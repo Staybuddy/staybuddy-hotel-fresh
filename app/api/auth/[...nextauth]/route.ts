@@ -13,7 +13,7 @@ async function generateReferralCode(name: string) {
 
 async function handleReferral(newUserRef: any, newUser: any) {
   try {
-    const cookieStore = cookies();
+    const cookieStore = await cookies();
     const refCode = cookieStore.get('staybuddy_ref')?.value;
     if (refCode && !newUser.referredBy) {
       const referrerSnapshot = await db.collection('users').where('referralCode', '==', refCode).limit(1).get();
@@ -106,7 +106,7 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async signIn({ user, account, profile }) {
       if (account?.provider === 'google') {
-        const cookieStore = cookies();
+        const cookieStore = await cookies();
         const intendedRole = cookieStore.get('intended_role')?.value;
         const isPartnerLogin = intendedRole === 'partner';
         

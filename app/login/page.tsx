@@ -1,12 +1,13 @@
 'use client';
-import { useState } from 'react';
-import { signIn } from 'next-auth/react';
+import { useState, useEffect } from 'react';
+import { signIn, useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Navbar from '@/components/Navbar';
 
 export default function LoginPage() {
   const router = useRouter();
+  const { data: session, status } = useSession();
   
   // Phone OTP State
   const [phone, setPhone] = useState('');
@@ -17,6 +18,20 @@ export default function LoginPage() {
   const role = 'customer';
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // Automatically redirect if already logged in
+  useEffect(() => {
+    if (status === 'authenticated') {
+      const userRole = (session?.user as any)?.role;
+      if (userRole === 'admin') {
+        router.push('/admin');
+      } else if (userRole === 'partner') {
+        router.push('/partner');
+      } else {
+        router.push('/'); // B2C Client Panel
+      }
+    }
+  }, [status, session, router]);
 
   async function handleGoogleSignIn() {
     setLoading(true);
