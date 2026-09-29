@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import connectDB from '@/lib/mongodb';
-import User from '@/models/User';
+import { db } from '@/lib/firebaseAdmin';
+import crypto from 'crypto';
 
 export async function POST(request: NextRequest) {
   try {
@@ -14,27 +14,38 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Password must be at least 6 characters' }, { status: 400 });
     }
 
-    await connectDB();
-
-    const existingUser = await User.findOne({ email: email.toLowerCase() });
-    if (existingUser) {
+    const usersRef = db.collection('users');
+    const existing = await usersRef.where('email', '==', email.toLowerCase()).limit(1).get();
+    
+    if (!existing.empty) {
       return NextResponse.json({ error: 'An account with this email already exists' }, { status: 409 });
     }
 
     const userRole = role === 'partner' ? 'partner' : 'customer';
 
-    const user = await User.create({
+    const base = name.replace(/[^a-zA-Z]/g, '').toUpperCase().substring(0, 4) || 'USER';
+    const randomStr = crypto.randomBytes(2).toString('hex').toUpperCase();
+    const refCode = `${base}${randomStr}`;
+
+    const newUser = {
       name,
       email: email.toLowerCase(),
-      password,
       role: userRole,
-      phone,
-    });
+      phone: phone || '',
+      partnerStatus: userRole === 'partner' ? 'pending' : 'none',
+      isActive: true,
+      referralCode: refCode,
+      referralCount: 0,
+      walletBalance: 0,
+      createdAt: new Date()
+    };
+
+    const docRef = await usersRef.add(newUser);
 
     return NextResponse.json(
       {
         message: 'Account created successfully',
-        user: { id: user._id, name: user.name, email: user.email, role: user.role },
+        user: { id: docRef.id, name: newUser.name, email: newUser.email, role: newUser.role },
       },
       { status: 201 }
     );

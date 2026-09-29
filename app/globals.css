@@ -294,7 +294,7 @@ h4 { font-size: 1.125rem; }
 
 /* ===== MODAL ===== */
 .modal-overlay {
-  position: fixed; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px);
+  position: fixed; inset: 0; background: rgba(0,0,0,0.5); -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px);
   display: flex; align-items: center; justify-content: center; z-index: 1000;
   padding: var(--space-4); animation: fadeIn var(--transition-fast);
 }
@@ -378,7 +378,7 @@ tbody tr:hover { background: var(--bg-secondary); }
   .container { padding: 0 var(--space-4); }
   .grid-4, .grid-3, .grid-2 { grid-template-columns: 1fr; }
   .section { padding: var(--space-10) 0; }
-  .sidebar { width: 100%; min-height: auto; }
+  .sidebar { width: 100%; min-height: 0; }
   .hide-mobile { display: none; }
 }
 @media (max-width: 480px) {

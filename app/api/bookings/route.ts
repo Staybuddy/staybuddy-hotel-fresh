@@ -168,25 +168,23 @@ export async function POST(request: NextRequest) {
 
     await bookingRef.set(newBooking);
 
-    // TEMPORARY FOR TESTING: Send emails immediately upon booking creation
     try {
       const { sendBookingConfirmationEmail, sendPartnerNotificationEmail } = await import('@/lib/email');
-      const User = (await import('@/models/User')).default;
-      await (await import('@/lib/mongodb')).default();
       
       let emailBooking = { ...newBooking } as any;
       emailBooking.hotelId = { _id: hotelSnap.id, ...hotelData };
       
-      const customer = await User.findById(customerId);
-      if (customer) {
-        emailBooking.customerId = { _id: customer._id, name: customer.name, email: customer.email };
+      const customerDoc = await db.collection('users').doc(customerId).get();
+      if (customerDoc.exists) {
+        const customer = customerDoc.data() as any;
+        emailBooking.customerId = { _id: customerDoc.id, name: customer.name, email: customer.email };
         sendBookingConfirmationEmail(emailBooking).catch(console.error);
       }
 
       if (hotelData?.partnerId) {
-        const partner = await User.findById(hotelData.partnerId);
-        if (partner && partner.email) {
-          sendPartnerNotificationEmail(emailBooking, partner.email).catch(console.error);
+        const partnerDoc = await db.collection('users').doc(hotelData.partnerId).get();
+        if (partnerDoc.exists && partnerDoc.data()?.email) {
+          sendPartnerNotificationEmail(emailBooking, partnerDoc.data()!.email).catch(console.error);
         }
       }
     } catch (err) {

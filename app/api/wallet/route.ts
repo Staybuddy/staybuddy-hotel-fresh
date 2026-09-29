@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../auth/[...nextauth]/route';
-import connectDB from '@/lib/mongodb';
-import User from '@/models/User';
-import WalletTransaction from '@/models/WalletTransaction';
+import { db } from '@/lib/firebaseAdmin';
 
 export async function GET(request: NextRequest) {
   try {
@@ -12,17 +10,16 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    await connectDB();
     const userId = (session.user as any).id;
+    const userDoc = await db.collection('users').doc(userId).get();
     
-    // Get full user object to ensure we have latest balance and referral code
-    const user = await User.findById(userId);
-    if (!user) {
+    if (!userDoc.exists) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
+    const user = userDoc.data() as any;
 
-    // Get transaction history
-    const transactions = await WalletTransaction.find({ userId }).sort({ createdAt: -1 });
+    const txSnap = await db.collection('wallet_transactions').where('userId', '==', userId).orderBy('createdAt', 'desc').get();
+    const transactions = txSnap.docs.map(doc => ({ _id: doc.id, ...doc.data() }));
 
     return NextResponse.json({ 
       walletBalance: user.walletBalance || 0,
@@ -48,28 +45,36 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid amount' }, { status: 400 });
     }
 
-    await connectDB();
     const userId = (session.user as any).id;
-    const user = await User.findById(userId);
+    const userRef = db.collection('users').doc(userId);
+    const userDoc = await userRef.get();
     
-    if (!user || user.walletBalance < amount) {
+    if (!userDoc.exists) {
+      return NextResponse.json({ error: 'Insufficient balance' }, { status: 400 });
+    }
+    const user = userDoc.data() as any;
+    const currentBalance = user.walletBalance || 0;
+
+    if (currentBalance < amount) {
       return NextResponse.json({ error: 'Insufficient balance' }, { status: 400 });
     }
 
-    // Deduct balance
-    user.walletBalance -= amount;
-    await user.save();
+    const newBalance = currentBalance - amount;
+    await userRef.update({ walletBalance: newBalance });
 
-    // Create withdrawal transaction
-    const transaction = await WalletTransaction.create({
+    const txRef = db.collection('wallet_transactions').doc();
+    const transaction = {
+      _id: txRef.id,
       userId,
       amount,
       type: 'withdrawal',
-      description: `Requested withdrawal to bank account`,
-      status: 'pending' // pending manual admin payout
-    });
+      description: 'Requested withdrawal to bank account',
+      status: 'pending',
+      createdAt: new Date().toISOString()
+    };
+    await txRef.set(transaction);
 
-    return NextResponse.json({ success: true, walletBalance: user.walletBalance, transaction });
+    return NextResponse.json({ success: true, walletBalance: newBalance, transaction });
   } catch (error) {
     console.error('Wallet withdrawal error:', error);
     return NextResponse.json({ error: 'Failed to process withdrawal' }, { status: 500 });

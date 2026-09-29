@@ -1,18 +1,27 @@
-import connectDB from '@/lib/mongodb';
-import Booking from '@/models/Booking';
+import { db } from '@/lib/firebaseAdmin';
 import PrintButton from '../PrintButton';
 import { notFound } from 'next/navigation';
 
 export default async function InvoicePage({ params }: { params: Promise<{ id: string }> }) {
-  await connectDB();
   const resolvedParams = await params;
-  const booking = await Booking.findById(resolvedParams.id)
-    .populate('hotelId')
-    .populate('roomId')
-    .lean() as any;
-
-  if (!booking) {
+  
+  const bookingDoc = await db.collection('bookings').doc(resolvedParams.id).get();
+  
+  if (!bookingDoc.exists) {
     return <div>Booking not found for ID: {resolvedParams.id}</div>;
+  }
+  
+  const bookingData = bookingDoc.data() as any;
+  let booking = { _id: bookingDoc.id, ...bookingData } as any;
+
+  if (booking.hotelId) {
+    const hotelDoc = await db.collection('hotels').doc(booking.hotelId).get();
+    if (hotelDoc.exists) booking.hotelId = { _id: hotelDoc.id, ...hotelDoc.data() };
+  }
+
+  if (booking.roomId) {
+    const roomDoc = await db.collection('rooms').doc(booking.roomId).get();
+    if (roomDoc.exists) booking.roomId = { _id: roomDoc.id, ...roomDoc.data() };
   }
 
   // Invoice calculations

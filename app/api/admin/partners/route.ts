@@ -1,8 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
-import connectDB from '@/lib/mongodb';
-import User from '@/models/User';
+import { db } from '@/lib/firebaseAdmin';
 
 export async function GET(req: Request) {
   try {
@@ -11,10 +10,15 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    await connectDB();
+    const snapshot = await db.collection('users').where('role', '==', 'partner').get();
+    const partners = snapshot.docs.map(doc => {
+      const data = doc.data();
+      delete data.password;
+      return { _id: doc.id, ...data };
+    });
     
-    // Fetch all users with role 'partner'
-    const partners = await User.find({ role: 'partner' }).sort({ createdAt: -1 }).lean();
+    // Sort manually since we can't sort by createdAt if we filter by role without composite index
+    partners.sort((a: any, b: any) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
     
     return NextResponse.json({ partners });
   } catch (error) {
@@ -30,13 +34,11 @@ export async function PATCH(req: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { partnerId, action } = await req.json(); // action can be 'approve' or 'reject'
+    const { partnerId, action } = await req.json();
     if (!partnerId || !action) {
       return NextResponse.json({ error: 'Missing parameters' }, { status: 400 });
     }
 
-    await connectDB();
-    
     const statusMap: Record<string, string> = {
       'approve': 'approved',
       'reject': 'rejected'
@@ -46,17 +48,20 @@ export async function PATCH(req: Request) {
       return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
     }
 
-    const updatedUser = await User.findByIdAndUpdate(
-      partnerId,
-      { partnerStatus: statusMap[action] },
-      { new: true }
-    ).lean();
+    const docRef = db.collection('users').doc(partnerId);
+    const docSnap = await docRef.get();
 
-    if (!updatedUser) {
+    if (!docSnap.exists) {
       return NextResponse.json({ error: 'Partner not found' }, { status: 404 });
     }
 
-    return NextResponse.json({ success: true, partner: updatedUser });
+    await docRef.update({ partnerStatus: statusMap[action] });
+    const updated = await docRef.get();
+
+    const partner = { _id: updated.id, ...updated.data() };
+    delete (partner as any).password;
+
+    return NextResponse.json({ success: true, partner });
   } catch (error) {
     console.error('Failed to update partner status:', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });

@@ -1,19 +1,28 @@
 import NextAuth, { NextAuthOptions } from 'next-auth';
 import GoogleProvider from 'next-auth/providers/google';
 import CredentialsProvider from 'next-auth/providers/credentials';
-import connectDB from '@/lib/mongodb';
-import User from '@/models/User';
+import { db } from '@/lib/firebaseAdmin';
 import { cookies } from 'next/headers';
+import crypto from 'crypto';
 
-async function handleReferral(newUser: any) {
+async function generateReferralCode(name: string) {
+  const base = name.replace(/[^a-zA-Z]/g, '').toUpperCase().substring(0, 4) || 'USER';
+  const randomStr = crypto.randomBytes(2).toString('hex').toUpperCase();
+  return `${base}${randomStr}`;
+}
+
+async function handleReferral(newUserRef: any, newUser: any) {
   try {
     const cookieStore = cookies();
     const refCode = cookieStore.get('staybuddy_ref')?.value;
     if (refCode && !newUser.referredBy) {
-      const referrer = await User.findOne({ referralCode: refCode });
-      if (referrer && referrer.referralCount < 5 && referrer._id.toString() !== newUser._id.toString()) {
-        newUser.referredBy = referrer._id;
-        await newUser.save();
+      const referrerSnapshot = await db.collection('users').where('referralCode', '==', refCode).limit(1).get();
+      if (!referrerSnapshot.empty) {
+        const referrerDoc = referrerSnapshot.docs[0];
+        const referrer = referrerDoc.data();
+        if (referrer.referralCount < 5 && referrerDoc.id !== newUserRef.id) {
+          await newUserRef.update({ referredBy: referrerDoc.id });
+        }
       }
     }
   } catch (error) {
@@ -33,44 +42,55 @@ export const authOptions: NextAuthOptions = {
       credentials: {
         phone: { label: 'Phone Number', type: 'text' },
         otp: { label: 'OTP Code', type: 'text' },
-        role: { label: 'Role', type: 'text' }, // Allows passing role during initial registration
+        role: { label: 'Role', type: 'text' },
       },
       async authorize(credentials) {
         if (!credentials?.phone || !credentials?.otp) {
           throw new Error('Please enter your phone number and OTP');
         }
 
-        // MOCK OTP VERIFICATION (Always accepts '123456')
         if (credentials.otp !== '123456') {
           throw new Error('Invalid OTP Code. (Hint: Use 123456 for testing)');
         }
 
-        await connectDB();
+        const usersRef = db.collection('users');
+        const snapshot = await usersRef.where('phone', '==', credentials.phone).limit(1).get();
         
-        let user = await User.findOne({ phone: credentials.phone });
-        
-        // Auto-register if user doesn't exist
-        if (!user) {
-          user = await User.create({
+        let userId;
+        let userData;
+
+        if (snapshot.empty) {
+          const newUserData = {
             name: `User ${credentials.phone.slice(-4)}`,
             phone: credentials.phone,
             role: credentials.role || 'customer',
             isActive: true,
-          });
-          await handleReferral(user);
+            partnerStatus: 'none',
+            referralCode: await generateReferralCode(`User ${credentials.phone.slice(-4)}`),
+            referralCount: 0,
+            walletBalance: 0,
+            createdAt: new Date(),
+          };
+          const newUserRef = await usersRef.add(newUserData);
+          await handleReferral(newUserRef, newUserData);
+          userId = newUserRef.id;
+          userData = newUserData;
+        } else {
+          userId = snapshot.docs[0].id;
+          userData = snapshot.docs[0].data();
         }
 
-        if (!user.isActive) {
+        if (!userData.isActive) {
           throw new Error('Your account has been suspended. Contact support.');
         }
 
         return {
-          id: user._id.toString(),
-          name: user.name,
-          email: user.email,
-          role: user.role,
-          image: user.avatar,
-          phone: user.phone,
+          id: userId,
+          name: userData.name,
+          email: userData.email,
+          role: userData.role,
+          image: userData.avatar,
+          phone: userData.phone,
         };
       },
     }),
@@ -78,19 +98,21 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async signIn({ user, account, profile }) {
       if (account?.provider === 'google') {
-        await connectDB();
-        
         const cookieStore = cookies();
         const intendedRole = cookieStore.get('intended_role')?.value;
         const isPartnerLogin = intendedRole === 'partner';
         
-        let existingUser = await User.findOne({ 
-          $or: [{ googleId: account.providerAccountId }, { email: user.email }] 
-        });
+        const usersRef = db.collection('users');
+        const byGoogleId = await usersRef.where('googleId', '==', account.providerAccountId).limit(1).get();
+        let existingUserDoc = byGoogleId.empty ? null : byGoogleId.docs[0];
 
-        if (!existingUser) {
-          // Auto-register new Google user
-          const newUser = await User.create({
+        if (!existingUserDoc && user.email) {
+          const byEmail = await usersRef.where('email', '==', user.email).limit(1).get();
+          if (!byEmail.empty) existingUserDoc = byEmail.docs[0];
+        }
+
+        if (!existingUserDoc) {
+          const newUserData = {
             name: user.name,
             email: user.email,
             googleId: account.providerAccountId,
@@ -98,31 +120,38 @@ export const authOptions: NextAuthOptions = {
             role: isPartnerLogin ? 'partner' : 'customer',
             partnerStatus: isPartnerLogin ? 'pending' : 'none',
             isActive: true,
-          });
-          await handleReferral(newUser);
-          user.id = newUser._id.toString();
-          (user as any).role = newUser.role;
-          (user as any).partnerStatus = newUser.partnerStatus;
-          (user as any).phone = newUser.phone;
+            referralCode: await generateReferralCode(user.name || 'USER'),
+            referralCount: 0,
+            walletBalance: 0,
+            createdAt: new Date(),
+          };
+          const newUserRef = await usersRef.add(newUserData);
+          await handleReferral(newUserRef, newUserData);
+          user.id = newUserRef.id;
+          (user as any).role = newUserData.role;
+          (user as any).partnerStatus = newUserData.partnerStatus;
+          (user as any).phone = newUserData.phone;
         } else {
-          // Link google ID if email matched but googleId didn't
-          if (!existingUser.googleId) {
-            existingUser.googleId = account.providerAccountId;
+          const existingData = existingUserDoc.data();
+          const updates: any = {};
+          
+          if (!existingData.googleId) updates.googleId = account.providerAccountId;
+          
+          if (isPartnerLogin && existingData.role === 'customer') {
+            updates.role = 'partner';
+            updates.partnerStatus = 'pending';
           }
           
-          // Upgrade customer to pending partner if they try to login as partner
-          if (isPartnerLogin && existingUser.role === 'customer') {
-            existingUser.role = 'partner';
-            existingUser.partnerStatus = 'pending';
+          if (Object.keys(updates).length > 0) {
+            await existingUserDoc.ref.update(updates);
+            Object.assign(existingData, updates);
           }
           
-          await existingUser.save();
-          
-          if (!existingUser.isActive) return false;
-          user.id = existingUser._id.toString();
-          (user as any).role = existingUser.role;
-          (user as any).partnerStatus = existingUser.partnerStatus;
-          (user as any).phone = existingUser.phone;
+          if (!existingData.isActive) return false;
+          user.id = existingUserDoc.id;
+          (user as any).role = existingData.role;
+          (user as any).partnerStatus = existingData.partnerStatus;
+          (user as any).phone = existingData.phone;
         }
       }
       return true;
@@ -152,7 +181,7 @@ export const authOptions: NextAuthOptions = {
   },
   session: {
     strategy: 'jwt',
-    maxAge: 30 * 24 * 60 * 60, // 30 days
+    maxAge: 30 * 24 * 60 * 60,
   },
   secret: process.env.NEXTAUTH_SECRET,
 };

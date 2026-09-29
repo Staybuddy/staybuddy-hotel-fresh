@@ -1,10 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
-import connectDB from '@/lib/mongodb';
-import User from '@/models/User';
-import WalletTransaction from '@/models/WalletTransaction';
-import { sendBookingConfirmationEmail, sendPartnerNotificationEmail } from '@/lib/email';
 import { db } from '@/lib/firebaseAdmin';
+import { sendBookingConfirmationEmail, sendPartnerNotificationEmail } from '@/lib/email';
 
 export async function POST(request: NextRequest) {
   try {
@@ -20,7 +17,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid payment signature' }, { status: 400 });
     }
 
-    // Update booking in Firestore
     const bookingRef = db.collection('bookings').doc(bookingId);
     const bookingSnap = await bookingRef.get();
     
@@ -32,44 +28,48 @@ export async function POST(request: NextRequest) {
     const updatedBookingSnap = await bookingRef.get();
     let booking = { _id: updatedBookingSnap.id, ...updatedBookingSnap.data() } as any;
 
-    // Fetch related docs for email
     const hotelSnap = await db.collection('hotels').doc(booking.hotelId).get();
     const hotel = hotelSnap.exists ? { _id: hotelSnap.id, ...hotelSnap.data() } : null;
     booking.hotelId = hotel;
 
-    await connectDB();
-    const customer = await User.findById(booking.customerId);
-    booking.customerId = customer ? { name: customer.name, email: customer.email, _id: customer._id } : booking.customerId;
+    const customerSnap = await db.collection('users').doc(booking.customerId).get();
+    const customer = customerSnap.exists ? customerSnap.data() : null;
+    booking.customerId = customer ? { name: customer.name, email: customer.email, _id: customerSnap.id } : booking.customerId;
 
     if (booking) {
-      // Send B2C email
       sendBookingConfirmationEmail(booking).catch(console.error);
 
-      // Send B2B email if partner has email
       if (hotel && hotel.partnerId) {
-        const partner = await User.findById(hotel.partnerId);
-        if (partner && partner.email) {
-          sendPartnerNotificationEmail(booking, partner.email).catch(console.error);
+        const partnerSnap = await db.collection('users').doc(hotel.partnerId).get();
+        if (partnerSnap.exists && partnerSnap.data()?.email) {
+          sendPartnerNotificationEmail(booking, partnerSnap.data()!.email).catch(console.error);
         }
       }
 
       try {
         if (customer && customer.referredBy && !customer.referralRewardClaimed) {
-          const referrer = await User.findById(customer.referredBy);
-          if (referrer && referrer.referralCount < 5) {
-            referrer.walletBalance = (referrer.walletBalance || 0) + 20;
-            referrer.referralCount = (referrer.referralCount || 0) + 1;
-            await referrer.save();
+          const referrerRef = db.collection('users').doc(customer.referredBy);
+          const referrerSnap = await referrerRef.get();
+          if (referrerSnap.exists) {
+            const referrer = referrerSnap.data() as any;
+            if (referrer.referralCount < 5) {
+              await referrerRef.update({
+                walletBalance: (referrer.walletBalance || 0) + 20,
+                referralCount: (referrer.referralCount || 0) + 1
+              });
 
-            customer.referralRewardClaimed = true;
-            await customer.save();
+              await db.collection('users').doc(booking.customerId).update({ referralRewardClaimed: true });
 
-            await WalletTransaction.create({
-              userId: referrer._id,
-              amount: 20,
-              type: 'referral_reward',
-              description: `Referral reward for ${customer.name}'s first booking`,
-            });
+              const txRef = db.collection('wallet_transactions').doc();
+              await txRef.set({
+                _id: txRef.id,
+                userId: referrerSnap.id,
+                amount: 20,
+                type: 'referral_reward',
+                description: `Referral reward for ${customer.name}'s first booking`,
+                createdAt: new Date().toISOString()
+              });
+            }
           }
         }
       } catch (err) {

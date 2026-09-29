@@ -1,24 +1,21 @@
 import HomeClient from '@/components/HomeClient';
-import connectDB from '@/lib/mongodb';
-import Hotel from '@/models/Hotel';
-import Room from '@/models/Room';
+import { db } from '@/lib/firebaseAdmin';
 
 export const revalidate = 60; // Cache and revalidate every 60 seconds
 
 async function getFeaturedHotels() {
   try {
-    await connectDB();
-    const hotels = await Hotel.find({ status: 'approved' })
-      .sort({ avgRating: -1, createdAt: -1 })
-      .limit(6)
-      .lean();
+    const hotelsSnap = await db.collection('hotels').where('status', '==', 'approved').get();
+    let hotels = hotelsSnap.docs.map(doc => ({ _id: doc.id, ...doc.data() }) as any);
+    hotels.sort((a, b) => (b.avgRating || 0) - (a.avgRating || 0));
+    hotels = hotels.slice(0, 6);
 
     const hotelsWithPrices = await Promise.all(
       hotels.map(async (hotel: any) => {
-        const cheapestRoom = await Room.findOne({ hotelId: hotel._id, isActive: true })
-          .sort({ priceDouble: 1 })
-          .select('priceDouble priceSingle')
-          .lean();
+        const roomsSnap = await db.collection('rooms').where('hotelId', '==', hotel._id).where('isActive', '==', true).get();
+        const rooms = roomsSnap.docs.map(doc => doc.data());
+        rooms.sort((a: any, b: any) => (a.priceDouble || 0) - (b.priceDouble || 0));
+        const cheapestRoom = rooms[0];
         
         return {
           ...hotel,
@@ -27,8 +24,7 @@ async function getFeaturedHotels() {
       })
     );
     
-    // Ensure all ObjectIds and Dates are serialized for the Client Component
-    return JSON.parse(JSON.stringify(hotelsWithPrices));
+    return hotelsWithPrices;
   } catch (error) {
     console.error('Failed to fetch featured hotels', error);
     return [];

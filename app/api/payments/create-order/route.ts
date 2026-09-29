@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Razorpay from 'razorpay';
-import connectDB from '@/lib/mongodb';
-import Booking from '@/models/Booking';
+import { db } from '@/lib/firebaseAdmin';
 
 const razorpay = new Razorpay({
   key_id: process.env.RAZORPAY_KEY_ID || '',
@@ -12,12 +11,12 @@ export async function POST(request: NextRequest) {
   try {
     const { bookingId } = await request.json();
     
-    await connectDB();
-    const booking = await Booking.findById(bookingId);
+    const docSnap = await db.collection('bookings').doc(bookingId).get();
     
-    if (!booking) {
+    if (!docSnap.exists) {
       return NextResponse.json({ error: 'Booking not found' }, { status: 404 });
     }
+    const booking = docSnap.data() as any;
 
     const options = {
       amount: booking.totalPrice * 100, // Amount in paise
