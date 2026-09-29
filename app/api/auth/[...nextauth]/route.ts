@@ -30,6 +30,14 @@ async function handleReferral(newUserRef: any, newUser: any) {
   }
 }
 
+// Automatically fix NEXTAUTH_URL on Vercel to prevent localhost redirects
+if (process.env.VERCEL) {
+  const vercelUrl = process.env.VERCEL_PROJECT_PRODUCTION_URL || process.env.VERCEL_URL;
+  if (vercelUrl) {
+    process.env.NEXTAUTH_URL = `https://${vercelUrl}`;
+  }
+}
+
 export const authOptions: NextAuthOptions = {
   providers: [
     GoogleProvider({
