@@ -78,7 +78,7 @@ export default function HomeClient({ initialHotels }: { initialHotels: any[] }) 
       <Navbar />
 
       {/* ===== HERO / PROPERTY TYPES ===== */}
-      <section style={{ paddingTop: '60px', paddingBottom: '20px', background: 'var(--bg-secondary)' }}>
+      <section style={{ paddingTop: '24px', paddingBottom: '20px', background: 'var(--bg-secondary)' }}>
         <div className="container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '0 16px' }}>
           <div 
             className="hide-scrollbar"
@@ -303,18 +303,18 @@ export default function HomeClient({ initialHotels }: { initialHotels: any[] }) 
       </section>
 
       {/* ===== TRENDING DESTINATIONS ===== */}
-      <section style={{ padding: '40px 0', background: 'var(--bg-secondary)' }}>
+      <section style={{ padding: '20px 0 10px', background: 'var(--bg-secondary)' }}>
         <div className="container">
-          <div style={{ textAlign: 'center', marginBottom: 48 }}>
+          <div style={{ textAlign: 'center', marginBottom: 32 }}>
             <div style={{ display: 'inline-block', background: 'var(--brand-50)', color: 'var(--brand-700)', padding: '4px 14px', borderRadius: 'var(--radius-full)', fontSize: '0.8rem', fontWeight: 700, marginBottom: 12, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Popular Destinations</div>
             <h2>Trending <span style={{ color: 'var(--brand-600)' }}>Right Now</span></h2>
             <p style={{ color: 'var(--text-secondary)', marginTop: 8 }}>Top-rated destinations loved by millions of travelers</p>
           </div>
           <div style={{
             display: 'flex', gap: 12, overflowX: 'auto',
-            padding: '20px 4px 30px', scrollSnapType: 'x mandatory',
+            padding: '10px 4px 16px', scrollSnapType: 'x mandatory',
             scrollbarWidth: 'thin', scrollbarColor: 'var(--brand-200) transparent',
-            margin: '-20px -4px 0'
+            margin: '-10px -4px 0'
           }}>
             {DESTINATIONS.map((dest, index) => (
               <Link key={dest.city} href={`/hotels?city=${dest.city}`} style={{ 
@@ -344,7 +344,7 @@ export default function HomeClient({ initialHotels }: { initialHotels: any[] }) 
       </section>
 
       {/* ===== PROMOTIONAL BANNER ===== */}
-      <section className="container" style={{ margin: 'var(--space-6) auto' }}>
+      <section className="container" style={{ margin: '16px auto' }}>
         <div style={{
           background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
           borderRadius: 'var(--radius-xl)',
@@ -386,7 +386,7 @@ export default function HomeClient({ initialHotels }: { initialHotels: any[] }) 
       </section>
 
       {/* ===== BUDGET STAYS CARD ===== */}
-      <section className="container" style={{ marginBottom: 'var(--space-6)' }}>
+      <section className="container" style={{ marginBottom: '32px' }}>
         <Link href="/hotels?maxPrice=1199" style={{ textDecoration: 'none' }}>
           <div style={{
             position: 'relative',
@@ -443,9 +443,9 @@ export default function HomeClient({ initialHotels }: { initialHotels: any[] }) 
       </section>
 
       {/* ===== FEATURED HOTELS ===== */}
-      <section style={{ padding: 'var(--space-6) 0' }}>
+      <section style={{ padding: '24px 0' }}>
         <div className="container">
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 40, flexWrap: 'wrap', gap: 16 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24, flexWrap: 'wrap', gap: 16 }}>
             <div>
               <h2>Featured <span style={{ color: 'var(--brand-600)' }}>Hotels</span></h2>
               <p style={{ color: 'var(--text-secondary)', marginTop: 4 }}>Hand-picked top-rated stays for you</p>
