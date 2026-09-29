@@ -16,10 +16,12 @@ async function getFeaturedHotels() {
         const rooms = roomsSnap.docs.map(doc => doc.data());
         rooms.sort((a: any, b: any) => (a.priceDouble || 0) - (b.priceDouble || 0));
         const cheapestRoom = rooms[0];
+        const roomsLeft = rooms.reduce((sum: number, r: any) => sum + (r.staybuddyAllocation || 0), 0);
         
         return {
           ...hotel,
-          startingPrice: cheapestRoom?.priceSingle || cheapestRoom?.priceDouble || null
+          startingPrice: cheapestRoom?.priceSingle || cheapestRoom?.priceDouble || null,
+          roomsLeft
         };
       })
     );

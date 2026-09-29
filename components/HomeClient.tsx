@@ -724,6 +724,11 @@ function HotelCard({ hotel }: { hotel: any }) {
               <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>({hotel.totalReviews} reviews)</span>
             </div>
           )}
+          {typeof hotel.roomsLeft === 'number' && (
+            <div style={{ fontSize: '0.75rem', color: '#d97706', fontWeight: 600, marginTop: hotel.avgRating > 0 ? 0 : 8, marginBottom: 8 }}>
+              {hotel.roomsLeft} {hotel.roomsLeft === 1 ? 'room' : 'rooms'} left!
+            </div>
+          )}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 12 }}>
             <div>
               <span className="price" style={{ fontSize: '1.25rem' }}>₹{hotel.startingPrice || 'Check rates'}</span>
