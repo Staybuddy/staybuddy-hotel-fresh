@@ -75,11 +75,57 @@ export default function HomeClient({ initialHotels }: { initialHotels: any[] }) 
 
   return (
     <div>
+      <style>{`
+        @media (max-width: 768px) {
+          /* MASTER FIX: prevent ANY element from causing horizontal scroll */
+          * { box-sizing: border-box !important; }
+          
+          /* Hero section full width */
+          .hero-section-container { padding: 0 12px !important; }
+          
+          /* Search wrapper: column on mobile */
+          .hero-search-wrapper {
+            flex-direction: column !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            padding: 10px !important;
+            gap: 8px !important;
+          }
+          
+          /* All search items: full width */
+          .hero-search-item {
+            width: 100% !important;
+            flex: none !important;
+            min-width: 0 !important;
+            box-sizing: border-box !important;
+          }
+          
+          /* Search button: full width */
+          .hero-search-btn {
+            width: 100% !important;
+            margin: 0 !important;
+            border-radius: 12px !important;
+            padding: 14px !important;
+          }
+          
+          /* Hotel cards in scroll rows: smaller on mobile */
+          .hotel-scroll-card { width: 260px !important; }
+          
+          /* Destination cards scroll: ensure doesn't overflow */
+          .dest-scroll-row { padding-bottom: 8px !important; }
+        }
+        
+        @media (max-width: 390px) {
+          .hero-search-wrapper { padding: 8px !important; }
+          .hotel-scroll-card { width: 220px !important; }
+        }
+      `}</style>
       <Navbar />
 
       {/* ===== HERO / PROPERTY TYPES ===== */}
       <section style={{ paddingTop: '24px', paddingBottom: '20px', background: 'var(--bg-secondary)' }}>
-        <div className="container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '0 16px' }}>
+        <div className="container hero-section-container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '0 16px' }}>
+
           <div 
             className="hide-scrollbar"
             style={{ 
@@ -482,7 +528,7 @@ export default function HomeClient({ initialHotels }: { initialHotels: any[] }) 
               margin: '-10px -4px 0'
             }}>
               {hotels.map(hotel => (
-                <div key={hotel._id} style={{ flexShrink: 0, width: '320px', scrollSnapAlign: 'start' }}>
+                <div key={hotel._id} className="hotel-scroll-card" style={{ flexShrink: 0, width: '320px', scrollSnapAlign: 'start' }}>
                   <HotelCard hotel={hotel} />
                 </div>
               ))}
