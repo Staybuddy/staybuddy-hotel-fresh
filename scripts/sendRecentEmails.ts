@@ -31,11 +31,11 @@ async function sendRecentEmails() {
     }
     
     // Send emails
-    const customerEmail = (booking.customerId as any)?.email;
+    const customerEmail = (booking.customerId as { email?: string })?.email;
     console.log(`Sending customer email to ${customerEmail}...`);
     await sendBookingConfirmationEmail(booking);
     
-    const partnerId = (booking.hotelId as any)?.partnerId;
+    const partnerId = (booking.hotelId as { partnerId?: string })?.partnerId;
     if (partnerId) {
       const partnerDoc = await db.collection('users').doc(partnerId).get();
       if (partnerDoc.exists && partnerDoc.data()?.email) {

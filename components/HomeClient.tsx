@@ -134,7 +134,7 @@ export default function HomeClient({ initialHotels }: { initialHotels: any[] }) 
           </div>
           
           {searchData.propertyType && (
-            <div className="fade-in" style={{
+            <div className="fade-in hero-search-wrapper" style={{
               marginTop: '24px',
               display: 'flex',
               gap: 8,
@@ -150,7 +150,7 @@ export default function HomeClient({ initialHotels }: { initialHotels: any[] }) 
             }}>
               
               {/* Location Block */}
-              <div style={{ flex: '1.2 1 0', minWidth: 200 }}>
+              <div className="hero-search-item" style={{ flex: '1.2 1 0', minWidth: 200 }}>
                 <LocationSearch 
                   city={searchData.location} 
                   onChange={c => setSearchData(p => ({ ...p, location: c }))} 
@@ -158,7 +158,7 @@ export default function HomeClient({ initialHotels }: { initialHotels: any[] }) 
               </div>
               
               {/* Check-in Block */}
-              <div 
+              <div className="hero-search-item"
                 onClick={() => { setShowDatePicker(true); setActiveDateSelection('checkIn'); }}
                 style={{ background: '#f8fafc', borderRadius: '12px', padding: '12px 16px', flex: '1 1 0', display: 'flex', flexDirection: 'column', gap: 4, cursor: 'pointer', border: '1px solid transparent', transition: 'border 0.2s', position: 'relative' }}
                 onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--brand-200)'}
@@ -176,7 +176,7 @@ export default function HomeClient({ initialHotels }: { initialHotels: any[] }) 
               </div>
 
               {/* Check-out Block */}
-              <div 
+              <div className="hero-search-item"
                 onClick={() => { setShowDatePicker(true); setActiveDateSelection('checkOut'); }}
                 style={{ background: '#f8fafc', borderRadius: '12px', padding: '12px 16px', flex: '1 1 0', display: 'flex', flexDirection: 'column', gap: 4, cursor: 'pointer', border: '1px solid transparent', transition: 'border 0.2s', position: 'relative' }}
                 onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--brand-200)'}
@@ -210,7 +210,7 @@ export default function HomeClient({ initialHotels }: { initialHotels: any[] }) 
               )}
 
               {/* Guests Block */}
-              <div 
+              <div className="hero-search-item"
                 onClick={() => setShowGuestPicker(!showGuestPicker)}
                 style={{ background: '#f8fafc', borderRadius: '12px', padding: '12px 16px', flex: '1.1 1 0', display: 'flex', flexDirection: 'column', gap: 4, cursor: 'pointer', border: '1px solid transparent', transition: 'border 0.2s', position: 'relative' }}
                 onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--brand-200)'}
@@ -270,7 +270,7 @@ export default function HomeClient({ initialHotels }: { initialHotels: any[] }) 
               </div>
 
               {/* Search Button */}
-              <button 
+              <button className="hero-search-item"
                 onClick={handleSearch}
                 style={{ 
                   background: '#ff6b35', 
