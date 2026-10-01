@@ -88,6 +88,7 @@ export default function HomeClient({ initialHotels }: { initialHotels: any[] }) 
               overflowX: 'auto', 
               borderRadius: 'var(--radius-xl)', 
               boxShadow: '0 8px 32px rgba(0,0,0,0.15)',
+              width: '100%',
               maxWidth: '100%',
               background: 'white',
               WebkitOverflowScrolling: 'touch'
@@ -108,16 +109,17 @@ export default function HomeClient({ initialHotels }: { initialHotels: any[] }) 
                   style={{
                     background: isActive ? 'var(--brand-50)' : 'white',
                     borderRight: isLast ? 'none' : '1px solid var(--border)',
-                    padding: '16px 28px',
+                    padding: '12px 16px',
                     cursor: 'pointer',
-                    minWidth: 150,
+                    minWidth: 0,
+                    flex: '1 0 auto',
                     transition: 'all 0.3s ease',
                     textAlign: 'center',
-                    height: '100%',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    gap: 12
+                    flexDirection: 'column',
+                    gap: 4
                   }}
                   onMouseEnter={e => {
                     if (!isActive) e.currentTarget.style.background = 'var(--brand-50)';
@@ -126,8 +128,8 @@ export default function HomeClient({ initialHotels }: { initialHotels: any[] }) 
                     if (!isActive) e.currentTarget.style.background = 'white';
                   }}
                 >
-                  <div style={{ fontSize: '2rem', transition: 'transform 0.3s ease', transform: isActive ? 'scale(1.1)' : 'scale(1)' }}>{card.icon}</div>
-                  <div style={{ color: isActive ? 'var(--brand-700)' : 'var(--text-primary)', fontWeight: 700, fontSize: '1rem', letterSpacing: '0.02em' }}>{card.label}</div>
+                  <div style={{ fontSize: '1.5rem', transition: 'transform 0.3s ease', transform: isActive ? 'scale(1.1)' : 'scale(1)' }}>{card.icon}</div>
+                  <div style={{ color: isActive ? 'var(--brand-700)' : 'var(--text-primary)', fontWeight: 700, fontSize: '0.8rem', letterSpacing: '0.02em', whiteSpace: 'nowrap' }}>{card.label}</div>
                 </div>
               );
             })}
@@ -135,22 +137,23 @@ export default function HomeClient({ initialHotels }: { initialHotels: any[] }) 
           
           {searchData.propertyType && (
             <div className="fade-in hero-search-wrapper" style={{
-              marginTop: '24px',
+              marginTop: '16px',
               display: 'flex',
+              flexWrap: 'wrap',
               gap: 8,
-              alignItems: 'center',
+              alignItems: 'stretch',
               background: 'white',
-              borderRadius: 'var(--radius-xl)',
+              borderRadius: '16px',
               boxShadow: '0 8px 32px rgba(0,0,0,0.08)',
               padding: '12px',
-              maxWidth: 900,
               width: '100%',
-              position: 'relative',
+              maxWidth: '100%',
+              boxSizing: 'border-box',
               zIndex: 50
             }}>
               
               {/* Location Block */}
-              <div className="hero-search-item" style={{ flex: '1.2 1 0', minWidth: 200 }}>
+              <div className="hero-search-item" style={{ flex: '1 1 160px', minWidth: 0 }}>
                 <LocationSearch 
                   city={searchData.location} 
                   onChange={c => setSearchData(p => ({ ...p, location: c }))} 
@@ -160,36 +163,34 @@ export default function HomeClient({ initialHotels }: { initialHotels: any[] }) 
               {/* Check-in Block */}
               <div className="hero-search-item"
                 onClick={() => { setShowDatePicker(true); setActiveDateSelection('checkIn'); }}
-                style={{ background: '#f8fafc', borderRadius: '12px', padding: '12px 16px', flex: '1 1 0', display: 'flex', flexDirection: 'column', gap: 4, cursor: 'pointer', border: '1px solid transparent', transition: 'border 0.2s', position: 'relative' }}
+                style={{ background: '#f8fafc', borderRadius: '12px', padding: '12px 16px', flex: '1 1 140px', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 4, cursor: 'pointer', border: '1px solid transparent', transition: 'border 0.2s' }}
                 onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--brand-200)'}
                 onMouseLeave={e => e.currentTarget.style.borderColor = 'transparent'}
               >
                 <label style={{ fontSize: '0.7rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', cursor: 'pointer' }}>CHECK-IN</label>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--brand-600)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.2 }}>{searchData.checkIn ? new Date(searchData.checkIn).getDate() + ' ' + new Date(searchData.checkIn).toLocaleString('default', { month: 'short' }) : 'Add Date'}</div>
-                    <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: 2 }}>{searchData.checkIn ? new Date(searchData.checkIn).toLocaleDateString('default', { weekday: 'long', year: 'numeric' }) : 'Select Check-in'}</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--brand-600)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.2 }}>{searchData.checkIn ? new Date(searchData.checkIn).getDate() + ' ' + new Date(searchData.checkIn).toLocaleString('default', { month: 'short' }) : 'Add Date'}</div>
+                    <div style={{ fontSize: '0.7rem', color: '#64748b', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{searchData.checkIn ? new Date(searchData.checkIn).toLocaleDateString('default', { weekday: 'short', year: 'numeric' }) : 'Select Check-in'}</div>
                   </div>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
                 </div>
               </div>
 
               {/* Check-out Block */}
               <div className="hero-search-item"
                 onClick={() => { setShowDatePicker(true); setActiveDateSelection('checkOut'); }}
-                style={{ background: '#f8fafc', borderRadius: '12px', padding: '12px 16px', flex: '1 1 0', display: 'flex', flexDirection: 'column', gap: 4, cursor: 'pointer', border: '1px solid transparent', transition: 'border 0.2s', position: 'relative' }}
+                style={{ background: '#f8fafc', borderRadius: '12px', padding: '12px 16px', flex: '1 1 140px', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 4, cursor: 'pointer', border: '1px solid transparent', transition: 'border 0.2s' }}
                 onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--brand-200)'}
                 onMouseLeave={e => e.currentTarget.style.borderColor = 'transparent'}
               >
                 <label style={{ fontSize: '0.7rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', cursor: 'pointer' }}>CHECK-OUT</label>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--brand-600)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.2 }}>{searchData.checkOut ? new Date(searchData.checkOut).getDate() + ' ' + new Date(searchData.checkOut).toLocaleString('default', { month: 'short' }) : 'Add Date'}</div>
-                    <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: 2 }}>{searchData.checkOut ? new Date(searchData.checkOut).toLocaleDateString('default', { weekday: 'long', year: 'numeric' }) : 'Select Check-out'}</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--brand-600)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.2 }}>{searchData.checkOut ? new Date(searchData.checkOut).getDate() + ' ' + new Date(searchData.checkOut).toLocaleString('default', { month: 'short' }) : 'Add Date'}</div>
+                    <div style={{ fontSize: '0.7rem', color: '#64748b', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{searchData.checkOut ? new Date(searchData.checkOut).toLocaleDateString('default', { weekday: 'short', year: 'numeric' }) : 'Select Check-out'}</div>
                   </div>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
                 </div>
               </div>
 
@@ -212,7 +213,7 @@ export default function HomeClient({ initialHotels }: { initialHotels: any[] }) 
               {/* Guests Block */}
               <div className="hero-search-item"
                 onClick={() => setShowGuestPicker(!showGuestPicker)}
-                style={{ background: '#f8fafc', borderRadius: '12px', padding: '12px 16px', flex: '1.1 1 0', display: 'flex', flexDirection: 'column', gap: 4, cursor: 'pointer', border: '1px solid transparent', transition: 'border 0.2s', position: 'relative' }}
+                style={{ background: '#f8fafc', borderRadius: '12px', padding: '12px 16px', flex: '1 1 140px', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 4, cursor: 'pointer', border: '1px solid transparent', transition: 'border 0.2s', position: 'relative' }}
                 onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--brand-200)'}
                 onMouseLeave={e => e.currentTarget.style.borderColor = 'transparent'}
               >
