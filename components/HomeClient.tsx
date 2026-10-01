@@ -270,28 +270,28 @@ export default function HomeClient({ initialHotels }: { initialHotels: any[] }) 
               </div>
 
               {/* Search Button */}
-              <button className="hero-search-item"
+              <button className="hero-search-btn"
                 onClick={handleSearch}
                 style={{ 
-                  background: '#ff6b35', 
+                  background: 'linear-gradient(135deg, #ff6b35, #ea580c)', 
                   color: 'white', 
                   border: 'none', 
                   borderRadius: '30px', 
-                  padding: '12px 32px', 
+                  padding: '14px 32px', 
                   fontSize: '1.1rem', 
                   fontWeight: 800, 
                   cursor: 'pointer',
-                  position: 'absolute',
-                  bottom: '-24px',
-                  left: '50%',
-                  transform: 'translateX(-50%)',
+                  whiteSpace: 'nowrap',
                   boxShadow: '0 4px 15px rgba(255,107,53,0.4)',
-                  zIndex: 20
+                  flexShrink: 0,
+                  alignSelf: 'center',
+                  marginTop: 4,
                 }}
               >
-                SEARCH
+                🔍 SEARCH
               </button>
             </div>
+
           )}
           
           {searchError && (
