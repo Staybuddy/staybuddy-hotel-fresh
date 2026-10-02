@@ -27,7 +27,7 @@ const AMENITY_ICONS: Record<string, string> = {
 
 export default function HomeClient({ initialHotels }: { initialHotels: any[] }) {
   const router = useRouter();
-  const [searchData, setSearchData] = useState({ propertyType: '', location: '', checkIn: '', checkOut: '', rooms: 1, adults: 2, children: 0 });
+  const [searchData, setSearchData] = useState({ propertyType: 'Hotel', location: '', checkIn: '', checkOut: '', rooms: 1, adults: 2, children: 0 });
   const [hotels, setHotels] = useState<any[]>(initialHotels);
   const [loading, setLoading] = useState(false);
   const [searchError, setSearchError] = useState('');
@@ -135,7 +135,10 @@ export default function HomeClient({ initialHotels }: { initialHotels: any[] }) 
             return (
               <div
                 key={card.id}
-                onClick={() => setSearchData(p => ({ ...p, propertyType: p.propertyType === card.id ? '' : card.id }))}
+                onClick={() => {
+                  setSearchData(p => ({ ...p, propertyType: p.propertyType === card.id ? '' : card.id }));
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
                 style={{
                   display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer',
                   padding: '6px 12px', borderRadius: '20px',
