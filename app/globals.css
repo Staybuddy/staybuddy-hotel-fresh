@@ -477,3 +477,30 @@ tbody tr:hover { background: var(--bg-secondary); }
 
 @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
 .animate-pulse { animation: pulse 2s cubic-bezier(0.4,0,0.6,1) infinite; }
+
+/* ===== HOTEL DETAILS PAGE RESPONSIVE GRIDS ===== */
+.hotel-details-grid {
+  display: grid;
+  grid-template-columns: 1fr 360px;
+}
+.hotel-gallery-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+}
+
+@media (max-width: 1024px) {
+  .hotel-details-grid {
+    grid-template-columns: 1fr;
+  }
+  .hotel-gallery-grid {
+    grid-template-columns: 1fr;
+    height: auto !important;
+  }
+  .hotel-gallery-grid > div:nth-child(n+2) {
+    display: none; /* Hide the smaller side images on mobile to save space */
+  }
+  .hotel-gallery-grid > div:first-child {
+    height: 250px;
+  }
+}
+

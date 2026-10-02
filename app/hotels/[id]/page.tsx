@@ -419,10 +419,8 @@ export default function HotelDetailPage() {
 
         {/* Main Grid Wrapper */}
         <div
-          className="container"
+          className="container hotel-details-grid"
           style={{
-            display: "grid",
-            gridTemplateColumns: "1fr 360px",
             gap: "var(--space-8)",
             alignItems: "flex-start",
             paddingBottom: "var(--space-16)",
@@ -433,9 +431,8 @@ export default function HotelDetailPage() {
             {/* Hero Images Gallery */}
             <div style={{ marginBottom: "var(--space-6)" }}>
               <div
+                className="hotel-gallery-grid"
                 style={{
-                  display: "grid",
-                  gridTemplateColumns: "2fr 1fr",
                   gap: "16px",
                   borderRadius: "24px",
                   overflow: "hidden",

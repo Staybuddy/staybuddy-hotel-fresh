@@ -184,9 +184,9 @@ export default function HomeClient({ initialHotels }: { initialHotels: any[] }) 
           {searchData.propertyType && (
             <div className="fade-in hero-search-wrapper" style={{
               marginTop: '16px',
-              display: 'flex',
-              flexWrap: 'wrap',
-              gap: 8,
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+              gap: 12,
               alignItems: 'stretch',
               background: 'white',
               borderRadius: '16px',
@@ -199,7 +199,7 @@ export default function HomeClient({ initialHotels }: { initialHotels: any[] }) 
             }}>
               
               {/* Location Block */}
-              <div className="hero-search-item" style={{ flex: '1 1 160px', minWidth: 0 }}>
+              <div className="hero-search-item" style={{ minWidth: 0 }}>
                 <LocationSearch 
                   city={searchData.location} 
                   onChange={c => setSearchData(p => ({ ...p, location: c }))} 
@@ -209,7 +209,7 @@ export default function HomeClient({ initialHotels }: { initialHotels: any[] }) 
               {/* Check-in Block */}
               <div className="hero-search-item"
                 onClick={() => { setShowDatePicker(true); setActiveDateSelection('checkIn'); }}
-                style={{ background: '#f8fafc', borderRadius: '12px', padding: '12px 16px', flex: '1 1 140px', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 4, cursor: 'pointer', border: '1px solid transparent', transition: 'border 0.2s' }}
+                style={{ background: '#f8fafc', borderRadius: '12px', padding: '12px 16px', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 4, cursor: 'pointer', border: '1px solid transparent', transition: 'border 0.2s' }}
                 onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--brand-200)'}
                 onMouseLeave={e => e.currentTarget.style.borderColor = 'transparent'}
               >
@@ -226,7 +226,7 @@ export default function HomeClient({ initialHotels }: { initialHotels: any[] }) 
               {/* Check-out Block */}
               <div className="hero-search-item"
                 onClick={() => { setShowDatePicker(true); setActiveDateSelection('checkOut'); }}
-                style={{ background: '#f8fafc', borderRadius: '12px', padding: '12px 16px', flex: '1 1 140px', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 4, cursor: 'pointer', border: '1px solid transparent', transition: 'border 0.2s' }}
+                style={{ background: '#f8fafc', borderRadius: '12px', padding: '12px 16px', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 4, cursor: 'pointer', border: '1px solid transparent', transition: 'border 0.2s' }}
                 onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--brand-200)'}
                 onMouseLeave={e => e.currentTarget.style.borderColor = 'transparent'}
               >
@@ -259,7 +259,7 @@ export default function HomeClient({ initialHotels }: { initialHotels: any[] }) 
               {/* Guests Block */}
               <div className="hero-search-item"
                 onClick={() => setShowGuestPicker(!showGuestPicker)}
-                style={{ background: '#f8fafc', borderRadius: '12px', padding: '12px 16px', flex: '1 1 140px', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 4, cursor: 'pointer', border: '1px solid transparent', transition: 'border 0.2s', position: 'relative' }}
+                style={{ background: '#f8fafc', borderRadius: '12px', padding: '12px 16px', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 4, cursor: 'pointer', border: '1px solid transparent', transition: 'border 0.2s', position: 'relative' }}
                 onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--brand-200)'}
                 onMouseLeave={e => e.currentTarget.style.borderColor = 'transparent'}
               >
