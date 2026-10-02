@@ -29,12 +29,11 @@ export default function Navbar({ middleContent }: { middleContent?: React.ReactN
   return (
     <>
       <nav style={{
-        position: 'sticky', top: 0, zIndex: 200,
-        background: scrolled ? 'rgba(255,255,255,0.95)' : 'white',
-        backdropFilter: scrolled ? 'blur(20px)' : 'none',
-        borderBottom: '1px solid var(--border)',
-        boxShadow: scrolled ? 'var(--shadow-sm)' : 'none',
-        transition: 'all var(--transition-base)',
+        position: 'sticky', top: 0, zIndex: 999,
+        background: 'white',
+        borderBottom: scrolled ? 'none' : '1px solid var(--border)',
+        boxShadow: scrolled ? '0 4px 20px rgba(0,0,0,0.08)' : 'none',
+        transition: 'all 0.3s ease',
       }}>
         <div className="container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 68 }}>
           {/* Logo */}
@@ -44,8 +43,8 @@ export default function Navbar({ middleContent }: { middleContent?: React.ReactN
             </Link>
           </div>
 
-          {/* MIDDLE SECTION - Always visible */}
-          <div style={{ flex: 2, display: 'flex', justifyContent: 'center' }}>
+          {/* MIDDLE SECTION - Appears when scrolled */}
+          <div style={{ flex: 2, display: 'flex', justifyContent: 'center', opacity: scrolled ? 1 : 0, transition: 'opacity 0.3s ease', pointerEvents: scrolled ? 'auto' : 'none' }}>
             {middleContent}
           </div>
 
