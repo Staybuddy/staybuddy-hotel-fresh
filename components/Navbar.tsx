@@ -44,8 +44,8 @@ export default function Navbar({ middleContent }: { middleContent?: React.ReactN
             </Link>
           </div>
 
-          {/* MIDDLE SECTION - Appears when scrolled */}
-          <div style={{ flex: 2, display: 'flex', justifyContent: 'center', opacity: scrolled ? 1 : 0, transition: 'opacity 0.3s ease', pointerEvents: scrolled ? 'auto' : 'none' }}>
+          {/* MIDDLE SECTION - Always visible */}
+          <div style={{ flex: 2, display: 'flex', justifyContent: 'center' }}>
             {middleContent}
           </div>
 

@@ -153,67 +153,7 @@ export default function HomeClient({ initialHotels }: { initialHotels: any[] }) 
         </div>
       } />
 
-      {/* HERO SECTION WITH INLINE PROPERTY TYPES */}
-      <div style={{ background: 'var(--bg-secondary)', padding: '24px 0 0 0', marginTop: '-8px' }}>
-        <div className="container hero-section-container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '0 16px' }}>
 
-          {/* Inline Property Selector */}
-          <div 
-            className="hide-scrollbar"
-            style={{ 
-              display: 'flex', 
-              gap: 0, 
-              overflowX: 'auto', 
-              borderRadius: 'var(--radius-xl)', 
-              boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
-              width: 'fit-content',
-              maxWidth: '100%',
-              background: 'white',
-              WebkitOverflowScrolling: 'touch'
-            }}>
-            {[
-              { id: 'Hotel', label: 'Hotels', icon: '🏨' },
-              { id: 'Resort', label: 'Resorts', icon: '🌴' },
-              { id: 'Villa', label: 'Villas', icon: '🏡' },
-              { id: 'Homestay', label: 'Homestays', icon: '🏘️' },
-              { id: 'HolidayPackage', label: 'Packages', icon: '🎒' }
-            ].map((card, index, array) => {
-              const isLast = index === array.length - 1;
-              const isActive = searchData.propertyType === card.id;
-              return (
-                <div
-                  key={card.id}
-                  onClick={() => setSearchData(p => ({ ...p, propertyType: p.propertyType === card.id ? '' : card.id }))}
-                  style={{
-                    background: isActive ? 'var(--brand-50)' : 'white',
-                    borderRight: isLast ? 'none' : '1px solid var(--border)',
-                    padding: '8px 16px',
-                    cursor: 'pointer',
-                    minWidth: 0,
-                    flex: '1 0 auto',
-                    transition: 'all 0.3s ease',
-                    textAlign: 'center',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    flexDirection: 'column',
-                    gap: 4
-                  }}
-                  onMouseEnter={e => {
-                    if (!isActive) e.currentTarget.style.background = 'var(--brand-50)';
-                  }}
-                  onMouseLeave={e => {
-                    if (!isActive) e.currentTarget.style.background = 'white';
-                  }}
-                >
-                  <div style={{ fontSize: '1.2rem', transition: 'transform 0.3s ease', transform: isActive ? 'scale(1.1)' : 'scale(1)' }}>{card.icon}</div>
-                  <div style={{ color: isActive ? 'var(--brand-700)' : 'var(--text-primary)', fontWeight: 700, fontSize: '0.75rem', letterSpacing: '0.02em', whiteSpace: 'nowrap' }}>{card.label}</div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </div>
 
       {/* SEARCH BAR SECTION */}
       <section style={{ paddingBottom: '20px', paddingTop: '24px', background: 'var(--bg-secondary)', marginTop: '-8px' }}>
