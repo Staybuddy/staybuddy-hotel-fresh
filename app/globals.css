@@ -553,3 +553,20 @@ tbody tr:hover { background: var(--bg-secondary); }
   }
 }
 
+
+@media (max-width: 1024px) {
+  .hero-search-wrapper {
+    flex-direction: column !important;
+    padding: 10px !important;
+  }
+  .hero-search-item {
+    width: 100% !important;
+    min-width: 100% !important;
+    margin-bottom: 8px !important;
+  }
+  .hero-search-btn {
+    width: 100% !important;
+    margin-top: 8px !important;
+  }
+}
+
