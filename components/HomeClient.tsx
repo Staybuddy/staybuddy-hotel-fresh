@@ -76,7 +76,7 @@ export default function HomeClient({ initialHotels }: { initialHotels: any[] }) 
   return (
     <div>
       <style>{`
-        @media (max-width: 768px) {
+        @media (max-width: 1024px) {
           /* MASTER FIX: prevent ANY element from causing horizontal scroll */
           * { box-sizing: border-box !important; }
           
