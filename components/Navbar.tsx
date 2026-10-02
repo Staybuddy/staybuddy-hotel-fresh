@@ -44,52 +44,7 @@ export default function Navbar() {
             </Link>
           </div>
 
-          {/* Center Navbar Property Cards (Only visible when scrolled) */}
-          <div style={{ 
-            flex: 1, display: 'flex', justifyContent: 'center', 
-            opacity: scrolled ? 1 : 0, 
-            transform: scrolled ? 'translateY(0)' : 'translateY(-10px)',
-            pointerEvents: scrolled ? 'auto' : 'none',
-            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
-          }}>
-            <div className="hide-scrollbar" style={{ display: 'flex', gap: 0, justifyContent: 'center', overflowX: 'auto', borderRadius: 'var(--radius-xl)', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', maxWidth: '100%', WebkitOverflowScrolling: 'touch' }}>
-              {[
-                { id: 'Hotel', label: 'Hotels', icon: '🏨' },
-                { id: 'Resort', label: 'Resorts', icon: '🌴' },
-                { id: 'Villa', label: 'Villas', icon: '🏡' },
-                { id: 'Homestay', label: 'Homestays', icon: '🏘️' },
-                { id: 'HolidayPackage', label: 'Packages', icon: '🎒' }
-              ].map((card, index, array) => {
-                const isLast = index === array.length - 1;
-                return (
-                  <Link key={card.id} href={`/hotels?propertyType=${card.id}`} style={{ textDecoration: 'none' }}>
-                    <div
-                      style={{
-                        flexShrink: 0,
-                        background: 'white',
-                        borderRight: isLast ? 'none' : '1px solid var(--border)',
-                        padding: '6px 16px',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 8,
-                        transition: 'all 0.3s ease',
-                      }}
-                      onMouseEnter={e => {
-                        e.currentTarget.style.background = 'var(--brand-50)';
-                      }}
-                      onMouseLeave={e => {
-                        e.currentTarget.style.background = 'white';
-                      }}
-                    >
-                      <span style={{ fontSize: '1.1rem' }}>{card.icon}</span>
-                      <span style={{ color: 'var(--text-primary)', fontWeight: 600, fontSize: '0.8rem', letterSpacing: '0.02em' }}>{card.label}</span>
-                    </div>
-                  </Link>
-                );
-              })}
-            </div>
-          </div>
+
 
           {/* Desktop Nav */}
           <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8 }} className="hide-mobile">
