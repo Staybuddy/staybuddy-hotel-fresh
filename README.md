@@ -1,0 +1,1 @@
+# staybuddy-hotel-fresh
