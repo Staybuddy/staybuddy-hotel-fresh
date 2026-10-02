@@ -88,11 +88,11 @@ export default function Navbar({ middleContent }: { middleContent?: React.ReactN
                       position: 'absolute', right: 0, top: 'calc(100% + 8px)',
                       background: 'var(--surface)', border: '1px solid var(--border)',
                       borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-xl)',
-                      width: 220, zIndex: 100, overflow: 'hidden',
+                      width: 240, minWidth: 240, zIndex: 100, overflow: 'hidden',
                     }}>
                       <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border)' }}>
                         <div style={{ fontWeight: 700, fontSize: '0.9rem' }}>{session.user?.name}</div>
-                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{session.user?.email}</div>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{session.user?.email}</div>
                         <span className="badge badge-primary" style={{ marginTop: 4 }}>{role}</span>
                       </div>
                       <div style={{ padding: '8px 0' }}>
