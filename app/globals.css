@@ -1,7 +1,47 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Playfair+Display:wght@400;600;700&display=swap');
 
-/* ===== CSS RESET ===== */
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+ /* ========================================================
+   GLOBAL RESPONSIVE RESET & FIX FOR MOBILE OVERFLOW
+   ======================================================== */
+
+/* 1. Ensure padding and border are included in width calculations */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+/* 2. Lock page bounds to prevent horizontal screen overflow */
+html, body {
+  width: 100%;
+  max-width: 100vw;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+}
+
+/* 3. Make all media elements automatically shrink to fit small screens */
+img, video, canvas, svg, iframe {
+  max-width: 100%;
+  height: auto;
+}
+
+/* 4. Ensure large text or long links break cleanly without pushing layout */
+p, h1, h2, h3, h4, h5, h6, span, a {
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+}
+
+/* 5. Mobile Layout Tweaks (for screens 768px wide and below) */
+@media (max-width: 768px) {
+  /* Make all container elements fluid */
+  div, section, main, header, footer, container {
+    max-width: 100% !important;
+  }
+
+  /* Automatically stack side-by-side flex layouts vertically */
+  .flex-row, .row, [class*="container"] {
+    flex-direction: column;
+  }
+}
 
 .hero-search-wrapper {
   display: grid;
