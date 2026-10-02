@@ -569,3 +569,16 @@ tbody tr:hover { background: var(--bg-secondary); }
   }
 }
 
+
+@media (max-width: 768px) {
+  .responsive-popup {
+    position: fixed !important;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    margin-top: 0 !important;
+    width: 90% !important;
+    max-width: 400px !important;
+    z-index: 1000 !important;
+  }
+}

@@ -249,7 +249,7 @@ export default function HomeClient({ initialHotels }: { initialHotels: any[] }) 
               {showDatePicker && (
                 <>
                   <div style={{ position: 'fixed', inset: 0, zIndex: 90 }} onClick={() => setShowDatePicker(false)} />
-                  <div style={{ position: 'absolute', top: '100%', left: '50%', transform: 'translateX(-50%)', marginTop: 16, zIndex: 100, background: 'white', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-xl)', border: '1px solid var(--border)' }}>
+                  <div className="responsive-popup" style={{ position: 'absolute', top: '100%', left: '50%', transform: 'translateX(-50%)', marginTop: 16, zIndex: 100, background: 'white', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-xl)', border: '1px solid var(--border)' }}>
                      <DateRangePicker 
                        checkIn={searchData.checkIn} 
                        checkOut={searchData.checkOut}
@@ -282,7 +282,7 @@ export default function HomeClient({ initialHotels }: { initialHotels: any[] }) 
                 {showGuestPicker && (
                   <>
                     <div style={{ position: 'fixed', inset: 0, zIndex: 90 }} onClick={(e) => { e.stopPropagation(); setShowGuestPicker(false); }} />
-                    <div onClick={e => e.stopPropagation()} style={{ position: 'absolute', top: '100%', right: 0, marginTop: 16, zIndex: 100, background: 'white', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-xl)', border: '1px solid var(--border)', padding: 'var(--space-5)', width: 320, cursor: 'default' }}>
+                    <div className="responsive-popup" onClick={e => e.stopPropagation()} style={{ position: 'absolute', top: '100%', right: 0, marginTop: 16, zIndex: 100, background: 'white', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-xl)', border: '1px solid var(--border)', padding: 'var(--space-5)', width: 320, cursor: 'default' }}>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
                         {/* Rooms */}
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
