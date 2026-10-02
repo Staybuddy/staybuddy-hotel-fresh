@@ -3,6 +3,11 @@
 /* ===== CSS RESET ===== */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+.hero-search-wrapper {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
 /* ===== DESIGN TOKENS ===== */
 :root {
   /* Brand Colors */
