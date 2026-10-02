@@ -33,6 +33,7 @@ export default function HomeClient({ initialHotels }: { initialHotels: any[] }) 
   const [searchError, setSearchError] = useState('');
   
   // Date Picker State
+  const [showStickySearch, setShowStickySearch] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [activeDateSelection, setActiveDateSelection] = useState<'checkIn' | 'checkOut'>('checkIn');
 
@@ -73,157 +74,8 @@ export default function HomeClient({ initialHotels }: { initialHotels: any[] }) 
 
   const today = new Date().toISOString().split('T')[0];
 
-  return (
-    <div>
-      <style>{`
-        @media (max-width: 1024px) {
-          /* MASTER FIX: prevent ANY element from causing horizontal scroll */
-          * { box-sizing: border-box !important; }
-          
-          /* Hero section full width */
-          .hero-section-container { padding: 0 12px !important; }
-          
-          /* Search wrapper: column on mobile */
-          .hero-search-wrapper {
-            display: flex !important;
-            flex-direction: column !important;
-            width: 100% !important;
-            max-width: 100% !important;
-            padding: 10px !important;
-            gap: 8px !important;
-          }
-          
-          /* All search items: full width */
-          .hero-search-item {
-            width: 100% !important;
-            flex: none !important;
-            min-width: 0 !important;
-            box-sizing: border-box !important;
-          }
-          
-          /* Search button: full width */
-          .hero-search-btn {
-            width: 100% !important;
-            margin: 0 !important;
-            border-radius: 12px !important;
-            padding: 14px !important;
-          }
-          
-          /* Hotel cards in scroll rows: smaller on mobile */
-          .hotel-scroll-card { width: 260px !important; }
-          
-          /* Destination cards scroll: ensure doesn't overflow */
-          .dest-scroll-row { padding-bottom: 8px !important; }
-        }
-        
-        @media (max-width: 390px) {
-          .hero-search-wrapper { padding: 8px !important; }
-          .hotel-scroll-card { width: 220px !important; }
-        }
-      `}</style>
-      {/* Property Selector for Hero and Navbar */}
-      <Navbar middleContent={
-        <div className="hide-scrollbar" style={{ display: 'flex', gap: 16, alignItems: 'center', overflowX: 'auto', maxWidth: '100%', padding: '0 8px' }}>
-          {[
-            { id: 'Hotel', label: 'Hotels', icon: '🏨' },
-            { id: 'Resort', label: 'Resorts', icon: '🌴' },
-            { id: 'Villa', label: 'Villas', icon: '🏡' },
-            { id: 'Homestay', label: 'Homestays', icon: '🏘️' },
-            { id: 'HolidayPackage', label: 'Packages', icon: '🎒' }
-          ].map(card => {
-            const isActive = searchData.propertyType === card.id;
-            return (
-              <div
-                key={card.id}
-                onClick={() => {
-                  setSearchData(p => ({ ...p, propertyType: p.propertyType === card.id ? '' : card.id }));
-                  window.scrollTo({ top: 0, behavior: 'smooth' });
-                }}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer',
-                  padding: '6px 12px', borderRadius: '20px',
-                  background: isActive ? 'var(--brand-50)' : 'transparent',
-                  border: isActive ? '1px solid var(--brand-200)' : '1px solid transparent',
-                  color: isActive ? 'var(--brand-700)' : 'var(--text-primary)',
-                  fontWeight: 600, fontSize: '0.85rem', transition: 'all 0.2s'
-                }}
-              >
-                <span>{card.icon}</span>
-                <span className="hide-mobile">{card.label}</span>
-              </div>
-            );
-          })}
-        </div>
-      } />
-
-      {/* HERO SECTION WITH INLINE PROPERTY TYPES */}
-      <div style={{ background: 'var(--bg-secondary)', padding: '24px 0 0 0', marginTop: '-8px' }}>
-        <div className="container hero-section-container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '0 16px' }}>
-
-          {/* Inline Property Selector */}
-          <div 
-            className="hide-scrollbar"
-            style={{ 
-              display: 'flex', 
-              gap: 0, 
-              overflowX: 'auto', 
-              borderRadius: 'var(--radius-xl)', 
-              boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
-              width: 'fit-content',
-              maxWidth: '100%',
-              background: 'white',
-              WebkitOverflowScrolling: 'touch'
-            }}>
-            {[
-              { id: 'Hotel', label: 'Hotels', icon: '🏨' },
-              { id: 'Resort', label: 'Resorts', icon: '🌴' },
-              { id: 'Villa', label: 'Villas', icon: '🏡' },
-              { id: 'Homestay', label: 'Homestays', icon: '🏘️' },
-              { id: 'HolidayPackage', label: 'Packages', icon: '🎒' }
-            ].map((card, index, array) => {
-              const isLast = index === array.length - 1;
-              const isActive = searchData.propertyType === card.id;
-              return (
-                  <div
-                  key={card.id}
-                  onClick={() => setSearchData(p => ({ ...p, propertyType: p.propertyType === card.id ? '' : card.id }))}
-                  style={{
-                    background: isActive ? 'var(--brand-50)' : 'white',
-                    borderRight: isLast ? 'none' : '1px solid var(--border)',
-                    padding: '12px 24px', /* INCREASED PADDING */
-                    cursor: 'pointer',
-                    minWidth: 0,
-                    flex: '1 0 auto',
-                    transition: 'all 0.3s ease',
-                    textAlign: 'center',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    flexDirection: 'column',
-                    gap: 8 /* INCREASED GAP */
-                  }}
-                  onMouseEnter={e => {
-                    if (!isActive) e.currentTarget.style.background = 'var(--brand-50)';
-                  }}
-                  onMouseLeave={e => {
-                    if (!isActive) e.currentTarget.style.background = 'white';
-                  }}
-                >
-                  <div style={{ fontSize: '1.6rem', transition: 'transform 0.3s ease', transform: isActive ? 'scale(1.1)' : 'scale(1)' }}>{card.icon}</div> {/* INCREASED ICON */}
-                  <div style={{ color: isActive ? 'var(--brand-700)' : 'var(--text-primary)', fontWeight: 800, fontSize: '0.85rem', letterSpacing: '0.02em', whiteSpace: 'nowrap' }}>{card.label}</div> {/* INCREASED TEXT */}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-
-      {/* SEARCH BAR SECTION */}
-      <section style={{ paddingBottom: '20px', paddingTop: '24px', background: 'var(--bg-secondary)', marginTop: '-8px' }}>
-        <div className="container hero-section-container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '0 16px' }}>
-          
-          {searchData.propertyType && (
-            <div className="fade-in hero-search-wrapper" style={{
+    const renderSearchBar = () => (
+    <div className="fade-in hero-search-wrapper" style={{
               position: 'relative',
               marginTop: '16px',
               gap: 12,
@@ -378,9 +230,160 @@ export default function HomeClient({ initialHotels }: { initialHotels: any[] }) 
                 🔍 SEARCH
               </button>
             </div>
+  );
 
-          )}
+  return (
+    <div>
+      <style>{`
+        @media (max-width: 1024px) {
+          /* MASTER FIX: prevent ANY element from causing horizontal scroll */
+          * { box-sizing: border-box !important; }
           
+          /* Hero section full width */
+          .hero-section-container { padding: 0 12px !important; }
+          
+          /* Search wrapper: column on mobile */
+          .hero-search-wrapper {
+            display: flex !important;
+            flex-direction: column !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            padding: 10px !important;
+            gap: 8px !important;
+          }
+          
+          /* All search items: full width */
+          .hero-search-item {
+            width: 100% !important;
+            flex: none !important;
+            min-width: 0 !important;
+            box-sizing: border-box !important;
+          }
+          
+          /* Search button: full width */
+          .hero-search-btn {
+            width: 100% !important;
+            margin: 0 !important;
+            border-radius: 12px !important;
+            padding: 14px !important;
+          }
+          
+          /* Hotel cards in scroll rows: smaller on mobile */
+          .hotel-scroll-card { width: 260px !important; }
+          
+          /* Destination cards scroll: ensure doesn't overflow */
+          .dest-scroll-row { padding-bottom: 8px !important; }
+        }
+        
+        @media (max-width: 390px) {
+          .hero-search-wrapper { padding: 8px !important; }
+          .hotel-scroll-card { width: 220px !important; }
+        }
+      `}</style>
+      {/* Property Selector for Hero and Navbar */}
+      <Navbar 
+        extendedContent={showStickySearch ? renderSearchBar() : null}
+        middleContent={
+        <div className="hide-scrollbar" style={{ display: 'flex', gap: 16, alignItems: 'center', overflowX: 'auto', maxWidth: '100%', padding: '0 8px' }}>
+          {[
+            { id: 'Hotel', label: 'Hotels', icon: '🏨' },
+            { id: 'Resort', label: 'Resorts', icon: '🌴' },
+            { id: 'Villa', label: 'Villas', icon: '🏡' },
+            { id: 'Homestay', label: 'Homestays', icon: '🏘️' },
+            { id: 'HolidayPackage', label: 'Packages', icon: '🎒' }
+          ].map(card => {
+            const isActive = searchData.propertyType === card.id;
+            return (
+              <div
+                key={card.id}
+                onClick={() => {
+                  setSearchData(p => ({ ...p, propertyType: p.propertyType === card.id ? '' : card.id }));
+                  setShowStickySearch(p => !p);
+                }}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer',
+                  padding: '6px 12px', borderRadius: '20px',
+                  background: isActive ? 'var(--brand-50)' : 'transparent',
+                  border: isActive ? '1px solid var(--brand-200)' : '1px solid transparent',
+                  color: isActive ? 'var(--brand-700)' : 'var(--text-primary)',
+                  fontWeight: 600, fontSize: '0.85rem', transition: 'all 0.2s'
+                }}
+              >
+                <span>{card.icon}</span>
+                <span className="hide-mobile">{card.label}</span>
+              </div>
+            );
+          })}
+        </div>
+      } />
+
+      {/* HERO SECTION WITH INLINE PROPERTY TYPES */}
+      <div style={{ background: 'var(--bg-secondary)', padding: '24px 0 0 0', marginTop: '-8px' }}>
+        <div className="container hero-section-container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '0 16px' }}>
+
+          {/* Inline Property Selector */}
+          <div 
+            className="hide-scrollbar"
+            style={{ 
+              display: 'flex', 
+              gap: 0, 
+              overflowX: 'auto', 
+              borderRadius: 'var(--radius-xl)', 
+              boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+              width: 'fit-content',
+              maxWidth: '100%',
+              background: 'white',
+              WebkitOverflowScrolling: 'touch'
+            }}>
+            {[
+              { id: 'Hotel', label: 'Hotels', icon: '🏨' },
+              { id: 'Resort', label: 'Resorts', icon: '🌴' },
+              { id: 'Villa', label: 'Villas', icon: '🏡' },
+              { id: 'Homestay', label: 'Homestays', icon: '🏘️' },
+              { id: 'HolidayPackage', label: 'Packages', icon: '🎒' }
+            ].map((card, index, array) => {
+              const isLast = index === array.length - 1;
+              const isActive = searchData.propertyType === card.id;
+              return (
+                  <div
+                  key={card.id}
+                  onClick={() => setSearchData(p => ({ ...p, propertyType: p.propertyType === card.id ? '' : card.id }))}
+                  style={{
+                    background: isActive ? 'var(--brand-50)' : 'white',
+                    borderRight: isLast ? 'none' : '1px solid var(--border)',
+                    padding: '12px 24px', /* INCREASED PADDING */
+                    cursor: 'pointer',
+                    minWidth: 0,
+                    flex: '1 0 auto',
+                    transition: 'all 0.3s ease',
+                    textAlign: 'center',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexDirection: 'column',
+                    gap: 8 /* INCREASED GAP */
+                  }}
+                  onMouseEnter={e => {
+                    if (!isActive) e.currentTarget.style.background = 'var(--brand-50)';
+                  }}
+                  onMouseLeave={e => {
+                    if (!isActive) e.currentTarget.style.background = 'white';
+                  }}
+                >
+                  <div style={{ fontSize: '1.6rem', transition: 'transform 0.3s ease', transform: isActive ? 'scale(1.1)' : 'scale(1)' }}>{card.icon}</div> {/* INCREASED ICON */}
+                  <div style={{ color: isActive ? 'var(--brand-700)' : 'var(--text-primary)', fontWeight: 800, fontSize: '0.85rem', letterSpacing: '0.02em', whiteSpace: 'nowrap' }}>{card.label}</div> {/* INCREASED TEXT */}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      {/* SEARCH BAR SECTION */}
+      <section style={{ paddingBottom: '20px', paddingTop: '24px', background: 'var(--bg-secondary)', marginTop: '-8px' }}>
+        <div className="container hero-section-container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '0 16px' }}>
+          
+          {searchData.propertyType && renderSearchBar()}
           {searchError && (
             <div style={{ marginTop: 12, color: 'white', background: '#ef4444', padding: '6px 16px', borderRadius: 'var(--radius-full)', fontSize: '0.9rem', fontWeight: 600, animation: 'fadeIn 0.3s ease' }}>
               {searchError}

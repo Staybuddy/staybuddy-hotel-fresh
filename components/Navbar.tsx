@@ -5,7 +5,7 @@ import Logo from './Logo';
 import { useSession, signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 
-export default function Navbar({ middleContent }: { middleContent?: React.ReactNode }) {
+export default function Navbar({ middleContent, extendedContent }: { middleContent?: React.ReactNode, extendedContent?: React.ReactNode }) {
   const { data: session } = useSession();
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -127,6 +127,15 @@ export default function Navbar({ middleContent }: { middleContent?: React.ReactN
             )}
           </div>
         </div>
+        
+        {/* Extended Sticky Content */}
+        {extendedContent && scrolled && (
+          <div style={{ borderTop: '1px solid var(--border)', background: 'var(--surface)', padding: '16px 0', animation: 'fadeIn 0.2s ease-out' }}>
+            <div className="container" style={{ padding: '0 16px' }}>
+              {extendedContent}
+            </div>
+          </div>
+        )}
       </nav>
       <style>{`.hide-desktop { display: none; } @media (max-width: 768px) { .hide-desktop { display: flex; } .hide-mobile { display: none !important; } }`}</style>
     </>
