@@ -94,19 +94,15 @@ export default function DateRangePicker({ checkIn, checkOut, onChange, onClose, 
     return (
       <div style={{ flex: 1, minWidth: 280 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-          {offset === 0 ? (
-            <button type="button" onClick={handlePrevMonth} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.2rem', color: 'var(--brand-500)' }} disabled={currentMonth.getFullYear() === today.getFullYear() && currentMonth.getMonth() === today.getMonth()}>
-              {'<'}
-            </button>
-          ) : <div style={{ width: 24 }} />}
+          <button type="button" onClick={handlePrevMonth} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.2rem', color: 'var(--brand-500)', opacity: (currentMonth.getFullYear() === today.getFullYear() && currentMonth.getMonth() === today.getMonth()) ? 0.3 : 1 }} disabled={currentMonth.getFullYear() === today.getFullYear() && currentMonth.getMonth() === today.getMonth()}>
+            {'<'}
+          </button>
           
           <div style={{ fontWeight: 800, fontSize: '1.1rem' }}>{monthName} <span style={{ fontWeight: 400, color: 'var(--text-muted)' }}>{displayYear}</span></div>
           
-          {offset === 1 ? (
-            <button type="button" onClick={handleNextMonth} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.2rem', color: 'var(--brand-500)' }}>
-              {'>'}
-            </button>
-          ) : <div style={{ width: 24 }} />}
+          <button type="button" onClick={handleNextMonth} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.2rem', color: 'var(--brand-500)' }}>
+            {'>'}
+          </button>
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 4, textAlign: 'center', marginBottom: 8 }}>
@@ -200,8 +196,6 @@ export default function DateRangePicker({ checkIn, checkOut, onChange, onClose, 
       onClick={e => e.stopPropagation()} // Prevent closing when clicking inside picker
     >
       {renderMonth(0)}
-      <div style={{ width: 1, background: 'var(--border)' }} />
-      {renderMonth(1)}
     </div>
   );
 }
