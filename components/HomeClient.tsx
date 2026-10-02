@@ -190,6 +190,7 @@ export default function HomeClient({ initialHotels }: { initialHotels: any[] }) 
           
           {searchData.propertyType && (
             <div className="fade-in hero-search-wrapper" style={{
+              position: 'relative',
               marginTop: '16px',
               gap: 12,
               alignItems: 'stretch',

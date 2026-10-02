@@ -473,7 +473,6 @@ tbody tr:hover { background: var(--bg-secondary); }
     flex: none !important;
     width: 100% !important;
     box-sizing: border-box !important;
-    position: static !important;
   }
   .hero-search-btn {
     width: 100% !important;
