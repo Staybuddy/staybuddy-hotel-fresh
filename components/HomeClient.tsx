@@ -121,12 +121,43 @@ export default function HomeClient({ initialHotels }: { initialHotels: any[] }) 
           .hotel-scroll-card { width: 220px !important; }
         }
       `}</style>
-      <Navbar />
+      {/* Property Selector for Hero and Navbar */}
+      <Navbar middleContent={
+        <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
+          {[
+            { id: 'Hotel', label: 'Hotels', icon: '🏨' },
+            { id: 'Resort', label: 'Resorts', icon: '🌴' },
+            { id: 'Villa', label: 'Villas', icon: '🏡' },
+            { id: 'Homestay', label: 'Homestays', icon: '🏘️' },
+            { id: 'HolidayPackage', label: 'Packages', icon: '🎒' }
+          ].map(card => {
+            const isActive = searchData.propertyType === card.id;
+            return (
+              <div
+                key={card.id}
+                onClick={() => setSearchData(p => ({ ...p, propertyType: p.propertyType === card.id ? '' : card.id }))}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer',
+                  padding: '6px 12px', borderRadius: '20px',
+                  background: isActive ? 'var(--brand-50)' : 'transparent',
+                  border: isActive ? '1px solid var(--brand-200)' : '1px solid transparent',
+                  color: isActive ? 'var(--brand-700)' : 'var(--text-primary)',
+                  fontWeight: 600, fontSize: '0.85rem', transition: 'all 0.2s'
+                }}
+              >
+                <span>{card.icon}</span>
+                <span className="hide-mobile">{card.label}</span>
+              </div>
+            );
+          })}
+        </div>
+      } />
 
-      {/* STICKY PROPERTY TYPES BAR */}
-      <div style={{ position: 'sticky', top: 68, zIndex: 95, background: 'var(--bg-secondary)', padding: '16px 0', borderBottom: '1px solid var(--border)' }}>
+      {/* HERO SECTION WITH INLINE PROPERTY TYPES */}
+      <div style={{ background: 'var(--bg-secondary)', padding: '24px 0 0 0', marginTop: '-8px' }}>
         <div className="container hero-section-container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '0 16px' }}>
 
+          {/* Inline Property Selector */}
           <div 
             className="hide-scrollbar"
             style={{ 

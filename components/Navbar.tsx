@@ -5,7 +5,7 @@ import Logo from './Logo';
 import { useSession, signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 
-export default function Navbar() {
+export default function Navbar({ middleContent }: { middleContent?: React.ReactNode }) {
   const { data: session } = useSession();
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -44,7 +44,10 @@ export default function Navbar() {
             </Link>
           </div>
 
-
+          {/* MIDDLE SECTION - Appears when scrolled */}
+          <div style={{ flex: 2, display: 'flex', justifyContent: 'center', opacity: scrolled ? 1 : 0, transition: 'opacity 0.3s ease', pointerEvents: scrolled ? 'auto' : 'none' }}>
+            {middleContent}
+          </div>
 
           {/* Desktop Nav */}
           <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8 }} className="hide-mobile">
