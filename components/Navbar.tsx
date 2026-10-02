@@ -48,13 +48,13 @@ export default function Navbar({ middleContent }: { middleContent?: React.ReactN
             {middleContent}
           </div>
 
-          {/* Desktop Nav */}
-          <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8 }} className="hide-mobile">
+          {/* Right Nav */}
+          <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8 }}>
             {!session && (
               <>
-                <Link href="/login" className="btn btn-ghost" style={{ fontWeight: 500 }}>List Your Hotel</Link>
+                <Link href="/login" className="btn btn-ghost hide-mobile" style={{ fontWeight: 500 }}>List Your Hotel</Link>
                 <Link href="/login" className="btn btn-outline" style={{ border: '2px solid var(--border)' }}>Log In</Link>
-                <Link href="/login" className="btn btn-primary">Get Started</Link>
+                <Link href="/login" className="btn btn-primary hide-mobile">Get Started</Link>
               </>
             )}
             {session && (
@@ -126,34 +126,7 @@ export default function Navbar({ middleContent }: { middleContent?: React.ReactN
               </div>
             )}
           </div>
-
-          {/* Mobile Burger */}
-          <button className="hide-desktop" onClick={() => setMenuOpen(!menuOpen)}
-            style={{ background: 'none', border: 'none', padding: 8, cursor: 'pointer' }}>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              {menuOpen ? <path d="M6 18L18 6M6 6l12 12"/> : <path d="M4 6h16M4 12h16M4 18h16"/>}
-            </svg>
-          </button>
         </div>
-
-        {/* Mobile Menu */}
-        {menuOpen && (
-          <div style={{ borderTop: '1px solid var(--border)', padding: 'var(--space-4)', background: 'var(--surface)' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {!session ? (
-                <>
-                  <Link href="/login" className="btn btn-outline" onClick={() => setMenuOpen(false)}>Log In</Link>
-                  <Link href="/login" className="btn btn-primary" onClick={() => setMenuOpen(false)}>Get Started</Link>
-                </>
-              ) : (
-                <>
-                  <Link href={getDashboardLink()} className="btn btn-secondary" onClick={() => setMenuOpen(false)}>Dashboard</Link>
-                  <button className="btn btn-danger" onClick={() => signOut({ callbackUrl: '/' })}>Sign Out</button>
-                </>
-              )}
-            </div>
-          </div>
-        )}
       </nav>
       <style>{`.hide-desktop { display: none; } @media (max-width: 768px) { .hide-desktop { display: flex; } .hide-mobile { display: none !important; } }`}</style>
     </>
