@@ -461,10 +461,10 @@ tbody tr:hover { background: var(--bg-secondary); }
   .sidebar { width: 100%; min-height: 0; }
   .hide-mobile { display: none !important; }
 
-  /* Search bar stacks vertically */
+  /* Search bar stacks vertically but dates are side-by-side */
   .hero-search-wrapper {
     display: grid !important;
-    grid-template-columns: 1fr !important;
+    grid-template-columns: 1fr 1fr !important;
     border-radius: 16px !important;
     padding: 12px !important;
     gap: 8px !important;
@@ -473,6 +473,17 @@ tbody tr:hover { background: var(--bg-secondary); }
     flex: none !important;
     width: 100% !important;
     box-sizing: border-box !important;
+    padding: 8px 12px !important; /* Shorter padding */
+  }
+  /* Make location and guests span full width */
+  .hero-search-wrapper > div:nth-child(1), /* Location */
+  .hero-search-wrapper > div:nth-child(4), /* Guests */
+  .hero-search-wrapper > div:nth-child(5) { /* Search button */
+    grid-column: 1 / -1 !important;
+  }
+  .hero-search-wrapper > div:nth-child(2), /* Check-in */
+  .hero-search-wrapper > div:nth-child(3) { /* Check-out */
+    grid-column: span 1 !important;
   }
   .hero-search-btn {
     width: 100% !important;
