@@ -13,7 +13,7 @@ export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 200);
+    const handleScroll = () => setScrolled(window.scrollY > 80);
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
@@ -51,7 +51,7 @@ export default function Navbar() {
             transform: scrolled ? 'translateY(0)' : 'translateY(-10px)',
             pointerEvents: scrolled ? 'auto' : 'none',
             transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
-          }} className="hide-mobile">
+          }}>
             <div className="hide-scrollbar" style={{ display: 'flex', gap: 0, justifyContent: 'center', overflowX: 'auto', borderRadius: 'var(--radius-xl)', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', maxWidth: '100%', WebkitOverflowScrolling: 'touch' }}>
               {[
                 { id: 'Hotel', label: 'Hotels', icon: '🏨' },
