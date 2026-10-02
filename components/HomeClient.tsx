@@ -181,13 +181,13 @@ export default function HomeClient({ initialHotels }: { initialHotels: any[] }) 
               const isLast = index === array.length - 1;
               const isActive = searchData.propertyType === card.id;
               return (
-                <div
+                  <div
                   key={card.id}
                   onClick={() => setSearchData(p => ({ ...p, propertyType: p.propertyType === card.id ? '' : card.id }))}
                   style={{
                     background: isActive ? 'var(--brand-50)' : 'white',
                     borderRight: isLast ? 'none' : '1px solid var(--border)',
-                    padding: '8px 16px',
+                    padding: '12px 24px', /* INCREASED PADDING */
                     cursor: 'pointer',
                     minWidth: 0,
                     flex: '1 0 auto',
@@ -197,7 +197,7 @@ export default function HomeClient({ initialHotels }: { initialHotels: any[] }) 
                     alignItems: 'center',
                     justifyContent: 'center',
                     flexDirection: 'column',
-                    gap: 4
+                    gap: 8 /* INCREASED GAP */
                   }}
                   onMouseEnter={e => {
                     if (!isActive) e.currentTarget.style.background = 'var(--brand-50)';
@@ -206,8 +206,8 @@ export default function HomeClient({ initialHotels }: { initialHotels: any[] }) 
                     if (!isActive) e.currentTarget.style.background = 'white';
                   }}
                 >
-                  <div style={{ fontSize: '1.2rem', transition: 'transform 0.3s ease', transform: isActive ? 'scale(1.1)' : 'scale(1)' }}>{card.icon}</div>
-                  <div style={{ color: isActive ? 'var(--brand-700)' : 'var(--text-primary)', fontWeight: 700, fontSize: '0.75rem', letterSpacing: '0.02em', whiteSpace: 'nowrap' }}>{card.label}</div>
+                  <div style={{ fontSize: '1.6rem', transition: 'transform 0.3s ease', transform: isActive ? 'scale(1.1)' : 'scale(1)' }}>{card.icon}</div> {/* INCREASED ICON */}
+                  <div style={{ color: isActive ? 'var(--brand-700)' : 'var(--text-primary)', fontWeight: 800, fontSize: '0.85rem', letterSpacing: '0.02em', whiteSpace: 'nowrap' }}>{card.label}</div> {/* INCREASED TEXT */}
                 </div>
               );
             })}
