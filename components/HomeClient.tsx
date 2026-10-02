@@ -85,8 +85,8 @@ export default function HomeClient({ initialHotels }: { initialHotels: any[] }) 
           
           /* Search wrapper: column on mobile */
           .hero-search-wrapper {
-            display: grid !important;
-            grid-template-columns: 1fr !important;
+            display: flex !important;
+            flex-direction: column !important;
             width: 100% !important;
             max-width: 100% !important;
             padding: 10px !important;

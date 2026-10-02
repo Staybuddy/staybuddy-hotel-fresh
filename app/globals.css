@@ -44,8 +44,11 @@ p, h1, h2, h3, h4, h5, h6, span, a {
 }
 
 .hero-search-wrapper {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  display: flex;
+  flex-wrap: wrap;
+}
+.hero-search-wrapper > * {
+  flex: 1 1 220px;
 }
 
 /* ===== DESIGN TOKENS ===== */
