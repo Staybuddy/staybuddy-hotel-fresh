@@ -35,7 +35,7 @@ export default function Navbar({ middleContent }: { middleContent?: React.ReactN
         boxShadow: scrolled ? '0 4px 20px rgba(0,0,0,0.08)' : 'none',
         transition: 'all 0.3s ease',
       }}>
-        <div className="container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 68 }}>
+        <div className="container" style={{ display: 'flex', flexDirection: 'row', flexWrap: 'nowrap', alignItems: 'center', justifyContent: 'space-between', height: 68 }}>
           {/* Logo */}
           <div style={{ flex: 1, display: 'flex' }}>
             <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 8, textDecoration: 'none' }}>
