@@ -415,7 +415,8 @@ tbody tr:hover { background: var(--bg-secondary); }
 
   /* Search bar stacks vertically */
   .hero-search-wrapper {
-    flex-direction: column !important;
+    display: grid !important;
+    grid-template-columns: 1fr !important;
     border-radius: 16px !important;
     padding: 12px !important;
     gap: 8px !important;
