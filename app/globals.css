@@ -608,3 +608,31 @@ tbody tr:hover { background: var(--bg-secondary); }
     gap: 16px;
   }
 }
+
+/* Review Header Adjustments */
+.review-header-inner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+@media (max-width: 768px) {
+  .review-header-inner {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+}
+
+/* Guest Form Adjustments */
+.guest-form-row {
+  display: flex;
+  gap: 20px;
+}
+
+@media (max-width: 768px) {
+  .guest-form-row {
+    flex-direction: column;
+    gap: 16px;
+  }
+}

@@ -1625,12 +1625,10 @@ export default function HotelDetailPage() {
                 }}
               >
                 <div
+                  className="review-header-inner"
                   style={{
                     width: "100%",
                     maxWidth: "1100px",
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
                     padding: "16px 24px",
                   }}
                 >
@@ -2193,7 +2191,7 @@ export default function HotelDetailPage() {
                       Guest Details
                     </h3>
 
-                    <div style={{ display: "flex", gap: 20, marginBottom: 20 }}>
+                    <div className="guest-form-row" style={{ marginBottom: 20 }}>
                       <div style={{ width: "90px" }}>
                         <label
                           style={{
@@ -2308,7 +2306,7 @@ export default function HotelDetailPage() {
                       </div>
                     </div>
 
-                    <div style={{ display: "flex", gap: 20, marginBottom: 24 }}>
+                    <div className="guest-form-row" style={{ marginBottom: 24 }}>
                       <div style={{ flex: 1.1 }}>
                         <label
                           style={{
