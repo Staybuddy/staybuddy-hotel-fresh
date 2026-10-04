@@ -126,8 +126,9 @@ export default async function TaxInvoicePage({ params }: { params: Promise<{ id:
                     <strong style={{ color: '#111827' }}>{inv.checkOutDate ? formatDate(inv.checkOutDate) : 'N/A'} (11 AM)</strong>
                   </div>
                 </div>
-                <div style={{ marginTop: '10px', color: '#4b5563', fontSize: '10px' }}>
-                  <strong>Duration:</strong> {inv.noOfNights || 1} Night(s)
+                <div style={{ marginTop: '10px', color: '#4b5563', fontSize: '10px', display: 'flex', justifyContent: 'space-between' }}>
+                  <span><strong>Duration:</strong> {inv.noOfNights || 1} Night(s)</span>
+                  <span><strong>Per Day Tariff:</strong> ₹{(inv.tariffPerNight || basePrice).toLocaleString(undefined, {minimumFractionDigits: 2})}</span>
                 </div>
               </div>
             </div>
