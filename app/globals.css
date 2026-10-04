@@ -739,4 +739,7 @@ tbody tr:hover { background: var(--bg-secondary); }
   .admin-form-grid {
     grid-template-columns: 1fr !important;
   }
+  .invoice-container {
+    zoom: 0.45;
+  }
 }

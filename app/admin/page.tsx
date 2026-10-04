@@ -782,7 +782,7 @@ export default function AdminDashboard() {
               .no-print { display: none !important; }
             }
           `}} />
-          <div id="printable-invoice" style={{ background: 'white', borderRadius: 16, width: '100%', maxWidth: 900, padding: 40, boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)', position: 'relative' }} onClick={e => e.stopPropagation()}>
+          <div id="printable-invoice" className="invoice-container" style={{ background: 'white', borderRadius: 16, width: '100%', maxWidth: 900, padding: 40, boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)', position: 'relative' }} onClick={e => e.stopPropagation()}>
             <button className="no-print" onClick={() => setSelectedInvoiceHotel(null)} style={{ position: 'absolute', top: 20, right: 20, background: '#f1f5f9', border: 'none', width: 36, height: 36, borderRadius: '50%', cursor: 'pointer', fontSize: '1.2rem', color: '#64748b', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
             
             {/* Invoice Header */}
