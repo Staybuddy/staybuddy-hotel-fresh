@@ -170,28 +170,7 @@ export async function POST(request: NextRequest) {
 
     await bookingRef.set(newBooking);
 
-    try {
-      const { sendBookingConfirmationEmail, sendPartnerNotificationEmail } = await import('@/lib/email');
-      
-      let emailBooking = { ...newBooking } as any;
-      emailBooking.hotelId = { _id: hotelSnap.id, ...hotelData };
-      
-      const customerDoc = await db.collection('users').doc(customerId).get();
-      if (customerDoc.exists) {
-        const customer = customerDoc.data() as any;
-        emailBooking.customerId = { _id: customerDoc.id, name: customer.name, email: customer.email };
-        sendBookingConfirmationEmail(emailBooking).catch(console.error);
-      }
 
-      if (hotelData?.partnerId) {
-        const partnerDoc = await db.collection('users').doc(hotelData.partnerId).get();
-        if (partnerDoc.exists && partnerDoc.data()?.email) {
-          sendPartnerNotificationEmail(emailBooking, partnerDoc.data()!.email).catch(console.error);
-        }
-      }
-    } catch (err) {
-      console.error('Email sending error during booking:', err);
-    }
 
     return NextResponse.json({ booking: newBooking }, { status: 201 });
   } catch (error: any) {
