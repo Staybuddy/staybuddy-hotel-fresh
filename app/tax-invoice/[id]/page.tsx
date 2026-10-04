@@ -124,7 +124,8 @@ export default async function TaxInvoicePage({ params }: { params: Promise<{ id:
                 </div>
                 <div style={{ marginTop: '10px', color: '#4b5563', fontSize: '10px', display: 'flex', justifyContent: 'space-between' }}>
                   <span><strong>Duration:</strong> {inv.noOfNights || 1} Night(s)</span>
-                  <span><strong>Per Day Tariff:</strong> ₹{(inv.tariffPerNight || basePrice).toLocaleString(undefined, {minimumFractionDigits: 2})}</span>
+                  <span><strong>Rooms:</strong> {inv.noOfRooms || 1}</span>
+                  <span><strong>Tariff/Room/Night:</strong> ₹{(inv.tariffPerNight || basePrice).toLocaleString(undefined, {minimumFractionDigits: 2})}</span>
                 </div>
               </div>
             </div>
@@ -152,7 +153,7 @@ export default async function TaxInvoicePage({ params }: { params: Promise<{ id:
                     <span style={{ color: '#6b7280', fontSize: '9px' }}>{inv.description || 'Room Only (Base Rate)'}</span>
                   </td>
                   <td style={{ padding: '12px', border: '1px solid #e5e7eb', textAlign: 'center', color: '#4b5563' }}>998552</td>
-                  <td style={{ padding: '12px', border: '1px solid #e5e7eb', textAlign: 'center', color: '#4b5563' }}>{inv.noOfNights || 1} Night(s)</td>
+                  <td style={{ padding: '12px', border: '1px solid #e5e7eb', textAlign: 'center', color: '#4b5563' }}>{(inv.noOfRooms || 1)} Room(s) × {inv.noOfNights || 1} Night(s)</td>
                   <td style={{ padding: '12px', border: '1px solid #e5e7eb', textAlign: 'right', color: '#4b5563' }}>{(inv.tariffPerNight || basePrice).toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
                   <td style={{ padding: '12px', border: '1px solid #e5e7eb', textAlign: 'right', color: '#111827', fontWeight: 600 }}>{basePrice.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
                 </tr>

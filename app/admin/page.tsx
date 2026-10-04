@@ -30,7 +30,7 @@ export default function AdminDashboard() {
   const [showCreateInvoice, setShowCreateInvoice] = useState(false);
   const [newInvoiceData, setNewInvoiceData] = useState({ 
     guestName: '', companyName: '', gstNumber: '', address: '', 
-    checkInDate: '', checkOutDate: '', noOfNights: '', totalAmount: '', 
+    checkInDate: '', checkOutDate: '', noOfNights: '', noOfRooms: '1', totalAmount: '', 
     invoiceNo: `INV-${Math.floor(100000 + Math.random() * 900000)}`, 
     invoiceDate: new Date().toISOString().split('T')[0] 
   });
@@ -145,33 +145,45 @@ export default function AdminDashboard() {
 
     const total = Number(newInvoiceData.totalAmount) || 0;
     const nights = Number(newInvoiceData.noOfNights) || 1;
-    const tariffPerNight = total / nights;
-    
+    const rooms = Number(newInvoiceData.noOfRooms) || 1;
+
+    // Step 1: Determine GST slab based on per-room-per-night tariff (amount is inclusive of GST)
+    // First, assume 0% to get an initial per-room-night estimate
     let gstPercentage = 0;
-    if (tariffPerNight >= 1000 && tariffPerNight <= 7499) {
-      gstPercentage = 5;
-    } else if (tariffPerNight >= 7500) {
+    let perRoomNightInclusive = total / (nights * rooms);
+    
+    // Determine slab from inclusive rate
+    if (perRoomNightInclusive >= 7500) {
       gstPercentage = 18;
+    } else if (perRoomNightInclusive >= 1000) {
+      gstPercentage = 5;
+    } else {
+      gstPercentage = 0;
     }
-    const gstAmount = (total * gstPercentage) / 100;
-    const grandTotal = total + gstAmount;
+
+    // Step 2: Back-calculate base from inclusive amount
+    const baseAmount = total / (1 + gstPercentage / 100);
+    const gstAmount = total - baseAmount;
+    const grandTotal = total; // Amount entered IS the grand total (inclusive)
+    const tariffPerNight = baseAmount / (nights * rooms);
 
     await fetch('/api/admin/tax-invoices', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ 
         ...newInvoiceData, 
-        totalAmount: total, 
+        totalAmount: baseAmount, 
         tariffPerNight, 
         gstPercentage, 
         gstAmount, 
-        grandTotal 
+        grandTotal,
+        noOfRooms: rooms,
       })
     });
     setShowCreateInvoice(false);
     setNewInvoiceData({ 
       guestName: '', companyName: '', gstNumber: '', address: '', 
-      checkInDate: '', checkOutDate: '', noOfNights: '', totalAmount: '', 
+      checkInDate: '', checkOutDate: '', noOfNights: '', noOfRooms: '1', totalAmount: '', 
       invoiceNo: `INV-${Math.floor(100000 + Math.random() * 900000)}`, 
       invoiceDate: new Date().toISOString().split('T')[0] 
     });
@@ -207,24 +219,6 @@ export default function AdminDashboard() {
         style={{ display: isMobileMenuOpen ? 'block' : 'none' }}
         onClick={() => setIsMobileMenuOpen(false)}
       />
-      {/* ===== FLOATING 3-DOT MOBILE MENU BUTTON ===== */}
-      <button
-        className="admin-float-btn"
-        onClick={() => setIsMobileMenuOpen(true)}
-        style={{
-          position: 'fixed', top: 16, right: 16, zIndex: 1100,
-          width: 48, height: 48, borderRadius: '50%',
-          background: 'linear-gradient(135deg, #0ea5e9, #2563eb)',
-          color: 'white', border: 'none', cursor: 'pointer',
-          boxShadow: '0 4px 16px rgba(37,99,235,0.4)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          flexDirection: 'column', gap: 4,
-        }}
-      >
-        <span style={{ width: 18, height: 2, background: 'white', borderRadius: 2, display: 'block' }} />
-        <span style={{ width: 18, height: 2, background: 'white', borderRadius: 2, display: 'block' }} />
-        <span style={{ width: 18, height: 2, background: 'white', borderRadius: 2, display: 'block' }} />
-      </button>
       {/* Sidebar */}
       <aside className={`sidebar admin-sidebar ${isMobileMenuOpen ? 'open' : ''}`} style={{ position: 'sticky', top: 0, height: '100vh', flexShrink: 0, width: 280, background: 'white', borderRight: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column' }}>
         <div style={{ padding: '24px 20px', borderBottom: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -277,7 +271,9 @@ export default function AdminDashboard() {
       {/* Main Content */}
       <main className="admin-main" style={{ flex: 1, overflow: 'auto', padding: '40px' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-          {/* mobile menu button is now a floating fixed button above */}
+          <button className="admin-menu-btn" onClick={() => setIsMobileMenuOpen(true)}>
+            ☰ Menu
+          </button>
 
           {/* ===== OVERVIEW ===== */}
           {activeTab === 'overview' && (
@@ -745,7 +741,7 @@ export default function AdminDashboard() {
                 </div>
               </div>
 
-              <div className="admin-form-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16 }}>
+              <div className="admin-form-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 16 }}>
                 <div>
                   <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: '#475569', marginBottom: 8 }}>Check-In</label>
                   <input required type="date" value={newInvoiceData.checkInDate} onChange={e => setNewInvoiceData({...newInvoiceData, checkInDate: e.target.value})} style={{ width: '100%', padding: '10px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '0.95rem' }} />
@@ -755,24 +751,55 @@ export default function AdminDashboard() {
                   <input required type="date" value={newInvoiceData.checkOutDate} onChange={e => setNewInvoiceData({...newInvoiceData, checkOutDate: e.target.value})} style={{ width: '100%', padding: '10px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '0.95rem' }} />
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: '#475569', marginBottom: 8 }}>No. of Nights</label>
-                  <input required type="number" value={newInvoiceData.noOfNights} onChange={e => setNewInvoiceData({...newInvoiceData, noOfNights: e.target.value})} style={{ width: '100%', padding: '10px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '0.95rem' }} />
+                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: '#475569', marginBottom: 8 }}>Nights</label>
+                  <input required type="number" min="1" value={newInvoiceData.noOfNights} onChange={e => setNewInvoiceData({...newInvoiceData, noOfNights: e.target.value})} style={{ width: '100%', padding: '10px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '0.95rem' }} />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: '#475569', marginBottom: 8 }}>Rooms</label>
+                  <input required type="number" min="1" value={newInvoiceData.noOfRooms} onChange={e => setNewInvoiceData({...newInvoiceData, noOfRooms: e.target.value})} style={{ width: '100%', padding: '10px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '0.95rem' }} />
                 </div>
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: '#475569', marginBottom: 8 }}>Base Amount (₹) before GST</label>
+                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: '#475569', marginBottom: 8 }}>Total Amount (₹) Inclusive of GST</label>
                 <input required type="number" value={newInvoiceData.totalAmount} onChange={e => setNewInvoiceData({...newInvoiceData, totalAmount: e.target.value})} style={{ width: '100%', padding: '10px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '0.95rem' }} />
-                <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: 8, lineHeight: '1.4' }}>
-                  Tariff per night: ₹{newInvoiceData.totalAmount && newInvoiceData.noOfNights ? (Number(newInvoiceData.totalAmount) / Number(newInvoiceData.noOfNights)).toFixed(2) : '0.00'}<br/>
-                  GST Slab: {
-                    (() => {
-                      const tariff = (Number(newInvoiceData.totalAmount) || 0) / (Number(newInvoiceData.noOfNights) || 1);
-                      if (tariff >= 1000 && tariff <= 7499) return '5%';
-                      if (tariff >= 7500) return '18%';
-                      return '0%';
-                    })()
-                  } (Auto-applied to the final invoice)
+                <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: 8, lineHeight: '1.6', background: '#f8fafc', padding: '10px 12px', borderRadius: 8, border: '1px solid #e2e8f0' }}>
+                  {(() => {
+                    const amt = Number(newInvoiceData.totalAmount) || 0;
+                    const n = Number(newInvoiceData.noOfNights) || 1;
+                    const r = Number(newInvoiceData.noOfRooms) || 1;
+                    const perRoomNight = amt / (n * r);
+                    let gst = 0;
+                    if (perRoomNight >= 7500) gst = 18;
+                    else if (perRoomNight >= 1000) gst = 5;
+                    const base = amt / (1 + gst / 100);
+                    const gstAmt = amt - base;
+                    const basePerRoomNight = base / (n * r);
+                    return (
+                      <>
+                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                          <span>Per Room/Night (inclusive):</span>
+                          <strong>₹{perRoomNight.toFixed(2)}</strong>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                          <span>GST Slab:</span>
+                          <strong style={{ color: gst > 0 ? '#ea580c' : '#16a34a' }}>{gst}%</strong>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                          <span>Base (excl. GST):</span>
+                          <strong>₹{base.toFixed(2)}</strong>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                          <span>GST Amount:</span>
+                          <strong>₹{gstAmt.toFixed(2)}</strong>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                          <span>Tariff/Room/Night (excl. GST):</span>
+                          <strong>₹{basePerRoomNight.toFixed(2)}</strong>
+                        </div>
+                      </>
+                    );
+                  })()}
                 </div>
               </div>
 
