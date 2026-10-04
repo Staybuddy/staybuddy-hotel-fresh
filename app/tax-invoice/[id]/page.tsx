@@ -79,10 +79,6 @@ export default async function TaxInvoicePage({ params }: { params: Promise<{ id:
                     <td style={{ color: '#6b7280', paddingRight: '15px' }}>Invoice Date:</td>
                     <td style={{ fontWeight: 700, color: '#111827' }}>{invoiceDate}</td>
                   </tr>
-                  <tr>
-                    <td style={{ color: '#6b7280', paddingRight: '15px' }}>Place of Supply:</td>
-                    <td style={{ fontWeight: 700, color: '#111827' }}>Maharashtra</td>
-                  </tr>
                 </tbody>
               </table>
             </div>
@@ -229,9 +225,10 @@ export default async function TaxInvoicePage({ params }: { params: Promise<{ id:
             
             {/* Company Info Moved to Bottom */}
             <div style={{ fontSize: '9px', color: '#6b7280', lineHeight: '1.6' }}>
-              <strong style={{ color: '#4b5563', fontSize: '10px', textTransform: 'uppercase' }}>Staybuddy (India) Private Limited</strong><br/>
-              12th Floor, Tower B, Tech Park, Andheri East, Mumbai, Maharashtra, 400053<br/>
-              <strong>GSTIN:</strong> 27AABCS1429B1Z5 &nbsp;|&nbsp; <strong>PAN:</strong> AABCS1429B &nbsp;|&nbsp; <strong>Email:</strong> support@staybuddy.com
+              <strong style={{ color: '#4b5563', fontSize: '10px', textTransform: 'uppercase' }}>Stay Buddy (Proprietorship: Mulla Arif)</strong><br/>
+              1st Floor, 11-3, Shamshabad Flyover, Near Appu Pan Shop,<br/>
+              Shamshabad, Hyderabad, Rangareddy, Telangana 501218<br/>
+              <strong>GSTIN:</strong> 36FSKPM3408R1ZZ &nbsp;|&nbsp; <strong>Email:</strong> support@staybuddy.in
             </div>
 
             {/* Signature */}
