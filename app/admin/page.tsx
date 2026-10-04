@@ -1,4 +1,5 @@
 'use client';
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
@@ -13,6 +14,7 @@ const NAV = [
   { id: 'hotels', label: 'Properties & Margins', icon: '🏨' },
   { id: 'performance', label: 'Performance & Invoices', icon: '📈' },
   { id: 'users', label: 'User Analytics', icon: '👥' },
+  { id: 'tax_invoices', label: 'Tax Invoices', icon: '🧾' },
 ];
 
 export default function AdminDashboard() {
@@ -23,6 +25,9 @@ export default function AdminDashboard() {
   const [bookings, setBookings] = useState<any[]>([]);
   const [users, setUsers] = useState<any[]>([]);
   const [partners, setPartners] = useState<any[]>([]);
+  const [taxInvoices, setTaxInvoices] = useState<any[]>([]);
+  const [showCreateInvoice, setShowCreateInvoice] = useState(false);
+  const [newInvoiceData, setNewInvoiceData] = useState({ customerName: '', bookingId: '', amount: '', description: '', date: new Date().toISOString().split('T')[0] });
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({ totalHotels: 0, pendingHotels: 0, pendingPartners: 0, totalBookings: 0, totalRevenue: 0, totalProfit: 0, totalUsers: 0 });
   const [approveLoading, setApproveLoading] = useState<string | null>(null);
@@ -31,7 +36,11 @@ export default function AdminDashboard() {
   const [editingHotel, setEditingHotel] = useState<any>(null);
 
   useEffect(() => {
-    if (activeTab === 'bookings') setHasNewBookings(false);
+    let mounted = true;
+    if (activeTab === 'bookings') {
+      setTimeout(() => { if (mounted) setHasNewBookings(false); }, 0);
+    }
+    return () => { mounted = false; };
   }, [activeTab]);
 
   useEffect(() => {
@@ -58,23 +67,26 @@ export default function AdminDashboard() {
   async function fetchAll() {
     setLoading(true);
     try {
-      const [hotelRes, bookingRes, userRes, partnerRes] = await Promise.all([
+      const [hotelRes, bookingRes, userRes, partnerRes, invoiceRes] = await Promise.all([
         fetch('/api/admin/hotels'),
         fetch('/api/admin/bookings'),
         fetch('/api/admin/users'),
         fetch('/api/admin/partners'),
+        fetch('/api/admin/tax-invoices'),
       ]);
-      const [hData, bData, uData, pData] = await Promise.all([hotelRes.json(), bookingRes.json(), userRes.json(), partnerRes.json()]);
+      const [hData, bData, uData, pData, iData] = await Promise.all([hotelRes.json(), bookingRes.json(), userRes.json(), partnerRes.json(), invoiceRes.json()]);
 
       const h = hData.hotels || [];
       const b = bData.bookings || [];
       const u = uData.users || [];
       const p = pData.partners || [];
+      const inv = iData.invoices || [];
 
       setHotels(h);
       setBookings(b);
       setUsers(u);
       setPartners(p);
+      setTaxInvoices(inv);
 
       const revenue = b.filter((bk: any) => bk.paymentStatus === 'paid').reduce((s: number, bk: any) => s + bk.totalPrice, 0);
       
@@ -117,6 +129,20 @@ export default function AdminDashboard() {
       headers: { 'Content-Type': 'application/json' }, 
       body: JSON.stringify({ partnerId: id, action }) 
     });
+    fetchAll();
+  }
+
+  async function handleCreateInvoice(e: React.FormEvent) {
+    e.preventDefault();
+    setApproveLoading('invoice');
+    await fetch('/api/admin/tax-invoices', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...newInvoiceData, amount: Number(newInvoiceData.amount) })
+    });
+    setShowCreateInvoice(false);
+    setNewInvoiceData({ customerName: '', bookingId: '', amount: '', description: '', date: new Date().toISOString().split('T')[0] });
+    setApproveLoading(null);
     fetchAll();
   }
 
@@ -199,7 +225,7 @@ export default function AdminDashboard() {
           {activeTab === 'overview' && (
             <div className="fade-in">
               <h1 style={{ fontSize: '2rem', color: '#0f172a', marginBottom: 8 }}>Dashboard Overview</h1>
-              <p style={{ color: '#64748b', marginBottom: 32 }}>Welcome back! Here's what's happening across StayBuddy today.</p>
+              <p style={{ color: '#64748b', marginBottom: 32 }}>Welcome back! Here&apos;s what&apos;s happening across StayBuddy today.</p>
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 24, marginBottom: 40 }}>
                 {[
@@ -474,11 +500,9 @@ export default function AdminDashboard() {
                   const propertyBookings = bookings.filter(b => (b.hotelId?._id === h._id || b.hotelId === h._id) && b.paymentStatus === 'paid');
                   const propertyGmv = propertyBookings.reduce((s, b) => s + b.totalPrice, 0);
                   const basePrice = propertyGmv / 1.12;
-                  const gstAmount = propertyGmv - basePrice;
                   const margin = h.marginPercentage || 0;
                   const propertyProfit = (basePrice * margin) / 100;
                   const b2bPrice = basePrice - propertyProfit;
-                  const payoutAmount = propertyGmv - propertyProfit;
 
                   return (
                     <div key={h._id} style={{ background: 'white', borderRadius: 16, padding: 24, boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' }}>
@@ -557,8 +581,98 @@ export default function AdminDashboard() {
             </div>
           )}
 
+          {/* ===== TAX INVOICES ===== */}
+          {activeTab === 'tax_invoices' && (
+            <div className="fade-in">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32 }}>
+                <div>
+                  <h1 style={{ fontSize: '2rem', color: '#0f172a', marginBottom: 8 }}>Tax Invoices / Extra Bills</h1>
+                  <p style={{ color: '#64748b' }}>Generate and manage standalone tax invoices and extra bills for customers.</p>
+                </div>
+                <button onClick={() => setShowCreateInvoice(true)} className="btn btn-primary" style={{ padding: '10px 20px', borderRadius: 8, fontWeight: 600, boxShadow: '0 4px 12px rgba(37,99,235,0.2)' }}>
+                  + Generate New Invoice
+                </button>
+              </div>
+
+              <div style={{ background: 'white', borderRadius: 16, boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)', overflow: 'hidden' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0', textAlign: 'left' }}>
+                      <th style={{ padding: '16px 24px', fontSize: '0.8rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Date</th>
+                      <th style={{ padding: '16px 24px', fontSize: '0.8rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Customer</th>
+                      <th style={{ padding: '16px 24px', fontSize: '0.8rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Description</th>
+                      <th style={{ padding: '16px 24px', fontSize: '0.8rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Amount</th>
+                      <th style={{ padding: '16px 24px', fontSize: '0.8rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {taxInvoices.length === 0 ? (
+                      <tr><td colSpan={5} style={{ padding: '40px', textAlign: 'center', color: '#64748b' }}>No tax invoices found.</td></tr>
+                    ) : (
+                      taxInvoices.map(inv => (
+                        <tr key={inv._id} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                          <td style={{ padding: '16px 24px', color: '#475569', fontSize: '0.9rem' }}>{inv.date}</td>
+                          <td style={{ padding: '16px 24px' }}>
+                            <div style={{ fontWeight: 700, color: '#0f172a' }}>{inv.customerName}</div>
+                            {inv.bookingId && <div style={{ fontSize: '0.75rem', color: '#3b82f6', fontWeight: 600, marginTop: 4 }}>Booking ID: {inv.bookingId}</div>}
+                          </td>
+                          <td style={{ padding: '16px 24px', color: '#475569', fontSize: '0.9rem' }}>{inv.description}</td>
+                          <td style={{ padding: '16px 24px', fontWeight: 800, color: '#059669' }}>₹{inv.amount.toLocaleString()}</td>
+                          <td style={{ padding: '16px 24px' }}>
+                            <button onClick={() => {
+                              // Re-using the same invoice modal style but populating extra bill data
+                              // For a production app, we would have a separate extra bill view modal
+                              alert('Print/View Extra Bill functionality goes here. Invoice details: ' + JSON.stringify(inv));
+                            }} style={{ padding: '6px 12px', background: '#eff6ff', color: '#2563eb', border: 'none', borderRadius: 6, fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer' }}>View</button>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
         </div>
       </main>
+
+      {/* ===== CREATE TAX INVOICE MODAL ===== */}
+      {showCreateInvoice && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 999, background: 'rgba(15, 23, 42, 0.7)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+          <div style={{ background: 'white', borderRadius: 16, width: '100%', maxWidth: 500, padding: 32, boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)' }}>
+            <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#0f172a', marginBottom: 24 }}>Generate Tax Invoice</h2>
+            <form onSubmit={handleCreateInvoice} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: '#475569', marginBottom: 8 }}>Customer Name</label>
+                <input required type="text" value={newInvoiceData.customerName} onChange={e => setNewInvoiceData({...newInvoiceData, customerName: e.target.value})} style={{ width: '100%', padding: '10px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '0.95rem' }} />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: '#475569', marginBottom: 8 }}>Booking ID (Optional)</label>
+                <input type="text" value={newInvoiceData.bookingId} onChange={e => setNewInvoiceData({...newInvoiceData, bookingId: e.target.value})} style={{ width: '100%', padding: '10px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '0.95rem' }} />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: '#475569', marginBottom: 8 }}>Amount (₹)</label>
+                <input required type="number" value={newInvoiceData.amount} onChange={e => setNewInvoiceData({...newInvoiceData, amount: e.target.value})} style={{ width: '100%', padding: '10px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '0.95rem' }} />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: '#475569', marginBottom: 8 }}>Description</label>
+                <textarea required value={newInvoiceData.description} onChange={e => setNewInvoiceData({...newInvoiceData, description: e.target.value})} style={{ width: '100%', padding: '10px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '0.95rem', minHeight: 80 }} />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: '#475569', marginBottom: 8 }}>Date</label>
+                <input required type="date" value={newInvoiceData.date} onChange={e => setNewInvoiceData({...newInvoiceData, date: e.target.value})} style={{ width: '100%', padding: '10px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '0.95rem' }} />
+              </div>
+              <div style={{ display: 'flex', gap: 12, marginTop: 16 }}>
+                <button type="button" onClick={() => setShowCreateInvoice(false)} style={{ flex: 1, padding: '12px', background: '#f1f5f9', color: '#475569', border: 'none', borderRadius: 8, fontWeight: 700, cursor: 'pointer' }}>Cancel</button>
+                <button type="submit" disabled={approveLoading === 'invoice'} style={{ flex: 1, padding: '12px', background: '#2563eb', color: 'white', border: 'none', borderRadius: 8, fontWeight: 700, cursor: 'pointer', opacity: approveLoading === 'invoice' ? 0.7 : 1 }}>
+                  {approveLoading === 'invoice' ? 'Saving...' : 'Save Invoice'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* ===== INVOICE MODAL ===== */}
       {selectedInvoiceHotel && (
