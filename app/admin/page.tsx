@@ -664,8 +664,8 @@ export default function AdminDashboard() {
                           </td>
                           <td style={{ padding: '16px 24px' }}>
                             <button onClick={() => {
-                              alert('Print/View Extra Bill functionality goes here. Invoice details: ' + JSON.stringify(inv));
-                            }} style={{ padding: '6px 12px', background: '#eff6ff', color: '#2563eb', border: 'none', borderRadius: 6, fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer' }}>View</button>
+                              window.open('/tax-invoice/' + inv._id, '_blank');
+                            }} style={{ padding: '6px 12px', background: '#eff6ff', color: '#2563eb', border: 'none', borderRadius: 6, fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer' }}>View Bill (PDF)</button>
                           </td>
                         </tr>
                       ))
