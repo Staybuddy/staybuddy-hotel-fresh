@@ -124,7 +124,7 @@ export default async function TaxInvoicePage({ params }: { params: Promise<{ id:
                 </div>
                 <div style={{ marginTop: '10px', color: '#4b5563', fontSize: '10px', display: 'flex', justifyContent: 'space-between' }}>
                   <span><strong>Duration:</strong> {inv.noOfNights || 1} Night(s)</span>
-                  <span><strong>Rooms:</strong> {inv.noOfRooms || 1}</span>
+                  <span><strong>Rooms:</strong> {inv.noOfRooms || 1} ({inv.noOfGuests || 1} Guest{inv.noOfGuests > 1 ? 's' : ''})</span>
                   <span><strong>Tariff/Room/Night:</strong> ₹{(inv.tariffPerNight || basePrice).toLocaleString(undefined, {minimumFractionDigits: 2})}</span>
                 </div>
               </div>

@@ -30,7 +30,7 @@ export default function AdminDashboard() {
   const [showCreateInvoice, setShowCreateInvoice] = useState(false);
   const [newInvoiceData, setNewInvoiceData] = useState({ 
     guestName: '', companyName: '', gstNumber: '', address: '', 
-    checkInDate: '', checkOutDate: '', noOfNights: '', noOfRooms: '1', totalAmount: '', 
+    checkInDate: '', checkOutDate: '', noOfNights: '', noOfRooms: '1', noOfGuests: '1', totalAmount: '', 
     invoiceNo: `INV-${Math.floor(100000 + Math.random() * 900000)}`, 
     invoiceDate: new Date().toISOString().split('T')[0] 
   });
@@ -146,6 +146,7 @@ export default function AdminDashboard() {
     const total = Number(newInvoiceData.totalAmount) || 0;
     const nights = Number(newInvoiceData.noOfNights) || 1;
     const rooms = Number(newInvoiceData.noOfRooms) || 1;
+    const guests = Number(newInvoiceData.noOfGuests) || 1;
 
     // Step 1: Determine GST slab based on per-room-per-night tariff (amount is inclusive of GST)
     // First, assume 0% to get an initial per-room-night estimate
@@ -178,12 +179,13 @@ export default function AdminDashboard() {
         gstAmount, 
         grandTotal,
         noOfRooms: rooms,
+        noOfGuests: guests,
       })
     });
     setShowCreateInvoice(false);
     setNewInvoiceData({ 
       guestName: '', companyName: '', gstNumber: '', address: '', 
-      checkInDate: '', checkOutDate: '', noOfNights: '', noOfRooms: '1', totalAmount: '', 
+      checkInDate: '', checkOutDate: '', noOfNights: '', noOfRooms: '1', noOfGuests: '1', totalAmount: '', 
       invoiceNo: `INV-${Math.floor(100000 + Math.random() * 900000)}`, 
       invoiceDate: new Date().toISOString().split('T')[0] 
     });
@@ -741,7 +743,7 @@ export default function AdminDashboard() {
                 </div>
               </div>
 
-              <div className="admin-form-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 16 }}>
+              <div className="admin-form-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 16 }}>
                 <div>
                   <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: '#475569', marginBottom: 8 }}>Check-In</label>
                   <input required type="date" value={newInvoiceData.checkInDate} onChange={e => setNewInvoiceData({...newInvoiceData, checkInDate: e.target.value})} style={{ width: '100%', padding: '10px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '0.95rem' }} />
@@ -757,6 +759,10 @@ export default function AdminDashboard() {
                 <div>
                   <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: '#475569', marginBottom: 8 }}>Rooms</label>
                   <input required type="number" min="1" value={newInvoiceData.noOfRooms} onChange={e => setNewInvoiceData({...newInvoiceData, noOfRooms: e.target.value})} style={{ width: '100%', padding: '10px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '0.95rem' }} />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: '#475569', marginBottom: 8 }}>Guests/Rm</label>
+                  <input required type="number" min="1" value={newInvoiceData.noOfGuests} onChange={e => setNewInvoiceData({...newInvoiceData, noOfGuests: e.target.value})} style={{ width: '100%', padding: '10px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '0.95rem' }} />
                 </div>
               </div>
 
