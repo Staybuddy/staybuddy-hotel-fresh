@@ -64,12 +64,13 @@ export default async function TaxInvoicePage({ params }: { params: Promise<{ id:
           
           {/* Header Row */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px' }}>
-            <div style={{ width: '50%' }}>
+            <div style={{ width: '33.33%' }}>
               <h2 style={{ margin: '0', fontSize: '24px', color: '#111827', fontWeight: 800, textTransform: 'uppercase' }}>Tax Invoice</h2>
             </div>
-            <div style={{ width: '50%', textAlign: 'right' }}>
+            <div style={{ width: '33.33%', textAlign: 'center' }}>
               <h1 style={{ margin: 0, fontSize: '36px', color: '#ea580c', fontWeight: 900, letterSpacing: '-1px' }}>StayBuddy.</h1>
             </div>
+            <div style={{ width: '33.33%' }}></div>
           </div>
 
           {/* Invoice Details */}
@@ -93,10 +94,6 @@ export default async function TaxInvoicePage({ params }: { params: Promise<{ id:
               </div>
             </div>
             <div style={{ width: '50%' }}>
-              <div style={{ marginBottom: '10px' }}>
-                <div style={{ color: '#6b7280', fontSize: '9px' }}>PAN</div>
-                <div style={{ fontWeight: 700, color: '#111827' }}>Not Available</div>
-              </div>
               <div style={{ marginBottom: '10px' }}>
                 <div style={{ color: '#6b7280', fontSize: '9px' }}>HSN/SAC</div>
                 <div style={{ fontWeight: 700, color: '#111827' }}>998552</div>
