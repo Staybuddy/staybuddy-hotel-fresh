@@ -207,6 +207,24 @@ export default function AdminDashboard() {
         style={{ display: isMobileMenuOpen ? 'block' : 'none' }}
         onClick={() => setIsMobileMenuOpen(false)}
       />
+      {/* ===== FLOATING 3-DOT MOBILE MENU BUTTON ===== */}
+      <button
+        className="admin-float-btn"
+        onClick={() => setIsMobileMenuOpen(true)}
+        style={{
+          position: 'fixed', top: 16, right: 16, zIndex: 1100,
+          width: 48, height: 48, borderRadius: '50%',
+          background: 'linear-gradient(135deg, #0ea5e9, #2563eb)',
+          color: 'white', border: 'none', cursor: 'pointer',
+          boxShadow: '0 4px 16px rgba(37,99,235,0.4)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          flexDirection: 'column', gap: 4,
+        }}
+      >
+        <span style={{ width: 18, height: 2, background: 'white', borderRadius: 2, display: 'block' }} />
+        <span style={{ width: 18, height: 2, background: 'white', borderRadius: 2, display: 'block' }} />
+        <span style={{ width: 18, height: 2, background: 'white', borderRadius: 2, display: 'block' }} />
+      </button>
       {/* Sidebar */}
       <aside className={`sidebar admin-sidebar ${isMobileMenuOpen ? 'open' : ''}`} style={{ position: 'sticky', top: 0, height: '100vh', flexShrink: 0, width: 280, background: 'white', borderRight: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column' }}>
         <div style={{ padding: '24px 20px', borderBottom: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -259,9 +277,7 @@ export default function AdminDashboard() {
       {/* Main Content */}
       <main className="admin-main" style={{ flex: 1, overflow: 'auto', padding: '40px' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-          <button className="admin-menu-btn" onClick={() => setIsMobileMenuOpen(true)}>
-            ☰ Menu
-          </button>
+          {/* mobile menu button is now a floating fixed button above */}
 
           {/* ===== OVERVIEW ===== */}
           {activeTab === 'overview' && (

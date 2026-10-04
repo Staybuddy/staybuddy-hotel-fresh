@@ -707,6 +707,10 @@ tbody tr:hover { background: var(--bg-secondary); }
   .admin-modal-box { zoom: 0.82; padding: 16px !important; }
   .admin-form-grid { grid-template-columns: 1fr !important; }
   .admin-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 999; }
+  /* Floating 3-line menu button — always visible on mobile */
+  .admin-float-btn {
+    display: flex !important;
+  }
 
   /* ---- Invoices ---- */
   .invoice-container { zoom: 0.44; }
@@ -749,6 +753,7 @@ tbody tr:hover { background: var(--bg-secondary); }
 .admin-sidebar { transition: transform 0.3s ease; }
 .admin-main { padding: 40px; }
 .admin-menu-btn { display: none; }
+.admin-float-btn { display: none; }
 .admin-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 999; }
 
 /* ---- Extra small screens (below 400px) ---- */
