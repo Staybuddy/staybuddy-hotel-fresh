@@ -27,7 +27,12 @@ export default function AdminDashboard() {
   const [partners, setPartners] = useState<any[]>([]);
   const [taxInvoices, setTaxInvoices] = useState<any[]>([]);
   const [showCreateInvoice, setShowCreateInvoice] = useState(false);
-  const [newInvoiceData, setNewInvoiceData] = useState({ customerName: '', bookingId: '', amount: '', description: '', date: new Date().toISOString().split('T')[0] });
+  const [newInvoiceData, setNewInvoiceData] = useState({ 
+    guestName: '', companyName: '', gstNumber: '', address: '', 
+    checkInDate: '', checkOutDate: '', noOfNights: '', totalAmount: '', 
+    invoiceNo: `INV-${Math.floor(100000 + Math.random() * 900000)}`, 
+    invoiceDate: new Date().toISOString().split('T')[0] 
+  });
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({ totalHotels: 0, pendingHotels: 0, pendingPartners: 0, totalBookings: 0, totalRevenue: 0, totalProfit: 0, totalUsers: 0 });
   const [approveLoading, setApproveLoading] = useState<string | null>(null);
@@ -135,13 +140,23 @@ export default function AdminDashboard() {
   async function handleCreateInvoice(e: React.FormEvent) {
     e.preventDefault();
     setApproveLoading('invoice');
+
+    const total = Number(newInvoiceData.totalAmount) || 0;
+    const nights = Number(newInvoiceData.noOfNights) || 1;
+    const tariffPerNight = total / nights;
+
     await fetch('/api/admin/tax-invoices', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...newInvoiceData, amount: Number(newInvoiceData.amount) })
+      body: JSON.stringify({ ...newInvoiceData, totalAmount: total, tariffPerNight })
     });
     setShowCreateInvoice(false);
-    setNewInvoiceData({ customerName: '', bookingId: '', amount: '', description: '', date: new Date().toISOString().split('T')[0] });
+    setNewInvoiceData({ 
+      guestName: '', companyName: '', gstNumber: '', address: '', 
+      checkInDate: '', checkOutDate: '', noOfNights: '', totalAmount: '', 
+      invoiceNo: `INV-${Math.floor(100000 + Math.random() * 900000)}`, 
+      invoiceDate: new Date().toISOString().split('T')[0] 
+    });
     setApproveLoading(null);
     fetchAll();
   }
@@ -598,9 +613,9 @@ export default function AdminDashboard() {
                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                   <thead>
                     <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0', textAlign: 'left' }}>
-                      <th style={{ padding: '16px 24px', fontSize: '0.8rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Date</th>
-                      <th style={{ padding: '16px 24px', fontSize: '0.8rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Customer</th>
-                      <th style={{ padding: '16px 24px', fontSize: '0.8rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Description</th>
+                      <th style={{ padding: '16px 24px', fontSize: '0.8rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Inv No & Date</th>
+                      <th style={{ padding: '16px 24px', fontSize: '0.8rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Guest & Company</th>
+                      <th style={{ padding: '16px 24px', fontSize: '0.8rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Stay Details</th>
                       <th style={{ padding: '16px 24px', fontSize: '0.8rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Amount</th>
                       <th style={{ padding: '16px 24px', fontSize: '0.8rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Actions</th>
                     </tr>
@@ -611,17 +626,22 @@ export default function AdminDashboard() {
                     ) : (
                       taxInvoices.map(inv => (
                         <tr key={inv._id} style={{ borderBottom: '1px solid #e2e8f0' }}>
-                          <td style={{ padding: '16px 24px', color: '#475569', fontSize: '0.9rem' }}>{inv.date}</td>
                           <td style={{ padding: '16px 24px' }}>
-                            <div style={{ fontWeight: 700, color: '#0f172a' }}>{inv.customerName}</div>
-                            {inv.bookingId && <div style={{ fontSize: '0.75rem', color: '#3b82f6', fontWeight: 600, marginTop: 4 }}>Booking ID: {inv.bookingId}</div>}
+                            <div style={{ fontWeight: 700, color: '#0f172a' }}>{inv.invoiceNo || '-'}</div>
+                            <div style={{ color: '#475569', fontSize: '0.85rem' }}>{inv.invoiceDate || inv.date}</div>
                           </td>
-                          <td style={{ padding: '16px 24px', color: '#475569', fontSize: '0.9rem' }}>{inv.description}</td>
-                          <td style={{ padding: '16px 24px', fontWeight: 800, color: '#059669' }}>₹{inv.amount.toLocaleString()}</td>
+                          <td style={{ padding: '16px 24px' }}>
+                            <div style={{ fontWeight: 700, color: '#0f172a' }}>{inv.guestName || inv.customerName}</div>
+                            {inv.companyName && <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: 4 }}>{inv.companyName}</div>}
+                            {inv.gstNumber && <div style={{ fontSize: '0.75rem', color: '#64748b' }}>GST: {inv.gstNumber}</div>}
+                          </td>
+                          <td style={{ padding: '16px 24px', color: '#475569', fontSize: '0.85rem' }}>
+                            {inv.checkInDate && inv.checkOutDate ? `${inv.checkInDate} to ${inv.checkOutDate}` : inv.description}
+                            {inv.noOfNights && <div style={{ marginTop: 4, fontWeight: 600 }}>{inv.noOfNights} Nights @ ₹{inv.tariffPerNight?.toFixed(2)}/nt</div>}
+                          </td>
+                          <td style={{ padding: '16px 24px', fontWeight: 800, color: '#059669' }}>₹{(inv.totalAmount || inv.amount)?.toLocaleString()}</td>
                           <td style={{ padding: '16px 24px' }}>
                             <button onClick={() => {
-                              // Re-using the same invoice modal style but populating extra bill data
-                              // For a production app, we would have a separate extra bill view modal
                               alert('Print/View Extra Bill functionality goes here. Invoice details: ' + JSON.stringify(inv));
                             }} style={{ padding: '6px 12px', background: '#eff6ff', color: '#2563eb', border: 'none', borderRadius: 6, fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer' }}>View</button>
                           </td>
@@ -639,30 +659,64 @@ export default function AdminDashboard() {
 
       {/* ===== CREATE TAX INVOICE MODAL ===== */}
       {showCreateInvoice && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 999, background: 'rgba(15, 23, 42, 0.7)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
-          <div style={{ background: 'white', borderRadius: 16, width: '100%', maxWidth: 500, padding: 32, boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)' }}>
+        <div style={{ position: 'fixed', inset: 0, zIndex: 999, background: 'rgba(15, 23, 42, 0.7)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px', overflowY: 'auto' }}>
+          <div style={{ background: 'white', borderRadius: 16, width: '100%', maxWidth: 700, padding: 32, boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)', maxHeight: '90vh', overflowY: 'auto' }}>
             <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#0f172a', marginBottom: 24 }}>Generate Tax Invoice</h2>
             <form onSubmit={handleCreateInvoice} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-              <div>
-                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: '#475569', marginBottom: 8 }}>Customer Name</label>
-                <input required type="text" value={newInvoiceData.customerName} onChange={e => setNewInvoiceData({...newInvoiceData, customerName: e.target.value})} style={{ width: '100%', padding: '10px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '0.95rem' }} />
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: '#475569', marginBottom: 8 }}>Invoice No.</label>
+                  <input required type="text" value={newInvoiceData.invoiceNo} onChange={e => setNewInvoiceData({...newInvoiceData, invoiceNo: e.target.value})} style={{ width: '100%', padding: '10px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '0.95rem' }} />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: '#475569', marginBottom: 8 }}>Invoice Date</label>
+                  <input required type="date" value={newInvoiceData.invoiceDate} onChange={e => setNewInvoiceData({...newInvoiceData, invoiceDate: e.target.value})} style={{ width: '100%', padding: '10px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '0.95rem' }} />
+                </div>
               </div>
-              <div>
-                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: '#475569', marginBottom: 8 }}>Booking ID (Optional)</label>
-                <input type="text" value={newInvoiceData.bookingId} onChange={e => setNewInvoiceData({...newInvoiceData, bookingId: e.target.value})} style={{ width: '100%', padding: '10px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '0.95rem' }} />
+              
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: '#475569', marginBottom: 8 }}>Guest Name</label>
+                  <input required type="text" value={newInvoiceData.guestName} onChange={e => setNewInvoiceData({...newInvoiceData, guestName: e.target.value})} style={{ width: '100%', padding: '10px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '0.95rem' }} />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: '#475569', marginBottom: 8 }}>Company Name (Optional)</label>
+                  <input type="text" value={newInvoiceData.companyName} onChange={e => setNewInvoiceData({...newInvoiceData, companyName: e.target.value})} style={{ width: '100%', padding: '10px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '0.95rem' }} />
+                </div>
               </div>
-              <div>
-                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: '#475569', marginBottom: 8 }}>Amount (₹)</label>
-                <input required type="number" value={newInvoiceData.amount} onChange={e => setNewInvoiceData({...newInvoiceData, amount: e.target.value})} style={{ width: '100%', padding: '10px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '0.95rem' }} />
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: '#475569', marginBottom: 8 }}>GST Number (Optional)</label>
+                  <input type="text" value={newInvoiceData.gstNumber} onChange={e => setNewInvoiceData({...newInvoiceData, gstNumber: e.target.value})} style={{ width: '100%', padding: '10px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '0.95rem' }} />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: '#475569', marginBottom: 8 }}>Address</label>
+                  <input type="text" value={newInvoiceData.address} onChange={e => setNewInvoiceData({...newInvoiceData, address: e.target.value})} style={{ width: '100%', padding: '10px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '0.95rem' }} />
+                </div>
               </div>
-              <div>
-                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: '#475569', marginBottom: 8 }}>Description</label>
-                <textarea required value={newInvoiceData.description} onChange={e => setNewInvoiceData({...newInvoiceData, description: e.target.value})} style={{ width: '100%', padding: '10px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '0.95rem', minHeight: 80 }} />
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16 }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: '#475569', marginBottom: 8 }}>Check-In</label>
+                  <input required type="date" value={newInvoiceData.checkInDate} onChange={e => setNewInvoiceData({...newInvoiceData, checkInDate: e.target.value})} style={{ width: '100%', padding: '10px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '0.95rem' }} />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: '#475569', marginBottom: 8 }}>Check-Out</label>
+                  <input required type="date" value={newInvoiceData.checkOutDate} onChange={e => setNewInvoiceData({...newInvoiceData, checkOutDate: e.target.value})} style={{ width: '100%', padding: '10px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '0.95rem' }} />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: '#475569', marginBottom: 8 }}>No. of Nights</label>
+                  <input required type="number" value={newInvoiceData.noOfNights} onChange={e => setNewInvoiceData({...newInvoiceData, noOfNights: e.target.value})} style={{ width: '100%', padding: '10px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '0.95rem' }} />
+                </div>
               </div>
+
               <div>
-                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: '#475569', marginBottom: 8 }}>Date</label>
-                <input required type="date" value={newInvoiceData.date} onChange={e => setNewInvoiceData({...newInvoiceData, date: e.target.value})} style={{ width: '100%', padding: '10px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '0.95rem' }} />
+                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: '#475569', marginBottom: 8 }}>Total Amount (₹)</label>
+                <input required type="number" value={newInvoiceData.totalAmount} onChange={e => setNewInvoiceData({...newInvoiceData, totalAmount: e.target.value})} style={{ width: '100%', padding: '10px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '0.95rem' }} />
+                <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: 4 }}>Tariff per night will be automatically calculated as (Total Amount / No. of Nights).</div>
               </div>
+
               <div style={{ display: 'flex', gap: 12, marginTop: 16 }}>
                 <button type="button" onClick={() => setShowCreateInvoice(false)} style={{ flex: 1, padding: '12px', background: '#f1f5f9', color: '#475569', border: 'none', borderRadius: 8, fontWeight: 700, cursor: 'pointer' }}>Cancel</button>
                 <button type="submit" disabled={approveLoading === 'invoice'} style={{ flex: 1, padding: '12px', background: '#2563eb', color: 'white', border: 'none', borderRadius: 8, fontWeight: 700, cursor: 'pointer', opacity: approveLoading === 'invoice' ? 0.7 : 1 }}>
