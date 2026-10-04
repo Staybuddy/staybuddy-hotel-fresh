@@ -62,16 +62,19 @@ export default function AdminDashboard() {
       if (role !== 'admin') { router.push('/'); return; }
       fetchAll();
 
+      // Avoid rapid polling to prevent exhausting Firebase free quota
       const interval = setInterval(() => {
         fetch('/api/admin/bookings').then(r => r.json()).then(data => {
-          setBookings(prev => {
-            if (data.bookings && data.bookings.length > prev.length && prev.length > 0) {
-              if (activeTab !== 'bookings') setHasNewBookings(true);
-            }
-            return data.bookings || prev;
-          });
+          if (data.bookings) {
+            setBookings(prev => {
+              if (data.bookings.length > prev.length && prev.length > 0) {
+                if (activeTab !== 'bookings') setHasNewBookings(true);
+              }
+              return data.bookings;
+            });
+          }
         }).catch(e => console.error(e));
-      }, 10000);
+      }, 60000); // 60s instead of 10s
       return () => clearInterval(interval);
     }
   }, [status]);
