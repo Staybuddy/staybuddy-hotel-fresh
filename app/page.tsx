@@ -97,3 +97,5 @@ export default async function HomePage() {
   
   return <HomeClient initialHotels={initialHotels} recentReviews={recentReviews} />;
 }
+
+// trigger vercel build
