@@ -34,7 +34,7 @@ export default function AdminDashboard() {
 
   const [showCreateInvoice, setShowCreateInvoice] = useState(false);
   const [newInvoiceData, setNewInvoiceData] = useState({ 
-    guestName: '', companyName: '', gstNumber: '', address: '', bookingId: `NH${Math.floor(10000000000000 + Math.random() * 90000000000000)}`, placeOfSupply: 'Telangana',
+    guestName: '', companyName: '', gstNumber: '', address: '', bookingId: `SB-${Math.floor(1000000 + Math.random() * 9000000)}`, placeOfSupply: 'Telangana',
     checkInDate: '', checkOutDate: '', noOfNights: '', noOfRooms: '1', noOfGuests: '1', totalAmount: '', 
     invoiceNo: `INV-${Math.floor(100000 + Math.random() * 900000)}`, 
     invoiceDate: getLocalDateString() 
@@ -189,7 +189,7 @@ export default function AdminDashboard() {
     });
     setShowCreateInvoice(false);
     setNewInvoiceData({ 
-      guestName: '', companyName: '', gstNumber: '', address: '', bookingId: `NH${Math.floor(10000000000000 + Math.random() * 90000000000000)}`, placeOfSupply: 'Telangana',
+      guestName: '', companyName: '', gstNumber: '', address: '', bookingId: `SB-${Math.floor(1000000 + Math.random() * 9000000)}`, placeOfSupply: 'Telangana',
       checkInDate: '', checkOutDate: '', noOfNights: '', noOfRooms: '1', noOfGuests: '1', totalAmount: '', 
       invoiceNo: `INV-${Math.floor(100000 + Math.random() * 900000)}`, 
       invoiceDate: getLocalDateString() 
