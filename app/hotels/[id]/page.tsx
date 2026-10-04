@@ -1625,11 +1625,10 @@ export default function HotelDetailPage() {
                 }}
               >
                 <div
-                  className="review-header-inner"
+                  className="review-header-inner container"
                   style={{
                     width: "100%",
                     maxWidth: "1100px",
-                    padding: "16px 24px",
                   }}
                 >
                   <div
@@ -1676,11 +1675,10 @@ export default function HotelDetailPage() {
 
               {/* BODY CONTAINER */}
               <div
-                className="review-booking-grid"
+                className="review-booking-grid container"
                 style={{
                   width: "100%",
                   maxWidth: "1100px",
-                  padding: "32px 24px",
                 }}
               >
                 {/* LEFT COLUMN */}
@@ -2474,7 +2472,7 @@ export default function HotelDetailPage() {
                     </div>
 
                     {showGst && (
-                      <div style={{ display: "flex", gap: 16, marginBottom: 24 }}>
+                      <div className="guest-form-row" style={{ marginBottom: 24 }}>
                         <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
                           <label style={{ display: "block", fontSize: "0.8rem", fontWeight: 700, color: "#64748b", textTransform: "uppercase", marginBottom: 8 }}>
                             REGISTRATION NUMBER

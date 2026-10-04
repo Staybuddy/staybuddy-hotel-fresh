@@ -600,6 +600,8 @@ tbody tr:hover { background: var(--bg-secondary); }
   grid-template-columns: 1fr 380px;
   gap: 32px;
   align-items: start;
+  padding-top: 32px;
+  padding-bottom: 32px;
 }
 
 @media (max-width: 1024px) {
@@ -614,6 +616,8 @@ tbody tr:hover { background: var(--bg-secondary); }
   display: flex;
   justify-content: space-between;
   align-items: center;
+  padding-top: 16px;
+  padding-bottom: 16px;
 }
 
 @media (max-width: 768px) {
