@@ -1069,7 +1069,6 @@ export default function AdminDashboard() {
                     })}
                   </div>
                 </div>
-                </div>
 
                 {/* Additional Settings */}
                 <div style={{ background: 'white', padding: 24, borderRadius: 16, border: '1px solid #e2e8f0' }}>
