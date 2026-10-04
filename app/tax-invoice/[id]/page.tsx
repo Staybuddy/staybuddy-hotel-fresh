@@ -140,17 +140,17 @@ export default async function TaxInvoicePage({ params }: { params: Promise<{ id:
                 <div style={{ marginTop: '12px', display: 'flex', justifyContent: 'space-between', fontSize: '10px', backgroundColor: '#f3f4f6', padding: '6px', borderRadius: '4px' }}>
                   <div>
                     <span style={{ color: '#6b7280' }}>Check-In:</span><br/>
-                    <strong style={{ color: '#111827' }}>{inv.checkInDate ? formatDate(inv.checkInDate) : 'N/A'} (12 PM)</strong>
+                    <strong style={{ color: '#ea580c' }}>{inv.checkInDate ? formatDate(inv.checkInDate) : 'N/A'} (12 PM)</strong>
                   </div>
                   <div style={{ textAlign: 'right' }}>
                     <span style={{ color: '#6b7280' }}>Check-Out:</span><br/>
-                    <strong style={{ color: '#111827' }}>{inv.checkOutDate ? formatDate(inv.checkOutDate) : 'N/A'} (11 AM)</strong>
+                    <strong style={{ color: '#ea580c' }}>{inv.checkOutDate ? formatDate(inv.checkOutDate) : 'N/A'} (11 AM)</strong>
                   </div>
                 </div>
                 <div style={{ marginTop: '10px', color: '#4b5563', fontSize: '10px', display: 'flex', justifyContent: 'space-between' }}>
                   <span><strong>Duration:</strong> {inv.noOfNights || 1} Night(s)</span>
                   <span><strong>Rooms:</strong> {inv.noOfRooms || 1} ({inv.noOfGuests || 1} Guest{inv.noOfGuests > 1 ? 's' : ''})</span>
-                  <span><strong>Tariff/Room/Night:</strong> ₹{(inv.tariffPerNight || basePrice).toLocaleString(undefined, {minimumFractionDigits: 2})}</span>
+                  <span><strong>Tariff/Room/Night:</strong> <strong style={{ color: '#ea580c' }}>₹{(inv.tariffPerNight || basePrice).toLocaleString(undefined, {minimumFractionDigits: 2})}</strong></span>
                 </div>
               </div>
             </div>
@@ -177,7 +177,7 @@ export default async function TaxInvoicePage({ params }: { params: Promise<{ id:
                     <span style={{ color: '#6b7280', fontSize: '9px' }}>{inv.description || 'Room Only (Base Rate)'}</span>
                   </td>
                   <td style={{ padding: '12px', border: '1px solid #e5e7eb', textAlign: 'center', color: '#4b5563' }}>{(inv.noOfRooms || 1)} Room(s) × {inv.noOfNights || 1} Night(s)</td>
-                  <td style={{ padding: '12px', border: '1px solid #e5e7eb', textAlign: 'right', color: '#4b5563' }}>{(inv.tariffPerNight || basePrice).toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                  <td style={{ padding: '12px', border: '1px solid #e5e7eb', textAlign: 'right', color: '#ea580c', fontWeight: 600 }}>{(inv.tariffPerNight || basePrice).toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
                   <td style={{ padding: '12px', border: '1px solid #e5e7eb', textAlign: 'right', color: '#111827', fontWeight: 600 }}>{basePrice.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
                 </tr>
               </tbody>
