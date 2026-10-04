@@ -62,7 +62,6 @@ async function getRecentReviews() {
     const reviewsSnap = await db.collection('reviews').get();
     
     const allReviews = reviewsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() as any }))
-      .filter((r: any) => r.status === 'approved')
       .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
       .slice(0, 6);
     

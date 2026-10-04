@@ -28,6 +28,7 @@ export async function POST(request: NextRequest) {
       service: rating,
       location: rating,
       value: rating,
+      status: 'approved',
       createdAt: new Date().toISOString()
     };
     await reviewRef.set(newReview);
