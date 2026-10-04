@@ -31,6 +31,56 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       rooms = roomsSnapshot.docs.map(doc => ({ _id: doc.id, ...doc.data() }));
     }
     
+    // Fetch active bookings to calculate live availability for each room
+    try {
+      const searchParams = new URL(request.url).searchParams;
+      const searchCheckIn = searchParams.get('checkIn');
+      const searchCheckOut = searchParams.get('checkOut');
+      const bookingsSnap = await db.collection('bookings')
+        .where('hotelId', '==', hotel._id)
+        .get();
+
+      // Group active bookings by roomId
+      const activeBookingsByRoom: Record<string, number> = {};
+      
+      bookingsSnap.docs.forEach((doc: any) => {
+        const b = doc.data();
+        if (b.status !== 'cancelled' && b.status !== 'completed') {
+          const bCheckIn = new Date(b.checkIn).getTime();
+          const bCheckOut = new Date(b.checkOut).getTime();
+          
+          let overlap = false;
+          if (searchCheckIn && searchCheckOut) {
+            const sCheckIn = new Date(searchCheckIn).getTime();
+            const sCheckOut = new Date(searchCheckOut).getTime();
+            if (bCheckIn < sCheckOut && bCheckOut > sCheckIn) overlap = true;
+          } else {
+            const today = new Date().getTime();
+            if (bCheckOut > today) overlap = true;
+          }
+
+          if (overlap && b.roomId) {
+            activeBookingsByRoom[b.roomId] = (activeBookingsByRoom[b.roomId] || 0) + (b.rooms || 1);
+          }
+        }
+      });
+
+      // Update rooms with exact availability
+      rooms = rooms.map(room => {
+        const allocation = room.staybuddyAllocation || 0;
+        const booked = activeBookingsByRoom[room._id] || 0;
+        return {
+          ...room,
+          availableRooms: Math.max(0, allocation - booked)
+        };
+      });
+
+    } catch (e) {
+      console.error('Error calculating room availability', e);
+      // Fallback to allocation if error
+      rooms = rooms.map(room => ({ ...room, availableRooms: room.staybuddyAllocation || 0 }));
+    }
+
     // Note: Reviews are not fully migrated, but we will return an empty array for now to prevent crashes
     const reviews: any[] = [];
 

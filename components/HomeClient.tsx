@@ -10,6 +10,7 @@ import AppPromoCard from '@/components/AppPromoCard';
 import HomeReferralSection from '@/components/HomeReferralSection';
 import HomeStatsSection from '@/components/HomeStatsSection';
 import Image from 'next/image';
+import WishlistButton from '@/components/WishlistButton';
 
 const DESTINATIONS = [
   { city: 'Mumbai', country: 'India', emoji: '🏙️', hotels: 342 },
@@ -25,9 +26,9 @@ const AMENITY_ICONS: Record<string, string> = {
   'Restaurant': '🍽️', 'Parking': '🅿️', 'AC': '❄️', 'Bar': '🍸',
 };
 
-export default function HomeClient({ initialHotels }: { initialHotels: any[] }) {
+export default function HomeClient({ initialHotels, recentReviews = [], userWishlistIds = [] }: { initialHotels: any[], recentReviews?: any[], userWishlistIds?: string[] }) {
   const router = useRouter();
-  const [searchData, setSearchData] = useState({ propertyType: 'Hotel', location: '', checkIn: '', checkOut: '', rooms: 1, adults: 2, children: 0 });
+  const [searchData, setSearchData] = useState({ propertyType: '', location: '', checkIn: '', checkOut: '', rooms: 1, adults: 2, children: 0 });
   const [hotels, setHotels] = useState<any[]>(initialHotels);
   const [loading, setLoading] = useState(false);
   const [searchError, setSearchError] = useState('');
@@ -75,7 +76,16 @@ export default function HomeClient({ initialHotels }: { initialHotels: any[] }) 
   const today = new Date().toISOString().split('T')[0];
 
     const renderSearchBar = () => (
-    <div className="fade-in hero-search-wrapper" style={{
+      <>
+        <style>{`
+          @keyframes slideDownFade {
+            0% { opacity: 0; transform: translateY(-20px) scale(0.98); }
+            100% { opacity: 1; transform: translateY(0) scale(1); }
+          }
+        `}</style>
+        <div className="fade-in hero-search-wrapper" style={{
+              animation: 'slideDownFade 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+              transformOrigin: 'top center',
               position: 'relative',
               marginTop: '16px',
               gap: 12,
@@ -230,6 +240,7 @@ export default function HomeClient({ initialHotels }: { initialHotels: any[] }) 
                 🔍 SEARCH
               </button>
             </div>
+      </>
   );
 
   return (
@@ -283,39 +294,7 @@ export default function HomeClient({ initialHotels }: { initialHotels: any[] }) 
       {/* Property Selector for Hero and Navbar */}
       <Navbar 
         extendedContent={showStickySearch ? renderSearchBar() : null}
-        middleContent={
-        <div className="hide-scrollbar" style={{ display: 'flex', gap: 16, alignItems: 'center', overflowX: 'auto', maxWidth: '100%', padding: '0 8px' }}>
-          {[
-            { id: 'Hotel', label: 'Hotels', icon: '🏨' },
-            { id: 'Resort', label: 'Resorts', icon: '🌴' },
-            { id: 'Villa', label: 'Villas', icon: '🏡' },
-            { id: 'Homestay', label: 'Homestays', icon: '🏘️' },
-            { id: 'HolidayPackage', label: 'Packages', icon: '🎒' }
-          ].map(card => {
-            const isActive = searchData.propertyType === card.id;
-            return (
-              <div
-                key={card.id}
-                onClick={() => {
-                  setSearchData(p => ({ ...p, propertyType: p.propertyType === card.id ? '' : card.id }));
-                  setShowStickySearch(p => !p);
-                }}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer',
-                  padding: '6px 12px', borderRadius: '20px',
-                  background: isActive ? 'var(--brand-50)' : 'transparent',
-                  border: isActive ? '1px solid var(--brand-200)' : '1px solid transparent',
-                  color: isActive ? 'var(--brand-700)' : 'var(--text-primary)',
-                  fontWeight: 600, fontSize: '0.85rem', transition: 'all 0.2s'
-                }}
-              >
-                <span>{card.icon}</span>
-                <span className="hide-mobile">{card.label}</span>
-              </div>
-            );
-          })}
-        </div>
-      } />
+      />
 
       {/* HERO SECTION WITH INLINE PROPERTY TYPES */}
       <div style={{ background: 'var(--bg-secondary)', padding: '24px 0 0 0', marginTop: '-8px' }}>
@@ -532,6 +511,41 @@ export default function HomeClient({ initialHotels }: { initialHotels: any[] }) 
         </Link>
       </section>
 
+      {/* ===== RECENT REVIEWS ===== */}
+      {recentReviews && recentReviews.length > 0 && (
+        <section style={{ padding: '24px 0', background: 'var(--bg-secondary)' }}>
+          <div className="container">
+            <div style={{ marginBottom: 24, textAlign: 'center' }}>
+              <h2>What Our <span style={{ color: 'var(--brand-600)' }}>Guests</span> Say</h2>
+              <p style={{ color: 'var(--text-secondary)', marginTop: 4 }}>Real reviews from verified bookings</p>
+            </div>
+            
+            <div className="hide-scrollbar" style={{ display: 'flex', overflowX: 'auto', gap: 'var(--space-5)', paddingBottom: 'var(--space-4)', snapType: 'x mandatory' }}>
+              {recentReviews.map(review => (
+                <div key={review._id} className="card" style={{ minWidth: 300, maxWidth: 350, flex: '0 0 auto', scrollSnapAlign: 'start', padding: 'var(--space-5)', display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    <div style={{ fontWeight: 700, fontSize: '1.1rem' }}>{review.title}</div>
+                    <div style={{ background: 'var(--brand-500)', color: 'white', padding: '2px 8px', borderRadius: 'var(--radius-full)', fontWeight: 800, fontSize: '0.8rem' }}>
+                      {review.rating.toFixed(1)} ⭐
+                    </div>
+                  </div>
+                  
+                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', flex: 1, margin: 0, fontStyle: 'italic' }}>
+                    "{review.comment}"
+                  </p>
+                  
+                  <div style={{ borderTop: '1px solid var(--border)', paddingTop: 12, marginTop: 4 }}>
+                    <div style={{ fontWeight: 600, fontSize: '0.85rem' }}>{review.customerName}</div>
+                    <div style={{ color: 'var(--text-muted)', fontSize: '0.75rem', marginTop: 2 }}>Stayed at <span style={{ color: 'var(--brand-600)' }}>{review.hotelName}</span></div>
+                    <div style={{ color: 'var(--text-muted)', fontSize: '0.7rem', marginTop: 4 }}>{new Date(review.createdAt).toLocaleDateString()}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* ===== FEATURED HOTELS ===== */}
       <section style={{ padding: '24px 0' }}>
         <div className="container">
@@ -572,7 +586,7 @@ export default function HomeClient({ initialHotels }: { initialHotels: any[] }) 
             }}>
               {hotels.map(hotel => (
                 <div key={hotel._id} className="hotel-scroll-card" style={{ flexShrink: 0, width: '320px', scrollSnapAlign: 'start' }}>
-                  <HotelCard hotel={hotel} />
+                  <HotelCard hotel={hotel} isWishlisted={userWishlistIds.includes(hotel._id)} />
                 </div>
               ))}
             </div>
@@ -738,7 +752,7 @@ export default function HomeClient({ initialHotels }: { initialHotels: any[] }) 
   );
 }
 
-function HotelCard({ hotel }: { hotel: any }) {
+function HotelCard({ hotel, isWishlisted }: { hotel: any, isWishlisted?: boolean }) {
   const [imgIndex, setImgIndex] = useState(0);
 
   const handleNext = (e: React.MouseEvent) => {
@@ -767,11 +781,13 @@ function HotelCard({ hotel }: { hotel: any }) {
             <div className="hotel-card-img" style={{ background: 'linear-gradient(135deg, var(--brand-100), var(--brand-200))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '3rem' }}>🏨</div>
           )}
           
-          <div style={{ position: 'absolute', top: 12, left: 12 }}>
+          <div style={{ position: 'absolute', top: 12, left: 12, zIndex: 5 }}>
             <span className={`badge badge-${hotel.category === 'luxury' ? 'warning' : hotel.category === 'premium' ? 'primary' : 'gray'}`} style={{ backdropFilter: 'blur(4px)' }}>
               {'⭐'.repeat(hotel.starRating)}
             </span>
           </div>
+
+          <WishlistButton hotelId={hotel._id} initialIsWishlisted={isWishlisted} />
 
           {/* Slider Controls */}
           {hotel.images?.length > 1 && (

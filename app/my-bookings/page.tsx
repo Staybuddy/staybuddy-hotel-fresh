@@ -12,6 +12,13 @@ export default function MyBookingsPage() {
   const [bookings, setBookings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
+  
+  // Review Modal State
+  const [reviewModalOpen, setReviewModalOpen] = useState(false);
+  const [reviewBooking, setReviewBooking] = useState<any>(null);
+  const [reviewData, setReviewData] = useState({ rating: 5, title: '', comment: '' });
+  const [reviewLoading, setReviewLoading] = useState(false);
+  const [reviewError, setReviewError] = useState('');
 
   useEffect(() => {
     if (status === 'unauthenticated') { router.push('/login'); return; }
@@ -32,6 +39,39 @@ export default function MyBookingsPage() {
     if (!confirm('Are you sure you want to cancel this booking?')) return;
     await fetch(`/api/bookings/${id}`, { method: 'DELETE' });
     fetchBookings();
+  }
+
+  async function submitReview(e: React.FormEvent) {
+    e.preventDefault();
+    if (!reviewBooking) return;
+    setReviewLoading(true);
+    setReviewError('');
+    try {
+      const res = await fetch('/api/reviews', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          bookingId: reviewBooking._id,
+          hotelId: reviewBooking.hotelId._id,
+          customerId: (session?.user as any)?.id,
+          guestName: (session?.user as any)?.name || 'Guest',
+          rating: reviewData.rating,
+          title: reviewData.title,
+          comment: reviewData.comment
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to submit review');
+      
+      setReviewModalOpen(false);
+      setReviewBooking(null);
+      setReviewData({ rating: 5, title: '', comment: '' });
+      fetchBookings(); // Refresh to update isReviewed status
+    } catch (err: any) {
+      setReviewError(err.message);
+    } finally {
+      setReviewLoading(false);
+    }
   }
 
   const filtered = filter === 'all' ? bookings : bookings.filter(b => b.status === filter);
@@ -105,6 +145,12 @@ export default function MyBookingsPage() {
                     {booking.status === 'pending' && (
                       <button className="btn btn-danger btn-sm" onClick={() => cancelBooking(booking._id)} style={{width: '100%'}}>Cancel</button>
                     )}
+                    {(booking.status === 'completed' || booking.status === 'confirmed') && booking.paymentStatus === 'paid' && !booking.isReviewed && (
+                      <button className="btn btn-sm" style={{ background: '#f59e0b', color: 'white', width: '100%', border: 'none', cursor: 'pointer' }} onClick={() => { setReviewBooking(booking); setReviewModalOpen(true); }}>⭐ Write Review</button>
+                    )}
+                    {booking.isReviewed && (
+                      <div style={{ textAlign: 'center', fontSize: '0.75rem', color: 'var(--success)', fontWeight: 600 }}>✓ Reviewed</div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -112,6 +158,41 @@ export default function MyBookingsPage() {
           </div>
         )}
       </div>
+
+      {reviewModalOpen && reviewBooking && (
+        <>
+          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 999 }} onClick={() => setReviewModalOpen(false)} />
+          <div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', background: 'white', padding: 'var(--space-6)', borderRadius: 'var(--radius-xl)', zIndex: 1000, width: '90%', maxWidth: 500, boxShadow: 'var(--shadow-xl)' }}>
+            <h2 style={{ marginBottom: 16 }}>Review {reviewBooking.hotelId?.name}</h2>
+            {reviewError && <div className="alert alert-danger" style={{ marginBottom: 16 }}>{reviewError}</div>}
+            <form onSubmit={submitReview} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              <div>
+                <label className="form-label">Rating</label>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  {[1,2,3,4,5].map(num => (
+                    <button type="button" key={num} onClick={() => setReviewData(p => ({...p, rating: num}))} style={{ background: 'none', border: 'none', fontSize: '2rem', cursor: 'pointer', opacity: reviewData.rating >= num ? 1 : 0.3 }}>
+                      ⭐
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="form-group">
+                <label className="form-label">Title</label>
+                <input type="text" className="form-input" required placeholder="Summarize your experience" value={reviewData.title} onChange={e => setReviewData(p => ({...p, title: e.target.value}))} />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Review</label>
+                <textarea className="form-input" rows={4} required placeholder="Tell us what you liked or disliked" value={reviewData.comment} onChange={e => setReviewData(p => ({...p, comment: e.target.value}))} />
+              </div>
+              <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', marginTop: 8 }}>
+                <button type="button" className="btn btn-outline" onClick={() => setReviewModalOpen(false)}>Cancel</button>
+                <button type="submit" className="btn btn-primary" disabled={reviewLoading}>{reviewLoading ? 'Submitting...' : 'Submit Review'}</button>
+              </div>
+            </form>
+          </div>
+        </>
+      )}
+
     </div>
   );
 }

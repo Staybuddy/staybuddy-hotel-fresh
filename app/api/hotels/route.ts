@@ -11,6 +11,8 @@ export async function GET(request: NextRequest) {
     const category = searchParams.get('category');
     const propertyType = searchParams.get('propertyType');
     const limitParam = parseInt(searchParams.get('limit') || '12');
+    const searchCheckIn = searchParams.get('checkIn');
+    const searchCheckOut = searchParams.get('checkOut');
 
     let hotelsRef: any = db.collection('hotels').where('status', '==', status);
     
@@ -39,7 +41,46 @@ export async function GET(request: NextRequest) {
         const roomsSnap = await db.collection('rooms').where('hotelId', '==', hotel._id).get();
         const rooms = roomsSnap.docs.map((doc: any) => doc.data());
         const cheapestRoom = rooms.sort((a: any, b: any) => a.priceDouble - b.priceDouble)[0];
-        return { ...hotel, startingPrice: cheapestRoom?.priceSingle || cheapestRoom?.priceDouble };
+        let roomsLeft = rooms.reduce((sum: number, r: any) => sum + (r.staybuddyAllocation || 0), 0);
+
+        try {
+          const bookingsSnap = await db.collection('bookings')
+            .where('hotelId', '==', hotel._id)
+            .get();
+          
+          let activeBookingsCount = 0;
+
+          bookingsSnap.docs.forEach((doc: any) => {
+            const b = doc.data();
+            if (b.status !== 'cancelled' && b.status !== 'completed') {
+              const bCheckIn = new Date(b.checkIn).getTime();
+              const bCheckOut = new Date(b.checkOut).getTime();
+              
+              let overlap = false;
+              if (searchCheckIn && searchCheckOut) {
+                const sCheckIn = new Date(searchCheckIn).getTime();
+                const sCheckOut = new Date(searchCheckOut).getTime();
+                // Overlap: Booking starts before Search ends AND Booking ends after Search starts
+                if (bCheckIn < sCheckOut && bCheckOut > sCheckIn) {
+                  overlap = true;
+                }
+              } else {
+                // If no dates specified, just check if it's currently active today
+                const today = new Date().getTime();
+                if (bCheckOut > today) overlap = true;
+              }
+
+              if (overlap) {
+                activeBookingsCount += (b.rooms || 1);
+              }
+            }
+          });
+          roomsLeft = Math.max(0, roomsLeft - activeBookingsCount);
+        } catch (e) {
+          console.error('Error fetching bookings for availability', e);
+        }
+
+        return { ...hotel, startingPrice: cheapestRoom?.priceSingle || cheapestRoom?.priceDouble, roomsLeft };
       })
     );
 

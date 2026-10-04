@@ -1375,7 +1375,7 @@ export default function HotelDetailPage() {
                           display: "inline-block",
                         }}
                       />
-                      12 Rooms Available • Live Instant API Confirmation
+                      {displayRoom.availableRooms !== undefined ? displayRoom.availableRooms : displayRoom.staybuddyAllocation || 1} Rooms Available • Live Instant API Confirmation
                     </div>
 
                     <div
