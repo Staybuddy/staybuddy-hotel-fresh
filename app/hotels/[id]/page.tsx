@@ -1612,8 +1612,8 @@ export default function HotelDetailPage() {
                 right: 0,
                 bottom: 0,
                 zIndex: 9999,
-                width: "100vw",
-                height: "100vh",
+                width: "100%",
+                height: "100%",
                 overflowY: "auto",
                 overflowX: "hidden",
               }}
@@ -2578,6 +2578,8 @@ export default function HotelDetailPage() {
                     className="card price-breakup-card"
                     style={{
                       borderRadius: "var(--radius-lg)",
+                      maxWidth: "100%",
+                      overflow: "hidden",
                     }}
                   >
                     <h3
@@ -2780,6 +2782,8 @@ export default function HotelDetailPage() {
                     className="card price-breakup-card"
                     style={{
                       borderRadius: "var(--radius-lg)",
+                      maxWidth: "100%",
+                      overflow: "hidden",
                     }}
                   >
                     <div
