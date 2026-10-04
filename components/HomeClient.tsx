@@ -133,8 +133,8 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--brand-600)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.2 }}>{searchData.checkIn ? new Date(searchData.checkIn).getDate() + ' ' + new Date(searchData.checkIn).toLocaleString('default', { month: 'short' }) : 'Add Date'}</div>
-                    <div style={{ fontSize: '0.7rem', color: '#64748b', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{searchData.checkIn ? new Date(searchData.checkIn).toLocaleDateString('default', { weekday: 'short', year: 'numeric' }) : 'Select Check-in'}</div>
+                    <div suppressHydrationWarning style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.2 }}>{searchData.checkIn ? new Date(searchData.checkIn).getDate() + ' ' + new Date(searchData.checkIn).toLocaleString('default', { month: 'short' }) : 'Add Date'}</div>
+                    <div suppressHydrationWarning style={{ fontSize: '0.7rem', color: '#64748b', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{searchData.checkIn ? new Date(searchData.checkIn).toLocaleDateString('default', { weekday: 'short', year: 'numeric' }) : 'Select Check-in'}</div>
                   </div>
                 </div>
               </div>
@@ -150,8 +150,8 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--brand-600)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.2 }}>{searchData.checkOut ? new Date(searchData.checkOut).getDate() + ' ' + new Date(searchData.checkOut).toLocaleString('default', { month: 'short' }) : 'Add Date'}</div>
-                    <div style={{ fontSize: '0.7rem', color: '#64748b', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{searchData.checkOut ? new Date(searchData.checkOut).toLocaleDateString('default', { weekday: 'short', year: 'numeric' }) : 'Select Check-out'}</div>
+                    <div suppressHydrationWarning style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.2 }}>{searchData.checkOut ? new Date(searchData.checkOut).getDate() + ' ' + new Date(searchData.checkOut).toLocaleString('default', { month: 'short' }) : 'Add Date'}</div>
+                    <div suppressHydrationWarning style={{ fontSize: '0.7rem', color: '#64748b', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{searchData.checkOut ? new Date(searchData.checkOut).toLocaleDateString('default', { weekday: 'short', year: 'numeric' }) : 'Select Check-out'}</div>
                   </div>
                 </div>
               </div>
@@ -288,6 +288,7 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
           /* Search button: full width */
           .hero-search-btn {
             width: 100% !important;
+            flex: none !important;
             margin: 0 !important;
             border-radius: 12px !important;
             padding: 14px !important;
@@ -572,7 +573,7 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
                   <div style={{ borderTop: '1px solid var(--border)', paddingTop: 12, marginTop: 4 }}>
                     <div style={{ fontWeight: 600, fontSize: '0.85rem' }}>{review.customerName}</div>
                     <div style={{ color: 'var(--text-muted)', fontSize: '0.75rem', marginTop: 2 }}>Stayed at <span style={{ color: 'var(--brand-600)' }}>{review.hotelName}</span></div>
-                    <div style={{ color: 'var(--text-muted)', fontSize: '0.7rem', marginTop: 4 }}>{new Date(review.createdAt).toLocaleDateString()}</div>
+                    <div suppressHydrationWarning style={{ color: 'var(--text-muted)', fontSize: '0.7rem', marginTop: 4 }}>{new Date(review.createdAt).toLocaleDateString()}</div>
                   </div>
                 </div>
               ))}
