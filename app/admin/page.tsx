@@ -144,11 +144,27 @@ export default function AdminDashboard() {
     const total = Number(newInvoiceData.totalAmount) || 0;
     const nights = Number(newInvoiceData.noOfNights) || 1;
     const tariffPerNight = total / nights;
+    
+    let gstPercentage = 0;
+    if (tariffPerNight >= 1000 && tariffPerNight <= 7499) {
+      gstPercentage = 5;
+    } else if (tariffPerNight >= 7500) {
+      gstPercentage = 18;
+    }
+    const gstAmount = (total * gstPercentage) / 100;
+    const grandTotal = total + gstAmount;
 
     await fetch('/api/admin/tax-invoices', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...newInvoiceData, totalAmount: total, tariffPerNight })
+      body: JSON.stringify({ 
+        ...newInvoiceData, 
+        totalAmount: total, 
+        tariffPerNight, 
+        gstPercentage, 
+        gstAmount, 
+        grandTotal 
+      })
     });
     setShowCreateInvoice(false);
     setNewInvoiceData({ 
@@ -639,7 +655,13 @@ export default function AdminDashboard() {
                             {inv.checkInDate && inv.checkOutDate ? `${inv.checkInDate} to ${inv.checkOutDate}` : inv.description}
                             {inv.noOfNights && <div style={{ marginTop: 4, fontWeight: 600 }}>{inv.noOfNights} Nights @ ₹{inv.tariffPerNight?.toFixed(2)}/nt</div>}
                           </td>
-                          <td style={{ padding: '16px 24px', fontWeight: 800, color: '#059669' }}>₹{(inv.totalAmount || inv.amount)?.toLocaleString()}</td>
+                          <td style={{ padding: '16px 24px' }}>
+                            <div style={{ color: '#64748b', fontSize: '0.8rem' }}>Base: ₹{(inv.totalAmount || inv.amount)?.toLocaleString()}</div>
+                            {inv.gstPercentage !== undefined && (
+                              <div style={{ color: '#f59e0b', fontSize: '0.8rem' }}>GST ({inv.gstPercentage}%): ₹{inv.gstAmount?.toLocaleString()}</div>
+                            )}
+                            <div style={{ fontWeight: 800, color: '#059669', marginTop: 4 }}>Total: ₹{(inv.grandTotal || inv.totalAmount || inv.amount)?.toLocaleString()}</div>
+                          </td>
                           <td style={{ padding: '16px 24px' }}>
                             <button onClick={() => {
                               alert('Print/View Extra Bill functionality goes here. Invoice details: ' + JSON.stringify(inv));
@@ -712,9 +734,19 @@ export default function AdminDashboard() {
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: '#475569', marginBottom: 8 }}>Total Amount (₹)</label>
+                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: '#475569', marginBottom: 8 }}>Base Amount (₹) before GST</label>
                 <input required type="number" value={newInvoiceData.totalAmount} onChange={e => setNewInvoiceData({...newInvoiceData, totalAmount: e.target.value})} style={{ width: '100%', padding: '10px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '0.95rem' }} />
-                <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: 4 }}>Tariff per night will be automatically calculated as (Total Amount / No. of Nights).</div>
+                <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: 8, lineHeight: '1.4' }}>
+                  Tariff per night: ₹{newInvoiceData.totalAmount && newInvoiceData.noOfNights ? (Number(newInvoiceData.totalAmount) / Number(newInvoiceData.noOfNights)).toFixed(2) : '0.00'}<br/>
+                  GST Slab: {
+                    (() => {
+                      const tariff = (Number(newInvoiceData.totalAmount) || 0) / (Number(newInvoiceData.noOfNights) || 1);
+                      if (tariff >= 1000 && tariff <= 7499) return '5%';
+                      if (tariff >= 7500) return '18%';
+                      return '0%';
+                    })()
+                  } (Auto-applied to the final invoice)
+                </div>
               </div>
 
               <div style={{ display: 'flex', gap: 12, marginTop: 16 }}>
