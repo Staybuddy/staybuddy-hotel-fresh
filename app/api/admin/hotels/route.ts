@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
       const partner = usersMap[hotel.partnerId];
       return {
         ...hotel,
-        partnerId: partner ? { _id: partner._id || doc.id, name: partner.name, email: partner.email, phone: partner.phone } : hotel.partnerId
+        partnerId: partner ? { _id: partner._id || hotel.partnerId, name: partner.name, email: partner.email, phone: partner.phone } : hotel.partnerId
       };
     });
 

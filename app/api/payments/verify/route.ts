@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
     let booking = { _id: updatedBookingSnap.id, ...updatedBookingSnap.data() } as any;
 
     const hotelSnap = await db.collection('hotels').doc(booking.hotelId).get();
-    const hotel = hotelSnap.exists ? { _id: hotelSnap.id, ...hotelSnap.data() } : null;
+    const hotel = hotelSnap.exists ? { _id: hotelSnap.id, ...(hotelSnap.data() as any) } : null;
     booking.hotelId = hotel;
 
     const customerSnap = await db.collection('users').doc(booking.customerId).get();

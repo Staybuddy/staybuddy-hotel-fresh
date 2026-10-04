@@ -7,11 +7,11 @@ import { FieldValue } from 'firebase-admin/firestore';
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session || !session.user || !session.user.id) {
+    if (!session || !session.user || !(session.user as any).id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const userId = session.user.id;
+    const userId = (session.user as any).id;
     const userDoc = await db.collection('users').doc(userId).get();
     
     if (!userDoc.exists) {
@@ -46,14 +46,14 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session || !session.user || !session.user.id) {
+    if (!session || !session.user || !(session.user as any).id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { hotelId, action } = await request.json(); // action = 'add' or 'remove'
     if (!hotelId) return NextResponse.json({ error: 'Hotel ID is required' }, { status: 400 });
 
-    const userId = session.user.id;
+    const userId = (session.user as any).id;
     const userRef = db.collection('users').doc(userId);
 
     if (action === 'add') {

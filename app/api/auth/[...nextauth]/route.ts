@@ -88,17 +88,18 @@ export const authOptions: NextAuthOptions = {
           userData = snapshot.docs[0].data();
         }
 
-        if (!userData.isActive) {
+        const u = userData as any;
+        if (!u.isActive) {
           throw new Error('Your account has been suspended. Contact support.');
         }
 
         return {
           id: userId,
-          name: userData.name,
-          email: userData.email,
-          role: userData.role,
-          image: userData.avatar,
-          phone: userData.phone,
+          name: u.name,
+          email: u.email,
+          role: u.role,
+          image: u.avatar,
+          phone: u.phone,
         };
       },
     }),
@@ -138,7 +139,7 @@ export const authOptions: NextAuthOptions = {
           user.id = newUserRef.id;
           (user as any).role = newUserData.role;
           (user as any).partnerStatus = newUserData.partnerStatus;
-          (user as any).phone = newUserData.phone;
+          (user as any).phone = (newUserData as any).phone;
         } else {
           const existingData = existingUserDoc.data();
           const updates: any = {};
