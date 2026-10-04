@@ -732,4 +732,11 @@ tbody tr:hover { background: var(--bg-secondary); }
   .admin-table {
     zoom: 0.65;
   }
+  .admin-modal-box {
+    zoom: 0.85;
+    padding: 20px !important;
+  }
+  .admin-form-grid {
+    grid-template-columns: 1fr !important;
+  }
 }
