@@ -305,28 +305,23 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
           .hotel-scroll-card { width: 220px !important; }
         }
       `}</style>
-      {/* Property Selector for Hero and Navbar */}
-      <Navbar 
-        extendedContent={showStickySearch ? renderSearchBar() : null}
-      />
-
-      {/* HERO SECTION WITH INLINE PROPERTY TYPES */}
-      <div style={{ background: 'var(--bg-secondary)', padding: '24px 0 0 0', marginTop: '-8px' }}>
-        <div className="container hero-section-container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '0 16px' }}>
-
-          {/* Inline Property Selector */}
+      
+      {/* Helper to render property selector */}
+      {(() => {
+        const renderPropertySelector = (isCompact = false) => (
           <div 
             className="hide-scrollbar"
             style={{ 
               display: 'flex', 
               gap: 0, 
               overflowX: 'auto', 
-              borderRadius: 'var(--radius-xl)', 
-              boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+              borderRadius: isCompact ? 'var(--radius-full)' : 'var(--radius-xl)', 
+              boxShadow: isCompact ? '0 2px 10px rgba(0,0,0,0.05)' : '0 4px 20px rgba(0,0,0,0.08)',
               width: 'fit-content',
               maxWidth: '100%',
               background: 'white',
-              WebkitOverflowScrolling: 'touch'
+              WebkitOverflowScrolling: 'touch',
+              border: isCompact ? '1px solid var(--border)' : 'none'
             }}>
             {[
               { id: 'Hotel', label: 'Hotels', icon: '🏨' },
@@ -344,7 +339,7 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
                   style={{
                     background: isActive ? 'var(--brand-50)' : 'white',
                     borderRight: isLast ? 'none' : '1px solid var(--border)',
-                    padding: '12px 24px', /* INCREASED PADDING */
+                    padding: isCompact ? '6px 16px' : '12px 24px',
                     cursor: 'pointer',
                     minWidth: 0,
                     flex: '1 0 auto',
@@ -353,8 +348,8 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    flexDirection: 'column',
-                    gap: 8 /* INCREASED GAP */
+                    flexDirection: isCompact ? 'row' : 'column',
+                    gap: isCompact ? 6 : 8
                   }}
                   onMouseEnter={e => {
                     if (!isActive) e.currentTarget.style.background = 'var(--brand-50)';
@@ -363,14 +358,31 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
                     if (!isActive) e.currentTarget.style.background = 'white';
                   }}
                 >
-                  <div style={{ fontSize: '1.6rem', transition: 'transform 0.3s ease', transform: isActive ? 'scale(1.1)' : 'scale(1)' }}>{card.icon}</div> {/* INCREASED ICON */}
-                  <div style={{ color: isActive ? 'var(--brand-700)' : 'var(--text-primary)', fontWeight: 800, fontSize: '0.85rem', letterSpacing: '0.02em', whiteSpace: 'nowrap' }}>{card.label}</div> {/* INCREASED TEXT */}
+                  <div style={{ fontSize: isCompact ? '1.2rem' : '1.6rem', transition: 'transform 0.3s ease', transform: isActive ? 'scale(1.1)' : 'scale(1)' }}>{card.icon}</div>
+                  <div style={{ color: isActive ? 'var(--brand-700)' : 'var(--text-primary)', fontWeight: 800, fontSize: isCompact ? '0.8rem' : '0.85rem', letterSpacing: '0.02em', whiteSpace: 'nowrap' }}>{card.label}</div>
                 </div>
               );
             })}
           </div>
-        </div>
-      </div>
+        );
+
+        return (
+          <>
+            {/* Property Selector for Hero and Navbar */}
+            <Navbar 
+              middleContent={renderPropertySelector(true)}
+              extendedContent={showStickySearch ? renderSearchBar() : null}
+            />
+
+            {/* HERO SECTION WITH INLINE PROPERTY TYPES */}
+            <div style={{ background: 'var(--bg-secondary)', padding: '24px 0 0 0', marginTop: '-8px' }}>
+              <div className="container hero-section-container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '0 16px' }}>
+                {renderPropertySelector(false)}
+              </div>
+            </div>
+          </>
+        );
+      })()}
 
       {/* SEARCH BAR SECTION */}
       <div style={{
