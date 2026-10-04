@@ -228,7 +228,7 @@ export default async function TaxInvoicePage({ params }: { params: Promise<{ id:
               <strong style={{ color: '#4b5563', fontSize: '10px', textTransform: 'uppercase' }}>Stay Buddy (Proprietorship: Mulla Arif)</strong><br/>
               1st Floor, 11-3, Shamshabad Flyover, Near Appu Pan Shop,<br/>
               Shamshabad, Hyderabad, Rangareddy, Telangana 501218<br/>
-              <strong>GSTIN:</strong> 36FSKPM3408R1ZZ &nbsp;|&nbsp; <strong>Email:</strong> support@staybuddy.in
+              <strong>GSTIN:</strong> 36FSKPM3408R1ZZ &nbsp;|&nbsp; <strong>Email:</strong> staybuddyhotels@gmail.com
             </div>
 
             {/* Signature */}
