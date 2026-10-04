@@ -1608,6 +1608,7 @@ export default function HotelDetailPage() {
                 alignItems: "center",
                 minHeight: "calc(100vh - 68px)",
                 width: "100%",
+                overflowX: "hidden",
               }}
             >
               {/* HEADER */}
@@ -2769,9 +2770,8 @@ export default function HotelDetailPage() {
 
                   {/* COUPON CODES CARD */}
                   <div
-                    className="card"
+                    className="card price-breakup-card"
                     style={{
-                      padding: "24px",
                       borderRadius: "var(--radius-lg)",
                     }}
                   >
@@ -2811,6 +2811,7 @@ export default function HotelDetailPage() {
                         placeholder="HAVE A COUPON CODE?"
                         style={{
                           flex: 1,
+                          minWidth: 0,
                           textTransform: "uppercase",
                           fontSize: "0.85rem",
                         }}
