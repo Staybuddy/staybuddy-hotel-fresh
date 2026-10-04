@@ -1069,6 +1069,114 @@ export default function AdminDashboard() {
                     })}
                   </div>
                 </div>
+                </div>
+
+                {/* Additional Settings */}
+                <div style={{ background: 'white', padding: 24, borderRadius: 16, border: '1px solid #e2e8f0' }}>
+                  <h3 style={{ fontSize: '1.1rem', marginBottom: 16, color: '#0f172a' }}>Additional Settings & Contact Info</h3>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#64748b', marginBottom: 6 }}>Star Rating</label>
+                      <input type="number" min="1" max="5" value={extranetModal.starRating || 3} onChange={e => setExtranetModal({...extranetModal, starRating: Number(e.target.value)})} style={{ width: '100%', padding: '10px 14px', borderRadius: 8, border: '1px solid #cbd5e1' }} />
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#64748b', marginBottom: 6 }}>Total Property Rooms</label>
+                      <input type="number" value={extranetModal.totalPropertyRooms || 10} onChange={e => setExtranetModal({...extranetModal, totalPropertyRooms: Number(e.target.value)})} style={{ width: '100%', padding: '10px 14px', borderRadius: 8, border: '1px solid #cbd5e1' }} />
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#64748b', marginBottom: 6 }}>Contact Name</label>
+                      <input type="text" value={extranetModal.contactName || ''} onChange={e => setExtranetModal({...extranetModal, contactName: e.target.value})} style={{ width: '100%', padding: '10px 14px', borderRadius: 8, border: '1px solid #cbd5e1' }} />
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#64748b', marginBottom: 6 }}>Contact Phone</label>
+                      <input type="text" value={extranetModal.contactPhone || ''} onChange={e => setExtranetModal({...extranetModal, contactPhone: e.target.value})} style={{ width: '100%', padding: '10px 14px', borderRadius: 8, border: '1px solid #cbd5e1' }} />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Rooms Management */}
+                <div style={{ background: 'white', padding: 24, borderRadius: 16, border: '1px solid #e2e8f0' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                    <h3 style={{ fontSize: '1.1rem', color: '#0f172a', margin: 0 }}>Rooms Management</h3>
+                    <button type="button" onClick={() => {
+                      const newRoom = { id: Date.now().toString(), type: 'Standard Room', priceDouble: 1000, priceSingle: 1000, b2bPrice: 800, maxGuests: 2, totalRooms: 5, staybuddyAllocation: 5, ratePlan: 'EP' };
+                      setExtranetModal({...extranetModal, rooms: [...(extranetModal.rooms || []), newRoom]});
+                    }} style={{ background: 'var(--brand-100)', color: 'var(--brand-600)', border: 'none', padding: '6px 12px', borderRadius: 8, cursor: 'pointer', fontWeight: 600, fontSize: '0.8rem' }}>+ Add Room</button>
+                  </div>
+                  
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                    {(extranetModal.rooms || []).map((room: any, rIdx: number) => (
+                      <div key={room.id || rIdx} style={{ padding: 16, border: '1px solid #e2e8f0', borderRadius: 12, background: '#f8fafc' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
+                          <h4 style={{ margin: 0, fontSize: '1rem' }}>Room {rIdx + 1}</h4>
+                          <button type="button" onClick={() => {
+                            const updatedRooms = extranetModal.rooms.filter((_: any, idx: number) => idx !== rIdx);
+                            setExtranetModal({...extranetModal, rooms: updatedRooms});
+                          }} style={{ color: 'red', background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 600 }}>Remove</button>
+                        </div>
+                        
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
+                          <div>
+                            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: '#64748b', marginBottom: 4 }}>Room Type</label>
+                            <input type="text" value={room.type || ''} onChange={e => {
+                              const updatedRooms = [...extranetModal.rooms];
+                              updatedRooms[rIdx].type = e.target.value;
+                              setExtranetModal({...extranetModal, rooms: updatedRooms});
+                            }} style={{ width: '100%', padding: '8px 12px', borderRadius: 6, border: '1px solid #cbd5e1', fontSize: '0.9rem' }} />
+                          </div>
+                          <div>
+                            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: '#64748b', marginBottom: 4 }}>B2C Price (Double)</label>
+                            <input type="number" value={room.priceDouble || ''} onChange={e => {
+                              const updatedRooms = [...extranetModal.rooms];
+                              updatedRooms[rIdx].priceDouble = Number(e.target.value);
+                              setExtranetModal({...extranetModal, rooms: updatedRooms});
+                            }} style={{ width: '100%', padding: '8px 12px', borderRadius: 6, border: '1px solid #cbd5e1', fontSize: '0.9rem' }} />
+                          </div>
+                          <div>
+                            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: '#64748b', marginBottom: 4 }}>B2B Price (Double)</label>
+                            <input type="number" value={room.b2bPrice || ''} onChange={e => {
+                              const updatedRooms = [...extranetModal.rooms];
+                              updatedRooms[rIdx].b2bPrice = Number(e.target.value);
+                              setExtranetModal({...extranetModal, rooms: updatedRooms});
+                            }} style={{ width: '100%', padding: '8px 12px', borderRadius: 6, border: '1px solid #cbd5e1', fontSize: '0.9rem' }} />
+                          </div>
+                          <div>
+                            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: '#64748b', marginBottom: 4 }}>Staybuddy Allocation</label>
+                            <input type="number" value={room.staybuddyAllocation || ''} onChange={e => {
+                              const updatedRooms = [...extranetModal.rooms];
+                              updatedRooms[rIdx].staybuddyAllocation = Number(e.target.value);
+                              setExtranetModal({...extranetModal, rooms: updatedRooms});
+                            }} style={{ width: '100%', padding: '8px 12px', borderRadius: 6, border: '1px solid #cbd5e1', fontSize: '0.9rem' }} />
+                          </div>
+                          <div>
+                            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: '#64748b', marginBottom: 4 }}>Rate Plan</label>
+                            <select value={room.ratePlan || 'EP'} onChange={e => {
+                              const updatedRooms = [...extranetModal.rooms];
+                              updatedRooms[rIdx].ratePlan = e.target.value;
+                              setExtranetModal({...extranetModal, rooms: updatedRooms});
+                            }} style={{ width: '100%', padding: '8px 12px', borderRadius: 6, border: '1px solid #cbd5e1', fontSize: '0.9rem' }}>
+                              <option value="EP">EP (Room Only)</option>
+                              <option value="CP">CP (Room + Breakfast)</option>
+                              <option value="MAP">MAP (Room + 2 Meals)</option>
+                              <option value="AP">AP (Room + All Meals)</option>
+                            </select>
+                          </div>
+                          <div>
+                            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: '#64748b', marginBottom: 4 }}>Max Guests</label>
+                            <input type="number" value={room.maxGuests || 2} onChange={e => {
+                              const updatedRooms = [...extranetModal.rooms];
+                              updatedRooms[rIdx].maxGuests = Number(e.target.value);
+                              setExtranetModal({...extranetModal, rooms: updatedRooms});
+                            }} style={{ width: '100%', padding: '8px 12px', borderRadius: 6, border: '1px solid #cbd5e1', fontSize: '0.9rem' }} />
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                    {(!extranetModal.rooms || extranetModal.rooms.length === 0) && (
+                      <p style={{ color: '#64748b', fontSize: '0.9rem', textAlign: 'center', margin: '20px 0' }}>No rooms added yet. Click "+ Add Room" to create one.</p>
+                    )}
+                  </div>
+                </div>
                 
                 <div style={{ position: 'sticky', bottom: 0, background: '#f8fafc', padding: '16px 0', borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'flex-end', gap: 16 }}>
                   <button type="button" onClick={() => setExtranetModal(null)} className="btn btn-outline" style={{ background: 'white' }}>Cancel</button>

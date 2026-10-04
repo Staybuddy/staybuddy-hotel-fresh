@@ -111,7 +111,7 @@ export async function POST(request: NextRequest) {
     const hotelRef = db.collection('hotels').doc();
     const counterRef = db.collection('metadata').doc('counters');
 
-    let hotelIdString = 'SB-H-001';
+    let hotelIdString = 'SBHO-001';
     try {
       await db.runTransaction(async (t) => {
         const doc = await t.get(counterRef);
@@ -122,11 +122,11 @@ export async function POST(request: NextRequest) {
         } else {
           t.set(counterRef, { hotelCount: count });
         }
-        hotelIdString = `SB-H-${count.toString().padStart(3, '0')}`;
+        hotelIdString = `SBHO-${count.toString().padStart(3, '0')}`;
       });
     } catch (e) {
       console.error('Hotel counter transaction failed, falling back', e);
-      hotelIdString = `SB-H-${Math.floor(Math.random() * 900) + 100}`;
+      hotelIdString = `SBHO-${Math.floor(Math.random() * 900) + 100}`;
     }
 
     const hotel = {
