@@ -5,7 +5,6 @@ import Link from "next/link";
 import { useSession } from "next-auth/react";
 import Navbar from "@/components/Navbar";
 import DateRangePicker from "@/components/DateRangePicker";
-import ReviewSection from "./ReviewSection";
 import Image from "next/image";
 
 const formatDate = (dateString: string | null) => {
@@ -1679,14 +1678,11 @@ export default function HotelDetailPage() {
 
               {/* BODY CONTAINER */}
               <div
+                className="review-booking-grid"
                 style={{
                   width: "100%",
                   maxWidth: "1100px",
                   padding: "32px 24px",
-                  display: "grid",
-                  gridTemplateColumns: "1fr 380px",
-                  gap: "32px",
-                  alignItems: "start",
                 }}
               >
                 {/* LEFT COLUMN */}
@@ -2555,7 +2551,7 @@ export default function HotelDetailPage() {
                           gap: 8,
                         }}
                       >
-                        <span>✅</span> Logged in as {session.user.email || (session.user as any)?.phone || session.user.name}.
+                        <span>✅</span> Logged in as {session?.user?.email || (session?.user as any)?.phone || session?.user?.name}.
                         Traveller details prefilled & secret deals active!
                       </div>
                     )}

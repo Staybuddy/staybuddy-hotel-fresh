@@ -593,3 +593,18 @@ tbody tr:hover { background: var(--bg-secondary); }
     z-index: 1000 !important;
   }
 }
+
+/* ===== REVIEW BOOKING GRID ===== */
+.review-booking-grid {
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  gap: 32px;
+  align-items: start;
+}
+
+@media (max-width: 1024px) {
+  .review-booking-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+}
