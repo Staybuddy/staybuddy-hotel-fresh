@@ -46,12 +46,12 @@ export default function HotelDetailPage() {
   const [activeImg, setActiveImg] = useState(0);
   const [selectedRoom, setSelectedRoom] = useState<any>(null);
   const [bookingData, setBookingData] = useState({
-    checkIn: "",
-    checkOut: "",
+    checkIn: searchParams.get("checkIn") || "",
+    checkOut: searchParams.get("checkOut") || "",
     guests: "1",
-    rooms: 1,
-    adults: 2,
-    children: 0,
+    rooms: parseInt(searchParams.get("rooms") || "1", 10),
+    adults: parseInt(searchParams.get("adults") || "2", 10),
+    children: parseInt(searchParams.get("children") || "0", 10),
     guestFirstName: "",
     guestLastName: "",
     guestEmail: "",
@@ -88,19 +88,7 @@ export default function HotelDetailPage() {
     if (id) fetchHotelData();
   }, [id]);
 
-  const searchParamsInitialized = useRef(false);
-  useEffect(() => {
-    if (!searchParamsInitialized.current) {
-      setBookingData((p) => ({
-        ...p,
-        checkIn: searchParams.get("checkIn") || "",
-        checkOut: searchParams.get("checkOut") || "",
-        adults: parseInt(searchParams.get("adults") || "2"),
-        rooms: parseInt(searchParams.get("rooms") || "1"),
-      }));
-      searchParamsInitialized.current = true;
-    }
-  }, [searchParams]);
+
 
   useEffect(() => {
     if (session?.user) {

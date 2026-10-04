@@ -38,9 +38,9 @@ function HotelSearch() {
     propertyType: '',
     minRating: '',
     sortBy: 'rating',
-    rooms: 1,
-    adults: 2,
-    children: 0,
+    rooms: parseInt(searchParams.get('rooms') || '1', 10),
+    adults: parseInt(searchParams.get('adults') || '2', 10),
+    children: parseInt(searchParams.get('children') || '0', 10),
   });
 
   const [showDatePicker, setShowDatePicker] = useState(false);
