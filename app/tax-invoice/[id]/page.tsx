@@ -64,16 +64,11 @@ export default async function TaxInvoicePage({ params }: { params: Promise<{ id:
           
           {/* Header Row */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px' }}>
-            <div style={{ width: '33%' }}>
+            <div style={{ width: '50%' }}>
               <h2 style={{ margin: '0', fontSize: '24px', color: '#111827', fontWeight: 800, textTransform: 'uppercase' }}>Tax Invoice</h2>
             </div>
-            <div style={{ width: '33%', textAlign: 'center' }}>
+            <div style={{ width: '50%', textAlign: 'right' }}>
               <h1 style={{ margin: 0, fontSize: '36px', color: '#ea580c', fontWeight: 900, letterSpacing: '-1px' }}>StayBuddy.</h1>
-            </div>
-            <div style={{ width: '33%', textAlign: 'right', fontSize: '10px', color: '#111827', fontWeight: 600 }}>
-              StayBuddy<br/>
-              Hyderabad, Telangana<br/>
-              India
             </div>
           </div>
 

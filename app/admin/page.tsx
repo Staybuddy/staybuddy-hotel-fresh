@@ -29,7 +29,7 @@ export default function AdminDashboard() {
   const [taxInvoices, setTaxInvoices] = useState<any[]>([]);
   const [showCreateInvoice, setShowCreateInvoice] = useState(false);
   const [newInvoiceData, setNewInvoiceData] = useState({ 
-    guestName: '', companyName: '', gstNumber: '', address: '', bookingId: '', placeOfSupply: '',
+    guestName: '', companyName: '', gstNumber: '', address: '', bookingId: '', placeOfSupply: 'Telangana',
     checkInDate: '', checkOutDate: '', noOfNights: '', noOfRooms: '1', noOfGuests: '1', totalAmount: '', 
     invoiceNo: `INV-${Math.floor(100000 + Math.random() * 900000)}`, 
     invoiceDate: new Date().toISOString().split('T')[0] 
@@ -184,7 +184,7 @@ export default function AdminDashboard() {
     });
     setShowCreateInvoice(false);
     setNewInvoiceData({ 
-      guestName: '', companyName: '', gstNumber: '', address: '', bookingId: '', placeOfSupply: '',
+      guestName: '', companyName: '', gstNumber: '', address: '', bookingId: '', placeOfSupply: 'Telangana',
       checkInDate: '', checkOutDate: '', noOfNights: '', noOfRooms: '1', noOfGuests: '1', totalAmount: '', 
       invoiceNo: `INV-${Math.floor(100000 + Math.random() * 900000)}`, 
       invoiceDate: new Date().toISOString().split('T')[0] 
