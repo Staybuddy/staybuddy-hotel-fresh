@@ -373,17 +373,26 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
       </div>
 
       {/* SEARCH BAR SECTION */}
-      <section style={{ paddingBottom: '20px', paddingTop: '24px', background: 'var(--bg-secondary)', marginTop: '-8px' }}>
-        <div className="container hero-section-container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '0 16px' }}>
-          
-          {searchData.propertyType && renderSearchBar()}
-          {searchError && (
-            <div style={{ marginTop: 12, color: 'white', background: '#ef4444', padding: '6px 16px', borderRadius: 'var(--radius-full)', fontSize: '0.9rem', fontWeight: 600, animation: 'fadeIn 0.3s ease' }}>
-              {searchError}
-            </div>
-          )}
-        </div>
-      </section>
+      <div style={{
+        maxHeight: searchData.propertyType ? '1000px' : '0px',
+        opacity: searchData.propertyType ? 1 : 0,
+        overflow: 'hidden',
+        transition: 'max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease-in-out',
+        background: 'var(--bg-secondary)',
+        marginTop: '-8px'
+      }}>
+        <section style={{ paddingBottom: '20px', paddingTop: '24px' }}>
+          <div className="container hero-section-container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '0 16px' }}>
+            
+            {searchData.propertyType && renderSearchBar()}
+            {searchError && (
+              <div style={{ marginTop: 12, color: 'white', background: '#ef4444', padding: '6px 16px', borderRadius: 'var(--radius-full)', fontSize: '0.9rem', fontWeight: 600, animation: 'fadeIn 0.3s ease' }}>
+                {searchError}
+              </div>
+            )}
+          </div>
+        </section>
+      </div>
 
       {/* ===== TRENDING DESTINATIONS ===== */}
       <section style={{ padding: '20px 0 10px', background: 'var(--bg-secondary)' }}>
