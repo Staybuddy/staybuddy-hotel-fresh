@@ -27,12 +27,17 @@ export default function AdminDashboard() {
   const [partners, setPartners] = useState<any[]>([]);
   const [extranetModal, setExtranetModal] = useState<any>(null); // Hotel data for extranet edit
   const [taxInvoices, setTaxInvoices] = useState<any[]>([]);
+  const getLocalDateString = () => {
+    const today = new Date();
+    return today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
+  };
+
   const [showCreateInvoice, setShowCreateInvoice] = useState(false);
   const [newInvoiceData, setNewInvoiceData] = useState({ 
     guestName: '', companyName: '', gstNumber: '', address: '', bookingId: `NH${Math.floor(10000000000000 + Math.random() * 90000000000000)}`, placeOfSupply: 'Telangana',
     checkInDate: '', checkOutDate: '', noOfNights: '', noOfRooms: '1', noOfGuests: '1', totalAmount: '', 
     invoiceNo: `INV-${Math.floor(100000 + Math.random() * 900000)}`, 
-    invoiceDate: new Date().toISOString().split('T')[0] 
+    invoiceDate: getLocalDateString() 
   });
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({ totalHotels: 0, pendingHotels: 0, pendingPartners: 0, totalBookings: 0, totalRevenue: 0, totalProfit: 0, totalUsers: 0 });
@@ -187,7 +192,7 @@ export default function AdminDashboard() {
       guestName: '', companyName: '', gstNumber: '', address: '', bookingId: `NH${Math.floor(10000000000000 + Math.random() * 90000000000000)}`, placeOfSupply: 'Telangana',
       checkInDate: '', checkOutDate: '', noOfNights: '', noOfRooms: '1', noOfGuests: '1', totalAmount: '', 
       invoiceNo: `INV-${Math.floor(100000 + Math.random() * 900000)}`, 
-      invoiceDate: new Date().toISOString().split('T')[0] 
+      invoiceDate: getLocalDateString() 
     });
     setApproveLoading(null);
     fetchAll();
