@@ -682,3 +682,51 @@ tbody tr:hover { background: var(--bg-secondary); }
     padding: 10px !important;
   }
 }
+
+/* Admin Responsive */
+.admin-sidebar {
+  transition: transform 0.3s ease;
+}
+.admin-main {
+  padding: 40px;
+}
+.admin-menu-btn {
+  display: none;
+}
+.admin-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 999;
+}
+@media (max-width: 768px) {
+  .admin-sidebar {
+    position: fixed !important;
+    transform: translateX(-100%);
+    z-index: 1000;
+  }
+  .admin-sidebar.open {
+    transform: translateX(0);
+  }
+  .admin-main {
+    padding: 16px !important;
+    width: 100vw;
+  }
+  .admin-menu-btn {
+    display: block;
+    margin-bottom: 16px;
+    background: white;
+    border: 1px solid #e2e8f0;
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 1.2rem;
+    cursor: pointer;
+  }
+  .admin-main .fade-in {
+    zoom: 0.85;
+  }
+}

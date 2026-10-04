@@ -40,6 +40,7 @@ export default function AdminDashboard() {
   const [hasNewBookings, setHasNewBookings] = useState(false);
   const [selectedInvoiceHotel, setSelectedInvoiceHotel] = useState<any>(null);
   const [editingHotel, setEditingHotel] = useState<any>(null);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -200,8 +201,14 @@ export default function AdminDashboard() {
           50% { opacity: 0.3; }
         }
       `}} />
+      {/* Sidebar Overlay for Mobile */}
+      <div 
+        className="admin-overlay" 
+        style={{ display: isMobileMenuOpen ? 'block' : 'none' }}
+        onClick={() => setIsMobileMenuOpen(false)}
+      />
       {/* Sidebar */}
-      <aside className="sidebar" style={{ position: 'sticky', top: 0, height: '100vh', flexShrink: 0, width: 280, background: 'white', borderRight: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column' }}>
+      <aside className={`sidebar admin-sidebar ${isMobileMenuOpen ? 'open' : ''}`} style={{ position: 'sticky', top: 0, height: '100vh', flexShrink: 0, width: 280, background: 'white', borderRight: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column' }}>
         <div style={{ padding: '24px 20px', borderBottom: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', gap: 12 }}>
           <div style={{ width: 40, height: 40, borderRadius: 10, background: 'linear-gradient(135deg, #0ea5e9, #2563eb)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem', boxShadow: '0 4px 12px rgba(37,99,235,0.2)' }}>👑</div>
           <div>
@@ -212,7 +219,7 @@ export default function AdminDashboard() {
         <nav style={{ padding: '20px 12px', flex: 1 }}>
           <div style={{ fontSize: '0.7rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 12, paddingLeft: 12 }}>Management</div>
           {NAV.map(item => (
-            <button key={item.id} onClick={() => setActiveTab(item.id)} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 12, padding: '12px', borderRadius: 8, background: activeTab === item.id ? '#eff6ff' : 'transparent', color: activeTab === item.id ? '#2563eb' : '#475569', fontWeight: activeTab === item.id ? 700 : 500, border: 'none', cursor: 'pointer', transition: 'all 0.2s', marginBottom: 4 }}>
+            <button key={item.id} onClick={() => { setActiveTab(item.id); setIsMobileMenuOpen(false); }} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 12, padding: '12px', borderRadius: 8, background: activeTab === item.id ? '#eff6ff' : 'transparent', color: activeTab === item.id ? '#2563eb' : '#475569', fontWeight: activeTab === item.id ? 700 : 500, border: 'none', cursor: 'pointer', transition: 'all 0.2s', marginBottom: 4 }}>
               <span style={{ 
                 fontSize: '1.2rem', 
                 opacity: activeTab === item.id ? 1 : 0.7,
@@ -250,8 +257,11 @@ export default function AdminDashboard() {
       </aside>
 
       {/* Main Content */}
-      <main style={{ flex: 1, overflow: 'auto', padding: '40px' }}>
+      <main className="admin-main" style={{ flex: 1, overflow: 'auto', padding: '40px' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+          <button className="admin-menu-btn" onClick={() => setIsMobileMenuOpen(true)}>
+            ☰ Menu
+          </button>
 
           {/* ===== OVERVIEW ===== */}
           {activeTab === 'overview' && (
