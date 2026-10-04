@@ -1,7 +1,5 @@
 import HomeClient from '@/components/HomeClient';
 import { db } from '@/lib/firebaseAdmin';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 
 export const revalidate = 60; // Cache and revalidate every 60 seconds
 
@@ -62,13 +60,13 @@ async function getRecentReviews() {
   try {
     const reviewsSnap = await db.collection('reviews').get();
     
-    let allReviews = reviewsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() as any }))
+    const allReviews = reviewsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() as any }))
       .filter((r: any) => r.status === 'approved')
       .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
       .slice(0, 6);
     
     return Promise.all(allReviews.map(async (data: any) => {
-      let customerName = data.guestName || 'Anonymous';
+      const customerName = data.guestName || 'Anonymous';
       let hotelName = 'StayBuddy Hotel';
       
       // Fetch hotel name
@@ -78,7 +76,7 @@ async function getRecentReviews() {
       }
       
       return {
-        _id: doc.id,
+        _id: data.id,
         rating: data.rating || 5,
         title: data.title || 'Great stay!',
         comment: data.comment || '',
