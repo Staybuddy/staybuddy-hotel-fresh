@@ -989,7 +989,7 @@ export default function AdminDashboard() {
                 updateHotelStatus(extranetModal._id, extranetModal);
                 setExtranetModal(null);
                 alert('Property updated successfully!');
-              }} style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
+              }} style={{ display: 'flex', flexDirection: 'column', gap: 32, paddingBottom: 80 }}>
                 
                 {/* Basic Info */}
                 <div style={{ background: 'white', padding: 24, borderRadius: 16, border: '1px solid #e2e8f0' }}>
