@@ -121,14 +121,16 @@ export async function POST(request: NextRequest) {
     if (nights < 1) return NextResponse.json({ error: 'Check-out must be after check-in' }, { status: 400 });
 
     let basePartnerPrice = room.priceDouble || room.priceSingle || room.priceTriple || 0;
-    if (guests >= 3 && room.priceTriple) {
-      basePartnerPrice = room.priceTriple;
-    } else if (guests === 1 && room.priceSingle) {
+    if (body.occupancy === 'single' && room.priceSingle) {
       basePartnerPrice = room.priceSingle;
+    } else if (body.occupancy === 'triple' && room.priceTriple) {
+      basePartnerPrice = room.priceTriple;
+    } else if (body.occupancy === 'double' && room.priceDouble) {
+      basePartnerPrice = room.priceDouble;
     }
     
-    const margin = hotelData?.marginPercentage || 0;
-    const clientPrice = Math.round(basePartnerPrice * (1 + margin / 100));
+    // In the frontend we removed the margin override, so client price is equal to base partner price
+    const clientPrice = basePartnerPrice;
     const totalPrice = Math.round(nights * clientPrice * 1.05);
     const totalPartnerPrice = Math.round(nights * basePartnerPrice);
 

@@ -178,6 +178,7 @@ export default function HotelDetailPage() {
         customerId: (session.user as any).id,
         hotelId: id,
         roomId: selectedRoom._id,
+        occupancy: occupancy,
         checkIn: bookingData.checkIn,
         checkOut: bookingData.checkOut,
         guests: parseInt(bookingData.guests),
