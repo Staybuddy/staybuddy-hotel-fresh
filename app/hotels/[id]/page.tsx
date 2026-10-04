@@ -686,6 +686,7 @@ export default function HotelDetailPage() {
                       }}
                     />
                     <div
+                      className="responsive-popup"
                       style={{
                         position: "absolute",
                         top: "100%",
@@ -759,6 +760,7 @@ export default function HotelDetailPage() {
                       onClick={() => setShowGuestPicker(false)}
                     />
                     <div
+                      className="responsive-popup"
                       style={{
                         position: "absolute",
                         top: "100%",
