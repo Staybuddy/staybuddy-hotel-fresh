@@ -29,7 +29,7 @@ export default function AdminDashboard() {
   const [taxInvoices, setTaxInvoices] = useState<any[]>([]);
   const [showCreateInvoice, setShowCreateInvoice] = useState(false);
   const [newInvoiceData, setNewInvoiceData] = useState({ 
-    guestName: '', companyName: '', gstNumber: '', address: '', 
+    guestName: '', companyName: '', gstNumber: '', address: '', bookingId: '', placeOfSupply: '',
     checkInDate: '', checkOutDate: '', noOfNights: '', noOfRooms: '1', noOfGuests: '1', totalAmount: '', 
     invoiceNo: `INV-${Math.floor(100000 + Math.random() * 900000)}`, 
     invoiceDate: new Date().toISOString().split('T')[0] 
@@ -184,7 +184,7 @@ export default function AdminDashboard() {
     });
     setShowCreateInvoice(false);
     setNewInvoiceData({ 
-      guestName: '', companyName: '', gstNumber: '', address: '', 
+      guestName: '', companyName: '', gstNumber: '', address: '', bookingId: '', placeOfSupply: '',
       checkInDate: '', checkOutDate: '', noOfNights: '', noOfRooms: '1', noOfGuests: '1', totalAmount: '', 
       invoiceNo: `INV-${Math.floor(100000 + Math.random() * 900000)}`, 
       invoiceDate: new Date().toISOString().split('T')[0] 
@@ -742,6 +742,18 @@ export default function AdminDashboard() {
                   <input type="text" value={newInvoiceData.address} onChange={e => setNewInvoiceData({...newInvoiceData, address: e.target.value})} style={{ width: '100%', padding: '10px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '0.95rem' }} />
                 </div>
               </div>
+
+              <div className="admin-form-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: '#475569', marginBottom: 8 }}>Booking ID (Optional)</label>
+                  <input type="text" value={newInvoiceData.bookingId} onChange={e => setNewInvoiceData({...newInvoiceData, bookingId: e.target.value})} style={{ width: '100%', padding: '10px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '0.95rem' }} />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: '#475569', marginBottom: 8 }}>Place of Supply (State)</label>
+                  <input type="text" value={newInvoiceData.placeOfSupply} onChange={e => setNewInvoiceData({...newInvoiceData, placeOfSupply: e.target.value})} style={{ width: '100%', padding: '10px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '0.95rem' }} />
+                </div>
+              </div>
+
 
               <div className="admin-form-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 16 }}>
                 <div>

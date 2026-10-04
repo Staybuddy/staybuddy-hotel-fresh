@@ -63,24 +63,57 @@ export default async function TaxInvoicePage({ params }: { params: Promise<{ id:
         <div style={{ position: 'relative', zIndex: 1 }}>
           
           {/* Header Row */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '2px solid #ea580c', paddingBottom: '20px', marginBottom: '25px', alignItems: 'center' }}>
-            <div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px' }}>
+            <div style={{ width: '33%' }}>
+              <h2 style={{ margin: '0', fontSize: '24px', color: '#111827', fontWeight: 800, textTransform: 'uppercase' }}>Tax Invoice</h2>
+            </div>
+            <div style={{ width: '33%', textAlign: 'center' }}>
               <h1 style={{ margin: 0, fontSize: '36px', color: '#ea580c', fontWeight: 900, letterSpacing: '-1px' }}>StayBuddy.</h1>
             </div>
-            <div style={{ textAlign: 'right' }}>
-              <h2 style={{ margin: '0 0 8px 0', fontSize: '22px', color: '#111827', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px' }}>Tax Invoice</h2>
-              <table style={{ width: '100%', fontSize: '10px', textAlign: 'right' }}>
-                <tbody>
-                  <tr>
-                    <td style={{ color: '#6b7280', paddingRight: '15px' }}>Invoice No:</td>
-                    <td style={{ fontWeight: 700, color: '#111827' }}>{invoiceNum}</td>
-                  </tr>
-                  <tr>
-                    <td style={{ color: '#6b7280', paddingRight: '15px' }}>Invoice Date:</td>
-                    <td style={{ fontWeight: 700, color: '#111827' }}>{invoiceDate}</td>
-                  </tr>
-                </tbody>
-              </table>
+            <div style={{ width: '33%', textAlign: 'right', fontSize: '10px', color: '#111827', fontWeight: 600 }}>
+              StayBuddy<br/>
+              Hyderabad, Telangana<br/>
+              India
+            </div>
+          </div>
+
+          {/* Invoice Details */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', marginBottom: '30px', borderBottom: '1px solid #e5e7eb', paddingBottom: '20px' }}>
+            <div style={{ width: '50%' }}>
+              <div style={{ marginBottom: '10px' }}>
+                <div style={{ color: '#6b7280', fontSize: '9px' }}>Booking ID</div>
+                <div style={{ fontWeight: 700, color: '#111827' }}>{inv.bookingId || 'N/A'}</div>
+              </div>
+              <div style={{ marginBottom: '10px' }}>
+                <div style={{ color: '#6b7280', fontSize: '9px' }}>Invoice No.</div>
+                <div style={{ fontWeight: 700, color: '#111827' }}>{invoiceNum}</div>
+              </div>
+              <div style={{ marginBottom: '10px' }}>
+                <div style={{ color: '#6b7280', fontSize: '9px' }}>Date</div>
+                <div style={{ fontWeight: 700, color: '#111827' }}>{invoiceDate}</div>
+              </div>
+              <div style={{ marginBottom: '10px' }}>
+                <div style={{ color: '#6b7280', fontSize: '9px' }}>Place of Supply</div>
+                <div style={{ fontWeight: 700, color: '#111827' }}>{inv.placeOfSupply || 'N/A'}</div>
+              </div>
+            </div>
+            <div style={{ width: '50%' }}>
+              <div style={{ marginBottom: '10px' }}>
+                <div style={{ color: '#6b7280', fontSize: '9px' }}>PAN</div>
+                <div style={{ fontWeight: 700, color: '#111827' }}>Not Available</div>
+              </div>
+              <div style={{ marginBottom: '10px' }}>
+                <div style={{ color: '#6b7280', fontSize: '9px' }}>HSN/SAC</div>
+                <div style={{ fontWeight: 700, color: '#111827' }}>998552</div>
+              </div>
+              <div style={{ marginBottom: '10px' }}>
+                <div style={{ color: '#6b7280', fontSize: '9px' }}>GSTIN</div>
+                <div style={{ fontWeight: 700, color: '#111827' }}>Not Available</div>
+              </div>
+              <div style={{ marginBottom: '10px' }}>
+                <div style={{ color: '#6b7280', fontSize: '9px' }}>Service Description</div>
+                <div style={{ fontWeight: 700, color: '#111827' }}>Reservation service for accommodation</div>
+              </div>
             </div>
           </div>
 
@@ -138,10 +171,9 @@ export default async function TaxInvoicePage({ params }: { params: Promise<{ id:
               <thead>
                 <tr style={{ backgroundColor: '#f9fafb', color: '#374151', textTransform: 'uppercase', fontSize: '10px' }}>
                   <th style={{ padding: '10px 12px', border: '1px solid #e5e7eb', textAlign: 'center', width: '5%' }}>Sl.</th>
-                  <th style={{ padding: '10px 12px', border: '1px solid #e5e7eb', textAlign: 'left', width: '35%' }}>Description of Service</th>
-                  <th style={{ padding: '10px 12px', border: '1px solid #e5e7eb', textAlign: 'center', width: '12%' }}>HSN / SAC</th>
-                  <th style={{ padding: '10px 12px', border: '1px solid #e5e7eb', textAlign: 'center', width: '12%' }}>Quantity</th>
-                  <th style={{ padding: '10px 12px', border: '1px solid #e5e7eb', textAlign: 'right', width: '18%' }}>Rate (₹)</th>
+                  <th style={{ padding: '10px 12px', border: '1px solid #e5e7eb', textAlign: 'left', width: '47%' }}>Description of Service</th>
+                  <th style={{ padding: '10px 12px', border: '1px solid #e5e7eb', textAlign: 'center', width: '15%' }}>Quantity</th>
+                  <th style={{ padding: '10px 12px', border: '1px solid #e5e7eb', textAlign: 'right', width: '15%' }}>Per Day Tariff (₹)</th>
                   <th style={{ padding: '10px 12px', border: '1px solid #e5e7eb', textAlign: 'right', width: '18%' }}>Taxable Value (₹)</th>
                 </tr>
               </thead>
@@ -152,7 +184,6 @@ export default async function TaxInvoicePage({ params }: { params: Promise<{ id:
                     <strong>Accommodation Charges</strong><br/>
                     <span style={{ color: '#6b7280', fontSize: '9px' }}>{inv.description || 'Room Only (Base Rate)'}</span>
                   </td>
-                  <td style={{ padding: '12px', border: '1px solid #e5e7eb', textAlign: 'center', color: '#4b5563' }}>998552</td>
                   <td style={{ padding: '12px', border: '1px solid #e5e7eb', textAlign: 'center', color: '#4b5563' }}>{(inv.noOfRooms || 1)} Room(s) × {inv.noOfNights || 1} Night(s)</td>
                   <td style={{ padding: '12px', border: '1px solid #e5e7eb', textAlign: 'right', color: '#4b5563' }}>{(inv.tariffPerNight || basePrice).toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
                   <td style={{ padding: '12px', border: '1px solid #e5e7eb', textAlign: 'right', color: '#111827', fontWeight: 600 }}>{basePrice.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
