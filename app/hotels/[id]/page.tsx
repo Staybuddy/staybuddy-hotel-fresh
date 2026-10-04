@@ -1627,7 +1627,7 @@ export default function HotelDetailPage() {
                   display: "flex",
                   justifyContent: "center",
                   position: "sticky",
-                  top: 66,
+                  top: 0,
                   zIndex: 10,
                   boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.05)",
                 }}
