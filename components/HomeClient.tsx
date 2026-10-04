@@ -26,12 +26,25 @@ const AMENITY_ICONS: Record<string, string> = {
   'Restaurant': '🍽️', 'Parking': '🅿️', 'AC': '❄️', 'Bar': '🍸',
 };
 
-export default function HomeClient({ initialHotels, recentReviews = [], userWishlistIds = [] }: { initialHotels: any[], recentReviews?: any[], userWishlistIds?: string[] }) {
+export default function HomeClient({ initialHotels, recentReviews = [] }: { initialHotels: any[], recentReviews?: any[] }) {
   const router = useRouter();
   const [searchData, setSearchData] = useState({ propertyType: '', location: '', checkIn: '', checkOut: '', rooms: 1, adults: 2, children: 0 });
   const [hotels, setHotels] = useState<any[]>(initialHotels);
   const [loading, setLoading] = useState(false);
   const [searchError, setSearchError] = useState('');
+  const [userWishlistIds, setUserWishlistIds] = useState<string[]>([]);
+  
+  // Fetch Wishlist on load
+  useEffect(() => {
+    fetch('/api/wishlist')
+      .then(res => res.json())
+      .then(data => {
+        if (data.wishlistIds) {
+          setUserWishlistIds(data.wishlistIds);
+        }
+      })
+      .catch(e => console.error('Wishlist fetch error', e));
+  }, []);
   
   // Date Picker State
   const [showStickySearch, setShowStickySearch] = useState(false);

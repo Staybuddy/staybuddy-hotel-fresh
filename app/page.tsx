@@ -97,18 +97,5 @@ export default async function HomePage() {
   const initialHotels = await getFeaturedHotels();
   const recentReviews = await getRecentReviews();
   
-  let wishlistIds: string[] = [];
-  try {
-    const session = await getServerSession(authOptions);
-    if (session?.user?.id) {
-      const userDoc = await db.collection('users').doc(session.user.id).get();
-      if (userDoc.exists) {
-        wishlistIds = userDoc.data()?.wishlist || [];
-      }
-    }
-  } catch(e) {
-    console.error('Failed to get user wishlist', e);
-  }
-
-  return <HomeClient initialHotels={initialHotels} recentReviews={recentReviews} userWishlistIds={wishlistIds} />;
+  return <HomeClient initialHotels={initialHotels} recentReviews={recentReviews} />;
 }

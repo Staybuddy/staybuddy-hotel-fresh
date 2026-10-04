@@ -3,7 +3,6 @@ import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Navbar from '@/components/Navbar';
-import Footer from '@/components/Footer';
 import Link from 'next/link';
 
 export default function WishlistPage() {
@@ -11,16 +10,6 @@ export default function WishlistPage() {
   const router = useRouter();
   const [hotels, setHotels] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.push('/login');
-      return;
-    }
-    if (status === 'authenticated') {
-      fetchWishlist();
-    }
-  }, [status]);
 
   async function fetchWishlist() {
     try {
@@ -35,6 +24,16 @@ export default function WishlistPage() {
       setLoading(false);
     }
   }
+
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      router.push('/login');
+      return;
+    }
+    if (status === 'authenticated') {
+      fetchWishlist();
+    }
+  }, [status, router]);
 
   async function removeWishlist(hotelId: string) {
     // Optimistic removal
@@ -57,7 +56,6 @@ export default function WishlistPage() {
         <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div className="spinner" style={{ width: 40, height: 40, border: '4px solid var(--brand-100)', borderTopColor: 'var(--brand-500)', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
         </div>
-        <Footer />
       </>
     );
   }
@@ -77,7 +75,7 @@ export default function WishlistPage() {
             <div style={{ textAlign: 'center', padding: '100px 20px', background: 'white', borderRadius: 'var(--radius-xl)', boxShadow: '0 10px 30px rgba(0,0,0,0.02)' }}>
               <div style={{ fontSize: '4rem', marginBottom: 20 }}>💔</div>
               <h2 style={{ fontSize: '1.5rem', color: 'var(--text-primary)', marginBottom: 10 }}>Your wishlist is empty</h2>
-              <p style={{ color: 'var(--text-secondary)', marginBottom: 30 }}>Looks like you haven't saved any properties yet.</p>
+              <p style={{ color: 'var(--text-secondary)', marginBottom: 30 }}>Looks like you haven&apos;t saved any properties yet.</p>
               <Link href="/" className="btn btn-primary" style={{ padding: '12px 32px', borderRadius: 'var(--radius-lg)' }}>
                 Explore Hotels
               </Link>
@@ -129,7 +127,6 @@ export default function WishlistPage() {
           )}
         </div>
       </main>
-      <Footer />
     </>
   );
 }
