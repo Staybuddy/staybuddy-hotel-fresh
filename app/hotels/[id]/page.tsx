@@ -88,6 +88,21 @@ export default function HotelDetailPage() {
     if (id) fetchHotelData();
   }, [id]);
 
+  useEffect(() => {
+    const checkInParam = searchParams.get("checkIn");
+    const checkOutParam = searchParams.get("checkOut");
+    if (checkInParam && !bookingData.checkIn) {
+      setBookingData(p => ({
+        ...p,
+        checkIn: checkInParam,
+        checkOut: checkOutParam || p.checkOut,
+        adults: searchParams.has("adults") ? parseInt(searchParams.get("adults") as string, 10) : p.adults,
+        rooms: searchParams.has("rooms") ? parseInt(searchParams.get("rooms") as string, 10) : p.rooms,
+        children: searchParams.has("children") ? parseInt(searchParams.get("children") as string, 10) : p.children,
+      }));
+    }
+  }, [searchParams, bookingData.checkIn]);
+
 
 
   useEffect(() => {

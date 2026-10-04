@@ -47,6 +47,21 @@ function HotelSearch() {
   const [activeDateSelection, setActiveDateSelection] = useState<'checkIn' | 'checkOut'>('checkIn');
   const [showGuestPicker, setShowGuestPicker] = useState(false);
 
+  useEffect(() => {
+    const checkInParam = searchParams.get("checkIn");
+    if (checkInParam && !filters.checkIn) {
+      setFilters(p => ({
+        ...p,
+        city: searchParams.get('city') || p.city,
+        checkIn: checkInParam,
+        checkOut: searchParams.get('checkOut') || p.checkOut,
+        rooms: searchParams.has('rooms') ? parseInt(searchParams.get('rooms') as string, 10) : p.rooms,
+        adults: searchParams.has('adults') ? parseInt(searchParams.get('adults') as string, 10) : p.adults,
+        children: searchParams.has('children') ? parseInt(searchParams.get('children') as string, 10) : p.children,
+      }));
+    }
+  }, [searchParams, filters.checkIn]);
+
   useEffect(() => { fetchHotels(); }, [filters, page]);
 
   async function fetchHotels() {
