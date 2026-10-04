@@ -2543,12 +2543,16 @@ export default function HotelDetailPage() {
                           fontSize: "0.9rem",
                           fontWeight: 600,
                           display: "flex",
-                          alignItems: "center",
+                          alignItems: "flex-start",
                           gap: 8,
+                          wordBreak: "break-word",
                         }}
                       >
-                        <span>✅</span> Logged in as {session?.user?.email || (session?.user as any)?.phone || session?.user?.name}.
-                        Traveller details prefilled & secret deals active!
+                        <span style={{ flexShrink: 0 }}>✅</span> 
+                        <div style={{ minWidth: 0 }}>
+                          Logged in as {session?.user?.email || (session?.user as any)?.phone || session?.user?.name}.
+                          Traveller details prefilled & secret deals active!
+                        </div>
                       </div>
                     )}
                   </div>
@@ -2563,9 +2567,8 @@ export default function HotelDetailPage() {
                   }}
                 >
                   <div
-                    className="card"
+                    className="card price-breakup-card"
                     style={{
-                      padding: "24px",
                       borderRadius: "var(--radius-lg)",
                     }}
                   >
@@ -2580,6 +2583,7 @@ export default function HotelDetailPage() {
                     </h3>
 
                     <div
+                      className="price-breakup-rows"
                       style={{
                         display: "flex",
                         flexDirection: "column",

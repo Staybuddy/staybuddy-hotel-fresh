@@ -640,3 +640,28 @@ tbody tr:hover { background: var(--bg-secondary); }
     gap: 16px;
   }
 }
+
+/* Price Breakup Adjustments */
+.price-breakup-card {
+  padding: 24px;
+}
+
+.price-breakup-rows > div {
+  flex-wrap: wrap;
+  column-gap: 8px;
+}
+
+@media (max-width: 768px) {
+  .price-breakup-card {
+    padding: 16px;
+  }
+  .price-breakup-rows > div > div {
+    font-size: 0.95rem !important;
+  }
+  .price-breakup-rows > div:last-child > div:first-child {
+    font-size: 1.1rem !important;
+  }
+  .price-breakup-rows > div:last-child > div:last-child {
+    font-size: 1.3rem !important;
+  }
+}
