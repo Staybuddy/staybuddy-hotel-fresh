@@ -699,7 +699,7 @@ export default function PartnerDashboard() {
                         </div>
                         <div className="card-body" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-6)' }}>
                           
-                          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: 'var(--space-4)' }}>
+                          <div className="partner-grid-3" style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: 'var(--space-4)' }}>
                             <div className="form-group">
                               <label className="form-label">Room Category <span className="required">*</span></label>
                               <input className="form-input" type="text" placeholder="e.g. Standard Room, Deluxe Sea View" value={room.type} onChange={e => {
@@ -730,7 +730,7 @@ export default function PartnerDashboard() {
 
                           <div>
                             <h4 style={{ fontSize: '0.9rem', marginBottom: 'var(--space-3)', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Pricing Configuration</h4>
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 'var(--space-4)' }}>
+                            <div className="partner-grid-5" style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 'var(--space-4)' }}>
                               <div className="form-group">
                                 <label className="form-label" style={{ fontSize: '0.75rem' }}>Single Price (₹) <span className="required">*</span></label>
                                 <input className="form-input" type="number" min="0" value={room.priceSingle} onChange={e => {
@@ -902,7 +902,7 @@ export default function PartnerDashboard() {
                   <label className="form-label">Description</label>
                   <textarea className="form-input form-textarea" style={{ minHeight: 80 }} placeholder="Room features and highlights..." value={roomForm.description} onChange={e => setRoomForm(p => ({ ...p, description: e.target.value }))} />
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 'var(--space-4)' }}>
+                <div className="partner-grid-4" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 'var(--space-4)' }}>
                   <div className="form-group">
                     <label className="form-label" style={{ fontSize: '0.75rem' }}>Single Price (₹) <span className="required">*</span></label>
                     <input className="form-input" type="number" min="0" value={roomForm.priceSingle} onChange={e => setRoomForm(p => ({ ...p, priceSingle: e.target.value }))} required />

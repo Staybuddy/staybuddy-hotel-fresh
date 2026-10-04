@@ -742,4 +742,22 @@ tbody tr:hover { background: var(--bg-secondary); }
   .invoice-container {
     zoom: 0.45;
   }
+  /* Partner Extranet responsive grids */
+  .partner-grid-5 {
+    grid-template-columns: 1fr 1fr !important;
+  }
+  .partner-grid-4 {
+    grid-template-columns: 1fr 1fr !important;
+  }
+  .partner-grid-3 {
+    grid-template-columns: 1fr !important;
+  }
+  /* Make all form inputs readable - no text cutoff */
+  .form-input {
+    font-size: 0.85rem !important;
+    min-width: 0 !important;
+  }
+  .form-label {
+    font-size: 0.78rem !important;
+  }
 }
