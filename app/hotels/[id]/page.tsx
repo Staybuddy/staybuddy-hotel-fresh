@@ -130,18 +130,12 @@ export default function HotelDetailPage() {
   }
 
   const getRoomPrice = (room: any) => {
-    let basePartnerPrice = room.priceDouble || room.priceSingle || room.priceTriple || 0;
-    if (bookingData.adults >= 3 && room.priceTriple) {
-      basePartnerPrice = room.priceTriple;
-    } else if (bookingData.adults === 1 && room.priceSingle) {
-      basePartnerPrice = room.priceSingle;
-    }
+    if (!room) return 0;
+    if (occupancy === 'single' && room.priceSingle) return room.priceSingle;
+    if (occupancy === 'triple' && room.priceTriple) return room.priceTriple;
+    if (occupancy === 'double' && room.priceDouble) return room.priceDouble;
     
-    // Apply B2C margin percentage if available
-    const margin = hotel?.marginPercentage || 0;
-    const clientPrice = basePartnerPrice * (1 + margin / 100);
-    
-    return Math.round(clientPrice);
+    return room.priceDouble || room.priceSingle || room.priceTriple || 0;
   };
 
   async function handleBooking() {
