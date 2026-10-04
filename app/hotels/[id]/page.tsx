@@ -181,13 +181,12 @@ export default function HotelDetailPage() {
         checkIn: bookingData.checkIn,
         checkOut: bookingData.checkOut,
         guests: parseInt(bookingData.guests),
-        guestName:
-          `${bookingData.guestFirstName} ${bookingData.guestLastName}`.trim(),
+        guestName: `${bookingData.guestFirstName} ${bookingData.guestLastName}`.trim(),
         guestEmail: bookingData.guestEmail,
         guestPhone: bookingData.guestPhone,
         specialRequests: bookingData.specialRequests,
-        status: 'confirmed',
-        paymentStatus: 'paid',
+        status: 'pending',
+        paymentStatus: 'pending',
         gstRegistrationNo: (bookingData as any).gstRegistrationNo,
         gstCompanyName: (bookingData as any).gstCompanyName,
         gstCompanyAddress: (bookingData as any).gstCompanyAddress,
@@ -195,14 +194,66 @@ export default function HotelDetailPage() {
     });
 
     const data = await res.json();
-    setBookingLoading(false);
-
     if (!res.ok) {
       setBookingError(data.error || "Booking failed");
+      setBookingLoading(false);
       return;
     }
-    setConfirmedBookingId(data.booking._id);
-    setBookingStep(2);
+
+    const orderRes = await fetch("/api/payments/create-order", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ bookingId: data.booking._id }),
+    });
+    
+    const orderData = await orderRes.json();
+    if (!orderRes.ok) {
+      setBookingError(orderData.error || "Failed to initiate payment");
+      setBookingLoading(false);
+      return;
+    }
+
+    const options = {
+      key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_dummy', 
+      amount: orderData.amount,
+      currency: "INR",
+      name: "StayBuddy",
+      description: `Booking at ${hotel.name}`,
+      order_id: orderData.id,
+      handler: async function (response: any) {
+        const verifyRes = await fetch('/api/payments/verify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            razorpay_order_id: response.razorpay_order_id,
+            razorpay_payment_id: response.razorpay_payment_id,
+            razorpay_signature: response.razorpay_signature,
+            bookingId: data.booking._id
+          })
+        });
+        const verifyData = await verifyRes.json();
+        if(verifyRes.ok) {
+           setConfirmedBookingId(data.booking._id);
+           setBookingStep(2);
+        } else {
+           setBookingError(verifyData.error || "Payment verification failed");
+        }
+        setBookingLoading(false);
+      },
+      prefill: {
+        name: `${bookingData.guestFirstName} ${bookingData.guestLastName}`.trim(),
+        email: bookingData.guestEmail,
+        contact: bookingData.guestPhone
+      },
+      theme: { color: "#2563eb" }
+    };
+
+    const rzp = new (window as any).Razorpay(options);
+    rzp.on('payment.failed', function (response: any){
+      setBookingError(response.error.description);
+      setBookingLoading(false);
+    });
+    rzp.open();
   }
 
   async function submitReview(e: React.FormEvent) {

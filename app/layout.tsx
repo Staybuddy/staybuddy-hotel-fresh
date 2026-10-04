@@ -9,6 +9,7 @@ import Providers from '@/components/Providers';
 import SplashScreen from '@/components/SplashScreen';
 import ReferralTracker from '@/components/ReferralTracker';
 import { Suspense } from 'react';
+import Script from 'next/script';
 
 export const metadata: Metadata = {
   title: 'StayBuddy — Find & Book Hotels',
@@ -25,6 +26,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body>
+        <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
         <Suspense fallback={null}>
           <ReferralTracker />
         </Suspense>
