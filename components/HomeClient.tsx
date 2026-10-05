@@ -343,8 +343,16 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
                   onClick={() => {
                     const isOpening = searchData.propertyType !== card.id;
                     setSearchData(p => ({ ...p, propertyType: isOpening ? card.id : '' }));
-                    if (isOpening && !searchData.location) {
-                      setTimeout(() => document.getElementById('location-search-trigger')?.click(), 300);
+                    
+                    if (isOpening) {
+                      if (window.scrollY > 200) {
+                        setShowStickySearch(true);
+                      }
+                      if (!searchData.location) {
+                        setTimeout(() => document.getElementById('location-search-trigger')?.click(), 300);
+                      }
+                    } else {
+                      setShowStickySearch(false);
                     }
                   }}
                   style={{
