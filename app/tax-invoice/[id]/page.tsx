@@ -100,7 +100,7 @@ export default async function TaxInvoicePage({ params }: { params: Promise<{ id:
               </div>
               <div style={{ marginBottom: '10px' }}>
                 <div style={{ color: '#6b7280', fontSize: '9px' }}>GSTIN</div>
-                <div style={{ fontWeight: 700, color: '#111827' }}>Not Available</div>
+                <div style={{ fontWeight: 700, color: '#111827' }}>{inv.gstNumber || 'Not Available'}</div>
               </div>
               <div style={{ marginBottom: '10px' }}>
                 <div style={{ color: '#6b7280', fontSize: '9px' }}>Service Description</div>
@@ -110,34 +110,42 @@ export default async function TaxInvoicePage({ params }: { params: Promise<{ id:
           </div>
 
           {/* Billing Details Grid */}
-          <div style={{ display: 'flex', gap: '30px', marginBottom: '30px' }}>
+          <div style={{ display: 'flex', gap: '30px', marginBottom: '30px', alignItems: 'stretch' }}>
             
             {/* Billed To */}
-            <div style={{ flex: 1 }}>
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
               <div style={{ backgroundColor: '#f9fafb', border: '1px solid #e5e7eb', padding: '6px 12px', fontSize: '10px', fontWeight: 700, color: '#374151', textTransform: 'uppercase', borderBottom: 'none' }}>
                 Billed To (Customer Details)
               </div>
-              <div style={{ border: '1px solid #e5e7eb', padding: '12px', height: '110px' }}>
-                <strong style={{ fontSize: '12px', color: '#111827', display: 'block', marginBottom: '4px' }}>{inv.companyName || inv.guestName || inv.customerName}</strong>
-                <div style={{ color: '#4b5563' }}>
-                  {inv.guestName || inv.customerName}<br/>
-                  {inv.address || 'Address not provided'}
+              <div style={{ border: '1px solid #e5e7eb', padding: '12px', flex: 1, minHeight: '120px', fontSize: '10px', lineHeight: '1.5' }}>
+                {inv.companyName && (
+                  <div style={{ marginBottom: '4px' }}>
+                    <strong style={{ fontSize: '11px', color: '#111827' }}>{inv.companyName}</strong>
+                  </div>
+                )}
+                <div style={{ color: '#111827', fontWeight: inv.companyName ? 600 : 700, fontSize: inv.companyName ? '10px' : '11px', marginBottom: '4px' }}>
+                  {inv.guestName || inv.customerName}
                 </div>
+                {inv.address && (
+                  <div style={{ color: '#4b5563', marginBottom: '6px', wordBreak: 'break-word', whiteSpace: 'pre-line' }}>
+                    {inv.address}
+                  </div>
+                )}
                 {inv.gstNumber && (
-                  <div style={{ marginTop: '8px', color: '#111827' }}>
-                    <strong>GSTIN:</strong> {inv.gstNumber}
+                  <div style={{ color: '#111827', marginTop: '6px' }}>
+                    <strong style={{ color: '#374151' }}>GSTIN:</strong> {inv.gstNumber}
                   </div>
                 )}
               </div>
             </div>
 
             {/* Stay Details */}
-            <div style={{ flex: 1 }}>
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
               <div style={{ backgroundColor: '#f9fafb', border: '1px solid #e5e7eb', padding: '6px 12px', fontSize: '10px', fontWeight: 700, color: '#374151', textTransform: 'uppercase', borderBottom: 'none' }}>
                 Stay Details
               </div>
-              <div style={{ border: '1px solid #e5e7eb', padding: '12px', height: '110px' }}>
-                <div style={{ marginTop: '12px', display: 'flex', justifyContent: 'space-between', fontSize: '10px', backgroundColor: '#f3f4f6', padding: '6px', borderRadius: '4px' }}>
+              <div style={{ border: '1px solid #e5e7eb', padding: '12px', flex: 1, minHeight: '120px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', backgroundColor: '#f3f4f6', padding: '8px 10px', borderRadius: '4px' }}>
                   <div>
                     <span style={{ color: '#6b7280' }}>Check-In:</span><br/>
                     <strong style={{ color: '#ea580c' }}>{inv.checkInDate ? formatDate(inv.checkInDate) : 'N/A'} (12 PM)</strong>
@@ -147,7 +155,7 @@ export default async function TaxInvoicePage({ params }: { params: Promise<{ id:
                     <strong style={{ color: '#ea580c' }}>{inv.checkOutDate ? formatDate(inv.checkOutDate) : 'N/A'} (11 AM)</strong>
                   </div>
                 </div>
-                <div style={{ marginTop: '10px', color: '#4b5563', fontSize: '10px', display: 'flex', justifyContent: 'space-between' }}>
+                <div style={{ marginTop: '10px', color: '#4b5563', fontSize: '10px', display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '6px' }}>
                   <span><strong>Duration:</strong> {inv.noOfNights || 1} Night(s)</span>
                   <span><strong>Rooms:</strong> {inv.noOfRooms || 1} ({inv.noOfGuests || 1} Guest{inv.noOfGuests > 1 ? 's' : ''})</span>
                   <span><strong>Tariff/Room/Night:</strong> <strong style={{ color: '#ea580c' }}>₹{(inv.tariffPerNight || basePrice).toLocaleString(undefined, {minimumFractionDigits: 2})}</strong></span>
