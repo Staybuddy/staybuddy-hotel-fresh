@@ -105,17 +105,37 @@ function HotelSearch() {
 
   return (
     <div>
+      <style>{`
+        @media (max-width: 1024px) {
+          .hotels-search-wrapper {
+            flex-direction: column !important;
+            gap: 8px !important;
+          }
+          .hotels-search-item {
+            width: 100% !important;
+            flex: 1 1 100% !important;
+          }
+          .hotels-search-btn {
+            width: 100% !important;
+            margin-top: 4px !important;
+          }
+          .hotels-sidebar {
+            display: none !important;
+          }
+        }
+      `}</style>
       <Navbar />
 
       {/* Search Bar */}
       <div style={{ background: 'var(--bg-secondary)', borderBottom: '1px solid var(--border)', padding: 'var(--space-4) 0', position: 'sticky', top: 68, zIndex: 100 }}>
         <div className="container">
-          <div style={{ display: 'flex', gap: 'var(--space-3)', flexWrap: 'wrap', alignItems: 'stretch' }}>
-            <div style={{ flex: '2 1 200px', position: 'relative' }}>
+          <div className="hotels-search-wrapper" style={{ display: 'flex', gap: 'var(--space-3)', flexWrap: 'wrap', alignItems: 'stretch' }}>
+            <div className="hotels-search-item" style={{ flex: '2 1 200px', position: 'relative' }}>
               <LocationSearch city={filters.city} variant="compact" onChange={c => setFilters(p => ({ ...p, city: c }))} />
             </div>
             {/* Check-in */}
             <div 
+              className="hotels-search-item"
               onClick={() => { setActiveDateSelection('checkIn'); setShowDatePicker(true); }}
               style={{ flex: '1 1 140px', position: 'relative', background: 'white', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', padding: '6px 12px', cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: '2px', height: '54px', justifyContent: 'center' }}
             >
@@ -125,6 +145,7 @@ function HotelSearch() {
             
             {/* Check-out */}
             <div 
+              className="hotels-search-item"
               onClick={() => { setActiveDateSelection('checkOut'); setShowDatePicker(true); }}
               style={{ flex: '1 1 140px', position: 'relative', background: 'white', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', padding: '6px 12px', cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: '2px', height: '54px', justifyContent: 'center' }}
             >
@@ -133,7 +154,7 @@ function HotelSearch() {
             </div>
 
             {/* Guests & Rooms */}
-            <div style={{ flex: '1 1 160px', position: 'relative' }}>
+            <div className="hotels-search-item" style={{ flex: '1 1 160px', position: 'relative' }}>
               <div 
                 onClick={() => setShowGuestPicker(true)}
                 style={{ background: 'white', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', padding: '6px 12px', cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: '2px', height: '54px', justifyContent: 'center' }}
@@ -158,7 +179,7 @@ function HotelSearch() {
                 </>
               )}
             </div>
-            <button className="btn btn-primary" onClick={() => { setPage(1); fetchHotels(); }} style={{ height: '54px', padding: '0 24px', flex: '0 0 auto' }}>
+            <button className="btn btn-primary hotels-search-btn" onClick={() => { setPage(1); fetchHotels(); }} style={{ height: '54px', padding: '0 24px', flex: '0 0 auto' }}>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
               Search
             </button>
@@ -190,7 +211,7 @@ function HotelSearch() {
       <div className="container" style={{ padding: 'var(--space-4) var(--space-6) var(--space-8)', display: 'flex', gap: 'var(--space-8)', alignItems: 'flex-start' }}>
 
         {/* Sidebar Filters */}
-        <aside style={{ width: 260, flexShrink: 0, position: 'sticky', top: 160, display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }} className="hide-mobile">
+        <aside style={{ width: 260, flexShrink: 0, position: 'sticky', top: 160, display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }} className="hotels-sidebar hide-mobile">
           {/* Map Explore */}
           <div style={{ position: 'relative', height: 120, borderRadius: 'var(--radius-lg)', overflow: 'hidden', cursor: 'pointer', border: '1px solid var(--border)' }} onClick={() => {}}>
             <div style={{ backgroundImage: 'url(/map-bg.jpg)', backgroundSize: 'cover', backgroundPosition: 'center', width: '100%', height: '100%', filter: 'opacity(0.8)' }}></div>
@@ -352,6 +373,12 @@ function HotelSearch() {
                             <span key={a} style={{ fontSize: '0.7rem', background: 'var(--bg-secondary)', padding: '2px 8px', borderRadius: 'var(--radius-full)', color: 'var(--text-secondary)' }}>{a}</span>
                           ))}
                         </div>
+                        {typeof hotel.roomsLeft === 'number' && (
+                          <div style={{ fontSize: '0.8rem', color: '#ea580c', fontWeight: 600, marginBottom: 8, display: 'flex', alignItems: 'center', gap: 4 }}>
+                            <span style={{ display: 'inline-block', width: 6, height: 6, borderRadius: '50%', background: '#ea580c' }}></span>
+                            {hotel.roomsLeft} {hotel.roomsLeft === 1 ? 'room' : 'rooms'} left
+                          </div>
+                        )}
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                           <div>
                             <span className="price" style={{ fontSize: '1.2rem' }}>

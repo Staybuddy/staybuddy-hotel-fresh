@@ -13,7 +13,7 @@ export default function Navbar({ middleContent, extendedContent }: { middleConte
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 80);
+    const handleScroll = () => setScrolled(window.scrollY > 200);
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);

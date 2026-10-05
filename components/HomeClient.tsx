@@ -1,6 +1,7 @@
 /* eslint-disable */
 'use client';
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Navbar from '@/components/Navbar';
@@ -54,6 +55,8 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
 
   // Guest Picker State
   const [showGuestPicker, setShowGuestPicker] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
   const formatDate = (dateString: string) => {
     if (!dateString) return 'Select Date';
@@ -67,6 +70,8 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
     e.preventDefault();
     if (!searchData.location.trim()) {
       setSearchError('Please enter a destination to search.');
+      setTimeout(() => setSearchError(''), 3000);
+      document.getElementById('location-search-trigger')?.click();
       return;
     }
     if (!searchData.checkIn || !searchData.checkOut) {
@@ -94,7 +99,7 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
         <style>{`
           @keyframes slideDownFade {
             0% { opacity: 0; transform: translateY(-20px) scale(0.98); }
-            100% { opacity: 1; transform: translateY(0) scale(1); }
+            100% { opacity: 1; transform: none; }
           }
         `}</style>
         <div className="fade-in hero-search-wrapper" style={{
@@ -156,10 +161,10 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
                 </div>
               </div>
 
-              {showDatePicker && (
-                <>
-                  <div style={{ position: 'fixed', inset: 0, zIndex: 90 }} onClick={() => setShowDatePicker(false)} />
-                  <div className="responsive-popup" style={{ position: 'absolute', top: '100%', left: '50%', transform: 'translateX(-50%)', marginTop: 16, zIndex: 100, background: 'white', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-xl)', border: '1px solid var(--border)' }}>
+              {mounted && showDatePicker && createPortal(
+                <div style={{ position: 'fixed', inset: 0, zIndex: 10000, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '16px' }}>
+                  <div style={{ position: 'absolute', inset: 0, background: 'rgba(15, 23, 42, 0.6)', backdropFilter: 'blur(4px)' }} onClick={() => setShowDatePicker(false)} />
+                  <div className="responsive-popup" style={{ position: 'relative', background: 'white', borderRadius: '24px', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)', maxWidth: '100%', maxHeight: '90vh', overflowY: 'auto' }}>
                      <DateRangePicker 
                        checkIn={searchData.checkIn} 
                        checkOut={searchData.checkOut}
@@ -169,7 +174,8 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
                        setActiveSelection={setActiveDateSelection}
                      />
                   </div>
-                </>
+                </div>,
+                document.body
               )}
 
               {/* Guests Block */}
@@ -189,12 +195,11 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
                 </div>
 
-                {showGuestPicker && (
-                  <>
-                    <div style={{ position: 'fixed', inset: 0, zIndex: 90 }} onClick={(e) => { e.stopPropagation(); setShowGuestPicker(false); }} />
-                    <div className="responsive-popup" onClick={e => e.stopPropagation()} style={{ position: 'absolute', top: '100%', right: 0, marginTop: 16, zIndex: 100, background: 'white', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-xl)', border: '1px solid var(--border)', padding: 'var(--space-5)', width: 320, cursor: 'default' }}>
+                {mounted && showGuestPicker && createPortal(
+                  <div style={{ position: 'fixed', inset: 0, zIndex: 10000, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '16px' }}>
+                    <div style={{ position: 'absolute', inset: 0, background: 'rgba(15, 23, 42, 0.6)', backdropFilter: 'blur(4px)' }} onClick={(e) => { e.stopPropagation(); setShowGuestPicker(false); }} />
+                    <div className="responsive-popup" onClick={e => e.stopPropagation()} style={{ position: 'relative', background: 'white', borderRadius: '24px', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)', padding: 'var(--space-5)', width: 320, maxWidth: '100%', cursor: 'default' }}>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
-                        {/* Rooms */}
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                           <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>Rooms</div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 12, border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', padding: '4px 8px' }}>
@@ -204,7 +209,6 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
                           </div>
                         </div>
 
-                        {/* Adults */}
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                           <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>Adults</div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 12, border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', padding: '4px 8px' }}>
@@ -214,7 +218,6 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
                           </div>
                         </div>
 
-                        {/* Children */}
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                           <div>
                             <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>Children</div>
@@ -228,7 +231,8 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
                         </div>
                       </div>
                     </div>
-                  </>
+                  </div>,
+                  document.body
                 )}
               </div>
 
@@ -389,10 +393,12 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
       <div style={{
         maxHeight: searchData.propertyType ? '1000px' : '0px',
         opacity: searchData.propertyType ? 1 : 0,
-        overflow: 'hidden',
+        overflow: searchData.propertyType ? 'visible' : 'hidden',
         transition: 'max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease-in-out',
         background: 'var(--bg-secondary)',
-        marginTop: '-8px'
+        marginTop: '-8px',
+        position: 'relative',
+        zIndex: 100
       }}>
         <section style={{ paddingBottom: '20px', paddingTop: '24px' }}>
           <div className="container hero-section-container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '0 16px' }}>

@@ -48,7 +48,7 @@ export async function GET(request: NextRequest) {
         const roomsSnap = await db.collection('rooms').where('hotelId', '==', hotel._id).get();
         const rooms = roomsSnap.docs.map((doc: any) => doc.data());
         const cheapestRoom = rooms.sort((a: any, b: any) => a.priceDouble - b.priceDouble)[0];
-        let roomsLeft = rooms.reduce((sum: number, r: any) => sum + (r.staybuddyAllocation || 0), 0);
+        let roomsLeft = rooms.reduce((sum: number, r: any) => sum + Number(r.staybuddyAllocation || 0), 0);
 
         try {
           const bookingsSnap = await db.collection('bookings')
@@ -59,7 +59,7 @@ export async function GET(request: NextRequest) {
 
           bookingsSnap.docs.forEach((doc: any) => {
             const b = doc.data();
-            if (b.status !== 'cancelled' && b.status !== 'completed') {
+            if (b.status === 'confirmed') {
               const bCheckIn = new Date(b.checkIn).getTime();
               const bCheckOut = new Date(b.checkOut).getTime();
               
@@ -160,7 +160,7 @@ export async function POST(request: NextRequest) {
           b2bPrice: parseInt(r.b2bPrice) || 0,
           maxGuests: parseInt(r.maxGuests) || 2,
           totalRooms: parseInt(r.totalRooms) || 1,
-          staybuddyAllocation: parseInt(r.staybuddyAllocation) || 1,
+          staybuddyAllocation: parseInt(r.staybuddyAllocation) || parseInt(r.totalRooms) || 1,
           ratePlan: r.ratePlan || 'EP',
           bedType: r.bedType || 'Double',
           size: r.size ? parseInt(r.size) : undefined,

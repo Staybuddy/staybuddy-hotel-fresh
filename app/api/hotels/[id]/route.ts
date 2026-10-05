@@ -45,7 +45,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       
       bookingsSnap.docs.forEach((doc: any) => {
         const b = doc.data();
-        if (b.status !== 'cancelled' && b.status !== 'completed') {
+        if (b.status === 'confirmed') {
           const bCheckIn = new Date(b.checkIn).getTime();
           const bCheckOut = new Date(b.checkOut).getTime();
           
@@ -67,7 +67,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
       // Update rooms with exact availability
       rooms = rooms.map(room => {
-        const allocation = room.staybuddyAllocation || 0;
+        const allocation = Number(room.staybuddyAllocation || 0);
         const booked = activeBookingsByRoom[room._id] || 0;
         return {
           ...room,

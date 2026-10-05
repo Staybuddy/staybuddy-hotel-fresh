@@ -44,7 +44,7 @@ export default function PartnerDashboard() {
     contactName: '', contactDesignation: '', contactPhone: '', contactEmail: '',
     amenities: [] as string[], roomAmenities: [] as string[], extraAmenities: '', policies: '', images: [] as string[],
     rooms: [
-      { id: Date.now().toString(), type: 'Standard Room', priceSingle: '', priceDouble: '', priceTriple: '', b2bPrice: '', amenities: [] as string[], images: [] as string[], size: '', bedType: 'Double', maxGuests: 2, totalRooms: 1, staybuddyAllocation: 1, ratePlan: 'EP', description: '' }
+      { id: Date.now().toString(), type: 'Standard Room', priceSingle: '', priceDouble: '', priceTriple: '', b2bPrice: '', amenities: [] as string[], images: [] as string[], size: '', bedType: 'Double', maxGuests: 2, totalRooms: 1, ratePlan: 'EP', description: '' }
     ]
   });
 
@@ -836,7 +836,7 @@ export default function PartnerDashboard() {
                     <button type="button" className="btn btn-secondary" style={{ alignSelf: 'center', padding: '12px 24px', borderStyle: 'dashed', borderWidth: 2 }} onClick={() => {
                       setHotelForm(p => ({
                         ...p,
-                        rooms: [...p.rooms, { id: Date.now().toString(), type: '', priceSingle: '', priceDouble: '', priceTriple: '', b2bPrice: '', amenities: [], images: [], size: '', bedType: 'Double', maxGuests: 2, totalRooms: 1, staybuddyAllocation: 1, ratePlan: 'EP', description: '' }]
+                        rooms: [...p.rooms, { id: Date.now().toString(), type: '', priceSingle: '', priceDouble: '', priceTriple: '', b2bPrice: '', amenities: [], images: [], size: '', bedType: 'Double', maxGuests: 2, totalRooms: 1, ratePlan: 'EP', description: '' }]
                       }))
                     }}>
                       + Add Another Room Type
@@ -1021,12 +1021,12 @@ export default function PartnerDashboard() {
                       {hotelRooms.map((room, i) => (
                         <tr key={room._id} style={{ borderBottom: '1px solid var(--border-color)' }}>
                           <td style={{ padding: '12px 8px', fontWeight: 600 }}>{room.type}</td>
-                          <td style={{ padding: '12px 8px' }}><input type="number" style={{ width: 60, padding: 4 }} value={room.priceSingle || ''} onChange={e => saveRoomInventory(i, 'priceSingle', e.target.value)} /></td>
-                          <td style={{ padding: '12px 8px' }}><input type="number" style={{ width: 60, padding: 4 }} value={room.priceDouble || ''} onChange={e => saveRoomInventory(i, 'priceDouble', e.target.value)} /></td>
-                          <td style={{ padding: '12px 8px' }}><input type="number" style={{ width: 60, padding: 4 }} value={room.priceTriple || ''} onChange={e => saveRoomInventory(i, 'priceTriple', e.target.value)} /></td>
-                          <td style={{ padding: '12px 8px' }}><input type="number" style={{ width: 60, padding: 4 }} value={room.b2bPrice || ''} onChange={e => saveRoomInventory(i, 'b2bPrice', e.target.value)} /></td>
+                          <td style={{ padding: '12px 8px' }}><input type="number" style={{ width: 60, padding: 4 }} value={room.priceSingle || ''} onChange={e => saveRoomInventory(i, 'priceSingle', Number(e.target.value))} /></td>
+                          <td style={{ padding: '12px 8px' }}><input type="number" style={{ width: 60, padding: 4 }} value={room.priceDouble || ''} onChange={e => saveRoomInventory(i, 'priceDouble', Number(e.target.value))} /></td>
+                          <td style={{ padding: '12px 8px' }}><input type="number" style={{ width: 60, padding: 4 }} value={room.priceTriple || ''} onChange={e => saveRoomInventory(i, 'priceTriple', Number(e.target.value))} /></td>
+                          <td style={{ padding: '12px 8px' }}><input type="number" style={{ width: 60, padding: 4 }} value={room.b2bPrice || ''} onChange={e => saveRoomInventory(i, 'b2bPrice', Number(e.target.value))} /></td>
                           <td style={{ padding: '12px 8px', color: 'var(--text-muted)' }}>{room.totalRooms}</td>
-                          <td style={{ padding: '12px 8px' }}><input type="number" style={{ width: 50, padding: 4 }} value={room.staybuddyAllocation || ''} onChange={e => saveRoomInventory(i, 'staybuddyAllocation', e.target.value)} /></td>
+                          <td style={{ padding: '12px 8px' }}><input type="number" style={{ width: 50, padding: 4 }} value={room.staybuddyAllocation || ''} onChange={e => saveRoomInventory(i, 'staybuddyAllocation', Number(e.target.value))} /></td>
                           <td style={{ padding: '12px 8px' }}>
                             <select className="form-input form-select" value={room.ratePlan || 'EP'} onChange={e => saveRoomInventory(i, 'ratePlan', e.target.value)} style={{ padding: '4px 8px', fontSize: '0.8rem', height: 32 }}>
                               <option value="EP">EP</option>
