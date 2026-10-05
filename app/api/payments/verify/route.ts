@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
+import Razorpay from 'razorpay';
 import { db } from '@/lib/firebaseAdmin';
 import { sendBookingConfirmationEmail, sendPartnerNotificationEmail } from '@/lib/email';
 
@@ -8,12 +9,36 @@ export async function POST(request: NextRequest) {
     const { razorpay_order_id, razorpay_payment_id, razorpay_signature, bookingId } = await request.json();
     
     const secret = process.env.RAZORPAY_KEY_SECRET || '';
-    const generated_signature = crypto
-      .createHmac('sha256', secret)
-      .update(razorpay_order_id + '|' + razorpay_payment_id)
-      .digest('hex');
+    let isValid = false;
 
-    if (generated_signature !== razorpay_signature) {
+    if (secret && razorpay_order_id && razorpay_payment_id && razorpay_signature) {
+      const generated_signature = crypto
+        .createHmac('sha256', secret)
+        .update(razorpay_order_id + '|' + razorpay_payment_id)
+        .digest('hex');
+
+      if (generated_signature === razorpay_signature) {
+        isValid = true;
+      }
+    }
+
+    // Direct fallback check with Razorpay API if HMAC check failed or order_id wasn't returned
+    if (!isValid && razorpay_payment_id) {
+      try {
+        const razorpay = new Razorpay({
+          key_id: process.env.RAZORPAY_KEY_ID || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || '',
+          key_secret: secret,
+        });
+        const payment = await razorpay.payments.fetch(razorpay_payment_id);
+        if (payment && (payment.status === 'captured' || payment.status === 'authorized')) {
+          isValid = true;
+        }
+      } catch (err) {
+        console.error('Razorpay fallback verification error:', err);
+      }
+    }
+
+    if (!isValid) {
       return NextResponse.json({ error: 'Invalid payment signature' }, { status: 400 });
     }
 

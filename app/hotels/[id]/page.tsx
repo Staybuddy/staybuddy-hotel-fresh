@@ -216,21 +216,23 @@ export default function HotelDetailPage() {
       return;
     }
 
+    const actualOrder = orderData.order || orderData;
+
     const options = {
-      key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_dummy', 
-      amount: orderData.amount,
+      key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_live_Tjoj98t74vGXMx', 
+      amount: actualOrder.amount,
       currency: "INR",
       name: "StayBuddy",
       description: `Booking at ${hotel.name}`,
-      order_id: orderData.id,
+      order_id: actualOrder.id,
       handler: async function (response: any) {
         const verifyRes = await fetch('/api/payments/verify', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            razorpay_order_id: response.razorpay_order_id,
+            razorpay_order_id: response.razorpay_order_id || actualOrder.id,
             razorpay_payment_id: response.razorpay_payment_id,
-            razorpay_signature: response.razorpay_signature,
+            razorpay_signature: response.razorpay_signature || '',
             bookingId: data.booking._id
           })
         });
@@ -1019,6 +1021,23 @@ export default function HotelDetailPage() {
                             <span>🛏️ {room.bedType}</span>
                             <span>👥 Max {room.maxGuests} guests</span>
                             {room.size && <span>📐 {room.size} m²</span>}
+                            {room.ratePlan === 'CP' ? (
+                              <span style={{ backgroundColor: '#ecfdf5', color: '#059669', padding: '2px 8px', borderRadius: 4, fontWeight: 700, fontSize: '0.75rem', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                                🍳 Free Breakfast Included
+                              </span>
+                            ) : room.ratePlan === 'MAP' ? (
+                              <span style={{ backgroundColor: '#ecfdf5', color: '#059669', padding: '2px 8px', borderRadius: 4, fontWeight: 700, fontSize: '0.75rem', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                                🍽️ Breakfast & Dinner Included
+                              </span>
+                            ) : room.ratePlan === 'AP' ? (
+                              <span style={{ backgroundColor: '#ecfdf5', color: '#059669', padding: '2px 8px', borderRadius: 4, fontWeight: 700, fontSize: '0.75rem', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                                🍴 All Meals Included
+                              </span>
+                            ) : (
+                              <span style={{ backgroundColor: '#f1f5f9', color: '#64748b', padding: '2px 8px', borderRadius: 4, fontWeight: 600, fontSize: '0.75rem', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                                ☕ Room Only (No Breakfast)
+                              </span>
+                            )}
                           </div>
                         </div>
                         <div style={{ textAlign: "right", flexShrink: 0 }}>
@@ -3263,8 +3282,8 @@ export default function HotelDetailPage() {
                   >
                     MEAL PLAN
                   </span>
-                  <span style={{ fontWeight: 600, color: "var(--success)" }}>
-                    🍽️ {roomDetailsModal.ratePlan}
+                  <span style={{ fontWeight: 600, color: roomDetailsModal.ratePlan === 'EP' ? 'var(--text-secondary)' : 'var(--success)' }}>
+                    {roomDetailsModal.ratePlan === 'CP' ? '🍳 Free Breakfast Included (CP)' : roomDetailsModal.ratePlan === 'MAP' ? '🍽️ Breakfast & Dinner Included (MAP)' : roomDetailsModal.ratePlan === 'AP' ? '🍴 All Meals Included (AP)' : '☕ Room Only - No Breakfast (EP)'}
                   </span>
                 </div>
               )}

@@ -7,6 +7,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
 
     const status = searchParams.get('status') || 'approved';
+    const partnerId = searchParams.get('partnerId');
     const city = searchParams.get('city');
     const category = searchParams.get('category');
     const propertyType = searchParams.get('propertyType');
@@ -14,13 +15,19 @@ export async function GET(request: NextRequest) {
     const searchCheckIn = searchParams.get('checkIn');
     const searchCheckOut = searchParams.get('checkOut');
 
-    let hotelsRef: any = db.collection('hotels').where('status', '==', status);
+    let hotelsRef: any = db.collection('hotels');
     
+    if (status && status !== 'all') {
+      hotelsRef = hotelsRef.where('status', '==', status);
+    }
+    if (partnerId) {
+      hotelsRef = hotelsRef.where('partnerId', '==', partnerId);
+    }
     if (category) hotelsRef = hotelsRef.where('category', '==', category);
     if (propertyType) hotelsRef = hotelsRef.where('propertyType', '==', propertyType);
     
     const snapshot = await hotelsRef.get();
-    let hotels = snapshot.docs.map((doc: any) => doc.data());
+    let hotels = snapshot.docs.map((doc: any) => ({ _id: doc.id, ...doc.data() }));
 
     // Apply memory filters for things Firestore can't do natively like regex
     if (city) {

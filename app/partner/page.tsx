@@ -60,11 +60,19 @@ export default function PartnerDashboard() {
   async function fetchData() {
     setLoading(true);
     const partnerId = (session?.user as any)?.id;
+    const role = (session?.user as any)?.role;
     try {
+      const hotelUrl = role === 'admin' 
+        ? `/api/hotels?status=all&limit=50` 
+        : `/api/hotels?partnerId=${partnerId}&status=all&limit=50`;
+      const bookingUrl = role === 'admin'
+        ? `/api/bookings?limit=50`
+        : `/api/bookings?partnerId=${partnerId}&limit=50`;
+
       const [hotelRes, bookingRes] = await Promise.all([
-        fetch(`/api/hotels?partnerId=${partnerId}&status=all&limit=50`),
-        fetch(`/api/bookings?partnerId=${partnerId}&limit=50`),
-        new Promise(resolve => setTimeout(resolve, 1500)) // Guarantee the beautiful load screen is visible
+        fetch(hotelUrl),
+        fetch(bookingUrl),
+        new Promise(resolve => setTimeout(resolve, 600))
       ]);
       const [hotelData, bookingData] = await Promise.all([hotelRes.json(), bookingRes.json()]);
 
