@@ -18,14 +18,23 @@ export default async function TaxInvoicePage({ params }: { params: Promise<{ id:
   const gstAmount = inv.gstAmount || 0;
   const gstPercentage = inv.gstPercentage || 0;
   
-  // Assuming equal split for CGST and SGST for local state (Maharashtra)
-  const cgstAmount = gstAmount / 2;
-  const sgstAmount = gstAmount / 2;
+  // Assuming equal split for CGST and SGST for local state (Telangana)
+  const isInterState = inv.placeOfSupply && !inv.placeOfSupply.toLowerCase().includes('telangana');
+  const cgstAmount = isInterState ? 0 : gstAmount / 2;
+  const sgstAmount = isInterState ? 0 : gstAmount / 2;
+  const igstAmount = isInterState ? gstAmount : 0;
   
   const formatDate = (dateString: string) => {
     if (!dateString) return 'N/A';
     return new Date(dateString).toLocaleDateString('en-IN', {
       day: '2-digit', month: 'short', year: 'numeric'
+    });
+  };
+
+  const formatCurrency = (amount: number) => {
+    return Number(amount || 0).toLocaleString('en-IN', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
     });
   };
 
@@ -153,7 +162,7 @@ export default async function TaxInvoicePage({ params }: { params: Promise<{ id:
                 <div style={{ marginTop: '10px', color: '#4b5563', fontSize: '10px', display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '6px' }}>
                   <span><strong>Duration:</strong> {inv.noOfNights || 1} Night(s)</span>
                   <span><strong>Rooms:</strong> {inv.noOfRooms || 1} ({inv.noOfGuests || 1} Guest{inv.noOfGuests > 1 ? 's' : ''})</span>
-                  <span><strong>Tariff/Room/Night:</strong> <strong style={{ color: '#ea580c' }}>₹{(inv.tariffPerNight || basePrice).toLocaleString(undefined, {minimumFractionDigits: 2})}</strong></span>
+                  <span><strong>Tariff/Room/Night:</strong> <strong style={{ color: '#ea580c' }}>₹{formatCurrency(inv.tariffPerNight || basePrice)}</strong></span>
                 </div>
               </div>
             </div>
@@ -186,8 +195,8 @@ export default async function TaxInvoicePage({ params }: { params: Promise<{ id:
                     )}
                   </td>
                   <td style={{ padding: '12px', border: '1px solid #e5e7eb', textAlign: 'center', color: '#4b5563' }}>{(inv.noOfRooms || 1)} Room(s) × {inv.noOfNights || 1} Night(s)</td>
-                  <td style={{ padding: '12px', border: '1px solid #e5e7eb', textAlign: 'right', color: '#ea580c', fontWeight: 600 }}>{(inv.tariffPerNight || basePrice).toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
-                  <td style={{ padding: '12px', border: '1px solid #e5e7eb', textAlign: 'right', color: '#111827', fontWeight: 600 }}>{basePrice.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                  <td style={{ padding: '12px', border: '1px solid #e5e7eb', textAlign: 'right', color: '#ea580c', fontWeight: 600 }}>{formatCurrency(inv.tariffPerNight || basePrice)}</td>
+                  <td style={{ padding: '12px', border: '1px solid #e5e7eb', textAlign: 'right', color: '#111827', fontWeight: 600 }}>{formatCurrency(basePrice)}</td>
                 </tr>
               </tbody>
             </table>
@@ -219,20 +228,27 @@ export default async function TaxInvoicePage({ params }: { params: Promise<{ id:
                 <tbody>
                   <tr>
                     <td style={{ padding: '8px 12px', borderBottom: '1px solid #e5e7eb', color: '#4b5563' }}>Total Taxable Value</td>
-                    <td style={{ padding: '8px 12px', borderBottom: '1px solid #e5e7eb', textAlign: 'right', fontWeight: 600, color: '#111827' }}>₹{basePrice.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                    <td style={{ padding: '8px 12px', borderBottom: '1px solid #e5e7eb', textAlign: 'right', fontWeight: 600, color: '#111827' }}>₹{formatCurrency(basePrice)}</td>
                   </tr>
                   
                   {gstPercentage > 0 ? (
-                    <>
+                    isInterState ? (
                       <tr>
-                        <td style={{ padding: '8px 12px', borderBottom: '1px solid #e5e7eb', color: '#4b5563' }}>CGST @ {gstPercentage / 2}%</td>
-                        <td style={{ padding: '8px 12px', borderBottom: '1px solid #e5e7eb', textAlign: 'right', color: '#111827' }}>₹{cgstAmount.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                        <td style={{ padding: '8px 12px', borderBottom: '1px solid #e5e7eb', color: '#4b5563' }}>IGST @ {gstPercentage}%</td>
+                        <td style={{ padding: '8px 12px', borderBottom: '1px solid #e5e7eb', textAlign: 'right', color: '#111827' }}>₹{formatCurrency(igstAmount)}</td>
                       </tr>
-                      <tr>
-                        <td style={{ padding: '8px 12px', borderBottom: '1px solid #e5e7eb', color: '#4b5563' }}>SGST @ {gstPercentage / 2}%</td>
-                        <td style={{ padding: '8px 12px', borderBottom: '1px solid #e5e7eb', textAlign: 'right', color: '#111827' }}>₹{sgstAmount.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
-                      </tr>
-                    </>
+                    ) : (
+                      <>
+                        <tr>
+                          <td style={{ padding: '8px 12px', borderBottom: '1px solid #e5e7eb', color: '#4b5563' }}>CGST @ {gstPercentage / 2}%</td>
+                          <td style={{ padding: '8px 12px', borderBottom: '1px solid #e5e7eb', textAlign: 'right', color: '#111827' }}>₹{formatCurrency(cgstAmount)}</td>
+                        </tr>
+                        <tr>
+                          <td style={{ padding: '8px 12px', borderBottom: '1px solid #e5e7eb', color: '#4b5563' }}>SGST @ {gstPercentage / 2}%</td>
+                          <td style={{ padding: '8px 12px', borderBottom: '1px solid #e5e7eb', textAlign: 'right', color: '#111827' }}>₹{formatCurrency(sgstAmount)}</td>
+                        </tr>
+                      </>
+                    )
                   ) : (
                     <tr>
                       <td style={{ padding: '8px 12px', borderBottom: '1px solid #e5e7eb', color: '#4b5563' }}>GST @ 0%</td>
@@ -242,7 +258,7 @@ export default async function TaxInvoicePage({ params }: { params: Promise<{ id:
                   
                   <tr style={{ backgroundColor: '#fff7ed' }}>
                     <td style={{ padding: '12px', borderBottom: '1px solid #e5e7eb', color: '#ea580c', fontWeight: 800, fontSize: '14px' }}>Grand Total</td>
-                    <td style={{ padding: '12px', borderBottom: '1px solid #e5e7eb', textAlign: 'right', color: '#ea580c', fontWeight: 800, fontSize: '14px' }}>₹{grandTotal.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                    <td style={{ padding: '12px', borderBottom: '1px solid #e5e7eb', textAlign: 'right', color: '#ea580c', fontWeight: 800, fontSize: '14px' }}>₹{formatCurrency(grandTotal)}</td>
                   </tr>
                 </tbody>
               </table>
