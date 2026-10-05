@@ -178,11 +178,10 @@ export default async function TaxInvoicePage({ params }: { params: Promise<{ id:
                   <td style={{ padding: '12px', border: '1px solid #e5e7eb', color: '#111827' }}>
                     <strong>Accommodation Charges</strong><br/>
                     <span style={{ color: '#6b7280', fontSize: '9px' }}>{inv.description || 'Room Only (Base Rate)'}</span>
-                    {(inv.hotelName || inv.placeOfSupply) && (
-                      <div style={{ marginTop: '4px', fontSize: '10px', color: '#374151', fontWeight: 600 }}>
-                        {inv.hotelName ? `Hotel: ${inv.hotelName}` : ''}
-                        {inv.hotelName && inv.placeOfSupply ? ', ' : ''}
-                        {inv.placeOfSupply ? `${inv.placeOfSupply}` : ''}
+                    {inv.hotelName && (
+                      <div style={{ marginTop: '4px', fontSize: '10px', fontWeight: 600 }}>
+                        <span style={{ color: '#6b7280' }}>Hotel: </span>
+                        <strong style={{ color: '#ea580c' }}>{inv.hotelName}</strong>
                       </div>
                     )}
                   </td>
