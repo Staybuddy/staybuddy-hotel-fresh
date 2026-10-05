@@ -48,7 +48,10 @@ export async function GET(request: NextRequest) {
         const roomsSnap = await db.collection('rooms').where('hotelId', '==', hotel._id).get();
         const rooms = roomsSnap.docs.map((doc: any) => doc.data());
         const cheapestRoom = rooms.sort((a: any, b: any) => a.priceDouble - b.priceDouble)[0];
-        let roomsLeft = rooms.reduce((sum: number, r: any) => sum + Number(r.staybuddyAllocation || 0), 0);
+        let baseAllocation = hotel.staybuddyAllocation 
+          ? Number(hotel.staybuddyAllocation) 
+          : rooms.reduce((sum: number, r: any) => sum + Number(r.staybuddyAllocation || 0), 0);
+        let roomsLeft = baseAllocation;
 
         try {
           const bookingsSnap = await db.collection('bookings')
@@ -101,7 +104,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { partnerId, name, description, location, city, area, country, address, images, amenities, extraAmenities, propertyType, category, starRating, checkInTime, checkOutTime, policies, lat, lng, rooms, totalPropertyRooms, totalFloors, contactName, contactDesignation, contactPhone, contactEmail, providedRating } = body;
+    const { partnerId, name, description, location, city, area, country, address, images, amenities, extraAmenities, propertyType, category, starRating, checkInTime, checkOutTime, policies, lat, lng, rooms, totalPropertyRooms, staybuddyAllocation, totalFloors, contactName, contactDesignation, contactPhone, contactEmail, providedRating } = body;
 
     const missing = [];
     if (!partnerId) missing.push('partnerId (user session ID)');
@@ -139,7 +142,7 @@ export async function POST(request: NextRequest) {
     const hotel = {
       _id: hotelRef.id,
       hotelId: hotelIdString,
-      partnerId, name, description, location, city, area, country, address, coordinates, images, amenities, extraAmenities, propertyType: propertyType || 'Hotel', category, starRating, checkInTime, checkOutTime, policies, status: 'pending', totalPropertyRooms, totalFloors, contactName, contactDesignation, contactPhone, contactEmail, avgRating: providedRating ? parseFloat(providedRating) : 0,
+      partnerId, name, description, location, city, area, country, address, coordinates, images, amenities, extraAmenities, propertyType: propertyType || 'Hotel', category, starRating, checkInTime, checkOutTime, policies, status: 'pending', totalPropertyRooms, staybuddyAllocation: staybuddyAllocation ? parseInt(staybuddyAllocation) : undefined, totalFloors, contactName, contactDesignation, contactPhone, contactEmail, avgRating: providedRating ? parseFloat(providedRating) : 0,
       createdAt: new Date().toISOString()
     };
 

@@ -40,7 +40,7 @@ export default function PartnerDashboard() {
   const [hotelForm, setHotelForm] = useState({
     name: '', description: '', location: '', city: '', area: '', country: 'India', address: '', lat: '', lng: '', propertyType: 'Hotel',
     category: 'standard', starRating: '3', checkInTime: '14:00', checkOutTime: '11:00',
-    totalPropertyRooms: '', totalFloors: '', providedRating: '4.5',
+    totalPropertyRooms: '', staybuddyAllocation: '', totalFloors: '', providedRating: '4.5',
     contactName: '', contactDesignation: '', contactPhone: '', contactEmail: '',
     amenities: [] as string[], roomAmenities: [] as string[], extraAmenities: '', policies: '', images: [] as string[],
     rooms: [
@@ -117,7 +117,7 @@ export default function PartnerDashboard() {
 
     if (!res.ok) { setAddError(data.error || 'Failed to add property'); return; }
     setAddSuccess('Property submitted for approval! Our team will review it within 24 hours.');
-    setHotelForm({ name: '', description: '', location: '', city: '', area: '', country: 'India', address: '', lat: '', lng: '', propertyType: 'Hotel', category: 'standard', starRating: '3', checkInTime: '14:00', checkOutTime: '11:00', totalPropertyRooms: '', totalFloors: '', providedRating: '4.5', contactName: '', contactDesignation: '', contactPhone: '', contactEmail: '', amenities: [], roomAmenities: [], extraAmenities: '', policies: '', images: [], rooms: [] });
+    setHotelForm({ name: '', description: '', location: '', city: '', area: '', country: 'India', address: '', lat: '', lng: '', propertyType: 'Hotel', category: 'standard', starRating: '3', checkInTime: '14:00', checkOutTime: '11:00', totalPropertyRooms: '', staybuddyAllocation: '', totalFloors: '', providedRating: '4.5', contactName: '', contactDesignation: '', contactPhone: '', contactEmail: '', amenities: [], roomAmenities: [], extraAmenities: '', policies: '', images: [], rooms: [] });
     setFormStep(1);
     fetchData();
     setTimeout(() => setActiveTab('hotels'), 2000);
@@ -566,10 +566,17 @@ export default function PartnerDashboard() {
                           <input className="form-input" type="number" step="0.1" min="1" max="5" placeholder="4.5" value={hotelForm.providedRating} onChange={e => setHotelForm(p => ({ ...p, providedRating: e.target.value }))} />
                         </div>
                       </div>
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-4)' }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 'var(--space-4)' }}>
                         <div className="form-group">
                           <label className="form-label" style={{ textTransform: 'uppercase', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Total Rooms</label>
-                          <input className="form-input" type="number" min="1" placeholder="120" value={hotelForm.totalPropertyRooms} onChange={e => setHotelForm(p => ({ ...p, totalPropertyRooms: e.target.value }))} />
+                          <input className="form-input" type="number" min="1" placeholder="120" value={hotelForm.totalPropertyRooms} onChange={e => {
+                            const val = e.target.value;
+                            setHotelForm(p => ({ ...p, totalPropertyRooms: val, staybuddyAllocation: val }));
+                          }} />
+                        </div>
+                        <div className="form-group">
+                          <label className="form-label" style={{ textTransform: 'uppercase', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)' }}>SB Allocation</label>
+                          <input className="form-input" type="number" min="1" placeholder="20" value={hotelForm.staybuddyAllocation || ''} onChange={e => setHotelForm(p => ({ ...p, staybuddyAllocation: e.target.value }))} />
                         </div>
                         <div className="form-group">
                           <label className="form-label" style={{ textTransform: 'uppercase', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Total Floors</label>
