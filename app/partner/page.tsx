@@ -962,12 +962,15 @@ export default function PartnerDashboard() {
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-4)' }}>
                   <div className="form-group">
                     <label className="form-label">Total Rooms in Property</label>
-                    <input className="form-input" type="number" min="1" value={roomForm.totalRooms} onChange={e => setRoomForm(p => ({ ...p, totalRooms: e.target.value }))} />
+                    <input className="form-input" type="number" min="1" value={roomForm.totalRooms} onChange={e => {
+                      const val = e.target.value;
+                      setRoomForm(p => ({ ...p, totalRooms: val, staybuddyAllocation: val }));
+                    }} />
                   </div>
                   <div className="form-group">
                     <label className="form-label">StayBuddy Allocation</label>
-                    <input className="form-input" type="number" min="1" value={roomForm.staybuddyAllocation} onChange={e => setRoomForm(p => ({ ...p, staybuddyAllocation: e.target.value }))} />
-                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Rooms available on StayBuddy</span>
+                    <input className="form-input" type="number" min="1" max={roomForm.totalRooms} value={roomForm.staybuddyAllocation} onChange={e => setRoomForm(p => ({ ...p, staybuddyAllocation: e.target.value }))} />
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Rooms available on StayBuddy (defaults to total rooms)</span>
                   </div>
                 </div>
                 <div className="form-group">
