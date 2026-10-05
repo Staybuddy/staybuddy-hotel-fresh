@@ -132,8 +132,8 @@ export default async function TaxInvoicePage({ params }: { params: Promise<{ id:
                     <strong style={{ fontSize: '11px', color: '#111827' }}>{inv.companyName}</strong>
                   </div>
                 )}
-                <div style={{ color: '#111827', fontSize: '10px', marginBottom: '4px' }}>
-                  <strong style={{ color: '#374151' }}>Guest Name:</strong> {inv.guestName || inv.customerName}
+                <div style={{ fontSize: '10px', marginBottom: '4px' }}>
+                  <strong style={{ color: '#374151' }}>Guest Name:</strong> <strong style={{ color: '#ea580c' }}>{inv.guestName || inv.customerName}</strong>
                 </div>
                 {inv.address && (
                   <div style={{ color: '#4b5563', wordBreak: 'break-word', whiteSpace: 'pre-line' }}>
