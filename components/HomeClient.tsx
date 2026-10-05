@@ -340,7 +340,13 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
               return (
                   <div
                   key={card.id}
-                  onClick={() => setSearchData(p => ({ ...p, propertyType: p.propertyType === card.id ? '' : card.id }))}
+                  onClick={() => {
+                    const isOpening = searchData.propertyType !== card.id;
+                    setSearchData(p => ({ ...p, propertyType: isOpening ? card.id : '' }));
+                    if (isOpening && !searchData.location) {
+                      setTimeout(() => document.getElementById('location-search-trigger')?.click(), 300);
+                    }
+                  }}
                   style={{
                     background: isActive ? 'var(--brand-50)' : 'white',
                     borderRight: isLast ? 'none' : '1px solid var(--border)',
