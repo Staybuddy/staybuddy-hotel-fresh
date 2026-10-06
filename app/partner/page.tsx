@@ -187,31 +187,38 @@ export default function PartnerDashboard() {
 
   const [uploadingImage, setUploadingImage] = useState(false);
 
-  async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>, callback: (url: string) => void) {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  async function handleMultipleImageUpload(e: React.ChangeEvent<HTMLInputElement>, callback: (urls: string[]) => void) {
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
     setUploadingImage(true);
     try {
       const res = await fetch('/api/upload');
       const { signature, timestamp, cloudName, apiKey } = await res.json();
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('api_key', apiKey);
-      formData.append('timestamp', timestamp);
-      formData.append('signature', signature);
-      const uploadRes = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
-        method: 'POST',
-        body: formData,
+      
+      const uploadPromises = files.map(async (file) => {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('api_key', apiKey);
+        formData.append('timestamp', timestamp);
+        formData.append('signature', signature);
+        const uploadRes = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
+          method: 'POST',
+          body: formData,
+        });
+        const data = await uploadRes.json();
+        if (data.secure_url) return data.secure_url;
+        console.error('Upload failed:', data.error?.message);
+        return null;
       });
-      const data = await uploadRes.json();
-      if (data.secure_url) {
-        callback(data.secure_url);
-      } else {
-        alert('Upload failed: ' + (data.error?.message || 'Unknown error'));
+      
+      const urls = await Promise.all(uploadPromises);
+      const validUrls = urls.filter(Boolean) as string[];
+      if (validUrls.length > 0) {
+        callback(validUrls);
       }
     } catch (err) {
       console.error(err);
-      alert('Failed to upload image');
+      alert('Failed to upload images');
     } finally {
       setUploadingImage(false);
       e.target.value = ''; // Reset input
@@ -894,21 +901,36 @@ export default function PartnerDashboard() {
                             </div>
                             <div className="form-group">
                               <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <span>Room-Specific Images (URLs)</span>
-                                <label style={{ cursor: 'pointer', color: 'var(--brand-600)', fontSize: '0.8rem', fontWeight: 'bold' }}>
-                                  {uploadingImage ? 'Uploading...' : '📁 Upload Photo'}
-                                  <input type="file" accept="image/*" style={{ display: 'none' }} disabled={uploadingImage} onChange={(e) => handleImageUpload(e, (url) => {
+                                <span>Room Images</span>
+                                {uploadingImage && <span style={{ fontSize: '0.8rem', color: 'var(--brand-600)', fontWeight: 600 }}>Uploading...</span>}
+                              </label>
+                              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', padding: '12px', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', background: 'var(--bg-primary)', minHeight: '100px' }}>
+                                {Array.isArray(room.images) && room.images.map((url: string, i: number) => (
+                                  <div key={i} style={{ position: 'relative', width: '70px', height: '70px', flexShrink: 0 }}>
+                                    <img src={url} alt="Room" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '6px', border: '1px solid var(--border)' }} />
+                                    <button 
+                                      type="button" 
+                                      onClick={() => {
+                                        const newRooms = [...hotelForm.rooms];
+                                        newRooms[index].images = newRooms[index].images.filter((_: any, imgIndex: number) => imgIndex !== i);
+                                        setHotelForm({ ...hotelForm, rooms: newRooms });
+                                      }}
+                                      style={{ position: 'absolute', top: '-6px', right: '-6px', background: 'var(--danger)', color: 'white', borderRadius: '50%', width: '18px', height: '18px', border: 'none', cursor: 'pointer', fontSize: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0, lineHeight: 1 }}
+                                    >
+                                      &times;
+                                    </button>
+                                  </div>
+                                ))}
+                                <label style={{ width: '70px', height: '70px', border: '2px dashed var(--border-dark)', borderRadius: '6px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', background: 'var(--bg-secondary)', color: 'var(--text-secondary)', flexShrink: 0 }}>
+                                  <span style={{ fontSize: '24px', lineHeight: 1 }}>+</span>
+                                  <span style={{ fontSize: '10px', marginTop: '2px', fontWeight: 600 }}>Upload</span>
+                                  <input type="file" multiple accept="image/*" style={{ display: 'none' }} disabled={uploadingImage} onChange={(e) => handleMultipleImageUpload(e, (urls) => {
                                     const newRooms = [...hotelForm.rooms];
-                                    newRooms[index].images = [...(newRooms[index].images || []), url];
+                                    newRooms[index].images = [...(newRooms[index].images || []), ...urls];
                                     setHotelForm({ ...hotelForm, rooms: newRooms });
                                   })} />
                                 </label>
-                              </label>
-                              <textarea className="form-input form-textarea" style={{ height: 100 }} placeholder="https://example.com/room1.jpg&#10;https://example.com/room2.jpg" value={Array.isArray(room.images) ? room.images.join('\n') : ''} onChange={e => {
-                                const newRooms = [...hotelForm.rooms];
-                                newRooms[index].images = e.target.value.split('\n').filter(u => u.trim());
-                                setHotelForm({ ...hotelForm, rooms: newRooms });
-                              }} />
+                              </div>
                             </div>
                           </div>
 
@@ -934,19 +956,31 @@ export default function PartnerDashboard() {
                     <div className="card-body">
                       <div className="form-group">
                         <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <span>Image URLs (one per line)</span>
-                          <label style={{ cursor: 'pointer', color: 'var(--brand-600)', fontSize: '0.8rem', fontWeight: 'bold' }}>
-                            {uploadingImage ? 'Uploading...' : '📁 Upload Photo'}
-                            <input type="file" accept="image/*" style={{ display: 'none' }} disabled={uploadingImage} onChange={(e) => handleImageUpload(e, (url) => {
-                              setHotelForm(p => ({ ...p, images: [...(p.images || []), url] }));
+                          <span>Property Images</span>
+                          {uploadingImage && <span style={{ fontSize: '0.8rem', color: 'var(--brand-600)', fontWeight: 600 }}>Uploading...</span>}
+                        </label>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', padding: '16px', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', background: 'var(--bg-primary)', minHeight: '150px' }}>
+                          {Array.isArray(hotelForm.images) && hotelForm.images.map((url: string, i: number) => (
+                            <div key={i} style={{ position: 'relative', width: '100px', height: '100px', flexShrink: 0 }}>
+                              <img src={url} alt="Property" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '8px', border: '1px solid var(--border)' }} />
+                              <button 
+                                type="button" 
+                                onClick={() => setHotelForm(p => ({ ...p, images: p.images.filter((_, imgIndex) => imgIndex !== i) }))}
+                                style={{ position: 'absolute', top: '-8px', right: '-8px', background: 'var(--danger)', color: 'white', borderRadius: '50%', width: '22px', height: '22px', border: 'none', cursor: 'pointer', fontSize: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0, lineHeight: 1 }}
+                              >
+                                &times;
+                              </button>
+                            </div>
+                          ))}
+                          <label style={{ width: '100px', height: '100px', border: '2px dashed var(--border-dark)', borderRadius: '8px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', background: 'var(--bg-secondary)', color: 'var(--text-secondary)', flexShrink: 0 }}>
+                            <span style={{ fontSize: '28px', lineHeight: 1 }}>+</span>
+                            <span style={{ fontSize: '12px', marginTop: '4px', fontWeight: 600 }}>Upload</span>
+                            <input type="file" multiple accept="image/*" style={{ display: 'none' }} disabled={uploadingImage} onChange={(e) => handleMultipleImageUpload(e, (urls) => {
+                              setHotelForm(p => ({ ...p, images: [...(p.images || []), ...urls] }));
                             })} />
                           </label>
-                        </label>
-                        <textarea className="form-input form-textarea" style={{ minHeight: 180 }}
-                          placeholder="https://example.com/front.jpg&#10;https://example.com/lobby.jpg&#10;https://example.com/pool.jpg"
-                          value={hotelForm.images.join('\n')}
-                          onChange={e => setHotelForm(p => ({ ...p, images: e.target.value.split('\n').filter(u => u.trim()) }))} />
-                        <span className="form-hint">Enter one image URL per line. High-quality images significantly increase bookings!</span>
+                        </div>
+                        <span className="form-hint" style={{ marginTop: '8px', display: 'block' }}>Upload high-quality images. You can select multiple files at once.</span>
                       </div>
                     </div>
                   </div>
