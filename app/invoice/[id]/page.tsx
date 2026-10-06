@@ -188,7 +188,7 @@ export default async function InvoicePage({ params }: { params: Promise<{ id: st
                     {booking.hotelId?.name && (
                       <div style={{ marginTop: '4px', fontSize: '10px', fontWeight: 600 }}>
                         <span style={{ color: '#6b7280' }}>Hotel: </span>
-                        <strong style={{ color: '#ea580c' }}>{booking.hotelId.name}</strong>
+                        <strong style={{ color: '#ea580c' }}>{booking.hotelId.name}{booking.hotelId.state ? `, ${booking.hotelId.state}` : ''}</strong>
                       </div>
                     )}
                   </td>
