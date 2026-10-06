@@ -52,7 +52,7 @@ export default function Navbar({ middleContent, extendedContent }: { middleConte
           <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8 }}>
             {!session && (
               <>
-                <Link href="/login" className="btn btn-ghost hide-mobile" style={{ fontWeight: 500 }}>List Your Hotel</Link>
+                <Link href="/partner/login" className="btn btn-ghost hide-mobile" style={{ fontWeight: 500 }}>List Your Hotel</Link>
                 <Link href="/login" className="btn btn-outline" style={{ border: '2px solid var(--border)' }}>Log In</Link>
                 <Link href="/login" className="btn btn-primary hide-mobile">Get Started</Link>
               </>

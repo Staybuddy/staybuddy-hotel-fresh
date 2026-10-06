@@ -191,16 +191,49 @@ export default function PartnerDashboard() {
         minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
         background: 'linear-gradient(135deg, #fff7ed, white)', position: 'fixed', inset: 0, zIndex: 9999
       }}>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', padding: '24px', maxWidth: '500px' }}>
-          <div style={{ transform: 'scale(1.2)', marginBottom: 'var(--space-6)' }}>
+        <div className="card fade-in" style={{ padding: '32px', maxWidth: '600px', width: '90%', boxShadow: '0 20px 40px rgba(0,0,0,0.1)', borderTop: '4px solid var(--brand-600)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '24px' }}>
             <Logo size="lg" />
           </div>
-          <div style={{ fontSize: '3rem', marginBottom: '16px' }}>⏳</div>
-          <h2 style={{ color: 'var(--brand-600)', margin: '0 0 16px 0', fontSize: '1.8rem', fontWeight: 800 }}>Account Pending Approval</h2>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '1.05rem', lineHeight: 1.6 }}>
-            Your partner account is currently under review by our admin team. You will be granted access to the extranet dashboard once your account is verified.
+          <h2 style={{ color: '#0f172a', margin: '0 0 16px 0', fontSize: '1.6rem', fontWeight: 800, textAlign: 'center' }}>StayBuddy Partner Agreement</h2>
+          
+          <div style={{ background: '#f8fafc', padding: '20px', borderRadius: '12px', marginBottom: '24px', border: '1px solid #e2e8f0', maxHeight: '300px', overflowY: 'auto' }}>
+            <h4 style={{ fontSize: '1rem', color: '#1e293b', marginBottom: '12px' }}>Terms & Conditions</h4>
+            <ul style={{ paddingLeft: '20px', color: '#475569', fontSize: '0.9rem', lineHeight: 1.6 }}>
+              <li style={{ marginBottom: 8 }}><strong>Commission:</strong> StayBuddy charges a standard commission on all confirmed bookings.</li>
+              <li style={{ marginBottom: 8 }}><strong>Inventory Accuracy:</strong> Partners must ensure that room inventory and StayBuddy allocations are kept accurate and up to date.</li>
+              <li style={{ marginBottom: 8 }}><strong>Quality Standards:</strong> Properties must maintain a high standard of cleanliness and customer service.</li>
+              <li style={{ marginBottom: 8 }}><strong>Cancellations:</strong> Partners must honor all StayBuddy bookings according to the agreed cancellation policy.</li>
+              <li><strong>Payments:</strong> Payments will be settled according to the standard B2B cycle.</li>
+            </ul>
+          </div>
+
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', lineHeight: 1.5, textAlign: 'center', marginBottom: '24px' }}>
+            By clicking "I Agree", you accept the StayBuddy Partner Terms & Conditions and will instantly unlock your Extranet Dashboard to list your properties.
           </p>
-          <Link href="/" className="btn btn-secondary" style={{ marginTop: '32px' }}>Return to Homepage</Link>
+
+          <button 
+            type="button" 
+            className="btn btn-primary" 
+            style={{ width: '100%', padding: '14px', fontSize: '1.1rem', fontWeight: 700 }}
+            onClick={async (e) => {
+              const btn = e.currentTarget;
+              btn.disabled = true;
+              btn.innerHTML = 'Approving...';
+              try {
+                await fetch('/api/partner/agree', { method: 'POST' });
+                // Instantly update the session state visually to reveal dashboard
+                if (session && session.user) (session.user as any).partnerStatus = 'approved';
+                fetchData();
+              } catch (err) {
+                console.error(err);
+                btn.disabled = false;
+                btn.innerHTML = 'I Agree & Continue';
+              }
+            }}
+          >
+            I Agree & Continue
+          </button>
         </div>
       </div>
     );
