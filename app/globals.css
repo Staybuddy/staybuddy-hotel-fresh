@@ -659,8 +659,9 @@ tbody tr:hover { background: var(--bg-secondary); }
     padding-left: 12px;
     padding-right: 12px;
     width: 100% !important;
-    max-width: 100vw !important;
-    overflow: hidden;
+  }
+  #review-section {
+    -webkit-overflow-scrolling: touch !important;
   }
   .price-breakup-card {
     padding: 16px;
