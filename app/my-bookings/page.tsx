@@ -111,11 +111,11 @@ export default function MyBookingsPage() {
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
             {filtered.map(booking => (
-              <div key={booking._id} className="card" style={{ display: 'grid', gridTemplateColumns: booking.hotelId?.images?.[0] ? '120px 1fr auto' : '1fr auto', gap: 'var(--space-4)', alignItems: 'center' }}>
+              <div key={booking._id} className={`card booking-card-layout ${!booking.hotelId?.images?.[0] ? 'no-img' : ''}`}>
                 {booking.hotelId?.images?.[0] && (
-                  <Image src={booking.hotelId.images[0]} alt={booking.hotelId.name} width={120} height={90} style={{ objectFit: 'cover', borderRadius: 'var(--radius-md)' }} />
+                  <Image src={booking.hotelId.images[0]} alt={booking.hotelId.name} width={120} height={90} className="booking-card-img" />
                 )}
-                <div className="card-body" style={{ padding: 'var(--space-4)' }}>
+                <div className="card-body">
                   <div style={{ display: 'flex', gap: 8, marginBottom: 6, alignItems: 'center' }}>
                     <h3 style={{ fontSize: '1rem' }}>{booking.hotelId?.name || 'Hotel'}</h3>
                     <span className={`badge ${booking.status === 'confirmed' ? 'badge-success' : booking.status === 'cancelled' ? 'badge-danger' : booking.status === 'completed' ? 'badge-info' : 'badge-warning'}`}>{booking.status}</span>
@@ -129,13 +129,15 @@ export default function MyBookingsPage() {
                     <div><span style={{ color: 'var(--text-muted)' }}>Guests:</span> <strong>{booking.guests}</strong></div>
                   </div>
                 </div>
-                <div style={{ padding: 'var(--space-4)', textAlign: 'right', flexShrink: 0 }}>
-                  <div style={{ fontSize: '1.3rem', fontWeight: 800, color: 'var(--brand-600)', marginBottom: 4 }}>₹{booking.totalPrice?.toLocaleString()}</div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: 12 }}>
-                    <span className={`badge ${booking.paymentStatus === 'paid' ? 'badge-success' : 'badge-warning'}`}>{booking.paymentStatus}</span>
+                <div className="booking-card-actions">
+                  <div className="booking-card-actions-header">
+                    <div style={{ fontSize: '1.3rem', fontWeight: 800, color: 'var(--brand-600)' }}>₹{booking.totalPrice?.toLocaleString()}</div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                      <span className={`badge ${booking.paymentStatus === 'paid' ? 'badge-success' : 'badge-warning'}`}>{booking.paymentStatus}</span>
+                    </div>
                   </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                    <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
+                  <div className="booking-card-actions-btn-group">
+                    <div className="booking-card-actions-btn-row">
                       <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent((booking.hotelId?.name || '') + " " + (booking.hotelId?.city || ''))}`} target="_blank" rel="noreferrer" className="btn btn-outline btn-sm" style={{flex: 1, textAlign: 'center', padding: '6px 10px'}}>🗺️ Directions</a>
                       <Link href={`/hotels/${booking.hotelId?._id}`} className="btn btn-secondary btn-sm" style={{flex: 1, textAlign: 'center', padding: '6px 10px'}}>View Hotel</Link>
                     </div>

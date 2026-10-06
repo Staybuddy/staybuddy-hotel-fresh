@@ -766,3 +766,69 @@ tbody tr:hover { background: var(--bg-secondary); }
     font-size: 0.78rem !important;
   }
 }
+
+/* ===== BOOKING CARDS ===== */
+.booking-card-layout {
+  display: grid;
+  grid-template-columns: 120px 1fr 200px;
+  gap: var(--space-4);
+  align-items: center;
+}
+.booking-card-layout.no-img {
+  grid-template-columns: 1fr 200px;
+}
+.booking-card-img {
+  width: 120px !important;
+  height: 90px !important;
+  object-fit: cover !important;
+  border-radius: var(--radius-md) !important;
+}
+.booking-card-actions {
+  padding: var(--space-4);
+  text-align: right;
+  flex-shrink: 0;
+}
+.booking-card-actions-header {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+.booking-card-actions-btn-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.booking-card-actions-btn-row {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+@media (max-width: 768px) {
+  .booking-card-layout, .booking-card-layout.no-img {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+  .booking-card-img {
+    width: 100% !important;
+    height: 180px !important;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0 !important;
+  }
+  .booking-card-actions {
+    text-align: left;
+    padding: 0 var(--space-4) var(--space-4);
+  }
+  .booking-card-actions-header {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+  .booking-card-actions-btn-row {
+    flex-wrap: wrap;
+    justify-content: space-between;
+  }
+  .booking-card-actions-btn-row > * {
+    flex: 1 1 45%;
+  }
+}
