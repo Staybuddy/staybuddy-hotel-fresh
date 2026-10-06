@@ -70,79 +70,97 @@ export default async function InvoicePage({ params }: { params: Promise<{ id: st
         <div style={{ position: 'relative', zIndex: 1 }}>
           
           {/* Header Row */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '2px solid #ea580c', paddingBottom: '20px', marginBottom: '25px', alignItems: 'center' }}>
-            <div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px' }}>
+            <div style={{ width: '33.33%' }}>
+              <h2 style={{ margin: '0', fontSize: '24px', color: '#111827', fontWeight: 800, textTransform: 'uppercase' }}>Tax Invoice</h2>
+            </div>
+            <div style={{ width: '33.33%', textAlign: 'center' }}>
               <h1 style={{ margin: 0, fontSize: '36px', color: '#ea580c', fontWeight: 900, letterSpacing: '-1px' }}>StayBuddy.</h1>
             </div>
-            <div style={{ textAlign: 'right' }}>
-              <h2 style={{ margin: '0 0 8px 0', fontSize: '22px', color: '#111827', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px' }}>Tax Invoice</h2>
-              <table style={{ width: '100%', fontSize: '10px', textAlign: 'right' }}>
-                <tbody>
-                  <tr>
-                    <td style={{ color: '#6b7280', paddingRight: '15px' }}>Invoice No:</td>
-                    <td style={{ fontWeight: 700, color: '#111827' }}>{invoiceNum}</td>
-                  </tr>
-                  <tr>
-                    <td style={{ color: '#6b7280', paddingRight: '15px' }}>Booking ID:</td>
-                    <td style={{ fontWeight: 700, color: '#111827' }}>{booking.bookingId}</td>
-                  </tr>
-                  <tr>
-                    <td style={{ color: '#6b7280', paddingRight: '15px' }}>Invoice Date:</td>
-                    <td style={{ fontWeight: 700, color: '#111827' }}>{bookingDate}</td>
-                  </tr>
-                  <tr>
-                    <td style={{ color: '#6b7280', paddingRight: '15px' }}>Place of Supply:</td>
-                    <td style={{ fontWeight: 700, color: '#111827' }}>{booking.hotelId?.state || 'Maharashtra'}</td>
-                  </tr>
-                </tbody>
-              </table>
+            <div style={{ width: '33.33%' }}></div>
+          </div>
+
+          {/* Invoice Details */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', marginBottom: '30px', borderBottom: '1px solid #e5e7eb', paddingBottom: '20px' }}>
+            <div style={{ width: '50%' }}>
+              <div style={{ marginBottom: '10px' }}>
+                <div style={{ color: '#6b7280', fontSize: '9px' }}>Booking ID</div>
+                <div style={{ fontWeight: 700, color: '#111827' }}>{booking.bookingId || 'N/A'}</div>
+              </div>
+              <div style={{ marginBottom: '10px' }}>
+                <div style={{ color: '#6b7280', fontSize: '9px' }}>Invoice No.</div>
+                <div style={{ fontWeight: 700, color: '#111827' }}>{invoiceNum}</div>
+              </div>
+              <div style={{ marginBottom: '10px' }}>
+                <div style={{ color: '#6b7280', fontSize: '9px' }}>Date</div>
+                <div style={{ fontWeight: 700, color: '#111827' }}>{bookingDate}</div>
+              </div>
+              <div style={{ marginBottom: '10px' }}>
+                <div style={{ color: '#6b7280', fontSize: '9px' }}>Place of Supply</div>
+                <div style={{ fontWeight: 700, color: '#111827' }}>{booking.hotelId?.state || 'Telangana'}</div>
+              </div>
+            </div>
+            <div style={{ width: '50%' }}>
+              <div style={{ marginBottom: '10px' }}>
+                <div style={{ color: '#6b7280', fontSize: '9px' }}>HSN/SAC</div>
+                <div style={{ fontWeight: 700, color: '#111827' }}>998552</div>
+              </div>
+              <div style={{ marginBottom: '10px' }}>
+                <div style={{ color: '#6b7280', fontSize: '9px' }}>GSTIN</div>
+                <div style={{ fontWeight: 700, color: '#111827' }}>09ABMCS6430L1ZR</div>
+              </div>
+              <div style={{ marginBottom: '10px' }}>
+                <div style={{ color: '#6b7280', fontSize: '9px' }}>Service Description</div>
+                <div style={{ fontWeight: 700, color: '#111827' }}>Reservation service for accommodation</div>
+              </div>
             </div>
           </div>
 
           {/* Billing & Hotel Details Grid */}
-          <div style={{ display: 'flex', gap: '30px', marginBottom: '30px' }}>
+          <div style={{ display: 'flex', gap: '30px', marginBottom: '30px', alignItems: 'stretch' }}>
             
             {/* Billed To */}
-            <div style={{ flex: 1 }}>
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
               <div style={{ backgroundColor: '#f9fafb', border: '1px solid #e5e7eb', padding: '6px 12px', fontSize: '10px', fontWeight: 700, color: '#374151', textTransform: 'uppercase', borderBottom: 'none' }}>
                 Billed To (Customer Details)
               </div>
-              <div style={{ border: '1px solid #e5e7eb', padding: '12px', height: '110px' }}>
-                <strong style={{ fontSize: '12px', color: '#111827', display: 'block', marginBottom: '4px' }}>{booking.gstCompanyName || booking.guestName}</strong>
-                <div style={{ color: '#4b5563' }}>
-                  {booking.guestName}<br/>
-                  {booking.guestPhone}<br/>
-                  {booking.guestEmail}
+              <div style={{ border: '1px solid #e5e7eb', padding: '12px', flex: 1, minHeight: '120px', fontSize: '10px', lineHeight: '1.5' }}>
+                {booking.gstCompanyName && (
+                  <div style={{ fontSize: '10px', marginBottom: '4px' }}>
+                    <strong style={{ color: '#374151' }}>Company Name:</strong> <strong style={{ color: '#111827' }}>{booking.gstCompanyName}</strong>
+                  </div>
+                )}
+                <div style={{ fontSize: '10px', marginBottom: '4px' }}>
+                  <strong style={{ color: '#374151' }}>Guest Name:</strong> <strong style={{ color: '#ea580c' }}>{booking.guestName}</strong>
                 </div>
-                {booking.gstRegistrationNo && (
-                  <div style={{ marginTop: '8px', color: '#111827' }}>
-                    <strong>GSTIN:</strong> {booking.gstRegistrationNo}<br/>
-                    <strong>Address:</strong> {booking.gstCompanyAddress}
+                {booking.gstCompanyAddress && (
+                  <div style={{ color: '#4b5563', wordBreak: 'break-word', whiteSpace: 'pre-line' }}>
+                    <strong style={{ color: '#374151' }}>Address:</strong> {booking.gstCompanyAddress}
                   </div>
                 )}
               </div>
             </div>
 
-            {/* Hotel Details */}
-            <div style={{ flex: 1 }}>
+            {/* Stay Details */}
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
               <div style={{ backgroundColor: '#f9fafb', border: '1px solid #e5e7eb', padding: '6px 12px', fontSize: '10px', fontWeight: 700, color: '#374151', textTransform: 'uppercase', borderBottom: 'none' }}>
-                Property Details
+                Stay Details
               </div>
-              <div style={{ border: '1px solid #e5e7eb', padding: '12px', height: '110px' }}>
-                <strong style={{ fontSize: '12px', color: '#111827', display: 'block', marginBottom: '4px' }}>{booking.hotelId?.name}</strong>
-                <div style={{ color: '#4b5563' }}>
-                  {booking.hotelId?.address}<br/>
-                  {booking.hotelId?.city}, {booking.hotelId?.state} - {booking.hotelId?.zipCode}
-                </div>
-                <div style={{ marginTop: '12px', display: 'flex', justifyContent: 'space-between', fontSize: '10px', backgroundColor: '#f3f4f6', padding: '6px', borderRadius: '4px' }}>
+              <div style={{ border: '1px solid #e5e7eb', padding: '12px', flex: 1, minHeight: '120px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', backgroundColor: '#f3f4f6', padding: '8px 10px', borderRadius: '4px' }}>
                   <div>
                     <span style={{ color: '#6b7280' }}>Check-In:</span><br/>
-                    <strong style={{ color: '#111827' }}>{formatDate(booking.checkIn)} (12 PM)</strong>
+                    <strong style={{ color: '#ea580c' }}>{booking.checkIn ? formatDate(booking.checkIn) : 'N/A'} (12 PM)</strong>
                   </div>
                   <div style={{ textAlign: 'right' }}>
                     <span style={{ color: '#6b7280' }}>Check-Out:</span><br/>
-                    <strong style={{ color: '#111827' }}>{formatDate(booking.checkOut)} (11 AM)</strong>
+                    <strong style={{ color: '#ea580c' }}>{booking.checkOut ? formatDate(booking.checkOut) : 'N/A'} (11 AM)</strong>
                   </div>
+                </div>
+                <div style={{ marginTop: '10px', color: '#4b5563', fontSize: '10px', display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '6px' }}>
+                  <span><strong>Duration:</strong> {booking.nights || 1} Night(s)</span>
+                  <span><strong>Rooms:</strong> {booking.rooms || 1} ({booking.guests || 1} Guest{booking.guests > 1 ? 's' : ''})</span>
+                  <span><strong>Tariff/Room/Night:</strong> <strong style={{ color: '#ea580c' }}>₹{(basePrice / (booking.rooms || 1) / (booking.nights || 1)).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</strong></span>
                 </div>
               </div>
             </div>
@@ -155,10 +173,9 @@ export default async function InvoicePage({ params }: { params: Promise<{ id: st
               <thead>
                 <tr style={{ backgroundColor: '#f9fafb', color: '#374151', textTransform: 'uppercase', fontSize: '10px' }}>
                   <th style={{ padding: '10px 12px', border: '1px solid #e5e7eb', textAlign: 'center', width: '5%' }}>Sl.</th>
-                  <th style={{ padding: '10px 12px', border: '1px solid #e5e7eb', textAlign: 'left', width: '35%' }}>Description of Service</th>
-                  <th style={{ padding: '10px 12px', border: '1px solid #e5e7eb', textAlign: 'center', width: '12%' }}>HSN / SAC</th>
-                  <th style={{ padding: '10px 12px', border: '1px solid #e5e7eb', textAlign: 'center', width: '12%' }}>Room(s) x Night(s)</th>
-                  <th style={{ padding: '10px 12px', border: '1px solid #e5e7eb', textAlign: 'right', width: '18%' }}>Rate (₹)</th>
+                  <th style={{ padding: '10px 12px', border: '1px solid #e5e7eb', textAlign: 'left', width: '47%' }}>Description of Service</th>
+                  <th style={{ padding: '10px 12px', border: '1px solid #e5e7eb', textAlign: 'center', width: '15%' }}>Quantity</th>
+                  <th style={{ padding: '10px 12px', border: '1px solid #e5e7eb', textAlign: 'right', width: '15%' }}>Per Day Tariff (₹)</th>
                   <th style={{ padding: '10px 12px', border: '1px solid #e5e7eb', textAlign: 'right', width: '18%' }}>Taxable Value (₹)</th>
                 </tr>
               </thead>
@@ -168,10 +185,15 @@ export default async function InvoicePage({ params }: { params: Promise<{ id: st
                   <td style={{ padding: '12px', border: '1px solid #e5e7eb', color: '#111827' }}>
                     <strong>Accommodation Charges</strong><br/>
                     <span style={{ color: '#6b7280', fontSize: '9px' }}>{booking.roomId?.type || 'Standard Room'} - Room Only (Base Rate)</span>
+                    {booking.hotelId?.name && (
+                      <div style={{ marginTop: '4px', fontSize: '10px', fontWeight: 600 }}>
+                        <span style={{ color: '#6b7280' }}>Hotel: </span>
+                        <strong style={{ color: '#ea580c' }}>{booking.hotelId.name}</strong>
+                      </div>
+                    )}
                   </td>
-                  <td style={{ padding: '12px', border: '1px solid #e5e7eb', textAlign: 'center', color: '#4b5563' }}>998552</td>
-                  <td style={{ padding: '12px', border: '1px solid #e5e7eb', textAlign: 'center', color: '#4b5563' }}>{booking.rooms || 1} x {booking.nights}</td>
-                  <td style={{ padding: '12px', border: '1px solid #e5e7eb', textAlign: 'right', color: '#4b5563' }}>{Math.round(basePrice / booking.nights).toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                  <td style={{ padding: '12px', border: '1px solid #e5e7eb', textAlign: 'center', color: '#4b5563' }}>{(booking.rooms || 1)} Room(s) × {booking.nights || 1} Night(s)</td>
+                  <td style={{ padding: '12px', border: '1px solid #e5e7eb', textAlign: 'right', color: '#ea580c', fontWeight: 600 }}>{(basePrice / (booking.rooms || 1) / (booking.nights || 1)).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
                   <td style={{ padding: '12px', border: '1px solid #e5e7eb', textAlign: 'right', color: '#111827', fontWeight: 600 }}>{basePrice.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
                 </tr>
               </tbody>
@@ -206,7 +228,8 @@ export default async function InvoicePage({ params }: { params: Promise<{ id: st
                     <td style={{ padding: '8px 12px', borderBottom: '1px solid #e5e7eb', color: '#4b5563' }}>Total Taxable Value</td>
                     <td style={{ padding: '8px 12px', borderBottom: '1px solid #e5e7eb', textAlign: 'right', fontWeight: 600, color: '#111827' }}>₹{basePrice.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
                   </tr>
-                  {booking.hotelId?.state === 'Maharashtra' ? (
+                  
+                  {booking.hotelId?.state === 'Telangana' ? (
                     <>
                       <tr>
                         <td style={{ padding: '8px 12px', borderBottom: '1px solid #e5e7eb', color: '#4b5563' }}>CGST @ 2.5%</td>
@@ -223,6 +246,7 @@ export default async function InvoicePage({ params }: { params: Promise<{ id: st
                       <td style={{ padding: '8px 12px', borderBottom: '1px solid #e5e7eb', textAlign: 'right', color: '#111827' }}>₹{gstAmount.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
                     </tr>
                   )}
+                  
                   <tr style={{ backgroundColor: '#fff7ed' }}>
                     <td style={{ padding: '12px', borderBottom: '1px solid #e5e7eb', color: '#ea580c', fontWeight: 800, fontSize: '14px' }}>Grand Total</td>
                     <td style={{ padding: '12px', borderBottom: '1px solid #e5e7eb', textAlign: 'right', color: '#ea580c', fontWeight: 800, fontSize: '14px' }}>₹{grandTotal.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
@@ -241,9 +265,10 @@ export default async function InvoicePage({ params }: { params: Promise<{ id: st
             
             {/* Company Info Moved to Bottom */}
             <div style={{ fontSize: '9px', color: '#6b7280', lineHeight: '1.6' }}>
-              <strong style={{ color: '#4b5563', fontSize: '10px', textTransform: 'uppercase' }}>Staybuddy (India) Private Limited</strong><br/>
-              12th Floor, Tower B, Tech Park, Andheri East, Mumbai, Maharashtra, 400053<br/>
-              <strong>GSTIN:</strong> 27AABCS1429B1Z5 &nbsp;|&nbsp; <strong>PAN:</strong> AABCS1429B &nbsp;|&nbsp; <strong>Email:</strong> support@staybuddy.com
+              <strong style={{ color: '#4b5563', fontSize: '10px', textTransform: 'uppercase' }}>Stay Buddy (Proprietorship: Mulla Arif)</strong><br/>
+              1st Floor, 11-3, Shamshabad Flyover, Near Appu Pan Shop,<br/>
+              Shamshabad, Hyderabad, Rangareddy, Telangana 501218<br/>
+              <strong>GSTIN:</strong> 36FSKPM3408R1ZZ &nbsp;|&nbsp; <strong>Email:</strong> staybuddyhotels@gmail.com
             </div>
 
             {/* Signature */}
