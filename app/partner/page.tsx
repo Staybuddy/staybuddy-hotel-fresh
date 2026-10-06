@@ -185,6 +185,39 @@ export default function PartnerDashboard() {
 
   const toggleAmenity = (a: string) => setHotelForm(p => ({ ...p, amenities: p.amenities.includes(a) ? p.amenities.filter(x => x !== a) : [...p.amenities, a] }));
 
+  const [uploadingImage, setUploadingImage] = useState(false);
+
+  async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>, callback: (url: string) => void) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingImage(true);
+    try {
+      const res = await fetch('/api/upload');
+      const { signature, timestamp, cloudName, apiKey } = await res.json();
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('api_key', apiKey);
+      formData.append('timestamp', timestamp);
+      formData.append('signature', signature);
+      const uploadRes = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
+        method: 'POST',
+        body: formData,
+      });
+      const data = await uploadRes.json();
+      if (data.secure_url) {
+        callback(data.secure_url);
+      } else {
+        alert('Upload failed: ' + (data.error?.message || 'Unknown error'));
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Failed to upload image');
+    } finally {
+      setUploadingImage(false);
+      e.target.value = ''; // Reset input
+    }
+  }
+
   if (status === 'authenticated' && (session.user as any)?.role === 'partner' && (session.user as any)?.partnerStatus !== 'approved') {
     return (
       <div style={{ 
@@ -860,7 +893,17 @@ export default function PartnerDashboard() {
                               }} />
                             </div>
                             <div className="form-group">
-                              <label className="form-label">Room-Specific Images (URLs)</label>
+                              <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <span>Room-Specific Images (URLs)</span>
+                                <label style={{ cursor: 'pointer', color: 'var(--brand-600)', fontSize: '0.8rem', fontWeight: 'bold' }}>
+                                  {uploadingImage ? 'Uploading...' : '📁 Upload Photo'}
+                                  <input type="file" accept="image/*" style={{ display: 'none' }} disabled={uploadingImage} onChange={(e) => handleImageUpload(e, (url) => {
+                                    const newRooms = [...hotelForm.rooms];
+                                    newRooms[index].images = [...(newRooms[index].images || []), url];
+                                    setHotelForm({ ...hotelForm, rooms: newRooms });
+                                  })} />
+                                </label>
+                              </label>
                               <textarea className="form-input form-textarea" style={{ height: 100 }} placeholder="https://example.com/room1.jpg&#10;https://example.com/room2.jpg" value={Array.isArray(room.images) ? room.images.join('\n') : ''} onChange={e => {
                                 const newRooms = [...hotelForm.rooms];
                                 newRooms[index].images = e.target.value.split('\n').filter(u => u.trim());
@@ -890,7 +933,15 @@ export default function PartnerDashboard() {
                     <div className="card-header"><h3 style={{ fontSize: '1rem' }}>📸 Property Images</h3></div>
                     <div className="card-body">
                       <div className="form-group">
-                        <label className="form-label">Image URLs (one per line)</label>
+                        <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span>Image URLs (one per line)</span>
+                          <label style={{ cursor: 'pointer', color: 'var(--brand-600)', fontSize: '0.8rem', fontWeight: 'bold' }}>
+                            {uploadingImage ? 'Uploading...' : '📁 Upload Photo'}
+                            <input type="file" accept="image/*" style={{ display: 'none' }} disabled={uploadingImage} onChange={(e) => handleImageUpload(e, (url) => {
+                              setHotelForm(p => ({ ...p, images: [...(p.images || []), url] }));
+                            })} />
+                          </label>
+                        </label>
                         <textarea className="form-input form-textarea" style={{ minHeight: 180 }}
                           placeholder="https://example.com/front.jpg&#10;https://example.com/lobby.jpg&#10;https://example.com/pool.jpg"
                           value={hotelForm.images.join('\n')}
