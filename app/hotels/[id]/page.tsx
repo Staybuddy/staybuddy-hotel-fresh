@@ -1772,13 +1772,10 @@ export default function HotelDetailPage() {
                   </div>
 
                   <div
-                    className="card"
+                    className="card review-booking-dates-card"
                     style={{
                       padding: "20px",
                       borderRadius: "var(--radius-lg)",
-                      display: "flex",
-                      gap: "24px",
-                      alignItems: "stretch",
                     }}
                   >
                     <div
@@ -1955,14 +1952,11 @@ export default function HotelDetailPage() {
                     </div>
 
                     <div
+                      className="review-booking-dates-addon"
                       style={{
-                        width: "240px",
                         background: "#eff6ff",
                         borderRadius: "var(--radius-md)",
                         padding: "16px",
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: 8,
                         border: "1px solid #bfdbfe",
                       }}
                     >

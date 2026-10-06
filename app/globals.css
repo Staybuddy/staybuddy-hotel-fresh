@@ -845,3 +845,27 @@ tbody tr:hover { background: var(--bg-secondary); }
   }
 }
 
+
+/* Checkout Dates Card Layout */
+.review-booking-dates-card {
+  display: flex;
+  gap: 24px;
+  align-items: stretch;
+}
+
+.review-booking-dates-addon {
+  width: 240px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+@media (max-width: 768px) {
+  .review-booking-dates-card {
+    flex-direction: column;
+    gap: 16px;
+  }
+  .review-booking-dates-addon {
+    width: 100%;
+  }
+}
