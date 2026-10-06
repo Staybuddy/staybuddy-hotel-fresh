@@ -631,7 +631,7 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
               <div style={{ fontSize: '3rem', marginBottom: 16 }}>🏨</div>
               <h3 style={{ color: 'var(--text-secondary)' }}>Hotels Coming Soon!</h3>
               <p style={{ marginTop: 8 }}>Be the first to list your hotel on StayBuddy.</p>
-              <Link href="/login" className="btn btn-primary" style={{ marginTop: 20, display: 'inline-flex' }}>List Your Hotel</Link>
+              <Link href="/partner/login" className="btn btn-primary" style={{ marginTop: 20, display: 'inline-flex' }}>List Your Hotel</Link>
             </div>
           ) : (
             <div style={{
@@ -790,7 +790,7 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
                 <div style={{ fontWeight: 700, color: 'white', marginBottom: 12, fontSize: '0.9rem' }}>{col.title}</div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                   {col.links.map(link => (
-                    <Link key={link} href={link === 'Partner Login' ? '/partner/login' : '#'} style={{ fontSize: '0.875rem', color: '#64748b', transition: 'color var(--transition-fast)', textDecoration: 'none' }}
+                    <Link key={link} href={link === 'Partner Login' || link === 'List Your Hotel' ? '/partner/login' : '#'} style={{ fontSize: '0.875rem', color: '#64748b', transition: 'color var(--transition-fast)', textDecoration: 'none' }}
                       onMouseEnter={e => (e.currentTarget.style.color = 'var(--brand-400)')}
                       onMouseLeave={e => (e.currentTarget.style.color = '#64748b')}>{link}</Link>
                   ))}
