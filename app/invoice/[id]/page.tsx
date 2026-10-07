@@ -130,6 +130,11 @@ export default async function InvoicePage({ params }: { params: Promise<{ id: st
                     <strong style={{ color: '#374151' }}>Company Name:</strong> <strong style={{ color: '#111827' }}>{booking.gstCompanyName}</strong>
                   </div>
                 )}
+                {booking.gstRegistrationNo && (
+                  <div style={{ fontSize: '10px', marginBottom: '4px' }}>
+                    <strong style={{ color: '#374151' }}>Customer GSTIN:</strong> <strong style={{ color: '#111827' }}>{booking.gstRegistrationNo}</strong>
+                  </div>
+                )}
                 <div style={{ fontSize: '10px', marginBottom: '4px' }}>
                   <strong style={{ color: '#374151' }}>Guest Name:</strong> <strong style={{ color: '#ea580c' }}>{booking.guestName}</strong>
                 </div>

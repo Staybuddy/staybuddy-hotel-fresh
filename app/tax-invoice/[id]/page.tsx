@@ -109,7 +109,7 @@ export default async function TaxInvoicePage({ params }: { params: Promise<{ id:
               </div>
               <div style={{ marginBottom: '10px' }}>
                 <div style={{ color: '#6b7280', fontSize: '9px' }}>GSTIN</div>
-                <div style={{ fontWeight: 700, color: '#111827' }}>{inv.gstNumber || 'Not Available'}</div>
+                <div style={{ fontWeight: 700, color: '#111827' }}>09ABMCS6430L1ZR</div>
               </div>
               <div style={{ marginBottom: '10px' }}>
                 <div style={{ color: '#6b7280', fontSize: '9px' }}>Service Description</div>
@@ -130,6 +130,11 @@ export default async function TaxInvoicePage({ params }: { params: Promise<{ id:
                 {inv.companyName && (
                   <div style={{ fontSize: '10px', marginBottom: '4px' }}>
                     <strong style={{ color: '#374151' }}>Company Name:</strong> <strong style={{ color: '#111827' }}>{inv.companyName}</strong>
+                  </div>
+                )}
+                {inv.gstNumber && (
+                  <div style={{ fontSize: '10px', marginBottom: '4px' }}>
+                    <strong style={{ color: '#374151' }}>Customer GSTIN:</strong> <strong style={{ color: '#111827' }}>{inv.gstNumber}</strong>
                   </div>
                 )}
                 <div style={{ fontSize: '10px', marginBottom: '4px' }}>
