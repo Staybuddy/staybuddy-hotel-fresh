@@ -198,7 +198,6 @@ export default async function TaxInvoicePage({ params }: { params: Promise<{ id:
                         <strong style={{ color: '#ea580c' }}>
                           {inv.hotelName}
                           {inv.hotelCity ? `, ${inv.hotelCity}` : ''}
-                          {inv.placeOfSupply ? `, ${inv.placeOfSupply}` : ''}
                         </strong>
                       </div>
                     )}
