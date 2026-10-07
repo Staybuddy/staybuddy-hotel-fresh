@@ -107,7 +107,7 @@ export default async function InvoicePage({ params }: { params: Promise<{ id: st
               </div>
               <div style={{ marginBottom: '10px' }}>
                 <div style={{ color: '#6b7280', fontSize: '9px' }}>GSTIN</div>
-                <div style={{ fontWeight: 700, color: '#111827' }}>09ABMCS6430L1ZR</div>
+                <div style={{ fontWeight: 700, color: '#111827' }}>36FSKPM3408R1ZZ</div>
               </div>
               <div style={{ marginBottom: '10px' }}>
                 <div style={{ color: '#6b7280', fontSize: '9px' }}>Service Description</div>
