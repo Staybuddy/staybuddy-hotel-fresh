@@ -105,12 +105,26 @@ export default function AdminDashboard() {
 
       const revenue = b.filter((bk: any) => bk.paymentStatus === 'paid').reduce((s: number, bk: any) => s + bk.totalPrice, 0);
       
-      // Calculate profit based on margin of each hotel
+      // Calculate profit based on margin of each hotel (using base price)
       let profit = 0;
       b.filter((bk: any) => bk.paymentStatus === 'paid').forEach((bk: any) => {
         const hotel = h.find((htl: any) => htl._id === bk.hotelId?._id || htl._id === bk.hotelId);
         const margin = hotel?.marginPercentage || 0;
-        profit += (bk.totalPrice * margin) / 100;
+        
+        const nights = bk.noOfNights || 1;
+        const rooms = bk.noOfRooms || 1;
+        const perRoomNightInclusive = bk.totalPrice / (nights * rooms);
+        let gstPercentage = 0;
+        if (perRoomNightInclusive >= 7500) {
+          gstPercentage = 18;
+        } else if (perRoomNightInclusive >= 1000) {
+          gstPercentage = 5;
+        } else {
+          gstPercentage = 0;
+        }
+        const basePrice = bk.totalPrice / (1 + gstPercentage / 100);
+
+        profit += (basePrice * margin) / 100;
       });
 
       setStats({
@@ -562,11 +576,31 @@ export default function AdminDashboard() {
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(400px, 1fr))', gap: 24 }}>
                 {approvedHotels.map(h => {
                   const propertyBookings = bookings.filter(b => (b.hotelId?._id === h._id || b.hotelId === h._id) && b.paymentStatus === 'paid');
-                  const propertyGmv = propertyBookings.reduce((s, b) => s + b.totalPrice, 0);
-                  const basePrice = propertyGmv / 1.12;
+                  let propertyGmv = 0;
+                  let totalBasePrice = 0;
+                  let totalGstAmount = 0;
+
+                  propertyBookings.forEach(b => {
+                    propertyGmv += b.totalPrice;
+                    const nights = b.noOfNights || 1;
+                    const rooms = b.noOfRooms || 1;
+                    const perRoomNightInclusive = b.totalPrice / (nights * rooms);
+                    let gstPercentage = 0;
+                    if (perRoomNightInclusive >= 7500) {
+                      gstPercentage = 18;
+                    } else if (perRoomNightInclusive >= 1000) {
+                      gstPercentage = 5;
+                    } else {
+                      gstPercentage = 0;
+                    }
+                    const basePrice = b.totalPrice / (1 + gstPercentage / 100);
+                    totalBasePrice += basePrice;
+                    totalGstAmount += (b.totalPrice - basePrice);
+                  });
+
                   const margin = h.marginPercentage || 0;
-                  const propertyProfit = (basePrice * margin) / 100;
-                  const b2bPrice = basePrice - propertyProfit;
+                  const propertyProfit = (totalBasePrice * margin) / 100;
+                  const b2bPrice = totalBasePrice - propertyProfit;
 
                   return (
                     <div key={h._id} style={{ background: 'white', borderRadius: 16, padding: 24, boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' }}>
@@ -588,8 +622,8 @@ export default function AdminDashboard() {
                           <div style={{ fontSize: '1.4rem', fontWeight: 900, color: '#1d4ed8' }}>₹{Math.round(b2bPrice).toLocaleString()}</div>
                         </div>
                         <div style={{ background: '#fef3c7', padding: '16px', borderRadius: 12, border: '1px solid #fde68a' }}>
-                          <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#d97706', textTransform: 'uppercase', marginBottom: 6, letterSpacing: '0.05em' }}>GST (12%)</div>
-                          <div style={{ fontSize: '1.4rem', fontWeight: 900, color: '#d97706' }}>₹{Math.round(propertyGmv - basePrice).toLocaleString()}</div>
+                          <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#d97706', textTransform: 'uppercase', marginBottom: 6, letterSpacing: '0.05em' }}>GST Amount</div>
+                          <div style={{ fontSize: '1.4rem', fontWeight: 900, color: '#d97706' }}>₹{Math.round(totalGstAmount).toLocaleString()}</div>
                         </div>
                         <div style={{ background: '#ecfdf5', padding: '16px', borderRadius: 12, border: '1px solid #a7f3d0' }}>
                           <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#059669', textTransform: 'uppercase', marginBottom: 6, letterSpacing: '0.05em' }}>StayBuddy Profit</div>
