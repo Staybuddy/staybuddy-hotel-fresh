@@ -115,7 +115,7 @@ export async function sendBookingConfirmationEmail(booking: any) {
 
           <div style="margin-top: 40px; padding-top: 24px; border-top: 1px dashed #d1d5db; text-align: center; color: #6b7280; font-size: 13px;">
             <p style="margin: 4px 0;">This is a computer-generated tax invoice and does not require a signature.</p>
-            <p style="margin: 4px 0;">STAY BUDDY (PROPRIETORSHIP: MULLA ARIF) | Email: staybuddyhotels@gmail.com</p>
+            <p style="margin: 4px 0;">STAY BUDDY | Email: staybuddyhotels@gmail.com</p>
           </div>
         </div>
       </div>
