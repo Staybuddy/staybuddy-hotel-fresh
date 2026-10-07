@@ -64,11 +64,23 @@ export async function POST(request: NextRequest) {
     if (booking) {
       sendBookingConfirmationEmail(booking).catch(console.error);
 
-      if (hotel && hotel.partnerId) {
-        const partnerSnap = await db.collection('users').doc(hotel.partnerId).get();
-        if (partnerSnap.exists && partnerSnap.data()?.email) {
-          sendPartnerNotificationEmail(booking, partnerSnap.data()!.email).catch(console.error);
+      if (hotel) {
+        const notificationEmails = new Set<string>();
+        
+        if (hotel.partnerId) {
+          const partnerSnap = await db.collection('users').doc(hotel.partnerId).get();
+          if (partnerSnap.exists && partnerSnap.data()?.email) {
+            notificationEmails.add(partnerSnap.data()!.email);
+          }
         }
+        
+        if (hotel.contactEmail) {
+          notificationEmails.add(hotel.contactEmail);
+        }
+
+        notificationEmails.forEach(email => {
+          sendPartnerNotificationEmail(booking, email).catch(console.error);
+        });
       }
 
       try {
