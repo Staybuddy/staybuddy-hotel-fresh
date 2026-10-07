@@ -34,7 +34,7 @@ export default function AdminDashboard() {
 
   const [showCreateInvoice, setShowCreateInvoice] = useState(false);
   const [newInvoiceData, setNewInvoiceData] = useState({ 
-    guestName: '', companyName: '', gstNumber: '', address: '', bookingId: `SB-${Math.floor(1000000 + Math.random() * 9000000)}`, placeOfSupply: 'Telangana', hotelName: '',
+    guestName: '', companyName: '', gstNumber: '', address: '', bookingId: `SB-${Math.floor(1000000 + Math.random() * 9000000)}`, placeOfSupply: 'Telangana', hotelName: '', hotelCity: '',
     checkInDate: '', checkOutDate: '', noOfNights: '', noOfRooms: '1', noOfGuests: '1', totalAmount: '', 
     invoiceNo: `INV-${Math.floor(100000 + Math.random() * 900000)}`, 
     invoiceDate: getLocalDateString() 
@@ -751,7 +751,7 @@ export default function AdminDashboard() {
                 </div>
               </div>
 
-              <div className="admin-form-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16 }}>
+              <div className="admin-form-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 16 }}>
                 <div>
                   <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: '#475569', marginBottom: 8 }}>Booking ID (Optional)</label>
                   <input type="text" value={newInvoiceData.bookingId} onChange={e => setNewInvoiceData({...newInvoiceData, bookingId: e.target.value})} style={{ width: '100%', padding: '10px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '0.95rem' }} />
@@ -763,6 +763,10 @@ export default function AdminDashboard() {
                 <div>
                   <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: '#475569', marginBottom: 8 }}>Hotel Name</label>
                   <input type="text" value={newInvoiceData.hotelName} onChange={e => setNewInvoiceData({...newInvoiceData, hotelName: e.target.value})} style={{ width: '100%', padding: '10px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '0.95rem' }} placeholder="e.g. Hotel RK Grand" />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: '#475569', marginBottom: 8 }}>Hotel City</label>
+                  <input type="text" value={newInvoiceData.hotelCity} onChange={e => setNewInvoiceData({...newInvoiceData, hotelCity: e.target.value})} style={{ width: '100%', padding: '10px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '0.95rem' }} placeholder="e.g. Hyderabad" />
                 </div>
               </div>
 
