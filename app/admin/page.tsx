@@ -238,7 +238,7 @@ export default function AdminDashboard() {
             <div style={{ fontSize: '0.75rem', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 700 }}>Admin Portal</div>
           </div>
         </div>
-        <nav style={{ padding: '20px 12px', flex: 1 }}>
+        <nav style={{ padding: '20px 12px', flex: 1, overflowY: 'auto' }}>
           <div style={{ fontSize: '0.7rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 12, paddingLeft: 12 }}>Management</div>
           {NAV.map(item => (
             <button key={item.id} onClick={() => { setActiveTab(item.id); setIsMobileMenuOpen(false); }} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 12, padding: '12px', borderRadius: 8, background: activeTab === item.id ? '#eff6ff' : 'transparent', color: activeTab === item.id ? '#2563eb' : '#475569', fontWeight: activeTab === item.id ? 700 : 500, border: 'none', cursor: 'pointer', transition: 'all 0.2s', marginBottom: 4 }}>
@@ -586,6 +586,14 @@ export default function AdminDashboard() {
                         <div style={{ background: '#eff6ff', padding: '16px', borderRadius: 12, border: '1px solid #bfdbfe' }}>
                           <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#1d4ed8', textTransform: 'uppercase', marginBottom: 6, letterSpacing: '0.05em' }}>B2B Price (Payout)</div>
                           <div style={{ fontSize: '1.4rem', fontWeight: 900, color: '#1d4ed8' }}>₹{Math.round(b2bPrice).toLocaleString()}</div>
+                        </div>
+                        <div style={{ background: '#fef3c7', padding: '16px', borderRadius: 12, border: '1px solid #fde68a' }}>
+                          <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#d97706', textTransform: 'uppercase', marginBottom: 6, letterSpacing: '0.05em' }}>GST (12%)</div>
+                          <div style={{ fontSize: '1.4rem', fontWeight: 900, color: '#d97706' }}>₹{Math.round(propertyGmv - basePrice).toLocaleString()}</div>
+                        </div>
+                        <div style={{ background: '#ecfdf5', padding: '16px', borderRadius: 12, border: '1px solid #a7f3d0' }}>
+                          <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#059669', textTransform: 'uppercase', marginBottom: 6, letterSpacing: '0.05em' }}>StayBuddy Profit</div>
+                          <div style={{ fontSize: '1.4rem', fontWeight: 900, color: '#059669' }}>₹{Math.round(propertyProfit).toLocaleString()}</div>
                         </div>
                       </div>
 
