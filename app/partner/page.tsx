@@ -33,6 +33,7 @@ export default function PartnerDashboard() {
   const [roomForm, setRoomForm] = useState({ type: 'Standard', description: '', priceSingle: '', priceDouble: '', priceTriple: '', b2bPrice: '', ratePlan: 'EP', maxGuests: '2', bedType: 'Double', size: '', totalRooms: '1', staybuddyAllocation: '1', images: '' });
   const [formStep, setFormStep] = useState(1);
   const [bookingFilter, setBookingFilter] = useState('All');
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [bookingSearch, setBookingSearch] = useState('');
   const [extranetModal, setExtranetModal] = useState<any>(null);
   const [approveLoading, setApproveLoading] = useState<string | null>(null);
@@ -316,6 +317,7 @@ export default function PartnerDashboard() {
           ))}
           <div className="sidebar-section-label" style={{ marginTop: 'var(--space-4)' }}>Account</div>
           <Link href="/profile" className="sidebar-link">👤 Profile</Link>
+          <Link href="/partner-agreement" className="sidebar-link" target="_blank">📜 Partner Agreement</Link>
           <Link href="/" className="sidebar-link">🌐 View Site</Link>
         </nav>
         <div style={{ padding: 'var(--space-4)', borderTop: '1px solid var(--border)' }}>
@@ -986,6 +988,29 @@ export default function PartnerDashboard() {
                   </div>
                 )}
 
+                {/* STEP 6: Partner Agreement & Policies */}
+                {formStep === 6 && (
+                  <div className="card fade-in">
+                    <div className="card-header"><h3 style={{ fontSize: '1rem' }}>📜 Partner Agreement & Policies</h3></div>
+                    <div className="card-body">
+                      <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '0.9rem', color: '#334155', maxHeight: '300px', overflowY: 'auto', marginBottom: '16px', lineHeight: '1.6' }}>
+                        <h4 style={{ color: '#0f172a', marginBottom: '12px' }}>StayBuddy Partner Program Agreement</h4>
+                        <p style={{ marginBottom: '8px' }}><strong>1. B2B Inventory Model:</strong> You can add inventory on a daily basis (available rooms). If missed, the system will automatically roll over and continue the inventory provided during onboarding.</p>
+                        <p style={{ marginBottom: '8px' }}><strong>2. Commission Charge:</strong> StayBuddy will not charge any commission from the owner currently. Properties can be listed free of cost.</p>
+                        <p style={{ marginBottom: '8px' }}><strong>3. B2B Price:</strong> When defining B2B prices, partners must provide the best available market price for Business-to-Business.</p>
+                        <p style={{ marginBottom: '8px' }}><strong>4. Cancellation Policy:</strong> Before 48 hours: No cancellation fee. Before 24 hours: StayBuddy will charge 50% of the booking price. Same Day: No refund will be given.</p>
+                        <p style={{ marginBottom: '8px' }}><strong>5. Pay Out Policy:</strong> For bookings made a week in advance, payout will be done at the time of check-in or earlier. Same-day bookings will be cleared 48 hours after the booking is made.</p>
+                        <p style={{ marginBottom: '8px' }}><strong>6. Room Confirmation:</strong> When a room is confirmed via StayBuddy, the hotel must block the room immediately.</p>
+                        <p style={{ marginBottom: '8px' }}><strong>7. Room Blocking:</strong> A room blocking option is provided in the dashboard to avoid overflow and double bookings.</p>
+                      </div>
+                      <label style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', cursor: 'pointer' }}>
+                        <input type="checkbox" checked={agreedToTerms} onChange={e => setAgreedToTerms(e.target.checked)} style={{ width: '20px', height: '20px', marginTop: '2px' }} />
+                        <span style={{ fontWeight: 600, color: '#0f172a' }}>I have read and agree to the StayBuddy Partner Policies and Terms & Conditions</span>
+                      </label>
+                    </div>
+                  </div>
+                )}
+
                 </form>
                 </div>
               </div>
@@ -1000,7 +1025,7 @@ export default function PartnerDashboard() {
                   Step {formStep} / 6
                 </div>
 
-                <button type="submit" className="btn btn-primary" style={{ padding: '10px 32px', borderRadius: 'var(--radius-lg)', fontWeight: 600, fontSize: '1rem', boxShadow: '0 4px 12px rgba(234, 88, 12, 0.2)' }} disabled={addLoading} onClick={e => {
+                <button type="submit" className="btn btn-primary" style={{ padding: '10px 32px', borderRadius: 'var(--radius-lg)', fontWeight: 600, fontSize: '1rem', boxShadow: '0 4px 12px rgba(234, 88, 12, 0.2)' }} disabled={addLoading || (formStep === 6 && !agreedToTerms)} onClick={e => {
                   const form = e.currentTarget.closest('form');
                   if (form && !form.checkValidity()) {
                     return; // Let browser show native validation tooltip

@@ -279,6 +279,9 @@ export default function AdminDashboard() {
           ))}
           
           <div style={{ fontSize: '0.7rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.1em', marginTop: 32, marginBottom: 12, paddingLeft: 12 }}>External Links</div>
+          <Link href="/partner-agreement" target="_blank" style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px', borderRadius: 8, color: '#475569', fontWeight: 500, textDecoration: 'none', transition: 'all 0.2s' }}>
+            <span style={{ fontSize: '1.2rem', opacity: 0.7 }}>📜</span> Partner Agreement
+          </Link>
           <Link href="/partner" style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px', borderRadius: 8, color: '#475569', fontWeight: 500, textDecoration: 'none', transition: 'all 0.2s' }}>
             <span style={{ fontSize: '1.2rem', opacity: 0.7 }}>🏢</span> Partner Extranet
           </Link>
