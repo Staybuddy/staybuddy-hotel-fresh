@@ -37,6 +37,29 @@ export default function PartnerDashboard() {
   const [bookingSearch, setBookingSearch] = useState('');
   const [extranetModal, setExtranetModal] = useState<any>(null);
   const [approveLoading, setApproveLoading] = useState<string | null>(null);
+  const [isLocating, setIsLocating] = useState(false);
+
+  function getCurrentLocation() {
+    if (!navigator.geolocation) {
+      alert("Geolocation is not supported by your browser");
+      return;
+    }
+    setIsLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setHotelForm(p => ({ 
+          ...p, 
+          lat: position.coords.latitude.toFixed(6), 
+          lng: position.coords.longitude.toFixed(6) 
+        }));
+        setIsLocating(false);
+      },
+      (error) => {
+        alert("Unable to retrieve your location. Please check your browser permissions.");
+        setIsLocating(false);
+      }
+    );
+  }
 
   const [hotelForm, setHotelForm] = useState({
     name: '', description: '', location: '', city: '', area: '', country: 'India', address: '', lat: '', lng: '', propertyType: 'Hotel',
@@ -722,16 +745,31 @@ export default function PartnerDashboard() {
                           <input className="form-input" type="text" value={hotelForm.country} onChange={e => setHotelForm(p => ({ ...p, country: e.target.value }))} />
                         </div>
                       </div>
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-4)' }}>
-                        <div className="form-group">
-                          <label className="form-label">Latitude</label>
-                          <input className="form-input" type="number" step="any" placeholder="19.0760" value={hotelForm.lat} onChange={e => setHotelForm(p => ({ ...p, lat: e.target.value }))} />
+                      
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: 'var(--space-4)' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-4)', flex: 1 }}>
+                          <div className="form-group">
+                            <label className="form-label">Latitude</label>
+                            <input className="form-input" type="number" step="any" placeholder="19.0760" value={hotelForm.lat} onChange={e => setHotelForm(p => ({ ...p, lat: e.target.value }))} />
+                          </div>
+                          <div className="form-group">
+                            <label className="form-label">Longitude</label>
+                            <input className="form-input" type="number" step="any" placeholder="72.8777" value={hotelForm.lng} onChange={e => setHotelForm(p => ({ ...p, lng: e.target.value }))} />
+                          </div>
                         </div>
-                        <div className="form-group">
-                          <label className="form-label">Longitude</label>
-                          <input className="form-input" type="number" step="any" placeholder="72.8777" value={hotelForm.lng} onChange={e => setHotelForm(p => ({ ...p, lng: e.target.value }))} />
+                        <div style={{ paddingBottom: '2px' }}>
+                          <button 
+                            type="button" 
+                            className="btn btn-secondary" 
+                            style={{ padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 8, height: '42px', whiteSpace: 'nowrap' }}
+                            onClick={getCurrentLocation}
+                            disabled={isLocating}
+                          >
+                            {isLocating ? '⏳ Locating...' : '📍 Use Current Location'}
+                          </button>
                         </div>
                       </div>
+
                       <div className="form-group">
                         <label className="form-label">Location / Area Description</label>
                         <input className="form-input" type="text" placeholder="e.g., Near Bandra-Kurla Complex, 2km from airport" value={hotelForm.location} onChange={e => setHotelForm(p => ({ ...p, location: e.target.value }))} />
