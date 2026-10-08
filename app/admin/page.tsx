@@ -148,8 +148,8 @@ export default function AdminDashboard() {
     fetchAll(false);
   }
 
-  async function toggleUserStatus(id: string, isActive: boolean) {
-    await fetch(`/api/admin/users/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ isActive: !isActive }) });
+  async function updateUser(id: string, updates: any) {
+    await fetch(`/api/admin/users/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(updates) });
     fetchAll(false);
   }
 
@@ -744,7 +744,27 @@ export default function AdminDashboard() {
                           </div>
                         </div>
                         <div style={{ marginLeft: 'auto' }}>
-                          <span style={{ padding: '4px 10px', background: u.role === 'admin' ? '#fef3c7' : u.role === 'partner' ? '#e0f2fe' : '#f1f5f9', color: u.role === 'admin' ? '#d97706' : u.role === 'partner' ? '#0284c7' : '#475569', borderRadius: 20, fontSize: '0.75rem', fontWeight: 700, textTransform: 'capitalize' }}>{u.role}</span>
+                          <select 
+                            value={u.role || 'customer'}
+                            onChange={(e) => updateUser(u._id, { role: e.target.value })}
+                            style={{ 
+                              padding: '6px 14px', 
+                              background: u.role === 'admin' ? '#fef3c7' : u.role === 'partner' ? '#e0f2fe' : '#f1f5f9', 
+                              color: u.role === 'admin' ? '#d97706' : u.role === 'partner' ? '#0284c7' : '#475569', 
+                              borderRadius: 20, 
+                              fontSize: '0.75rem', 
+                              fontWeight: 700, 
+                              border: '1px solid',
+                              borderColor: u.role === 'admin' ? '#fde68a' : u.role === 'partner' ? '#bae6fd' : '#e2e8f0',
+                              outline: 'none',
+                              cursor: 'pointer',
+                              textTransform: 'capitalize'
+                            }}
+                          >
+                            <option value="customer">👤 Customer</option>
+                            <option value="partner">🏢 Partner</option>
+                            <option value="admin">👑 Admin</option>
+                          </select>
                         </div>
                       </div>
 
@@ -755,7 +775,7 @@ export default function AdminDashboard() {
                       </div>
 
                       <button 
-                        onClick={() => toggleUserStatus(u._id, u.isActive)}
+                        onClick={() => updateUser(u._id, { isActive: !u.isActive })}
                         style={{ width: '100%', padding: '10px', background: u.isActive ? 'white' : '#fee2e2', border: `1px solid ${u.isActive ? '#e2e8f0' : '#fca5a5'}`, color: u.isActive ? '#ef4444' : '#b91c1c', borderRadius: 8, fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s' }}
                       >
                         {u.isActive ? 'Suspend Account' : 'Reactivate Account'}
