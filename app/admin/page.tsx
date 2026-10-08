@@ -14,6 +14,7 @@ const NAV = [
   { id: 'hotels', label: 'Properties & Margins', icon: '🏨' },
   { id: 'performance', label: 'Performance & Invoices', icon: '📈' },
   { id: 'users', label: 'User Analytics', icon: '👥' },
+  { id: 'agreements', label: 'Partner Agreements', icon: '📜' },
   { id: 'tax_invoices', label: 'Tax Invoices', icon: '🧾' },
 ];
 
@@ -279,9 +280,6 @@ export default function AdminDashboard() {
           ))}
           
           <div style={{ fontSize: '0.7rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.1em', marginTop: 32, marginBottom: 12, paddingLeft: 12 }}>External Links</div>
-          <Link href="/partner-agreement" target="_blank" style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px', borderRadius: 8, color: '#475569', fontWeight: 500, textDecoration: 'none', transition: 'all 0.2s' }}>
-            <span style={{ fontSize: '1.2rem', opacity: 0.7 }}>📜</span> Partner Agreement
-          </Link>
           <Link href="/partner" style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px', borderRadius: 8, color: '#475569', fontWeight: 500, textDecoration: 'none', transition: 'all 0.2s' }}>
             <span style={{ fontSize: '1.2rem', opacity: 0.7 }}>🏢</span> Partner Extranet
           </Link>
@@ -682,6 +680,43 @@ export default function AdminDashboard() {
                     </div>
                   );
                 })}
+              </div>
+            </div>
+          )}
+
+          {/* ===== PARTNER AGREEMENTS ===== */}
+          {activeTab === 'agreements' && (
+            <div className="fade-in">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+                <h1 style={{ fontSize: '2rem', color: '#0f172a', margin: 0 }}>Partner Agreements</h1>
+              </div>
+              <p style={{ color: '#475569', marginBottom: 24 }}>
+                The following properties and partners have accepted the StayBuddy Partner Policies and Terms & Conditions.
+              </p>
+              
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                {hotels.filter((h: any) => h.status === 'approved').map(hotel => {
+                  const partner = partners.find(p => p._id === hotel.partnerId);
+                  return (
+                    <div key={hotel._id} style={{ background: 'white', padding: 20, borderRadius: 12, border: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
+                      <div>
+                        <h3 style={{ margin: '0 0 4px 0', color: '#0f172a', fontSize: '1.1rem', fontWeight: 700 }}>{hotel.name}</h3>
+                        <div style={{ color: '#64748b', fontSize: '0.85rem' }}>Partner: <span style={{ color: '#334155', fontWeight: 600 }}>{partner?.name || 'Unknown'}</span> &nbsp;|&nbsp; Email: {partner?.email || 'N/A'}</div>
+                        <div style={{ color: '#059669', fontSize: '0.8rem', fontWeight: 600, marginTop: 12, display: 'flex', alignItems: 'center', gap: 6, background: '#ecfdf5', padding: '4px 10px', borderRadius: 6, display: 'inline-flex' }}>
+                          <span style={{ fontSize: '1rem' }}>✓</span> Accepted StayBuddy Policies
+                        </div>
+                      </div>
+                      <Link href="/partner-agreement" target="_blank" style={{ padding: '10px 20px', background: '#eff6ff', color: '#1d4ed8', border: '1px solid #bfdbfe', borderRadius: 8, fontWeight: 600, textDecoration: 'none', transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span>📄</span> View Master Agreement
+                      </Link>
+                    </div>
+                  );
+                })}
+                {hotels.filter((h: any) => h.status === 'approved').length === 0 && (
+                  <div style={{ padding: 40, textAlign: 'center', background: '#f8fafc', borderRadius: 12, border: '1px dashed #cbd5e1', color: '#64748b' }}>
+                    No approved properties found.
+                  </div>
+                )}
               </div>
             </div>
           )}
