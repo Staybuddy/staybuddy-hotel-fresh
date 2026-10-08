@@ -706,7 +706,7 @@ export default function AdminDashboard() {
                           <span style={{ fontSize: '1rem' }}>✓</span> Accepted StayBuddy Policies
                         </div>
                       </div>
-                      <Link href="/partner-agreement" target="_blank" style={{ padding: '10px 20px', background: '#eff6ff', color: '#1d4ed8', border: '1px solid #bfdbfe', borderRadius: 8, fontWeight: 600, textDecoration: 'none', transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <Link href={`/partner-agreement?hotelId=${hotel._id}`} target="_blank" style={{ padding: '10px 20px', background: '#eff6ff', color: '#1d4ed8', border: '1px solid #bfdbfe', borderRadius: 8, fontWeight: 600, textDecoration: 'none', transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: 8 }}>
                         <span>📄</span> View Master Agreement
                       </Link>
                     </div>

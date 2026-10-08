@@ -1,6 +1,32 @@
-'use client';
+import { db } from '@/lib/firebaseAdmin';
+import AgreementPrintBtn from './AgreementPrintBtn';
 
-export default function PartnerAgreementPage() {
+export default async function PartnerAgreementPage({ searchParams }: { searchParams: Promise<{ hotelId?: string }> }) {
+  const resolvedParams = await searchParams;
+  let hotel = null;
+  let partner = null;
+  let singlePrice = 'N/A';
+  let doublePrice = 'N/A';
+  
+  if (resolvedParams.hotelId) {
+    const hotelDoc = await db.collection('hotels').doc(resolvedParams.hotelId).get();
+    if (hotelDoc.exists) {
+      hotel = { _id: hotelDoc.id, ...hotelDoc.data() } as any;
+      
+      const userDoc = await db.collection('users').doc(hotel.partnerId).get();
+      if (userDoc.exists) {
+        partner = userDoc.data() as any;
+      }
+      
+      const roomsSnap = await db.collection('rooms').where('hotelId', '==', hotel._id).limit(1).get();
+      if (!roomsSnap.empty) {
+        const room = roomsSnap.docs[0].data();
+        singlePrice = room.priceSingle ? `₹${room.priceSingle}` : 'N/A';
+        doublePrice = room.priceDouble ? `₹${room.priceDouble}` : 'N/A';
+      }
+    }
+  }
+
   return (
     <div style={{ minHeight: '100vh', background: '#f8fafc', padding: '40px 20px', fontFamily: 'system-ui, sans-serif' }}>
       <div style={{ maxWidth: '800px', margin: '0 auto', background: 'white', padding: '40px', borderRadius: '12px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06)' }}>
@@ -9,6 +35,40 @@ export default function PartnerAgreementPage() {
           <h1 style={{ fontSize: '2rem', color: '#0f172a', fontWeight: 800, marginBottom: '8px' }}>StayBuddy Partner Agreement</h1>
           <p style={{ color: '#64748b' }}>Terms & Policies for Hotel Partners</p>
         </div>
+
+        {hotel && partner && (
+          <div style={{ background: '#f1f5f9', padding: '24px', borderRadius: '12px', marginBottom: '32px', border: '1px solid #e2e8f0' }}>
+            <h2 style={{ fontSize: '1.25rem', color: '#0f172a', fontWeight: 700, margin: '0 0 16px 0', borderBottom: '2px solid #cbd5e1', paddingBottom: '8px' }}>
+              Property & Partner Details
+            </h2>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', fontSize: '0.95rem' }}>
+              <div>
+                <div style={{ color: '#64748b', fontSize: '0.8rem', fontWeight: 600, textTransform: 'uppercase' }}>Property Name</div>
+                <div style={{ fontWeight: 700, color: '#0f172a' }}>{hotel.name}</div>
+              </div>
+              <div>
+                <div style={{ color: '#64748b', fontSize: '0.8rem', fontWeight: 600, textTransform: 'uppercase' }}>Partner Name</div>
+                <div style={{ fontWeight: 700, color: '#0f172a' }}>{partner.name || 'N/A'}</div>
+              </div>
+              <div>
+                <div style={{ color: '#64748b', fontSize: '0.8rem', fontWeight: 600, textTransform: 'uppercase' }}>Email</div>
+                <div style={{ fontWeight: 600, color: '#334155' }}>{partner.email || 'N/A'}</div>
+              </div>
+              <div>
+                <div style={{ color: '#64748b', fontSize: '0.8rem', fontWeight: 600, textTransform: 'uppercase' }}>Mobile Number</div>
+                <div style={{ fontWeight: 600, color: '#334155' }}>{partner.phone || 'N/A'}</div>
+              </div>
+              <div>
+                <div style={{ color: '#64748b', fontSize: '0.8rem', fontWeight: 600, textTransform: 'uppercase' }}>Agreed B2B Price (Single)</div>
+                <div style={{ fontWeight: 700, color: '#1d4ed8' }}>{singlePrice}</div>
+              </div>
+              <div>
+                <div style={{ color: '#64748b', fontSize: '0.8rem', fontWeight: 600, textTransform: 'uppercase' }}>Agreed B2B Price (Double)</div>
+                <div style={{ fontWeight: 700, color: '#1d4ed8' }}>{doublePrice}</div>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div style={{ fontSize: '1rem', color: '#334155', lineHeight: '1.8' }}>
           
@@ -54,10 +114,10 @@ export default function PartnerAgreementPage() {
         </div>
 
         <div style={{ marginTop: '40px', paddingTop: '20px', borderTop: '1px solid #e2e8f0', textAlign: 'center' }}>
-          <p style={{ color: '#64748b', fontSize: '0.9rem' }}>By continuing to use the StayBuddy Partner Platform, you agree to these terms.</p>
-          <button onClick={() => window.print()} style={{ marginTop: '16px', padding: '10px 24px', background: '#0f172a', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}>
-            🖨️ Print / Save as PDF
-          </button>
+          <p style={{ color: '#64748b', fontSize: '0.9rem', marginBottom: '16px' }}>
+            By continuing to use the StayBuddy Partner Platform, you agree to these terms.
+          </p>
+          <AgreementPrintBtn />
         </div>
 
       </div>
