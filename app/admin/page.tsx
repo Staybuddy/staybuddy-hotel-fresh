@@ -653,7 +653,8 @@ export default function AdminDashboard() {
                                 <div key={bk._id} style={{ display: 'grid', gridTemplateColumns: '1fr auto auto auto', gap: 16, padding: '10px 12px', background: '#f8fafc', borderRadius: 8, border: '1px solid #e2e8f0', alignItems: 'center', fontSize: '0.8rem' }}>
                                   <div>
                                     <div style={{ fontWeight: 700, color: '#0f172a', display: 'flex', alignItems: 'center', gap: 4 }}><span style={{fontSize: '1rem'}}>🧾</span> {bk.invoiceNo || `INV-${(bk.bookingId || bk._id?.slice(-6)).toUpperCase()}`}</div>
-                                    <div style={{ color: '#64748b', fontSize: '0.7rem', marginTop: 4 }}>Check In: {new Date(bk.checkIn).toLocaleDateString()}</div>
+                                    <div style={{ color: '#3b82f6', fontSize: '0.7rem', fontWeight: 600, marginTop: 4 }}>Booking ID: {bk.bookingId || bk._id.slice(-8)}</div>
+                                    <div style={{ color: '#64748b', fontSize: '0.7rem', marginTop: 2 }}>Check In: {new Date(bk.checkIn).toLocaleDateString()}</div>
                                   </div>
                                   <div style={{ textAlign: 'right' }}>
                                     <div style={{ color: '#64748b', fontSize: '0.65rem', fontWeight: 800, textTransform: 'uppercase', marginBottom: 2 }}>B2C / B2B</div>
