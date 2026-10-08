@@ -1,3 +1,5 @@
+'use client';
+
 export default function PartnerAgreementPage() {
   return (
     <div style={{ minHeight: '100vh', background: '#f8fafc', padding: '40px 20px', fontFamily: 'system-ui, sans-serif' }}>
