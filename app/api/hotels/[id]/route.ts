@@ -67,7 +67,10 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
       // Update rooms with exact availability
       rooms = rooms.map(room => {
-        const allocation = Number(room.staybuddyAllocation || 0);
+        const baseAlloc = Number(room.staybuddyAllocation || 0);
+        const extraToday = Number(room.extraInventoryToday || 0);
+        const allocation = baseAlloc + extraToday;
+        
         const booked = activeBookingsByRoom[room._id] || 0;
         return {
           ...room,
@@ -78,7 +81,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     } catch (e) {
       console.error('Error calculating room availability', e);
       // Fallback to allocation if error
-      rooms = rooms.map(room => ({ ...room, availableRooms: room.staybuddyAllocation || 0 }));
+      rooms = rooms.map(room => ({ ...room, availableRooms: (Number(room.staybuddyAllocation) || 0) + (Number(room.extraInventoryToday) || 0) }));
     }
 
     // Note: Reviews are not fully migrated, but we will return an empty array for now to prevent crashes

@@ -54,7 +54,7 @@ export async function GET(request: NextRequest) {
         const cheapestRoom = rooms.sort((a: any, b: any) => a.priceDouble - b.priceDouble)[0];
         let baseAllocation = hotel.staybuddyAllocation 
           ? Number(hotel.staybuddyAllocation) 
-          : rooms.reduce((sum: number, r: any) => sum + Number(r.staybuddyAllocation || 0), 0);
+          : rooms.reduce((sum: number, r: any) => sum + Number(r.staybuddyAllocation || 0) + Number(r.extraInventoryToday || 0), 0);
         let roomsLeft = baseAllocation;
 
         try {
