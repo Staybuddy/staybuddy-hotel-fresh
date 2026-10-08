@@ -370,7 +370,7 @@ export default function PartnerDashboard() {
                         <div style={{ marginBottom: 16 }}>
                           <h3 style={{ fontSize: '1.1rem', margin: '0 0 4px 0' }}>{hotel.name}</h3>
                           <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', margin: 0 }}>📍 {hotel.city}, {hotel.country}</p>
-                          <div style={{ fontSize: '0.8rem', color: 'var(--brand-600)', fontWeight: 600, marginTop: 4 }}>ID: {hotel.hotelId || hotel._id?.slice(-8)}</div>
+                          <div style={{ fontSize: '0.8rem', color: 'var(--brand-600)', fontWeight: 600, marginTop: 4 }}>Hotel ID: {hotel.hotelId || hotel._id?.slice(-8)}</div>
                         </div>
                         
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 16, padding: '12px 0', borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)' }}>
@@ -524,7 +524,7 @@ export default function PartnerDashboard() {
                             <td style={{ padding: '16px 24px' }}>
                               <div style={{ fontWeight: 600, fontSize: '0.875rem' }}>{b.hotelId?.name}</div>
                               <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{b.roomId?.type}</div>
-                              <div style={{ fontSize: '0.7rem', color: 'var(--brand-500)', fontWeight: 600, marginTop: 4 }}>ID: {b.hotelId?.hotelId || b.hotelId?._id?.slice(-8)}</div>
+                              <div style={{ fontSize: '0.7rem', color: 'var(--brand-500)', fontWeight: 600, marginTop: 4 }}>Hotel ID: {b.hotelId?.hotelId || b.hotelId?._id?.slice(-8)}</div>
                             </td>
                             <td style={{ padding: '16px 24px', fontSize: '0.85rem' }}>
                               {new Date(b.checkIn).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' })} <br/>

@@ -402,11 +402,11 @@ export default function AdminDashboard() {
                           <td style={{ padding: '16px 24px' }}>
                             <div style={{ fontWeight: 700, color: '#0f172a' }}>{b.guestName}</div>
                             <div style={{ fontSize: '0.8rem', color: '#64748b' }}>{b.guestPhone}</div>
-                            <div style={{ fontSize: '0.75rem', color: '#3b82f6', fontWeight: 600, marginTop: 4 }}>ID: {b.bookingId || b._id.slice(-8)}</div>
+                            <div style={{ fontSize: '0.75rem', color: '#3b82f6', fontWeight: 600, marginTop: 4 }}>Booking ID: {b.bookingId || b._id.slice(-8)}</div>
                           </td>
                           <td style={{ padding: '16px 24px', color: '#475569', fontWeight: 500 }}>
                             <div>{b.hotelId?.name || 'Unknown Property'}</div>
-                            <div style={{ fontSize: '0.75rem', color: '#8b5cf6', fontWeight: 600, marginTop: 4 }}>ID: {b.hotelId?.hotelId || b.hotelId?._id?.slice(-8)}</div>
+                            <div style={{ fontSize: '0.75rem', color: '#8b5cf6', fontWeight: 600, marginTop: 4 }}>Hotel ID: {b.hotelId?.hotelId || b.hotelId?._id?.slice(-8)}</div>
                           </td>
                           <td style={{ padding: '16px 24px', fontSize: '0.85rem', color: '#475569' }}>
                             <div style={{ fontWeight: 600 }}>{new Date(b.checkIn).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' })} – {new Date(b.checkOut).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' })}</div>
@@ -534,7 +534,7 @@ export default function AdminDashboard() {
                         <td style={{ padding: '16px 24px', cursor: 'pointer' }} onClick={() => setExtranetModal(h)}>
                           <div style={{ fontWeight: 700, color: '#0f172a' }}>{h.name}</div>
                           <div style={{ fontSize: '0.8rem', color: '#64748b' }}>{h.city}</div>
-                          <div style={{ fontSize: '0.75rem', color: '#8b5cf6', fontWeight: 600, marginTop: 4 }}>ID: {h.hotelId || h._id?.slice(-8)}</div>
+                          <div style={{ fontSize: '0.75rem', color: '#8b5cf6', fontWeight: 600, marginTop: 4 }}>Hotel ID: {h.hotelId || h._id?.slice(-8)}</div>
                         </td>
                         <td style={{ padding: '16px 24px' }}>
                           <span style={{ padding: '4px 8px', background: h.isExtranet ? '#ede9fe' : '#e0f2fe', color: h.isExtranet ? '#7c3aed' : '#0284c7', borderRadius: 4, fontSize: '0.8rem', fontWeight: 600 }}>
