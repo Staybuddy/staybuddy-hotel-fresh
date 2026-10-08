@@ -634,6 +634,48 @@ export default function AdminDashboard() {
                         </div>
                       </div>
 
+                      {propertyBookings.length > 0 && (
+                        <div style={{ marginBottom: 24, marginTop: -8 }}>
+                          <h4 style={{ fontSize: '0.85rem', fontWeight: 700, color: '#475569', marginBottom: 12 }}>Booking Breakdown</h4>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                            {propertyBookings.map((bk: any) => {
+                              const nights = Math.ceil((new Date(bk.checkOut).getTime() - new Date(bk.checkIn).getTime()) / (1000 * 3600 * 24)) || 1;
+                              const rooms = bk.rooms || 1;
+                              const perRoomNightInclusive = bk.totalPrice / (nights * rooms);
+                              let gstP = 0;
+                              if (perRoomNightInclusive >= 7500) gstP = 18;
+                              else if (perRoomNightInclusive >= 1000) gstP = 5;
+                              
+                              const bkBase = bk.totalPrice / (1 + gstP / 100);
+                              const bkGst = bk.totalPrice - bkBase;
+                              const bkProfit = (bkBase * margin) / 100;
+                              const bkB2b = bkBase - bkProfit;
+                              
+                              return (
+                                <div key={bk._id} style={{ display: 'grid', gridTemplateColumns: '1fr auto auto auto', gap: 16, padding: '10px 12px', background: '#f8fafc', borderRadius: 8, border: '1px solid #e2e8f0', alignItems: 'center', fontSize: '0.8rem' }}>
+                                  <div>
+                                    <div style={{ fontWeight: 700, color: '#0f172a' }}>{bk.bookingId || bk._id?.slice(-6).toUpperCase()}</div>
+                                    <div style={{ color: '#64748b', fontSize: '0.7rem' }}>{new Date(bk.createdAt).toLocaleDateString()}</div>
+                                  </div>
+                                  <div style={{ textAlign: 'right' }}>
+                                    <div style={{ color: '#64748b', fontSize: '0.65rem', fontWeight: 800, textTransform: 'uppercase', marginBottom: 2 }}>B2C / B2B</div>
+                                    <div style={{ fontWeight: 700, color: '#0f172a' }}>₹{Math.round(bk.totalPrice).toLocaleString()} <span style={{ color: '#cbd5e1', fontWeight: 400 }}>|</span> <span style={{ color: '#1d4ed8' }}>₹{Math.round(bkB2b).toLocaleString()}</span></div>
+                                  </div>
+                                  <div style={{ textAlign: 'right' }}>
+                                    <div style={{ color: '#64748b', fontSize: '0.65rem', fontWeight: 800, textTransform: 'uppercase', marginBottom: 2 }}>GST ({gstP}%)</div>
+                                    <div style={{ fontWeight: 700, color: '#d97706' }}>₹{Math.round(bkGst).toLocaleString()}</div>
+                                  </div>
+                                  <div style={{ textAlign: 'right' }}>
+                                    <div style={{ color: '#64748b', fontSize: '0.65rem', fontWeight: 800, textTransform: 'uppercase', marginBottom: 2 }}>Profit</div>
+                                    <div style={{ fontWeight: 700, color: '#059669' }}>₹{Math.round(bkProfit).toLocaleString()}</div>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+
                       <button style={{ width: '100%', padding: '10px', background: '#0f172a', color: 'white', border: 'none', borderRadius: 8, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, cursor: 'pointer', transition: 'background 0.2s' }} onMouseEnter={e => e.currentTarget.style.background = '#1e293b'} onMouseLeave={e => e.currentTarget.style.background = '#0f172a'} onClick={() => setSelectedInvoiceHotel(h)}>
                         📄 Generate Tax Invoice
                       </button>
