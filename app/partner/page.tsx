@@ -1212,7 +1212,9 @@ export default function PartnerDashboard() {
                         <th style={{ padding: '12px 8px' }}>Trp (₹)</th>
                         <th style={{ padding: '12px 8px' }}>B2B (₹)</th>
                         <th style={{ padding: '12px 8px' }}>Total</th>
-                        <th style={{ padding: '12px 8px' }}>Alloc</th>
+                        <th style={{ padding: '12px 8px' }}>Alloc (Base)</th>
+                        <th style={{ padding: '12px 8px' }}>Extra (Today)</th>
+                        <th style={{ padding: '12px 8px' }}>Available</th>
                         <th style={{ padding: '12px 8px' }}>BF</th>
                         <th style={{ padding: '12px 8px' }}>Images (comma sep)</th>
                       </tr>
@@ -1227,6 +1229,12 @@ export default function PartnerDashboard() {
                           <td style={{ padding: '12px 8px' }}><input type="number" style={{ width: 60, padding: 4 }} value={room.b2bPrice || ''} onChange={e => saveRoomInventory(i, 'b2bPrice', Number(e.target.value))} /></td>
                           <td style={{ padding: '12px 8px', color: 'var(--text-muted)' }}>{room.totalRooms}</td>
                           <td style={{ padding: '12px 8px' }}><input type="number" style={{ width: 50, padding: 4 }} value={room.staybuddyAllocation || ''} onChange={e => saveRoomInventory(i, 'staybuddyAllocation', Number(e.target.value))} /></td>
+                          <td style={{ padding: '12px 8px' }}>
+                            <input type="number" style={{ width: 50, padding: 4, background: '#fef9c3', border: '1px solid #fde047' }} value={room.extraInventoryToday || ''} onChange={e => {
+                               saveRoomInventory(i, 'extraInventoryToday', Number(e.target.value));
+                            }} placeholder="+0" />
+                          </td>
+                          <td style={{ padding: '12px 8px', fontWeight: 'bold', color: 'var(--brand-600)' }}>{room.availableRooms !== undefined ? room.availableRooms : (room.staybuddyAllocation || room.totalRooms)}</td>
                           <td style={{ padding: '12px 8px' }}>
                             <select className="form-input form-select" value={room.ratePlan || 'EP'} onChange={e => saveRoomInventory(i, 'ratePlan', e.target.value)} style={{ padding: '4px 8px', fontSize: '0.8rem', height: 32 }}>
                               <option value="EP">EP</option>

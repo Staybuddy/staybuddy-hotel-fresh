@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   try {
     const body = await request.json();
-    const { roomId, priceSingle, priceDouble, priceTriple, b2bPrice, staybuddyAllocation, ratePlan } = body;
+    const { roomId, priceSingle, priceDouble, priceTriple, b2bPrice, staybuddyAllocation, ratePlan, extraInventoryToday } = body;
 
     if (!roomId) {
       return NextResponse.json({ error: 'roomId is required' }, { status: 400 });
@@ -59,10 +59,24 @@ export async function PUT(request: NextRequest) {
     if (priceDouble !== undefined) updateFields.priceDouble = priceDouble;
     if (priceTriple !== undefined) updateFields.priceTriple = priceTriple;
     if (b2bPrice !== undefined) updateFields.b2bPrice = b2bPrice;
+    
+    // If updating base allocation, reset available rooms (unless extra inventory is also being set simultaneously)
     if (staybuddyAllocation !== undefined) {
       updateFields.staybuddyAllocation = staybuddyAllocation;
-      updateFields.availableRooms = staybuddyAllocation; // simplify logic for now
+      updateFields.availableRooms = staybuddyAllocation; 
     }
+    
+    // If adding extra inventory for today, compute new availableRooms
+    if (extraInventoryToday !== undefined) {
+      updateFields.extraInventoryToday = extraInventoryToday;
+      // Fetch the current base allocation to calculate the new total
+      const roomSnap = await db.collection('rooms').doc(roomId).get();
+      if (roomSnap.exists) {
+        const baseAlloc = staybuddyAllocation !== undefined ? staybuddyAllocation : (roomSnap.data()?.staybuddyAllocation || 0);
+        updateFields.availableRooms = baseAlloc + Number(extraInventoryToday);
+      }
+    }
+
     if (ratePlan !== undefined) updateFields.ratePlan = ratePlan;
     updateFields.updatedAt = new Date().toISOString();
 
