@@ -79,8 +79,8 @@ export default function AdminDashboard() {
     }
   }, [status]);
 
-  async function fetchAll() {
-    setLoading(true);
+  async function fetchAll(showLoadingIndicator = true) {
+    if (showLoadingIndicator) setLoading(true);
     try {
       const [hotelRes, bookingRes, userRes, partnerRes, invoiceRes] = await Promise.all([
         fetch('/api/admin/hotels'),
@@ -137,19 +137,19 @@ export default function AdminDashboard() {
         totalUsers: u.length,
       });
     } catch (e) { console.error(e); }
-    finally { setLoading(false); }
+    finally { if (showLoadingIndicator) setLoading(false); }
   }
 
   async function updateHotelStatus(id: string, updates: any) {
     setApproveLoading(id);
     await fetch(`/api/hotels/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(updates) });
     setApproveLoading(null);
-    fetchAll();
+    fetchAll(false);
   }
 
   async function toggleUserStatus(id: string, isActive: boolean) {
     await fetch(`/api/admin/users/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ isActive: !isActive }) });
-    fetchAll();
+    fetchAll(false);
   }
 
   async function handlePartnerStatus(id: string, action: string) {
@@ -158,7 +158,7 @@ export default function AdminDashboard() {
       headers: { 'Content-Type': 'application/json' }, 
       body: JSON.stringify({ partnerId: id, action }) 
     });
-    fetchAll();
+    fetchAll(false);
   }
 
   async function handleCreateInvoice(e: React.FormEvent) {

@@ -58,8 +58,8 @@ export default function PartnerDashboard() {
     }
   }, [status, session]);
 
-  async function fetchData() {
-    setLoading(true);
+  async function fetchData(showLoadingIndicator = true) {
+    if (showLoadingIndicator) setLoading(true);
     const partnerId = (session?.user as any)?.id;
     const role = (session?.user as any)?.role;
     try {
@@ -92,7 +92,7 @@ export default function PartnerDashboard() {
     } catch (e) {
       console.error(e);
     } finally {
-      setLoading(false);
+      if (showLoadingIndicator) setLoading(false);
     }
   }
 
@@ -181,7 +181,7 @@ export default function PartnerDashboard() {
     setApproveLoading(id);
     await fetch(`/api/hotels/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(updates) });
     setApproveLoading(null);
-    fetchData();
+    fetchData(false);
   }
 
   const toggleAmenity = (a: string) => setHotelForm(p => ({ ...p, amenities: p.amenities.includes(a) ? p.amenities.filter(x => x !== a) : [...p.amenities, a] }));
@@ -397,8 +397,8 @@ export default function PartnerDashboard() {
                         </div>
                         <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
                           <button className="btn btn-outline" style={{ flex: 1, padding: '10px 0', fontSize: '0.85rem', border: '1px solid var(--brand-500)', color: 'var(--brand-600)' }} onClick={() => setExtranetModal(hotel)}>Extranet Manager</button>
-                          <button className="btn" style={{ flex: '0 0 100px', padding: '10px 0', fontSize: '0.85rem', fontWeight: 600, background: hotel.isBlocked ? '#fee2e2' : 'white', color: '#ef4444', border: '1px solid #ef4444', borderRadius: 'var(--radius-md)', cursor: 'pointer', transition: 'all 0.2s' }} onClick={() => updateHotelStatus(hotel._id, { isBlocked: !hotel.isBlocked })}>
-                            {hotel.isBlocked ? 'Blocked 🔓' : 'Block 🚫'}
+                          <button className="btn" style={{ flex: '0 0 100px', padding: '10px 0', fontSize: '0.85rem', fontWeight: 600, background: hotel.isBlocked ? '#fee2e2' : 'white', color: '#ef4444', border: '1px solid #ef4444', borderRadius: 'var(--radius-md)', cursor: 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center' }} disabled={approveLoading === hotel._id} onClick={() => updateHotelStatus(hotel._id, { isBlocked: !hotel.isBlocked })}>
+                            {approveLoading === hotel._id ? <div className="spinner" style={{ width: 14, height: 14, borderWidth: 2, borderColor: 'rgba(239, 68, 68, 0.3)', borderTopColor: '#ef4444' }} /> : hotel.isBlocked ? 'Blocked 🔓' : 'Block 🚫'}
                           </button>
                         </div>
                       </div>
