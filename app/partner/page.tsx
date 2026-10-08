@@ -240,17 +240,21 @@ export default function PartnerDashboard() {
           
           <div style={{ background: '#f8fafc', padding: '20px', borderRadius: '12px', marginBottom: '24px', border: '1px solid #e2e8f0', maxHeight: '300px', overflowY: 'auto' }}>
             <h4 style={{ fontSize: '1rem', color: '#1e293b', marginBottom: '12px' }}>Terms & Conditions</h4>
-            <ul style={{ paddingLeft: '20px', color: '#475569', fontSize: '0.9rem', lineHeight: 1.6 }}>
-              <li style={{ marginBottom: 8 }}><strong>Commission:</strong> StayBuddy charges a standard commission on all confirmed bookings.</li>
-              <li style={{ marginBottom: 8 }}><strong>Inventory Accuracy:</strong> Partners must ensure that room inventory and StayBuddy allocations are kept accurate and up to date.</li>
-              <li style={{ marginBottom: 8 }}><strong>Quality Standards:</strong> Properties must maintain a high standard of cleanliness and customer service.</li>
-              <li style={{ marginBottom: 8 }}><strong>Cancellations:</strong> Partners must honor all StayBuddy bookings according to the agreed cancellation policy.</li>
-              <li><strong>Payments:</strong> Payments will be settled according to the standard B2B cycle.</li>
-            </ul>
+            <div style={{ color: '#475569', fontSize: '0.9rem', lineHeight: 1.6 }}>
+              <p style={{ marginBottom: '8px' }}><strong>1. B2B Inventory Model:</strong> You can add inventory on a daily basis (available rooms). If missed, the system will automatically roll over and continue the inventory provided during onboarding.</p>
+              <p style={{ marginBottom: '8px' }}><strong>2. Commission Charge:</strong> StayBuddy will not charge any commission from the owner currently. Properties can be listed free of cost.</p>
+              <p style={{ marginBottom: '8px' }}><strong>3. B2B Price:</strong> When defining B2B prices, partners must provide the best available market price for Business-to-Business.</p>
+              <p style={{ marginBottom: '8px' }}><strong>4. Cancellation Policy:</strong> Before 48 hours: No cancellation fee. Before 24 hours: StayBuddy will charge 50% of the booking price. Same Day: No refund will be given.</p>
+              <p style={{ marginBottom: '8px' }}><strong>5. Pay Out Policy:</strong> For bookings made a week in advance, payout will be done at the time of check-in or earlier. Same-day bookings will be cleared 48 hours after the booking is made.</p>
+              <p style={{ marginBottom: '8px' }}><strong>6. Room Confirmation:</strong> When a room is confirmed via StayBuddy, the hotel must block the room immediately.</p>
+              <p style={{ marginBottom: '8px' }}><strong>7. Room Blocking:</strong> A room blocking option is provided in the dashboard to avoid overflow and double bookings.</p>
+            </div>
           </div>
 
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', lineHeight: 1.5, textAlign: 'center', marginBottom: '24px' }}>
             By clicking "I Agree", you accept the StayBuddy Partner Terms & Conditions and will instantly unlock your Extranet Dashboard to list your properties.
+            <br/><br/>
+            <a href="/partner-agreement" target="_blank" style={{ color: 'var(--brand-600)', fontWeight: 600, textDecoration: 'underline' }}>📄 View Printable Agreement / PDF</a>
           </p>
 
           <button 
