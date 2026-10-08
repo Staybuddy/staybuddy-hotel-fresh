@@ -395,7 +395,12 @@ export default function PartnerDashboard() {
                           <button className="btn btn-secondary" style={{ flex: 1, justifyContent: 'center', padding: '10px 0', fontSize: '0.85rem', background: 'white', border: '1px solid var(--border)' }} onClick={() => setAddRoomModal(hotel._id)}>+ Add Room</button>
                           <button className="btn btn-primary" style={{ flex: 1, justifyContent: 'center', padding: '10px 0', fontSize: '0.85rem' }} onClick={() => openInventory(hotel)}>Manage Inventory</button>
                         </div>
-                        <button className="btn btn-outline" style={{ marginTop: 8, width: '100%', padding: '10px 0', fontSize: '0.85rem', border: '1px solid var(--brand-500)', color: 'var(--brand-600)' }} onClick={() => setExtranetModal(hotel)}>Extranet Manager</button>
+                        <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+                          <button className="btn btn-outline" style={{ flex: 1, padding: '10px 0', fontSize: '0.85rem', border: '1px solid var(--brand-500)', color: 'var(--brand-600)' }} onClick={() => setExtranetModal(hotel)}>Extranet Manager</button>
+                          <button className="btn" style={{ flex: '0 0 100px', padding: '10px 0', fontSize: '0.85rem', fontWeight: 600, background: hotel.isBlocked ? '#fee2e2' : 'white', color: '#ef4444', border: '1px solid #ef4444', borderRadius: 'var(--radius-md)', cursor: 'pointer', transition: 'all 0.2s' }} onClick={() => updateHotelStatus(hotel._id, { isBlocked: !hotel.isBlocked })}>
+                            {hotel.isBlocked ? 'Blocked 🔓' : 'Block 🚫'}
+                          </button>
+                        </div>
                       </div>
                     </div>
                   ))}

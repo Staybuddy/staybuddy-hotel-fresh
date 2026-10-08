@@ -35,6 +35,10 @@ export async function GET(request: NextRequest) {
       hotels = hotels.filter((h: any) => h.city?.toLowerCase().includes(cityLower) || h.area?.toLowerCase().includes(cityLower));
     }
 
+    if (status !== 'all') {
+      hotels = hotels.filter((h: any) => h.isBlocked !== true);
+    }
+
     hotels = hotels.sort((a: any, b: any) => (b.avgRating || 0) - (a.avgRating || 0));
     
     const page = parseInt(searchParams.get('page') || '1');
