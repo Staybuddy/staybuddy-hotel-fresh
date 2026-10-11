@@ -30,6 +30,12 @@ export default function PartnerDashboard() {
   const [inventoryModal, setInventoryModal] = useState<any>(null);
   const [hotelRooms, setHotelRooms] = useState<any[]>([]);
   const [loadingRooms, setLoadingRooms] = useState(false);
+  const [inventoryDate, setInventoryDate] = useState<string>(() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  });
+  const [inventoryMeta, setInventoryMeta] = useState<any>({ isToday: true, todayStr: '' });
+  const [expandedRoomBookings, setExpandedRoomBookings] = useState<string | null>(null);
   const [roomForm, setRoomForm] = useState({ type: 'Standard', description: '', priceSingle: '', priceDouble: '', priceTriple: '', b2bPrice: '', ratePlan: 'EP', maxGuests: '2', bedType: 'Double', size: '', totalRooms: '1', staybuddyAllocation: '1', images: '' });
   const [formStep, setFormStep] = useState(1);
   const [bookingFilter, setBookingFilter] = useState('All');
@@ -169,17 +175,45 @@ export default function PartnerDashboard() {
     if (res.ok) { setAddRoomModal(null); setRoomForm({ type: 'Standard', description: '', priceSingle: '', priceDouble: '', priceTriple: '', b2bPrice: '', ratePlan: 'EP', maxGuests: '2', bedType: 'Double', size: '', totalRooms: '1', staybuddyAllocation: '1', images: '' }); }
   }
 
-  async function openInventory(hotel: any) {
+  async function openInventory(hotel: any, dateToFetch?: string) {
+    const targetDate = dateToFetch || inventoryDate;
     setInventoryModal(hotel);
     setLoadingRooms(true);
+    setExpandedRoomBookings(null);
     try {
-      const res = await fetch(`/api/rooms?hotelId=${hotel._id}`);
+      const res = await fetch(`/api/rooms?hotelId=${hotel._id}&date=${targetDate}`);
       const data = await res.json();
       setHotelRooms(data.rooms || []);
+      setInventoryMeta({
+        isToday: data.isToday !== false,
+        todayStr: data.todayStr || targetDate,
+        targetDate: data.targetDate || targetDate
+      });
     } catch (e) {
       console.error(e);
     } finally {
       setLoadingRooms(false);
+    }
+  }
+
+  async function handleInventoryDateChange(newDate: string) {
+    setInventoryDate(newDate);
+    if (inventoryModal) {
+      setLoadingRooms(true);
+      try {
+        const res = await fetch(`/api/rooms?hotelId=${inventoryModal._id}&date=${newDate}`);
+        const data = await res.json();
+        setHotelRooms(data.rooms || []);
+        setInventoryMeta({
+          isToday: data.isToday !== false,
+          todayStr: data.todayStr || newDate,
+          targetDate: data.targetDate || newDate
+        });
+      } catch (e) {
+        console.error(e);
+      } finally {
+        setLoadingRooms(false);
+      }
     }
   }
 
@@ -195,6 +229,12 @@ export default function PartnerDashboard() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ roomId: room._id, [field]: value })
       });
+      // Refresh with current date view to keep smart availability in exact sync
+      if (inventoryModal) {
+        const refRes = await fetch(`/api/rooms?hotelId=${inventoryModal._id}&date=${inventoryDate}`);
+        const refData = await refRes.json();
+        if (refData.rooms) setHotelRooms(refData.rooms);
+      }
     } catch (e) {
       console.error(e);
     }
@@ -1185,87 +1225,273 @@ export default function PartnerDashboard() {
       )}
 
       {/* Inventory Panel Modal */}
-      {inventoryModal && (
-        <div className="modal-overlay" onClick={() => setInventoryModal(null)}>
-          <div className="modal" style={{ maxWidth: '900px' }} onClick={e => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3>Inventory & Pricing - {inventoryModal.name}</h3>
-              <button onClick={() => setInventoryModal(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.2rem', color: 'var(--text-muted)' }}>✕</button>
-            </div>
-            <div className="modal-body">
-              {loadingRooms ? (
-                <div style={{ display: 'flex', justifyContent: 'center', padding: '40px' }}>
-                  <div className="spinner" style={{ width: 40, height: 40 }} />
+      {/* Inventory Panel Modal */}
+      {inventoryModal && (() => {
+        const dToday = new Date();
+        const tStr = `${dToday.getFullYear()}-${String(dToday.getMonth() + 1).padStart(2, '0')}-${String(dToday.getDate()).padStart(2, '0')}`;
+        const dTomorrow = new Date(dToday);
+        dTomorrow.setDate(dTomorrow.getDate() + 1);
+        const tmrStr = `${dTomorrow.getFullYear()}-${String(dTomorrow.getMonth() + 1).padStart(2, '0')}-${String(dTomorrow.getDate()).padStart(2, '0')}`;
+        const dDayAfter = new Date(dToday);
+        dDayAfter.setDate(dDayAfter.getDate() + 2);
+        const daStr = `${dDayAfter.getFullYear()}-${String(dDayAfter.getMonth() + 1).padStart(2, '0')}-${String(dDayAfter.getDate()).padStart(2, '0')}`;
+
+        const isViewingToday = inventoryDate === tStr;
+        const isViewingTomorrow = inventoryDate === tmrStr;
+
+        const totalBaseAlloc = hotelRooms.reduce((sum, r) => sum + Number(r.staybuddyAllocation !== undefined ? r.staybuddyAllocation : (r.totalRooms || 0)), 0);
+        const totalBooked = hotelRooms.reduce((sum, r) => sum + Number(r.bookedRooms || 0), 0);
+        const totalAvailable = hotelRooms.reduce((sum, r) => sum + Number(r.availableRooms || 0), 0);
+        const totalExtraToday = hotelRooms.reduce((sum, r) => sum + Number(r.extraInventoryToday || 0), 0);
+
+        return (
+          <div className="modal-overlay" onClick={() => setInventoryModal(null)}>
+            <div className="modal" style={{ maxWidth: '1080px', width: '95%', maxHeight: '92vh', overflowY: 'auto' }} onClick={e => e.stopPropagation()}>
+              <div className="modal-header" style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '16px' }}>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: '1.25rem', display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span>🏨 {inventoryModal.name}</span>
+                    <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--brand-600)', background: 'rgba(37,99,235,0.1)', padding: '2px 8px', borderRadius: '12px' }}>
+                      ID: {inventoryModal.hotelId || inventoryModal._id?.slice(-8)}
+                    </span>
+                  </h3>
+                  <p style={{ margin: '4px 0 0 0', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                    Smart B2B Inventory & Pricing Management with 12:00 PM Daily Rollover
+                  </p>
                 </div>
-              ) : hotelRooms.length === 0 ? (
-                <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>
-                  No rooms added for this hotel yet.
+                <button onClick={() => setInventoryModal(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.4rem', color: 'var(--text-muted)' }}>✕</button>
+              </div>
+
+              <div className="modal-body" style={{ padding: '20px 24px' }}>
+                {/* Smart Rollover Explanation Card */}
+                <div style={{ background: 'linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%)', border: '1px solid #bfdbfe', borderRadius: '12px', padding: '16px 20px', marginBottom: '20px' }}>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+                    <div style={{ fontSize: '1.6rem', lineHeight: 1 }}>⚡</div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontWeight: 700, fontSize: '0.95rem', color: '#1e3a8a', display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span>Smart 12:00 PM Daily Inventory Rollover Engine</span>
+                        <span style={{ fontSize: '0.7rem', background: '#10b981', color: 'white', padding: '2px 8px', borderRadius: 99, fontWeight: 700 }}>ACTIVE</span>
+                      </div>
+                      <div style={{ fontSize: '0.82rem', color: '#334155', marginTop: 6, lineHeight: 1.5 }}>
+                        • <strong>Daily 12:00 PM Auto-Rollover:</strong> Your onboarding base allocation (e.g. 10 rooms) automatically carries over every day by 12:00 PM checkout.<br />
+                        • <strong>Date-Aware Smart Inventory:</strong> If 2 rooms are booked today, 8 rooms are available today. When guests check out tomorrow (11:00 AM/12:00 PM), their rooms are automatically released back, giving you full 10 rooms available tomorrow!<br />
+                        • <strong>Extra Inventory:</strong> Extra rooms added for today apply specifically to today and reset back to base at 12:00 PM next day.
+                      </div>
+                    </div>
+                  </div>
                 </div>
-              ) : (
-                <div style={{ overflowX: 'auto' }}>
-                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
-                    <thead>
-                      <tr style={{ background: 'var(--bg-secondary)', borderBottom: '1px solid var(--border-color)', textAlign: 'left' }}>
-                        <th style={{ padding: '12px 8px' }}>Room Type</th>
-                        <th style={{ padding: '12px 8px' }}>Sgl (₹)</th>
-                        <th style={{ padding: '12px 8px' }}>Dbl (₹)</th>
-                        <th style={{ padding: '12px 8px' }}>Trp (₹)</th>
-                        <th style={{ padding: '12px 8px' }}>B2B (₹)</th>
-                        <th style={{ padding: '12px 8px' }}>Total</th>
-                        <th style={{ padding: '12px 8px' }}>Alloc (Base)</th>
-                        <th style={{ padding: '12px 8px' }}>Extra (Today)</th>
-                        <th style={{ padding: '12px 8px' }}>Available</th>
-                        <th style={{ padding: '12px 8px' }}>BF</th>
-                        <th style={{ padding: '12px 8px' }}>Images (comma sep)</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {hotelRooms.map((room, i) => (
-                        <tr key={room._id} style={{ borderBottom: '1px solid var(--border-color)' }}>
-                          <td style={{ padding: '12px 8px', fontWeight: 600 }}>{room.type}</td>
-                          <td style={{ padding: '12px 8px' }}><input type="number" style={{ width: 60, padding: 4 }} value={room.priceSingle || ''} onChange={e => saveRoomInventory(i, 'priceSingle', Number(e.target.value))} /></td>
-                          <td style={{ padding: '12px 8px' }}><input type="number" style={{ width: 60, padding: 4 }} value={room.priceDouble || ''} onChange={e => saveRoomInventory(i, 'priceDouble', Number(e.target.value))} /></td>
-                          <td style={{ padding: '12px 8px' }}><input type="number" style={{ width: 60, padding: 4 }} value={room.priceTriple || ''} onChange={e => saveRoomInventory(i, 'priceTriple', Number(e.target.value))} /></td>
-                          <td style={{ padding: '12px 8px' }}><input type="number" style={{ width: 60, padding: 4 }} value={room.b2bPrice || ''} onChange={e => saveRoomInventory(i, 'b2bPrice', Number(e.target.value))} /></td>
-                          <td style={{ padding: '12px 8px', color: 'var(--text-muted)' }}>{room.totalRooms}</td>
-                          <td style={{ padding: '12px 8px' }}><input type="number" style={{ width: 50, padding: 4 }} value={room.staybuddyAllocation || ''} onChange={e => saveRoomInventory(i, 'staybuddyAllocation', Number(e.target.value))} /></td>
-                          <td style={{ padding: '12px 8px' }}>
-                            <input type="number" style={{ width: 50, padding: 4, background: '#fef9c3', border: '1px solid #fde047' }} value={room.extraInventoryToday || ''} onChange={e => {
-                               saveRoomInventory(i, 'extraInventoryToday', Number(e.target.value));
-                            }} placeholder="+0" />
-                          </td>
-                          <td style={{ padding: '12px 8px', fontWeight: 'bold', color: 'var(--brand-600)' }}>{room.availableRooms !== undefined ? room.availableRooms : (room.staybuddyAllocation || room.totalRooms)}</td>
-                          <td style={{ padding: '12px 8px' }}>
-                            <select className="form-input form-select" value={room.ratePlan || 'EP'} onChange={e => saveRoomInventory(i, 'ratePlan', e.target.value)} style={{ padding: '4px 8px', fontSize: '0.8rem', height: 32 }}>
-                              <option value="EP">EP</option>
-                              <option value="CP">CP</option>
-                              <option value="MAP">MAP</option>
-                              <option value="AP">AP</option>
-                            </select>
-                          </td>
-                          <td style={{ padding: '12px 8px' }}>
-                            <input 
-                              type="text" 
-                              style={{ width: 120, padding: 4 }} 
-                              placeholder="url1,url2" 
-                              value={(room.images || []).join(',')} 
-                              onChange={e => saveRoomInventory(i, 'images', e.target.value.split(',').map(s => s.trim()).filter(Boolean))} 
-                            />
-                          </td>
+
+                {/* Date Selection Filter Bar */}
+                <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: 12, marginBottom: '20px', background: 'var(--bg-secondary)', padding: '12px 16px', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Select Inventory Date:</span>
+                    <div style={{ display: 'flex', gap: 6 }}>
+                      <button 
+                        type="button" 
+                        onClick={() => handleInventoryDateChange(tStr)}
+                        className={`btn ${isViewingToday ? 'btn-primary' : 'btn-secondary'}`}
+                        style={{ fontSize: '0.8rem', padding: '6px 14px', borderRadius: '8px' }}
+                      >
+                        ⚡ Today ({new Date(tStr).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })})
+                      </button>
+                      <button 
+                        type="button" 
+                        onClick={() => handleInventoryDateChange(tmrStr)}
+                        className={`btn ${isViewingTomorrow ? 'btn-primary' : 'btn-secondary'}`}
+                        style={{ fontSize: '0.8rem', padding: '6px 14px', borderRadius: '8px' }}
+                      >
+                        🌅 Tomorrow ({new Date(tmrStr).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })})
+                      </button>
+                      <button 
+                        type="button" 
+                        onClick={() => handleInventoryDateChange(daStr)}
+                        className={`btn ${inventoryDate === daStr ? 'btn-primary' : 'btn-secondary'}`}
+                        style={{ fontSize: '0.8rem', padding: '6px 14px', borderRadius: '8px' }}
+                      >
+                        📅 Day After ({new Date(daStr).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })})
+                      </button>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Custom Date:</label>
+                    <input 
+                      type="date" 
+                      className="form-input" 
+                      style={{ height: 36, fontSize: '0.82rem', padding: '4px 10px', width: 140 }} 
+                      value={inventoryDate} 
+                      min={tStr}
+                      onChange={e => e.target.value && handleInventoryDateChange(e.target.value)} 
+                    />
+                  </div>
+                </div>
+
+                {/* Quick Summary Metric Strip */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12, marginBottom: '20px' }}>
+                  <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '12px 16px' }}>
+                    <div style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 600 }}>Daily Base Allocation</div>
+                    <div style={{ fontSize: '1.4rem', fontWeight: 800, color: '#1e293b', marginTop: 4 }}>{totalBaseAlloc} <span style={{ fontSize: '0.75rem', fontWeight: 500, color: '#64748b' }}>Rooms</span></div>
+                    <div style={{ fontSize: '0.7rem', color: '#059669', marginTop: 2 }}>Auto-renews 12:00 PM daily</div>
+                  </div>
+
+                  {isViewingToday && (
+                    <div style={{ background: '#fefce8', border: '1px solid #fef08a', borderRadius: '10px', padding: '12px 16px' }}>
+                      <div style={{ fontSize: '0.75rem', color: '#854d0e', fontWeight: 600 }}>Extra Added (Today Only)</div>
+                      <div style={{ fontSize: '1.4rem', fontWeight: 800, color: '#a16207', marginTop: 4 }}>+{totalExtraToday} <span style={{ fontSize: '0.75rem', fontWeight: 500 }}>Rooms</span></div>
+                      <div style={{ fontSize: '0.7rem', color: '#a16207', marginTop: 2 }}>Resets 12:00 PM tomorrow</div>
+                    </div>
+                  )}
+
+                  <div style={{ background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: '10px', padding: '12px 16px' }}>
+                    <div style={{ fontSize: '0.75rem', color: '#9a3412', fontWeight: 600 }}>Booked on {new Date(inventoryDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}</div>
+                    <div style={{ fontSize: '1.4rem', fontWeight: 800, color: '#c2410c', marginTop: 4 }}>{totalBooked} <span style={{ fontSize: '0.75rem', fontWeight: 500 }}>Rooms</span></div>
+                    <div style={{ fontSize: '0.7rem', color: '#ea580c', marginTop: 2 }}>From active reservations</div>
+                  </div>
+
+                  <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '10px', padding: '12px 16px' }}>
+                    <div style={{ fontSize: '0.75rem', color: '#166534', fontWeight: 600 }}>Smart Available on {new Date(inventoryDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}</div>
+                    <div style={{ fontSize: '1.4rem', fontWeight: 800, color: '#15803d', marginTop: 4 }}>{totalAvailable} <span style={{ fontSize: '0.75rem', fontWeight: 500 }}>Rooms</span></div>
+                    <div style={{ fontSize: '0.7rem', color: '#16a34a', marginTop: 2 }}>{isViewingTomorrow ? '⚡ Base restored for tomorrow' : 'Live instant confirmation'}</div>
+                  </div>
+                </div>
+
+                {loadingRooms ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px' }}>
+                    <div className="spinner" style={{ width: 40, height: 40, marginBottom: 12 }} />
+                    <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Calculating smart date-based inventory...</span>
+                  </div>
+                ) : hotelRooms.length === 0 ? (
+                  <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>
+                    No rooms added for this hotel yet.
+                  </div>
+                ) : (
+                  <div style={{ overflowX: 'auto', border: '1px solid var(--border-color)', borderRadius: '10px' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
+                      <thead>
+                        <tr style={{ background: 'var(--bg-secondary)', borderBottom: '1px solid var(--border-color)', textAlign: 'left' }}>
+                          <th style={{ padding: '12px 10px' }}>Room Type</th>
+                          <th style={{ padding: '12px 10px' }}>Sgl (₹)</th>
+                          <th style={{ padding: '12px 10px' }}>Dbl (₹)</th>
+                          <th style={{ padding: '12px 10px' }}>Trp (₹)</th>
+                          <th style={{ padding: '12px 10px' }}>B2B (₹)</th>
+                          <th style={{ padding: '12px 10px', textAlign: 'center' }}>Total</th>
+                          <th style={{ padding: '12px 10px', textAlign: 'center' }}>Daily Base (Alloc)</th>
+                          {isViewingToday && <th style={{ padding: '12px 10px', textAlign: 'center' }}>Extra (Today)</th>}
+                          <th style={{ padding: '12px 10px', textAlign: 'center' }}>Booked ({new Date(inventoryDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })})</th>
+                          <th style={{ padding: '12px 10px', textAlign: 'center' }}>Smart Available</th>
+                          <th style={{ padding: '12px 10px' }}>Plan</th>
+                          <th style={{ padding: '12px 10px' }}>Images</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                  <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '12px' }}>* Changes are saved automatically.</p>
+                      </thead>
+                      <tbody>
+                        {hotelRooms.map((room, i) => (
+                          <React.Fragment key={room._id}>
+                            <tr style={{ borderBottom: '1px solid var(--border-color)', background: i % 2 === 0 ? 'white' : '#fcfcfc' }}>
+                              <td style={{ padding: '12px 10px', fontWeight: 600 }}>{room.type}</td>
+                              <td style={{ padding: '12px 10px' }}><input type="number" style={{ width: 60, padding: '4px 6px', borderRadius: 4, border: '1px solid #cbd5e1' }} value={room.priceSingle || ''} onChange={e => saveRoomInventory(i, 'priceSingle', Number(e.target.value))} /></td>
+                              <td style={{ padding: '12px 10px' }}><input type="number" style={{ width: 60, padding: '4px 6px', borderRadius: 4, border: '1px solid #cbd5e1' }} value={room.priceDouble || ''} onChange={e => saveRoomInventory(i, 'priceDouble', Number(e.target.value))} /></td>
+                              <td style={{ padding: '12px 10px' }}><input type="number" style={{ width: 60, padding: '4px 6px', borderRadius: 4, border: '1px solid #cbd5e1' }} value={room.priceTriple || ''} onChange={e => saveRoomInventory(i, 'priceTriple', Number(e.target.value))} /></td>
+                              <td style={{ padding: '12px 10px' }}><input type="number" style={{ width: 60, padding: '4px 6px', borderRadius: 4, border: '1px solid #cbd5e1' }} value={room.b2bPrice || ''} onChange={e => saveRoomInventory(i, 'b2bPrice', Number(e.target.value))} /></td>
+                              <td style={{ padding: '12px 10px', textAlign: 'center', color: 'var(--text-muted)' }}>{room.totalRooms}</td>
+                              <td style={{ padding: '12px 10px', textAlign: 'center' }}>
+                                <input 
+                                  type="number" 
+                                  style={{ width: 55, padding: '4px 6px', textAlign: 'center', borderRadius: 4, border: '1px solid #94a3b8', fontWeight: 600 }} 
+                                  value={room.staybuddyAllocation || ''} 
+                                  onChange={e => saveRoomInventory(i, 'staybuddyAllocation', Number(e.target.value))} 
+                                  title="Onboarding Base Allocation — Rolls over every day at 12:00 PM"
+                                />
+                              </td>
+                              {isViewingToday && (
+                                <td style={{ padding: '12px 10px', textAlign: 'center' }}>
+                                  <input 
+                                    type="number" 
+                                    style={{ width: 55, padding: '4px 6px', textAlign: 'center', background: '#fef9c3', border: '1px solid #fde047', borderRadius: 4, fontWeight: 700, color: '#854d0e' }} 
+                                    value={room.extraInventoryToday || ''} 
+                                    onChange={e => saveRoomInventory(i, 'extraInventoryToday', Number(e.target.value))} 
+                                    placeholder="+0" 
+                                    title="Extra inventory added specifically for today. Resets at 12:00 PM tomorrow."
+                                  />
+                                </td>
+                              )}
+                              <td style={{ padding: '12px 10px', textAlign: 'center' }}>
+                                {room.bookedRooms > 0 ? (
+                                  <button 
+                                    type="button" 
+                                    onClick={() => setExpandedRoomBookings(expandedRoomBookings === room._id ? null : room._id)}
+                                    style={{ background: '#ffedd5', border: '1px solid #fdba74', color: '#c2410c', padding: '3px 8px', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer' }}
+                                    title="Click to view guest bookings for this date"
+                                  >
+                                    {room.bookedRooms} Booked ▾
+                                  </button>
+                                ) : (
+                                  <span style={{ color: '#94a3b8', fontSize: '0.8rem' }}>0 Booked</span>
+                                )}
+                              </td>
+                              <td style={{ padding: '12px 10px', textAlign: 'center' }}>
+                                <span style={{ background: '#dcfce7', border: '1px solid #86efac', color: '#15803d', padding: '4px 10px', borderRadius: '12px', fontWeight: 800, fontSize: '0.85rem' }}>
+                                  {room.availableRooms !== undefined ? room.availableRooms : (room.staybuddyAllocation || room.totalRooms)} Left
+                                </span>
+                              </td>
+                              <td style={{ padding: '12px 10px' }}>
+                                <select className="form-input form-select" value={room.ratePlan || 'EP'} onChange={e => saveRoomInventory(i, 'ratePlan', e.target.value)} style={{ padding: '4px 8px', fontSize: '0.8rem', height: 32 }}>
+                                  <option value="EP">EP</option>
+                                  <option value="CP">CP</option>
+                                  <option value="MAP">MAP</option>
+                                  <option value="AP">AP</option>
+                                </select>
+                              </td>
+                              <td style={{ padding: '12px 10px' }}>
+                                <input 
+                                  type="text" 
+                                  style={{ width: 110, padding: '4px 6px', fontSize: '0.75rem', borderRadius: 4, border: '1px solid #cbd5e1' }} 
+                                  placeholder="url1,url2" 
+                                  value={(room.images || []).join(',')} 
+                                  onChange={e => saveRoomInventory(i, 'images', e.target.value.split(',').map((s: string) => s.trim()).filter(Boolean))} 
+                                />
+                              </td>
+                            </tr>
+                            {/* Expandable Guest Booking Details */}
+                            {expandedRoomBookings === room._id && (room.activeBookings || []).length > 0 && (
+                              <tr style={{ background: '#fffbeb' }}>
+                                <td colSpan={isViewingToday ? 12 : 11} style={{ padding: '10px 16px', borderBottom: '1px solid #fde68a' }}>
+                                  <div style={{ fontSize: '0.78rem', color: '#92400e', fontWeight: 700, marginBottom: 6 }}>
+                                    Active Reservations Occupying Rooms on {new Date(inventoryDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}:
+                                  </div>
+                                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+                                    {(room.activeBookings || []).map((b: any, bIdx: number) => (
+                                      <div key={bIdx} style={{ background: 'white', border: '1px solid #fcd34d', borderRadius: 6, padding: '6px 10px', fontSize: '0.75rem', color: '#78350f' }}>
+                                        <strong>👤 {b.guestName}</strong> ({b.rooms} room{b.rooms > 1 ? 's' : ''}) • Stay: {new Date(b.checkIn).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })} → {new Date(b.checkOut).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })} • #{b.bookingId}
+                                      </div>
+                                    ))}
+                                  </div>
+                                </td>
+                              </tr>
+                            )}
+                          </React.Fragment>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '16px' }}>
+                  <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: 0 }}>
+                    * Base allocation changes apply automatically to future rollover cycles. Extra inventory added is day-specific.
+                  </p>
+                  <div style={{ fontSize: '0.75rem', color: '#059669', fontWeight: 600 }}>
+                    ✓ 12:00 PM Daily Check-out & Inventory Release Scheduled
+                  </div>
                 </div>
-              )}
-            </div>
-            <div className="modal-footer">
-              <button type="button" className="btn btn-secondary" onClick={() => setInventoryModal(null)}>Close</button>
+              </div>
+
+              <div className="modal-footer" style={{ borderTop: '1px solid var(--border-color)', padding: '14px 24px', display: 'flex', justifyContent: 'flex-end' }}>
+                <button type="button" className="btn btn-secondary" onClick={() => setInventoryModal(null)}>Close</button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
       
       {extranetModal && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex' }}>

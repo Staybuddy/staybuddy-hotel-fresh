@@ -85,7 +85,7 @@ export default function HotelDetailPage() {
 
   useEffect(() => {
     if (id) fetchHotelData();
-  }, [id]);
+  }, [id, bookingData.checkIn, bookingData.checkOut]);
 
   useEffect(() => {
     const checkInParam = searchParams.get("checkIn");
@@ -102,8 +102,6 @@ export default function HotelDetailPage() {
     }
   }, [searchParams, bookingData.checkIn]);
 
-
-
   useEffect(() => {
     if (session?.user) {
       const nameParts = (session.user?.name || "").split(" ");
@@ -117,9 +115,14 @@ export default function HotelDetailPage() {
     }
   }, [session]);
 
-  async function fetchHotelData() {
+  async function fetchHotelData(cIn?: string, cOut?: string) {
     try {
-      const res = await fetch(`/api/hotels/${id}`);
+      const inDate = cIn !== undefined ? cIn : bookingData.checkIn;
+      const outDate = cOut !== undefined ? cOut : bookingData.checkOut;
+      const query = (inDate && outDate) 
+        ? `?checkIn=${encodeURIComponent(inDate)}&checkOut=${encodeURIComponent(outDate)}` 
+        : '';
+      const res = await fetch(`/api/hotels/${id}${query}`);
       const data = await res.json();
       setHotel(data.hotel);
       setRooms(data.rooms || []);

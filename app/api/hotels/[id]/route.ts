@@ -36,45 +36,69 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       const searchParams = new URL(request.url).searchParams;
       const searchCheckIn = searchParams.get('checkIn');
       const searchCheckOut = searchParams.get('checkOut');
+      const todayStr = (() => {
+        const d = new Date();
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      })();
+
+      const getDateStr = (d: Date | string | number) => {
+        const date = new Date(d);
+        return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+      };
+
+      // Determine stay nights to evaluate
+      let stayNights: string[] = [];
+      if (searchCheckIn && searchCheckOut) {
+        const start = new Date(searchCheckIn);
+        const end = new Date(searchCheckOut);
+        const curr = new Date(start);
+        while (curr < end) {
+          stayNights.push(getDateStr(curr));
+          curr.setDate(curr.getDate() + 1);
+        }
+      }
+      if (stayNights.length === 0) {
+        stayNights = [todayStr];
+      }
+
       const bookingsSnap = await db.collection('bookings')
         .where('hotelId', '==', hotel._id)
+        .where('status', '==', 'confirmed')
         .get();
 
-      // Group active bookings by roomId
-      const activeBookingsByRoom: Record<string, number> = {};
-      
-      bookingsSnap.docs.forEach((doc: any) => {
-        const b = doc.data();
-        if (b.status === 'confirmed') {
-          const bCheckIn = new Date(b.checkIn).getTime();
-          const bCheckOut = new Date(b.checkOut).getTime();
-          
-          let overlap = false;
-          if (searchCheckIn && searchCheckOut) {
-            const sCheckIn = new Date(searchCheckIn).getTime();
-            const sCheckOut = new Date(searchCheckOut).getTime();
-            if (bCheckIn < sCheckOut && bCheckOut > sCheckIn) overlap = true;
-          } else {
-            const today = new Date().getTime();
-            if (bCheckOut > today) overlap = true;
-          }
+      const confirmedBookings = bookingsSnap.docs.map((doc: any) => doc.data());
 
-          if (overlap && b.roomId) {
-            activeBookingsByRoom[b.roomId] = (activeBookingsByRoom[b.roomId] || 0) + (b.rooms || 1);
-          }
-        }
-      });
-
-      // Update rooms with exact availability
+      // Update rooms with exact night-by-night availability
       rooms = rooms.map(room => {
-        const baseAlloc = Number(room.staybuddyAllocation || 0);
-        const extraToday = Number(room.extraInventoryToday || 0);
-        const allocation = baseAlloc + extraToday;
+        const baseAlloc = Number(room.staybuddyAllocation !== undefined ? room.staybuddyAllocation : (room.totalRooms || 0));
         
-        const booked = activeBookingsByRoom[room._id] || 0;
+        // Calculate available capacity for each night of the requested stay
+        const availabilities = stayNights.map(nightStr => {
+          // Extra inventory applies only if the night being evaluated is today
+          const extraForNight = (nightStr === todayStr) ? Number(room.extraInventoryToday || 0) : 0;
+          const nightCapacity = baseAlloc + extraForNight;
+
+          // Find bookings occupying this night: bIn <= nightStr and bOut > nightStr
+          let bookedOnNight = 0;
+          confirmedBookings.forEach((b: any) => {
+            if (b.roomId === room._id && b.checkIn && b.checkOut) {
+              const bIn = getDateStr(b.checkIn);
+              const bOut = getDateStr(b.checkOut);
+              if (bIn <= nightStr && bOut > nightStr) {
+                bookedOnNight += Number(b.rooms || 1);
+              }
+            }
+          });
+
+          return Math.max(0, nightCapacity - bookedOnNight);
+        });
+
+        // The stay availability is the bottleneck (minimum) across all requested nights
+        const minAvailable = Math.min(...availabilities);
+
         return {
           ...room,
-          availableRooms: Math.max(0, allocation - booked)
+          availableRooms: minAvailable
         };
       });
 
