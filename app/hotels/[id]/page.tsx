@@ -303,6 +303,28 @@ export default function HotelDetailPage() {
         email: bookingData.guestEmail,
         contact: bookingData.guestPhone
       },
+      modal: {
+        ondismiss: async function () {
+          // If customer paid on PhonePe/UPI and pressed back or closed modal,
+          // immediately recheck with Razorpay API in the background!
+          try {
+            const recheckRes = await fetch('/api/payments/recheck', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ bookingId: data.booking._id })
+            });
+            const recheckData = await recheckRes.json();
+            if (recheckData.verified) {
+              setConfirmedBookingId(data.booking._id);
+              setBookingStep(2);
+              return;
+            }
+          } catch (e) {
+            console.warn('Auto-recheck on modal dismiss:', e);
+          }
+          setBookingLoading(false);
+        }
+      },
       theme: { color: "#2563eb" }
     };
 

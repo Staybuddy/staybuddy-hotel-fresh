@@ -1,31 +1,53 @@
 import { NextRequest, NextResponse } from 'next/server';
-import Razorpay from 'razorpay';
+import { getRazorpayClient } from '@/lib/razorpay';
 import { db } from '@/lib/firebaseAdmin';
-
-const razorpay = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID || 'dummy_key_id',
-  key_secret: process.env.RAZORPAY_KEY_SECRET || 'dummy_key_secret',
-});
 
 export async function POST(request: NextRequest) {
   try {
     const { bookingId } = await request.json();
     
-    const docSnap = await db.collection('bookings').doc(bookingId).get();
+    if (!bookingId) {
+      return NextResponse.json({ error: 'bookingId is required' }, { status: 400 });
+    }
+
+    let bookingRef = db.collection('bookings').doc(bookingId);
+    let docSnap = await bookingRef.get();
     
     if (!docSnap.exists) {
-      return NextResponse.json({ error: 'Booking not found' }, { status: 404 });
+      const snap = await db.collection('bookings').where('_id', '==', bookingId).limit(1).get();
+      if (snap.empty) {
+        return NextResponse.json({ error: 'Booking not found' }, { status: 404 });
+      }
+      bookingRef = snap.docs[0].ref;
+      docSnap = snap.docs[0];
     }
     const booking = docSnap.data() as any;
 
+    const razorpay = getRazorpayClient();
+
     const options = {
-      amount: booking.totalPrice * 100, // Amount in paise
+      amount: Math.round(Number(booking.totalPrice) * 100), // Amount in paise
       currency: 'INR',
       receipt: `receipt_${bookingId}`,
+      notes: {
+        bookingId: String(bookingId),
+        customerId: String(booking.customerId || ''),
+        hotelId: String(booking.hotelId || ''),
+        guestEmail: String(booking.guestEmail || ''),
+        guestPhone: String(booking.guestPhone || ''),
+      }
     };
 
     const order = await razorpay.orders.create(options);
     
+    // Crucial: Persist razorpayOrderId and receipt onto booking in Firestore
+    await bookingRef.update({
+      razorpayOrderId: order.id,
+      razorpayReceipt: options.receipt,
+      paymentMethod: 'razorpay',
+      lastOrderCreatedAt: new Date().toISOString()
+    });
+
     return NextResponse.json({ 
       order, 
       id: order.id, 

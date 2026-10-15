@@ -47,6 +47,29 @@ export default function AdminDashboard() {
   const [selectedInvoiceHotel, setSelectedInvoiceHotel] = useState<any>(null);
   const [editingHotel, setEditingHotel] = useState<any>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [adminRecheckingId, setAdminRecheckingId] = useState<string | null>(null);
+
+  async function adminRecheckBookingPayment(bookingId: string) {
+    setAdminRecheckingId(bookingId);
+    try {
+      const res = await fetch('/api/payments/recheck', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bookingId })
+      });
+      const data = await res.json();
+      if (data.verified) {
+        alert('🎉 Payment verified with Razorpay! Booking marked confirmed.');
+        fetchAll(false);
+      } else {
+        alert(data.message || 'No captured payment found on Razorpay for this booking.');
+      }
+    } catch (e: any) {
+      alert('Error verifying payment: ' + (e.message || e));
+    } finally {
+      setAdminRecheckingId(null);
+    }
+  }
 
   useEffect(() => {
     let mounted = true;
@@ -415,13 +438,37 @@ export default function AdminDashboard() {
                             ₹{b.totalPrice?.toLocaleString()}
                           </td>
                           <td style={{ padding: '16px 24px' }}>
-                            <span style={{ 
-                              padding: '4px 10px', borderRadius: 20, fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase',
-                              background: b.status === 'confirmed' ? '#d1fae5' : b.status === 'cancelled' ? '#fee2e2' : '#fef3c7',
-                              color: b.status === 'confirmed' ? '#059669' : b.status === 'cancelled' ? '#dc2626' : '#d97706'
-                            }}>
-                              {b.status}
-                            </span>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-start' }}>
+                              <span style={{ 
+                                padding: '4px 10px', borderRadius: 20, fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase',
+                                background: b.status === 'confirmed' ? '#d1fae5' : b.status === 'cancelled' ? '#fee2e2' : '#fef3c7',
+                                color: b.status === 'confirmed' ? '#059669' : b.status === 'cancelled' ? '#dc2626' : '#d97706'
+                              }}>
+                                {b.status} {b.paymentStatus === 'paid' ? '• PAID' : '• UNPAID'}
+                              </span>
+                              {(b.status === 'pending' || b.paymentStatus === 'pending') && (
+                                <button
+                                  onClick={() => adminRecheckBookingPayment(b._id)}
+                                  disabled={adminRecheckingId === b._id}
+                                  style={{
+                                    fontSize: '0.7rem',
+                                    padding: '3px 8px',
+                                    borderRadius: 6,
+                                    border: '1px solid #3b82f6',
+                                    background: '#eff6ff',
+                                    color: '#1d4ed8',
+                                    fontWeight: 600,
+                                    cursor: adminRecheckingId === b._id ? 'not-allowed' : 'pointer',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: 4
+                                  }}
+                                  title="Check Razorpay for captured payment / email confirmation"
+                                >
+                                  {adminRecheckingId === b._id ? 'Checking...' : '🔄 Verify Razorpay'}
+                                </button>
+                              )}
+                            </div>
                           </td>
                         </tr>
                       ))
