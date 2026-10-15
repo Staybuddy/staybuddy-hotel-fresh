@@ -13,6 +13,7 @@ import HomeReferralSection from '@/components/HomeReferralSection';
 import HomeStatsSection from '@/components/HomeStatsSection';
 import Image from 'next/image';
 import WishlistButton from '@/components/WishlistButton';
+import { adjustRoomsAndAdults, MAX_ADULTS_PER_ROOM } from '@/lib/occupancyPricing';
 
 const DESTINATIONS = [
   { city: 'Mumbai', country: 'India', emoji: '🏙️', hotels: 342 },
@@ -201,20 +202,38 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
                     <div className="responsive-popup" onClick={e => e.stopPropagation()} style={{ position: 'relative', background: 'white', borderRadius: '24px', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)', padding: 'var(--space-5)', width: 320, maxWidth: '100%', cursor: 'default' }}>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>Rooms</div>
+                          <div>
+                            <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>Rooms</div>
+                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Max 3 adults / room</div>
+                          </div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 12, border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', padding: '4px 8px' }}>
-                            <button className="btn-ghost" style={{ padding: '4px 8px', fontSize: '1.2rem', lineHeight: 1 }} onClick={() => setSearchData(p => ({ ...p, rooms: Math.max(1, p.rooms - 1) }))}>−</button>
+                            <button className="btn-ghost" style={{ padding: '4px 8px', fontSize: '1.2rem', lineHeight: 1 }} onClick={() => setSearchData(p => {
+                              const adj = adjustRoomsAndAdults(p.rooms, p.adults, 'rooms', p.rooms - 1);
+                              return { ...p, rooms: adj.rooms, adults: adj.adults };
+                            })}>−</button>
                             <span style={{ fontWeight: 700, width: 20, textAlign: 'center' }}>{searchData.rooms}</span>
-                            <button className="btn-ghost" style={{ padding: '4px 8px', fontSize: '1.2rem', lineHeight: 1 }} onClick={() => setSearchData(p => ({ ...p, rooms: Math.min(10, p.rooms + 1) }))}>+</button>
+                            <button className="btn-ghost" style={{ padding: '4px 8px', fontSize: '1.2rem', lineHeight: 1 }} onClick={() => setSearchData(p => {
+                              const adj = adjustRoomsAndAdults(p.rooms, p.adults, 'rooms', Math.min(10, p.rooms + 1));
+                              return { ...p, rooms: adj.rooms, adults: adj.adults };
+                            })}>+</button>
                           </div>
                         </div>
 
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>Adults</div>
+                          <div>
+                            <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>Adults</div>
+                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Max {searchData.rooms * MAX_ADULTS_PER_ROOM} for {searchData.rooms} room{searchData.rooms > 1 ? 's' : ''}</div>
+                          </div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 12, border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', padding: '4px 8px' }}>
-                            <button className="btn-ghost" style={{ padding: '4px 8px', fontSize: '1.2rem', lineHeight: 1 }} onClick={() => setSearchData(p => ({ ...p, adults: Math.max(1, p.adults - 1) }))}>−</button>
+                            <button className="btn-ghost" style={{ padding: '4px 8px', fontSize: '1.2rem', lineHeight: 1 }} onClick={() => setSearchData(p => {
+                              const adj = adjustRoomsAndAdults(p.rooms, p.adults, 'adults', p.adults - 1);
+                              return { ...p, rooms: adj.rooms, adults: adj.adults };
+                            })}>−</button>
                             <span style={{ fontWeight: 700, width: 20, textAlign: 'center' }}>{searchData.adults}</span>
-                            <button className="btn-ghost" style={{ padding: '4px 8px', fontSize: '1.2rem', lineHeight: 1 }} onClick={() => setSearchData(p => ({ ...p, adults: Math.min(30, p.adults + 1) }))}>+</button>
+                            <button className="btn-ghost" style={{ padding: '4px 8px', fontSize: '1.2rem', lineHeight: 1 }} onClick={() => setSearchData(p => {
+                              const adj = adjustRoomsAndAdults(p.rooms, p.adults, 'adults', Math.min(30, p.adults + 1));
+                              return { ...p, rooms: adj.rooms, adults: adj.adults };
+                            })}>+</button>
                           </div>
                         </div>
 
@@ -228,6 +247,18 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
                             <span style={{ fontWeight: 700, width: 20, textAlign: 'center' }}>{searchData.children}</span>
                             <button className="btn-ghost" style={{ padding: '4px 8px', fontSize: '1.2rem', lineHeight: 1 }} onClick={() => setSearchData(p => ({ ...p, children: Math.min(10, p.children + 1) }))}>+</button>
                           </div>
+                        </div>
+
+                        <div style={{
+                          padding: '8px 10px',
+                          borderRadius: '8px',
+                          background: '#eff6ff',
+                          border: '1px solid #bfdbfe',
+                          color: '#1e40af',
+                          fontSize: '0.75rem',
+                          lineHeight: 1.3
+                        }}>
+                          💡 <strong>Max 3 adults per room.</strong> Adding 4 or more adults automatically calculates rooms and occupancy pricing.
                         </div>
                       </div>
                     </div>

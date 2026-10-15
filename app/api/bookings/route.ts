@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/firebaseAdmin';
+import { calculateBookingPricing } from '@/lib/occupancyPricing';
 
 export async function GET(request: NextRequest) {
   try {
@@ -170,19 +171,13 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    let basePartnerPrice = room.priceDouble || room.priceSingle || room.priceTriple || 0;
-    if (body.occupancy === 'single' && room.priceSingle) {
-      basePartnerPrice = room.priceSingle;
-    } else if (body.occupancy === 'triple' && room.priceTriple) {
-      basePartnerPrice = room.priceTriple;
-    } else if (body.occupancy === 'double' && room.priceDouble) {
-      basePartnerPrice = room.priceDouble;
-    }
-    
-    // In the frontend we removed the margin override, so client price is equal to base partner price
-    const clientPrice = basePartnerPrice;
-    const totalPrice = Math.round(nights * clientPrice * requestedRooms * 1.05);
-    const totalPartnerPrice = Math.round(nights * basePartnerPrice * requestedRooms);
+    const requestedAdults = Number(body.adults || body.guests || 1);
+    const pricing = calculateBookingPricing(room, requestedAdults, requestedRooms, nights);
+
+    const clientPrice = Math.round(pricing.basePricePerNight / requestedRooms);
+    const totalPrice = pricing.totalAmount;
+    const totalPartnerPrice = pricing.priceAfterDiscount;
+    const basePartnerPrice = clientPrice;
 
     const bookingRef = db.collection('bookings').doc();
     const counterRef = db.collection('metadata').doc('counters');
@@ -210,6 +205,9 @@ export async function POST(request: NextRequest) {
       bookingId: bookingIdString,
       customerId, hotelId, roomId,
       rooms: requestedRooms,
+      adults: requestedAdults,
+      roomBreakdowns: pricing.roomBreakdowns,
+      occupancySummary: pricing.summaryText,
       checkIn: checkInDate.toISOString(), checkOut: checkOutDate.toISOString(),
       guests, nights, pricePerNight: clientPrice, totalPrice,
       partnerPricePerNight: basePartnerPrice, totalPartnerPrice,

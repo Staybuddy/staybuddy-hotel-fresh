@@ -6,6 +6,7 @@ import { useSession } from "next-auth/react";
 import Navbar from "@/components/Navbar";
 import DateRangePicker from "@/components/DateRangePicker";
 import Image from "next/image";
+import { calculateBookingPricing, adjustRoomsAndAdults, MAX_ADULTS_PER_ROOM } from "@/lib/occupancyPricing";
 
 const formatDate = (dateString: string | null) => {
   if (!dateString) return "Select date";
@@ -186,11 +187,8 @@ export default function HotelDetailPage() {
 
   const getRoomPrice = (room: any) => {
     if (!room) return 0;
-    if (occupancy === 'single' && room.priceSingle) return room.priceSingle;
-    if (occupancy === 'triple' && room.priceTriple) return room.priceTriple;
-    if (occupancy === 'double' && room.priceDouble) return room.priceDouble;
-    
-    return room.priceDouble || room.priceSingle || room.priceTriple || 0;
+    const p = calculateBookingPricing(room, bookingData.adults, bookingData.rooms, 1);
+    return p.basePricePerNight;
   };
 
   async function handleBooking() {
@@ -226,6 +224,13 @@ export default function HotelDetailPage() {
       return;
     }
 
+    const calculatedPricing = calculateBookingPricing(
+      selectedRoom,
+      bookingData.adults,
+      bookingData.rooms,
+      nights
+    );
+
     const res = await fetch("/api/bookings", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -233,10 +238,14 @@ export default function HotelDetailPage() {
         customerId: (session.user as any).id,
         hotelId: id,
         roomId: selectedRoom._id,
-        occupancy: occupancy,
+        rooms: bookingData.rooms,
+        adults: bookingData.adults,
+        guests: bookingData.adults + (bookingData.children || 0),
+        occupancy: bookingData.adults === 1 ? 'single' : (bookingData.adults === 3 ? 'triple' : 'double'),
+        roomBreakdowns: calculatedPricing.roomBreakdowns,
+        occupancySummary: calculatedPricing.summaryText,
         checkIn: bookingData.checkIn,
         checkOut: bookingData.checkOut,
-        guests: parseInt(bookingData.guests),
         guestName: `${bookingData.guestFirstName} ${bookingData.guestLastName}`.trim(),
         guestEmail: bookingData.guestEmail,
         guestPhone: bookingData.guestPhone,
@@ -421,6 +430,15 @@ export default function HotelDetailPage() {
           ),
         )
       : 1;
+
+  const currentPricing = useMemo(() => {
+    return calculateBookingPricing(
+      selectedRoom,
+      bookingData.adults,
+      bookingData.rooms,
+      nights
+    );
+  }, [selectedRoom, bookingData.adults, bookingData.rooms, nights]);
 
   if (loading)
     return (
@@ -1003,13 +1021,18 @@ export default function HotelDetailPage() {
                             alignItems: "center",
                           }}
                         >
-                          <div
-                            style={{
-                              fontWeight: 600,
-                              color: "var(--text-primary)",
-                            }}
-                          >
-                            Rooms
+                          <div>
+                            <div
+                              style={{
+                                fontWeight: 600,
+                                color: "var(--text-primary)",
+                              }}
+                            >
+                              Rooms
+                            </div>
+                            <div style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
+                              Max 3 adults / room
+                            </div>
                           </div>
                           <div
                             style={{
@@ -1029,10 +1052,10 @@ export default function HotelDetailPage() {
                                 lineHeight: 1,
                               }}
                               onClick={() =>
-                                setBookingData((p) => ({
-                                  ...p,
-                                  rooms: Math.max(1, p.rooms - 1),
-                                }))
+                                setBookingData((p) => {
+                                  const adj = adjustRoomsAndAdults(p.rooms, p.adults, 'rooms', p.rooms - 1);
+                                  return { ...p, rooms: adj.rooms, adults: adj.adults };
+                                })
                               }
                             >
                               −
@@ -1054,10 +1077,10 @@ export default function HotelDetailPage() {
                                 lineHeight: 1,
                               }}
                               onClick={() =>
-                                setBookingData((p) => ({
-                                  ...p,
-                                  rooms: Math.min(10, p.rooms + 1),
-                                }))
+                                setBookingData((p) => {
+                                  const adj = adjustRoomsAndAdults(p.rooms, p.adults, 'rooms', Math.min(10, p.rooms + 1));
+                                  return { ...p, rooms: adj.rooms, adults: adj.adults };
+                                })
                               }
                             >
                               +
@@ -1071,13 +1094,18 @@ export default function HotelDetailPage() {
                             alignItems: "center",
                           }}
                         >
-                          <div
-                            style={{
-                              fontWeight: 600,
-                              color: "var(--text-primary)",
-                            }}
-                          >
-                            Adults
+                          <div>
+                            <div
+                              style={{
+                                fontWeight: 600,
+                                color: "var(--text-primary)",
+                              }}
+                            >
+                              Adults
+                            </div>
+                            <div style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
+                              Max {bookingData.rooms * MAX_ADULTS_PER_ROOM} for {bookingData.rooms} room{bookingData.rooms > 1 ? "s" : ""}
+                            </div>
                           </div>
                           <div
                             style={{
@@ -1097,10 +1125,10 @@ export default function HotelDetailPage() {
                                 lineHeight: 1,
                               }}
                               onClick={() =>
-                                setBookingData((p) => ({
-                                  ...p,
-                                  adults: Math.max(1, p.adults - 1),
-                                }))
+                                setBookingData((p) => {
+                                  const adj = adjustRoomsAndAdults(p.rooms, p.adults, 'adults', Math.max(1, p.adults - 1));
+                                  return { ...p, rooms: adj.rooms, adults: adj.adults };
+                                })
                               }
                             >
                               −
@@ -1122,15 +1150,27 @@ export default function HotelDetailPage() {
                                 lineHeight: 1,
                               }}
                               onClick={() =>
-                                setBookingData((p) => ({
-                                  ...p,
-                                  adults: Math.min(20, p.adults + 1),
-                                }))
+                                setBookingData((p) => {
+                                  const adj = adjustRoomsAndAdults(p.rooms, p.adults, 'adults', Math.min(30, p.adults + 1));
+                                  return { ...p, rooms: adj.rooms, adults: adj.adults };
+                                })
                               }
                             >
                               +
                             </button>
                           </div>
+                        </div>
+
+                        <div style={{
+                          padding: '8px 10px',
+                          borderRadius: '8px',
+                          background: '#eff6ff',
+                          border: '1px solid #bfdbfe',
+                          color: '#1e40af',
+                          fontSize: '0.75rem',
+                          lineHeight: 1.3
+                        }}>
+                          💡 <strong>Max 3 adults per room.</strong> Adding 4 or more adults automatically calculates rooms and occupancy pricing.
                         </div>
                       </div>
                     </div>
@@ -1296,7 +1336,7 @@ export default function HotelDetailPage() {
                               color: "var(--text-muted)",
                             }}
                           >
-                            per night
+                            {bookingData.rooms > 1 ? `for ${bookingData.rooms} rooms / night` : "per night"}
                           </div>
                           <button
                             className="btn btn-primary btn-sm"
@@ -1603,13 +1643,6 @@ export default function HotelDetailPage() {
 
                 const displayRoom = selectedRoom;
 
-                const currentPrice =
-                  occupancy === "single"
-                    ? displayRoom.priceSingle
-                    : occupancy === "triple"
-                      ? displayRoom.priceTriple
-                      : displayRoom.priceDouble || displayRoom.priceSingle;
-
                 return (
                   <div className="card" style={{ padding: "var(--space-5)" }}>
                     <div
@@ -1662,70 +1695,135 @@ export default function HotelDetailPage() {
                         <path d="M23 21v-2a4 4 0 00-3-3.87" />
                         <path d="M16 3.13a4 4 0 010 7.75" />
                       </svg>
-                      Select Room Occupancy:
+                      {bookingData.rooms > 1 ? "Multi-Room Occupancy Breakdown:" : "Select Room Occupancy:"}
                     </div>
 
-                    <div
-                      style={{
-                        display: "grid",
-                        gridTemplateColumns: "1fr 1fr 1fr",
-                        gap: 8,
-                        marginBottom: 20,
-                      }}
-                    >
-                      {["single", "double", "triple"].map((occ) => {
-                        const p =
-                          occ === "single"
-                            ? displayRoom.priceSingle
-                            : occ === "triple"
-                              ? displayRoom.priceTriple
-                              : displayRoom.priceDouble ||
-                                displayRoom.priceSingle;
-                        if (!p) return null;
-                        return (
-                          <div
-                            key={occ}
-                            onClick={() => setOccupancy(occ as any)}
+                    {bookingData.rooms > 1 ? (
+                      <div
+                        style={{
+                          background: "#eff6ff",
+                          border: "1px solid #bfdbfe",
+                          borderRadius: "var(--radius-md)",
+                          padding: "12px 14px",
+                          marginBottom: 20,
+                        }}
+                      >
+                        <div
+                          style={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "center",
+                            marginBottom: 8,
+                          }}
+                        >
+                          <div style={{ fontSize: "0.85rem", fontWeight: 700, color: "#1d4ed8" }}>
+                            {bookingData.rooms} Rooms for {bookingData.adults} Adults
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setShowGuestPicker(true)}
                             style={{
-                              border:
-                                occupancy === occ
-                                  ? "2px solid #2563eb"
-                                  : "1px solid var(--border)",
-                              borderRadius: "var(--radius-md)",
-                              padding: "8px 4px",
-                              textAlign: "center",
+                              background: "white",
+                              border: "1px solid #93c5fd",
+                              color: "#2563eb",
+                              padding: "3px 10px",
+                              borderRadius: "var(--radius-sm)",
+                              fontSize: "0.75rem",
+                              fontWeight: 700,
                               cursor: "pointer",
-                              background:
-                                occupancy === occ ? "#eff6ff" : "white",
-                              transition: "all 0.2s",
                             }}
                           >
+                            ✏️ Edit Guests/Rooms
+                          </button>
+                        </div>
+                        <div
+                          style={{
+                            fontSize: "0.82rem",
+                            color: "#1e40af",
+                            fontWeight: 600,
+                            marginBottom: 6,
+                          }}
+                        >
+                          Allocation: {currentPricing.summaryText}
+                        </div>
+                        <div
+                          style={{
+                            fontSize: "0.75rem",
+                            color: "var(--text-muted)",
+                            borderTop: "1px dashed #bfdbfe",
+                            paddingTop: 6,
+                          }}
+                        >
+                          Rule: Max 3 adults per room. Price automatically accounts for all {bookingData.rooms} rooms and {bookingData.adults} guests.
+                        </div>
+                      </div>
+                    ) : (
+                      <div
+                        style={{
+                          display: "grid",
+                          gridTemplateColumns: "1fr 1fr 1fr",
+                          gap: 8,
+                          marginBottom: 20,
+                        }}
+                      >
+                        {["single", "double", "triple"].map((occ) => {
+                          const p =
+                            occ === "single"
+                              ? displayRoom.priceSingle
+                              : occ === "triple"
+                                ? displayRoom.priceTriple
+                                : displayRoom.priceDouble ||
+                                  displayRoom.priceSingle;
+                          if (!p) return null;
+                          return (
                             <div
+                              key={occ}
+                              onClick={() => {
+                                setOccupancy(occ as any);
+                                const adultCount = occ === "single" ? 1 : occ === "triple" ? 3 : 2;
+                                setBookingData((prev) => ({ ...prev, adults: adultCount }));
+                              }}
                               style={{
-                                fontSize: "0.75rem",
-                                fontWeight: 600,
-                                color:
+                                border:
                                   occupancy === occ
-                                    ? "#1d4ed8"
-                                    : "var(--text-primary)",
-                                textTransform: "capitalize",
+                                    ? "2px solid #2563eb"
+                                    : "1px solid var(--border)",
+                                borderRadius: "var(--radius-md)",
+                                padding: "8px 4px",
+                                textAlign: "center",
+                                cursor: "pointer",
+                                background:
+                                  occupancy === occ ? "#eff6ff" : "white",
+                                transition: "all 0.2s",
                               }}
                             >
-                              {occ} Room {occ === "double" && "⭐"}
+                              <div
+                                style={{
+                                  fontSize: "0.75rem",
+                                  fontWeight: 600,
+                                  color:
+                                    occupancy === occ
+                                      ? "#1d4ed8"
+                                      : "var(--text-primary)",
+                                  textTransform: "capitalize",
+                                }}
+                              >
+                                {occ} Room {occ === "double" && "⭐"}
+                              </div>
+                              <div
+                                style={{
+                                  fontSize: "0.85rem",
+                                  fontWeight: 700,
+                                  marginTop: 4,
+                                }}
+                              >
+                                ₹{p.toLocaleString()}
+                              </div>
                             </div>
-                            <div
-                              style={{
-                                fontSize: "0.85rem",
-                                fontWeight: 700,
-                                marginTop: 4,
-                              }}
-                            >
-                              ₹{p.toLocaleString()}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
+                          );
+                        })}
+                      </div>
+                    )}
 
                     <div
                       style={{
@@ -1742,7 +1840,7 @@ export default function HotelDetailPage() {
                           lineHeight: 1,
                         }}
                       >
-                        ₹{currentPrice.toLocaleString()}
+                        ₹{currentPricing.basePricePerNight.toLocaleString()}
                       </div>
                       <div
                         style={{
@@ -1751,7 +1849,7 @@ export default function HotelDetailPage() {
                           paddingBottom: 4,
                         }}
                       >
-                        Per Night ({occupancy.toUpperCase()} OCCUPANCY)
+                        Per Night {bookingData.rooms > 1 ? `(${bookingData.rooms} Rooms, ${bookingData.adults} Adults)` : `(${occupancy.toUpperCase()} OCCUPANCY)`}
                       </div>
                     </div>
 
@@ -2158,7 +2256,10 @@ export default function HotelDetailPage() {
                         </div>
                         <div style={{ display: "flex", gap: 8 }}>
                           <button
-                            onClick={() => closeReview()}
+                            onClick={() => {
+                              closeReview();
+                              setShowDatePicker(true);
+                            }}
                             style={{
                               background: "#ecfdf5",
                               border: "1px solid #a7f3d0",
@@ -2173,7 +2274,10 @@ export default function HotelDetailPage() {
                             ✏️ Edit Dates
                           </button>
                           <button
-                            onClick={() => closeReview()}
+                            onClick={() => {
+                              closeReview();
+                              setShowGuestPicker(true);
+                            }}
                             style={{
                               background: "#eff6ff",
                               border: "1px solid #bfdbfe",
@@ -2262,7 +2366,7 @@ export default function HotelDetailPage() {
                             marginBottom: 4,
                           }}
                         >
-                          {selectedRoom.type}
+                          {selectedRoom.type} {bookingData.rooms > 1 ? `(${bookingData.rooms} Rooms)` : ""}
                         </h3>
                         <div
                           style={{
@@ -2270,8 +2374,10 @@ export default function HotelDetailPage() {
                             color: "var(--text-muted)",
                           }}
                         >
-                          {bookingData.adults} Adult
-                          {bookingData.adults > 1 ? "s" : ""}
+                          {bookingData.adults} Adult{bookingData.adults > 1 ? "s" : ""}
+                          {bookingData.rooms > 1 && currentPricing.summaryText
+                            ? ` • ${currentPricing.summaryText}`
+                            : ` • ${occupancy.toUpperCase()} OCCUPANCY`}
                         </div>
                       </div>
                       <a
@@ -2891,15 +2997,24 @@ export default function HotelDetailPage() {
                               marginTop: 4,
                             }}
                           >
-                            {bookingData.rooms} Room x {nights} Night
+                            {bookingData.rooms} Room{bookingData.rooms > 1 ? "s" : ""} x {nights} Night
                             {nights > 1 ? "s" : ""}
+                            {currentPricing.summaryText && (
+                              <div
+                                style={{
+                                  color: "#2563eb",
+                                  marginTop: 3,
+                                  fontSize: "0.75rem",
+                                  fontWeight: 600,
+                                }}
+                              >
+                                {currentPricing.summaryText}
+                              </div>
+                            )}
                           </div>
                         </div>
                         <div style={{ fontSize: "1.1rem", fontWeight: 700 }}>
-                          ₹
-                          {Math.round(
-                            (getRoomPrice(selectedRoom) * nights) / 0.85,
-                          ).toLocaleString()}
+                          ₹{currentPricing.originalPriceBeforeDiscount.toLocaleString()}
                         </div>
                       </div>
 
@@ -2913,13 +3028,9 @@ export default function HotelDetailPage() {
                           fontSize: "0.95rem",
                         }}
                       >
-                        <div>Discount by Property</div>
+                        <div>Discount by Property (15%)</div>
                         <div>
-                          - ₹
-                          {Math.round(
-                            ((getRoomPrice(selectedRoom) * nights) / 0.85) *
-                              0.15,
-                          ).toLocaleString()}
+                          - ₹{currentPricing.discountAmount.toLocaleString()}
                         </div>
                       </div>
 
@@ -2942,10 +3053,7 @@ export default function HotelDetailPage() {
                       >
                         <div>Price after Discount</div>
                         <div>
-                          ₹
-                          {(
-                            getRoomPrice(selectedRoom) * nights
-                          ).toLocaleString()}
+                          ₹{currentPricing.priceAfterDiscount.toLocaleString()}
                         </div>
                       </div>
 
@@ -2960,10 +3068,7 @@ export default function HotelDetailPage() {
                       >
                         <div>Taxes & Service Fees (5% GST) ℹ️</div>
                         <div>
-                          ₹
-                          {Math.round(
-                            getRoomPrice(selectedRoom) * nights * 0.05,
-                          ).toLocaleString()}
+                          ₹{currentPricing.gstAmount.toLocaleString()}
                         </div>
                       </div>
 
@@ -2992,10 +3097,7 @@ export default function HotelDetailPage() {
                             color: "var(--text-primary)",
                           }}
                         >
-                          ₹
-                          {Math.round(
-                            getRoomPrice(selectedRoom) * nights * 1.05,
-                          ).toLocaleString()}
+                          ₹{currentPricing.totalAmount.toLocaleString()}
                         </div>
                       </div>
                     </div>
@@ -3013,10 +3115,7 @@ export default function HotelDetailPage() {
                         border: "1px solid #a7f3d0",
                       }}
                     >
-                      🎉 You save ₹
-                      {Math.round(
-                        ((getRoomPrice(selectedRoom) * nights) / 0.85) * 0.15,
-                      ).toLocaleString()}{" "}
+                      🎉 You save ₹{currentPricing.savingsAmount.toLocaleString()}{" "}
                       on this booking!
                     </div>
 
@@ -3208,10 +3307,7 @@ export default function HotelDetailPage() {
                               borderRadius: "var(--radius-sm)",
                             }}
                           >
-                            ₹
-                            {Math.round(
-                              getRoomPrice(selectedRoom) * nights * 1.05,
-                            ).toLocaleString()}
+                            ₹{currentPricing.totalAmount.toLocaleString()}
                           </span>
                         </>
                       )}
@@ -3565,7 +3661,7 @@ export default function HotelDetailPage() {
                 <span
                   style={{ fontSize: "0.85rem", color: "var(--text-muted)" }}
                 >
-                  Price per night
+                  Price per night {bookingData.rooms > 1 ? `(${bookingData.rooms} Rooms, ${bookingData.adults} Adults)` : ""}
                 </span>
                 <div
                   style={{

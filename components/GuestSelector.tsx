@@ -35,12 +35,17 @@ const Stepper = ({ label, subLabel, value, field, min, onUpdate }: { label: stri
   </div>
 );
 
+import { adjustRoomsAndAdults, MAX_ADULTS_PER_ROOM } from '@/lib/occupancyPricing';
+
 export default function GuestSelector({ rooms, adults, children, onChange, onClose }: GuestSelectorProps) {
   
   const update = (field: 'rooms' | 'adults' | 'children', value: number) => {
     let r = rooms, a = adults, c = children;
-    if (field === 'rooms') r = Math.max(1, value);
-    if (field === 'adults') a = Math.max(1, value);
+    if (field === 'rooms' || field === 'adults') {
+      const adjusted = adjustRoomsAndAdults(rooms, adults, field, value);
+      r = adjusted.rooms;
+      a = adjusted.adults;
+    }
     if (field === 'children') c = Math.max(0, value);
     onChange(r, a, c);
   };
@@ -55,11 +60,24 @@ export default function GuestSelector({ rooms, adults, children, onChange, onClo
       onClick={e => e.stopPropagation()}
     >
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-        <Stepper label="Room" value={rooms} field="rooms" min={1} onUpdate={update} />
+        <Stepper label="Rooms" subLabel="Max 3 adults per room" value={rooms} field="rooms" min={1} onUpdate={update} />
         <div style={{ height: 1, background: 'var(--border)' }} />
-        <Stepper label="Adults" value={adults} field="adults" min={1} onUpdate={update} />
+        <Stepper label="Adults" subLabel={`Max ${rooms * MAX_ADULTS_PER_ROOM} for ${rooms} room${rooms > 1 ? 's' : ''}`} value={adults} field="adults" min={1} onUpdate={update} />
         <div style={{ height: 1, background: 'var(--border)' }} />
         <Stepper label="Children" subLabel="0 - 17 Years Old" value={children} field="children" min={0} onUpdate={update} />
+      </div>
+
+      <div style={{
+        marginTop: 10,
+        padding: '6px 10px',
+        borderRadius: 'var(--radius-sm)',
+        background: '#eff6ff',
+        border: '1px solid #bfdbfe',
+        color: '#1e40af',
+        fontSize: '0.75rem',
+        lineHeight: 1.3
+      }}>
+        💡 <strong>Occupancy rule:</strong> Max 3 adults per room. Adding more adults automatically adds required rooms.
       </div>
       
       <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 16 }}>
