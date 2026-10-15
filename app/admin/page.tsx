@@ -48,6 +48,7 @@ export default function AdminDashboard() {
   const [editingHotel, setEditingHotel] = useState<any>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [adminRecheckingId, setAdminRecheckingId] = useState<string | null>(null);
+  const [bookingTab, setBookingTab] = useState<'live' | 'pending'>('live');
 
   async function adminRecheckBookingPayment(bookingId: string) {
     setAdminRecheckingId(bookingId);
@@ -91,7 +92,9 @@ export default function AdminDashboard() {
         fetch('/api/admin/bookings').then(r => r.json()).then(data => {
           if (data.bookings) {
             setBookings(prev => {
-              if (data.bookings.length > prev.length && prev.length > 0) {
+              const prevPaid = prev.filter(x => (x.status === 'confirmed' || x.status === 'completed') && x.paymentStatus === 'paid').length;
+              const newPaid = data.bookings.filter((x: any) => (x.status === 'confirmed' || x.status === 'completed') && x.paymentStatus === 'paid').length;
+              if (newPaid > prevPaid && prev.length > 0) {
                 if (activeTab !== 'bookings') setHasNewBookings(true);
               }
               return data.bookings;
@@ -155,7 +158,7 @@ export default function AdminDashboard() {
         totalHotels: h.filter((x: any) => x.status === 'approved').length,
         pendingHotels: h.filter((x: any) => x.status === 'pending').length,
         pendingPartners: p.filter((x: any) => x.partnerStatus === 'pending').length,
-        totalBookings: b.length,
+        totalBookings: b.filter((bk: any) => (bk.status === 'confirmed' || bk.status === 'completed') && bk.paymentStatus === 'paid').length,
         totalRevenue: revenue,
         totalProfit: profit,
         totalUsers: u.length,
@@ -400,84 +403,189 @@ export default function AdminDashboard() {
           )}
 
           {/* ===== LIVE BOOKINGS ===== */}
-          {activeTab === 'bookings' && (
-            <div className="fade-in">
-              <h1 style={{ fontSize: '2rem', color: '#0f172a', marginBottom: 8 }}>Live Bookings</h1>
-              <p style={{ color: '#64748b', marginBottom: 32 }}>View and manage all real-time bookings across your platform.</p>
+          {activeTab === 'bookings' && (() => {
+            const liveBookings = bookings.filter(b => (b.status === 'confirmed' || b.status === 'completed') && b.paymentStatus === 'paid');
+            const pendingBookings = bookings.filter(b => b.status === 'pending' || b.paymentStatus === 'pending' || b.paymentStatus === 'unpaid');
+            const displayBookings = bookingTab === 'live' ? liveBookings : pendingBookings;
+            const sortedBookings = [...displayBookings].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
-              <div style={{ background: 'white', borderRadius: 16, boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)', overflowX: 'auto' }}>
-                <table className="admin-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
-                  <thead>
-                    <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0', textAlign: 'left' }}>
-                      <th style={{ padding: '16px 24px', fontSize: '0.8rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Guest</th>
-                      <th style={{ padding: '16px 24px', fontSize: '0.8rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Property</th>
-                      <th style={{ padding: '16px 24px', fontSize: '0.8rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Dates</th>
-                      <th style={{ padding: '16px 24px', fontSize: '0.8rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Amount</th>
-                      <th style={{ padding: '16px 24px', fontSize: '0.8rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {bookings.length === 0 ? (
-                      <tr><td colSpan={5} style={{ padding: '40px', textAlign: 'center', color: '#64748b' }}>No live bookings found</td></tr>
-                    ) : (
-                      [...bookings].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).reverse().map(b => (
-                        <tr key={b._id} style={{ borderBottom: '1px solid #e2e8f0' }}>
-                          <td style={{ padding: '16px 24px' }}>
-                            <div style={{ fontWeight: 700, color: '#0f172a' }}>{b.guestName}</div>
-                            <div style={{ fontSize: '0.8rem', color: '#64748b' }}>{b.guestPhone}</div>
-                            <div style={{ fontSize: '0.75rem', color: '#3b82f6', fontWeight: 600, marginTop: 4 }}>Booking ID: {b.bookingId || b._id.slice(-8)}</div>
-                          </td>
-                          <td style={{ padding: '16px 24px', color: '#475569', fontWeight: 500 }}>
-                            <div>{b.hotelId?.name || 'Unknown Property'}</div>
-                            <div style={{ fontSize: '0.75rem', color: '#8b5cf6', fontWeight: 600, marginTop: 4 }}>Hotel ID: {b.hotelId?.hotelId || b.hotelId?._id?.slice(-8)}</div>
-                          </td>
-                          <td style={{ padding: '16px 24px', fontSize: '0.85rem', color: '#475569' }}>
-                            <div style={{ fontWeight: 600 }}>{new Date(b.checkIn).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' })} – {new Date(b.checkOut).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' })}</div>
-                          </td>
-                          <td style={{ padding: '16px 24px', fontWeight: 800, color: '#059669' }}>
-                            ₹{b.totalPrice?.toLocaleString()}
-                          </td>
-                          <td style={{ padding: '16px 24px' }}>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-start' }}>
-                              <span style={{ 
-                                padding: '4px 10px', borderRadius: 20, fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase',
-                                background: b.status === 'confirmed' ? '#d1fae5' : b.status === 'cancelled' ? '#fee2e2' : '#fef3c7',
-                                color: b.status === 'confirmed' ? '#059669' : b.status === 'cancelled' ? '#dc2626' : '#d97706'
-                              }}>
-                                {b.status} {b.paymentStatus === 'paid' ? '• PAID' : '• UNPAID'}
-                              </span>
-                              {(b.status === 'pending' || b.paymentStatus === 'pending') && (
-                                <button
-                                  onClick={() => adminRecheckBookingPayment(b._id)}
-                                  disabled={adminRecheckingId === b._id}
-                                  style={{
-                                    fontSize: '0.7rem',
-                                    padding: '3px 8px',
-                                    borderRadius: 6,
-                                    border: '1px solid #3b82f6',
-                                    background: '#eff6ff',
-                                    color: '#1d4ed8',
-                                    fontWeight: 600,
-                                    cursor: adminRecheckingId === b._id ? 'not-allowed' : 'pointer',
-                                    display: 'inline-flex',
-                                    alignItems: 'center',
-                                    gap: 4
-                                  }}
-                                  title="Check Razorpay for captured payment / email confirmation"
-                                >
-                                  {adminRecheckingId === b._id ? 'Checking...' : '🔄 Verify Razorpay'}
-                                </button>
-                              )}
-                            </div>
+            return (
+              <div className="fade-in">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 28, flexWrap: 'wrap', gap: 16 }}>
+                  <div>
+                    <h1 style={{ fontSize: '2rem', color: '#0f172a', marginBottom: 6 }}>Live Bookings</h1>
+                    <p style={{ color: '#64748b', fontSize: '0.95rem' }}>
+                      Real-time confirmed bookings where payment is completed, verified with Razorpay, and confirmation emails sent.
+                    </p>
+                  </div>
+
+                  {/* Filter Sub-Tabs */}
+                  <div style={{ display: 'flex', gap: 8, background: '#f1f5f9', padding: '4px', borderRadius: 12, border: '1px solid #e2e8f0' }}>
+                    <button
+                      onClick={() => setBookingTab('live')}
+                      style={{
+                        padding: '8px 16px',
+                        borderRadius: 8,
+                        border: 'none',
+                        cursor: 'pointer',
+                        fontWeight: 700,
+                        fontSize: '0.85rem',
+                        background: bookingTab === 'live' ? 'white' : 'transparent',
+                        color: bookingTab === 'live' ? '#0f172a' : '#64748b',
+                        boxShadow: bookingTab === 'live' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 8,
+                        transition: 'all 0.15s ease'
+                      }}
+                    >
+                      <span>🟢 Live & Confirmed</span>
+                      <span style={{
+                        background: bookingTab === 'live' ? '#d1fae5' : '#e2e8f0',
+                        color: bookingTab === 'live' ? '#065f46' : '#475569',
+                        padding: '2px 8px',
+                        borderRadius: 12,
+                        fontSize: '0.75rem',
+                        fontWeight: 700
+                      }}>
+                        {liveBookings.length}
+                      </span>
+                    </button>
+
+                    <button
+                      onClick={() => setBookingTab('pending')}
+                      style={{
+                        padding: '8px 16px',
+                        borderRadius: 8,
+                        border: 'none',
+                        cursor: 'pointer',
+                        fontWeight: 700,
+                        fontSize: '0.85rem',
+                        background: bookingTab === 'pending' ? 'white' : 'transparent',
+                        color: bookingTab === 'pending' ? '#0f172a' : '#64748b',
+                        boxShadow: bookingTab === 'pending' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 8,
+                        transition: 'all 0.15s ease'
+                      }}
+                    >
+                      <span>⏳ Incomplete / Unpaid Attempts</span>
+                      <span style={{
+                        background: bookingTab === 'pending' ? '#fef3c7' : '#e2e8f0',
+                        color: bookingTab === 'pending' ? '#92400e' : '#475569',
+                        padding: '2px 8px',
+                        borderRadius: 12,
+                        fontSize: '0.75rem',
+                        fontWeight: 700
+                      }}>
+                        {pendingBookings.length}
+                      </span>
+                    </button>
+                  </div>
+                </div>
+
+                {bookingTab === 'pending' && (
+                  <div style={{
+                    marginBottom: 20,
+                    padding: '14px 18px',
+                    borderRadius: 10,
+                    background: '#fffbeb',
+                    border: '1px solid #fde68a',
+                    color: '#92400e',
+                    fontSize: '0.85rem',
+                    lineHeight: 1.5
+                  }}>
+                    <strong>⚠️ Incomplete Checkout Attempts:</strong> These are booking attempts where the guest did not complete payment or cancelled at checkout. If a customer paid via PhonePe / UPI and hit back, click <strong>&quot;Verify Razorpay&quot;</strong> to directly check Razorpay servers and promote it into Live Bookings.
+                  </div>
+                )}
+
+                <div style={{ background: 'white', borderRadius: 16, boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)', overflowX: 'auto' }}>
+                  <table className="admin-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
+                    <thead>
+                      <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0', textAlign: 'left' }}>
+                        <th style={{ padding: '16px 24px', fontSize: '0.8rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Guest</th>
+                        <th style={{ padding: '16px 24px', fontSize: '0.8rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Property</th>
+                        <th style={{ padding: '16px 24px', fontSize: '0.8rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Dates</th>
+                        <th style={{ padding: '16px 24px', fontSize: '0.8rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Amount</th>
+                        <th style={{ padding: '16px 24px', fontSize: '0.8rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Status & Verification</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {sortedBookings.length === 0 ? (
+                        <tr>
+                          <td colSpan={5} style={{ padding: '48px', textAlign: 'center', color: '#64748b' }}>
+                            {bookingTab === 'live' ? 'No live confirmed bookings found.' : 'No incomplete or pending payment attempts.'}
                           </td>
                         </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
+                      ) : (
+                        sortedBookings.map(b => (
+                          <tr key={b._id} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                            <td style={{ padding: '16px 24px' }}>
+                              <div style={{ fontWeight: 700, color: '#0f172a' }}>{b.guestName}</div>
+                              <div style={{ fontSize: '0.8rem', color: '#64748b' }}>{b.guestPhone}</div>
+                              <div style={{ fontSize: '0.75rem', color: '#3b82f6', fontWeight: 600, marginTop: 4 }}>Booking ID: {b.bookingId || b._id.slice(-8)}</div>
+                            </td>
+                            <td style={{ padding: '16px 24px', color: '#475569', fontWeight: 500 }}>
+                              <div>{b.hotelId?.name || 'Unknown Property'}</div>
+                              <div style={{ fontSize: '0.75rem', color: '#8b5cf6', fontWeight: 600, marginTop: 4 }}>Hotel ID: {b.hotelId?.hotelId || b.hotelId?._id?.slice(-8)}</div>
+                            </td>
+                            <td style={{ padding: '16px 24px', fontSize: '0.85rem', color: '#475569' }}>
+                              <div style={{ fontWeight: 600 }}>{new Date(b.checkIn).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' })} – {new Date(b.checkOut).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' })}</div>
+                            </td>
+                            <td style={{ padding: '16px 24px', fontWeight: 800, color: '#059669' }}>
+                              ₹{b.totalPrice?.toLocaleString()}
+                            </td>
+                            <td style={{ padding: '16px 24px' }}>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-start' }}>
+                                <span style={{ 
+                                  padding: '4px 10px', borderRadius: 20, fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase',
+                                  background: b.status === 'confirmed' ? '#d1fae5' : b.status === 'completed' ? '#dbeafe' : b.status === 'cancelled' ? '#fee2e2' : '#fef3c7',
+                                  color: b.status === 'confirmed' ? '#059669' : b.status === 'completed' ? '#1d4ed8' : b.status === 'cancelled' ? '#dc2626' : '#d97706'
+                                }}>
+                                  {b.status} • {b.paymentStatus === 'paid' ? 'PAID' : 'UNPAID'}
+                                </span>
+
+                                {b.paymentStatus === 'paid' && (
+                                  <div style={{ fontSize: '0.7rem', color: '#059669', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>
+                                    <span>✅ Verified</span>
+                                    <span>• ✉️ Invoices & Emails Sent</span>
+                                  </div>
+                                )}
+
+                                {(b.status === 'pending' || b.paymentStatus === 'pending' || b.paymentStatus === 'unpaid') && (
+                                  <button
+                                    onClick={() => adminRecheckBookingPayment(b._id)}
+                                    disabled={adminRecheckingId === b._id}
+                                    style={{
+                                      fontSize: '0.72rem',
+                                      padding: '4px 10px',
+                                      borderRadius: 6,
+                                      border: '1px solid #3b82f6',
+                                      background: '#eff6ff',
+                                      color: '#1d4ed8',
+                                      fontWeight: 600,
+                                      cursor: adminRecheckingId === b._id ? 'not-allowed' : 'pointer',
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      gap: 4
+                                    }}
+                                    title="Check Razorpay for captured payment / email confirmation"
+                                  >
+                                    {adminRecheckingId === b._id ? 'Checking...' : '🔄 Verify Razorpay'}
+                                  </button>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
               </div>
-            </div>
-          )}
+            );
+          })()}
 
           {/* ===== PARTNER REQUESTS (PROPERTIES) ===== */}
           {activeTab === 'requests' && (

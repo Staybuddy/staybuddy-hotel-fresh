@@ -107,14 +107,15 @@ export default function PartnerDashboard() {
       const [hotelData, bookingData] = await Promise.all([hotelRes.json(), bookingRes.json()]);
 
       const h = hotelData.hotels || [];
-      const b = bookingData.bookings || [];
+      const allBookings = bookingData.bookings || [];
+      const confirmedBookings = allBookings.filter((bk: any) => bk.status !== 'pending' && bk.paymentStatus !== 'pending');
       setHotels(h);
-      setBookings(b);
+      setBookings(confirmedBookings);
 
-      const revenue = b.filter((bk: any) => bk.paymentStatus === 'paid').reduce((sum: number, bk: any) => sum + bk.totalPrice, 0);
+      const revenue = confirmedBookings.filter((bk: any) => bk.paymentStatus === 'paid').reduce((sum: number, bk: any) => sum + (bk.totalPartnerPrice || bk.totalPrice || 0), 0);
       setStats({
         totalHotels: h.length,
-        totalBookings: b.length,
+        totalBookings: confirmedBookings.length,
         totalRevenue: revenue,
         pendingHotels: h.filter((h: any) => h.status === 'pending').length,
       });
