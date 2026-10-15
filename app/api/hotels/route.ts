@@ -162,10 +162,15 @@ export async function POST(request: NextRequest) {
       hotelIdString = `SBHO-${Math.floor(Math.random() * 900) + 100}`;
     }
 
+    let finalHotelImages = Array.isArray(images) ? images.filter(Boolean) : [];
+    if (finalHotelImages.length === 0 && rooms && Array.isArray(rooms)) {
+      finalHotelImages = Array.from(new Set(rooms.flatMap((r: any) => Array.isArray(r.images) ? r.images : []).filter(Boolean)));
+    }
+
     const hotel = {
       _id: hotelRef.id,
       hotelId: hotelIdString,
-      partnerId, name, description, location, city, area, country, address, coordinates, images, amenities, extraAmenities, propertyType: propertyType || 'Hotel', category, starRating, checkInTime, checkOutTime, policies, status: 'pending', totalPropertyRooms, staybuddyAllocation: staybuddyAllocation ? parseInt(staybuddyAllocation) : undefined, totalFloors, contactName, contactDesignation, contactPhone, contactEmail, avgRating: providedRating ? parseFloat(providedRating) : 0,
+      partnerId, name, description, location, city, area, country, address, coordinates, images: finalHotelImages, amenities, extraAmenities, propertyType: propertyType || 'Hotel', category, starRating, checkInTime, checkOutTime, policies, status: 'pending', totalPropertyRooms, staybuddyAllocation: staybuddyAllocation ? parseInt(staybuddyAllocation) : undefined, totalFloors, contactName, contactDesignation, contactPhone, contactEmail, avgRating: providedRating ? parseFloat(providedRating) : 0,
       createdAt: new Date().toISOString()
     };
 

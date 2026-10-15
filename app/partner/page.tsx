@@ -132,11 +132,18 @@ export default function PartnerDashboard() {
     const partnerId = (session?.user as any)?.id;
     const finalLocation = hotelForm.location || [hotelForm.area, hotelForm.city].filter(Boolean).join(', ');
 
+    const roomPhotos = (hotelForm.rooms || []).flatMap((r: any) => Array.isArray(r.images) ? r.images : []).filter(Boolean);
+    let finalHotelImages = Array.isArray(hotelForm.images) ? [...hotelForm.images] : [];
+    if (finalHotelImages.length === 0 && roomPhotos.length > 0) {
+      finalHotelImages = Array.from(new Set(roomPhotos));
+    }
+
     const res = await fetch('/api/hotels', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ 
         ...hotelForm, 
+        images: finalHotelImages,
         location: finalLocation, 
         partnerId, 
         starRating: parseInt(hotelForm.starRating)
@@ -245,6 +252,29 @@ export default function PartnerDashboard() {
     await fetch(`/api/hotels/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(updates) });
     setApproveLoading(null);
     fetchData(false);
+  }
+
+  async function openExtranetModal(hotel: any) {
+    setExtranetModal(hotel);
+    try {
+      const res = await fetch(`/api/hotels/${hotel._id}`);
+      const data = await res.json();
+      if (data.hotel) {
+        const fetchedRooms = data.rooms || [];
+        const roomPhotos = fetchedRooms.flatMap((r: any) => Array.isArray(r.images) ? r.images : []).filter(Boolean);
+        let propertyPhotos = Array.isArray(data.hotel.images) ? [...data.hotel.images] : [];
+        if (propertyPhotos.length === 0 && roomPhotos.length > 0) {
+          propertyPhotos = Array.from(new Set(roomPhotos));
+        }
+        setExtranetModal({
+          ...data.hotel,
+          images: propertyPhotos,
+          rooms: fetchedRooms
+        });
+      }
+    } catch (e) {
+      console.error('Error fetching extranet hotel data:', e);
+    }
   }
 
   const toggleAmenity = (a: string) => setHotelForm(p => ({ ...p, amenities: p.amenities.includes(a) ? p.amenities.filter(x => x !== a) : [...p.amenities, a] }));
@@ -450,7 +480,7 @@ export default function PartnerDashboard() {
                           <button className="btn btn-primary" style={{ flex: 1, justifyContent: 'center', padding: '10px 0', fontSize: '0.85rem' }} onClick={() => openInventory(hotel)}>Manage Inventory</button>
                         </div>
                         <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-                          <button className="btn btn-outline" style={{ flex: 1, padding: '10px 0', fontSize: '0.85rem', border: '1px solid var(--brand-500)', color: 'var(--brand-600)' }} onClick={() => setExtranetModal(hotel)}>Extranet Manager</button>
+                          <button className="btn btn-outline" style={{ flex: 1, padding: '10px 0', fontSize: '0.85rem', border: '1px solid var(--brand-500)', color: 'var(--brand-600)' }} onClick={() => openExtranetModal(hotel)}>Extranet Manager</button>
                           <button className="btn" style={{ flex: '0 0 100px', padding: '10px 0', fontSize: '0.85rem', fontWeight: 600, background: hotel.isBlocked ? '#fee2e2' : 'white', color: '#ef4444', border: '1px solid #ef4444', borderRadius: 'var(--radius-md)', cursor: 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center' }} disabled={approveLoading === hotel._id} onClick={() => updateHotelStatus(hotel._id, { isBlocked: !hotel.isBlocked })}>
                             {approveLoading === hotel._id ? <div className="spinner" style={{ width: 14, height: 14, borderWidth: 2, borderColor: 'rgba(239, 68, 68, 0.3)', borderTopColor: '#ef4444' }} /> : hotel.isBlocked ? 'Blocked 🔓' : 'Block 🚫'}
                           </button>
@@ -1007,7 +1037,9 @@ export default function PartnerDashboard() {
                                   <input type="file" multiple accept="image/*" style={{ display: 'none' }} disabled={uploadingImage} onChange={(e) => handleMultipleImageUpload(e, (urls) => {
                                     const newRooms = [...hotelForm.rooms];
                                     newRooms[index].images = [...(newRooms[index].images || []), ...urls];
-                                    setHotelForm({ ...hotelForm, rooms: newRooms });
+                                    const currentHotelImgs = hotelForm.images || [];
+                                    const mergedHotelImgs = Array.from(new Set([...currentHotelImgs, ...urls]));
+                                    setHotelForm({ ...hotelForm, images: mergedHotelImgs, rooms: newRooms });
                                   })} />
                                 </label>
                               </div>
@@ -1660,7 +1692,13 @@ export default function PartnerDashboard() {
             <div className="hide-scrollbar" style={{ flex: 1, overflowY: 'auto', padding: '32px' }}>
               <form onSubmit={(e) => {
                 e.preventDefault();
-                updateHotelStatus(extranetModal._id, extranetModal);
+                const roomPhotos = (extranetModal.rooms || []).flatMap((r: any) => Array.isArray(r.images) ? r.images : []).filter(Boolean);
+                let finalImgs = [...(extranetModal.images || [])];
+                if (finalImgs.length < 3 && roomPhotos.length > 0) {
+                  finalImgs = Array.from(new Set([...finalImgs, ...roomPhotos]));
+                }
+                const updatedPayload = { ...extranetModal, images: finalImgs };
+                updateHotelStatus(extranetModal._id, updatedPayload);
                 setExtranetModal(null);
                 alert('Property updated successfully!');
               }} style={{ display: 'flex', flexDirection: 'column', gap: 32, paddingBottom: 80 }}>
@@ -2043,6 +2081,94 @@ export default function PartnerDashboard() {
                               updatedRooms[rIdx].maxGuests = Number(e.target.value);
                               setExtranetModal({...extranetModal, rooms: updatedRooms});
                             }} style={{ width: '100%', padding: '8px 12px', borderRadius: 6, border: '1px solid #cbd5e1', fontSize: '0.9rem' }} />
+                          </div>
+
+                          {/* Room Images Uploader (Syncs automatically into Space 1, 2, 3) */}
+                          <div style={{ gridColumn: '1 / -1', marginTop: 12 }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                              <label style={{ fontSize: '0.8rem', fontWeight: 700, color: '#334155', display: 'flex', alignItems: 'center', gap: 6 }}>
+                                <span>📷 Room Images</span>
+                                <span style={{ fontSize: '0.75rem', fontWeight: 500, color: '#64748b' }}>
+                                  ({(room.images || []).length} photos — lands directly in Hotel Hero Spaces)
+                                </span>
+                              </label>
+                              {uploadingImage && <span style={{ fontSize: '0.75rem', color: '#4f46e5', fontWeight: 600 }}>Uploading...</span>}
+                            </div>
+
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, padding: 12, border: '1px solid #cbd5e1', borderRadius: 8, background: 'white', minHeight: 70 }}>
+                              {Array.isArray(room.images) && room.images.map((url: string, pIdx: number) => (
+                                <div key={pIdx} style={{ position: 'relative', width: 75, height: 60, borderRadius: 6, overflow: 'hidden', border: '1px solid #cbd5e1', flexShrink: 0 }}>
+                                  <img src={url} alt={`Room ${rIdx} Photo ${pIdx}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const updatedRooms = [...extranetModal.rooms];
+                                      updatedRooms[rIdx].images = updatedRooms[rIdx].images.filter((_: any, idx: number) => idx !== pIdx);
+                                      setExtranetModal({ ...extranetModal, rooms: updatedRooms });
+                                    }}
+                                    style={{
+                                      position: 'absolute',
+                                      top: 2,
+                                      right: 2,
+                                      background: 'rgba(239, 68, 68, 0.85)',
+                                      color: 'white',
+                                      border: 'none',
+                                      borderRadius: '50%',
+                                      width: 18,
+                                      height: 18,
+                                      cursor: 'pointer',
+                                      fontSize: '0.7rem',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center',
+                                      lineHeight: 1
+                                    }}
+                                    title="Delete Photo"
+                                  >
+                                    ×
+                                  </button>
+                                </div>
+                              ))}
+
+                              <label style={{
+                                width: 75,
+                                height: 60,
+                                border: '2px dashed #6366f1',
+                                borderRadius: 6,
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                cursor: 'pointer',
+                                background: '#f5f3ff',
+                                color: '#4338ca',
+                                flexShrink: 0
+                              }}>
+                                <span style={{ fontSize: '20px', lineHeight: 1 }}>+</span>
+                                <span style={{ fontSize: '10px', marginTop: 2, fontWeight: 700 }}>Upload</span>
+                                <input
+                                  type="file"
+                                  multiple
+                                  accept="image/*"
+                                  style={{ display: 'none' }}
+                                  disabled={uploadingImage}
+                                  onChange={e => handleMultipleImageUpload(e, (urls) => {
+                                    const updatedRooms = [...extranetModal.rooms];
+                                    const currRoomImgs = updatedRooms[rIdx].images || [];
+                                    updatedRooms[rIdx].images = [...currRoomImgs, ...urls];
+
+                                    // Auto-sync into extranetModal.images so Space 1, 2, 3 show them immediately!
+                                    const currPropImgs = extranetModal.images || [];
+                                    const mergedPropImgs = Array.from(new Set([...currPropImgs, ...urls]));
+                                    setExtranetModal({
+                                      ...extranetModal,
+                                      images: mergedPropImgs,
+                                      rooms: updatedRooms
+                                    });
+                                  })}
+                                />
+                              </label>
+                            </div>
                           </div>
                         </div>
                       </div>

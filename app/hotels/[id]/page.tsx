@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
@@ -43,6 +43,10 @@ export default function HotelDetailPage() {
   const [reviews, setReviews] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeImg, setActiveImg] = useState(0);
+  const [activeHeroIndex, setActiveHeroIndex] = useState(0);
+  const [showGalleryModal, setShowGalleryModal] = useState(false);
+  const [galleryActiveIndex, setGalleryActiveIndex] = useState(0);
+  const [isAutoPlaying, setIsAutoPlaying] = useState(false);
   const [selectedRoom, setSelectedRoom] = useState<any>(null);
   const [bookingData, setBookingData] = useState({
     checkIn: searchParams.get("checkIn") || "",
@@ -133,6 +137,52 @@ export default function HotelDetailPage() {
       setLoading(false);
     }
   }
+
+  const allPhotos = useMemo(() => {
+    const list: Array<{ url: string; label: string }> = [
+      ...(Array.isArray(hotel?.images) ? hotel.images.map((url: string) => ({ url, label: 'Property Hero Photo' })) : []),
+      ...rooms.flatMap((r: any) => 
+        Array.isArray(r.images) 
+          ? r.images.map((url: string) => ({ url, label: r.type || 'Room Photo' }))
+          : []
+      )
+    ].filter((p: any) => typeof p.url === 'string' && p.url.trim().length > 0);
+
+    const map = new Map<string, { url: string; label: string }>();
+    list.forEach(p => {
+      if (!map.has(p.url)) map.set(p.url, p);
+    });
+    return Array.from(map.values());
+  }, [hotel?.images, rooms]);
+
+  const openPhotoViewer = (index: number) => {
+    if (allPhotos.length === 0) return;
+    setGalleryActiveIndex(Math.max(0, Math.min(index, allPhotos.length - 1)));
+    setShowGalleryModal(true);
+  };
+
+  useEffect(() => {
+    if (!showGalleryModal) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setShowGalleryModal(false);
+      if (e.key === "ArrowRight") {
+        setGalleryActiveIndex((prev) => (prev + 1) % (allPhotos.length || 1));
+      }
+      if (e.key === "ArrowLeft") {
+        setGalleryActiveIndex((prev) => (prev - 1 + allPhotos.length) % (allPhotos.length || 1));
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [showGalleryModal, allPhotos.length]);
+
+  useEffect(() => {
+    if (!showGalleryModal || !isAutoPlaying || allPhotos.length <= 1) return;
+    const timer = setInterval(() => {
+      setGalleryActiveIndex((prev) => (prev + 1) % allPhotos.length);
+    }, 3000);
+    return () => clearInterval(timer);
+  }, [showGalleryModal, isAutoPlaying, allPhotos.length]);
 
   const getRoomPrice = (room: any) => {
     if (!room) return 0;
@@ -489,7 +539,7 @@ export default function HotelDetailPage() {
                   ...rooms.flatMap((r: any) => Array.isArray(r.images) ? r.images : [])
                 ].filter((url: any) => typeof url === 'string' && url.trim().length > 0);
 
-                const photo0 = displayPhotos[0] || null;
+                const currentHeroPhoto = displayPhotos[activeHeroIndex % (displayPhotos.length || 1)] || displayPhotos[0] || null;
                 const photo1 = displayPhotos[1] || displayPhotos[0] || null;
                 const photo2 = displayPhotos[2] || displayPhotos[1] || displayPhotos[0] || null;
 
@@ -504,24 +554,108 @@ export default function HotelDetailPage() {
                       position: "relative",
                     }}
                   >
+                    {/* Space 1: Main Hero Photo with Click to View & Live Carousel Arrows */}
                     <div
                       style={{
                         position: "relative",
                         overflow: "hidden",
                         cursor: "pointer",
                       }}
-                      onClick={() => setActiveImg(0)}
+                      onClick={() => openPhotoViewer(activeHeroIndex % (displayPhotos.length || 1))}
                     >
-                      {photo0 ? (
-                        <Image
-                          src={photo0}
-                          alt={hotel.name}
-                          fill
-                          sizes="(max-width: 768px) 100vw, 66vw"
-                          style={{ objectFit: "cover" }}
-                          unoptimized
-                          priority
-                        />
+                      {currentHeroPhoto ? (
+                        <>
+                          <Image
+                            src={currentHeroPhoto}
+                            alt={hotel.name}
+                            fill
+                            sizes="(max-width: 768px) 100vw, 66vw"
+                            style={{ objectFit: "cover" }}
+                            unoptimized
+                            priority
+                          />
+                          {displayPhotos.length > 1 && (
+                            <>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setActiveHeroIndex((prev) => (prev - 1 + displayPhotos.length) % displayPhotos.length);
+                                }}
+                                style={{
+                                  position: "absolute",
+                                  left: 12,
+                                  top: "50%",
+                                  transform: "translateY(-50%)",
+                                  background: "rgba(15, 23, 42, 0.75)",
+                                  backdropFilter: "blur(6px)",
+                                  color: "white",
+                                  border: "1px solid rgba(255,255,255,0.2)",
+                                  borderRadius: "50%",
+                                  width: 40,
+                                  height: 40,
+                                  cursor: "pointer",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  fontSize: "1.4rem",
+                                  zIndex: 4,
+                                  transition: "all 0.2s",
+                                }}
+                                title="Previous Photo"
+                              >
+                                ‹
+                              </button>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setActiveHeroIndex((prev) => (prev + 1) % displayPhotos.length);
+                                }}
+                                style={{
+                                  position: "absolute",
+                                  right: 12,
+                                  top: "50%",
+                                  transform: "translateY(-50%)",
+                                  background: "rgba(15, 23, 42, 0.75)",
+                                  backdropFilter: "blur(6px)",
+                                  color: "white",
+                                  border: "1px solid rgba(255,255,255,0.2)",
+                                  borderRadius: "50%",
+                                  width: 40,
+                                  height: 40,
+                                  cursor: "pointer",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  fontSize: "1.4rem",
+                                  zIndex: 4,
+                                  transition: "all 0.2s",
+                                }}
+                                title="Next Photo"
+                              >
+                                ›
+                              </button>
+                              <div
+                                style={{
+                                  position: "absolute",
+                                  bottom: 12,
+                                  left: 12,
+                                  background: "rgba(15, 23, 42, 0.75)",
+                                  backdropFilter: "blur(6px)",
+                                  color: "white",
+                                  padding: "4px 10px",
+                                  borderRadius: 20,
+                                  fontSize: "0.75rem",
+                                  fontWeight: 700,
+                                  zIndex: 3,
+                                }}
+                              >
+                                📷 {(activeHeroIndex % displayPhotos.length) + 1} / {displayPhotos.length}
+                              </div>
+                            </>
+                          )}
+                        </>
                       ) : (
                         <div style={{ background: "linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)", width: "100%", height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 10 }}>
                           <span style={{ fontSize: "3.5rem" }}>🏨</span>
@@ -530,6 +664,8 @@ export default function HotelDetailPage() {
                         </div>
                       )}
                     </div>
+
+                    {/* Right Column: Space 2 & 3 */}
                     <div
                       style={{
                         display: "grid",
@@ -541,7 +677,7 @@ export default function HotelDetailPage() {
                         <div
                           key={idx}
                           style={{ position: "relative", overflow: "hidden", cursor: "pointer" }}
-                          onClick={() => setActiveImg(idx + 1)}
+                          onClick={() => openPhotoViewer(idx + 1)}
                         >
                           {imgSrc ? (
                             <Image
@@ -565,7 +701,7 @@ export default function HotelDetailPage() {
                     {displayPhotos.length > 0 && (
                       <button
                         type="button"
-                        onClick={() => setActiveImg(0)}
+                        onClick={() => openPhotoViewer(0)}
                         style={{
                           position: "absolute",
                           bottom: 16,
@@ -1041,18 +1177,45 @@ export default function HotelDetailPage() {
                           alignItems: "center",
                         }}
                       >
-                        {room.images?.[0] && (
-                          <Image
-                            src={room.images[0]}
-                            alt={room.type}
-                            width={140}
-                            height={100}
-                            style={{
-                              objectFit: "cover",
-                              borderRadius: "var(--radius-md)",
+                        {room.images?.[0] ? (
+                          <div
+                            style={{ position: "relative", width: 140, height: 100, borderRadius: "var(--radius-md)", overflow: "hidden", cursor: "pointer", flexShrink: 0 }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const foundIdx = allPhotos.findIndex(p => p.url === room.images[0]);
+                              openPhotoViewer(foundIdx >= 0 ? foundIdx : 0);
                             }}
-                          />
-                        )}
+                            title="Click to view full photo gallery"
+                          >
+                            <Image
+                              src={room.images[0]}
+                              alt={room.type}
+                              fill
+                              style={{
+                                objectFit: "cover",
+                              }}
+                              unoptimized
+                            />
+                            {room.images.length > 1 && (
+                              <div
+                                style={{
+                                  position: "absolute",
+                                  bottom: 4,
+                                  right: 4,
+                                  background: "rgba(15, 23, 42, 0.8)",
+                                  color: "white",
+                                  fontSize: "0.65rem",
+                                  fontWeight: 700,
+                                  padding: "2px 6px",
+                                  borderRadius: 4,
+                                  backdropFilter: "blur(4px)",
+                                }}
+                              >
+                                📷 {room.images.length}
+                              </div>
+                            )}
+                          </div>
+                        ) : null}
                         <div>
                           <h4 style={{ marginBottom: 4 }}>{room.type}</h4>
                           <p
@@ -3413,6 +3576,251 @@ export default function HotelDetailPage() {
             </div>
           </div>
         </>
+      )}
+
+      {/* Full-Screen Client Photo Viewer / Lightbox ("All photos appear one by one") */}
+      {showGalleryModal && allPhotos.length > 0 && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 99999,
+            background: "rgba(10, 15, 29, 0.96)",
+            backdropFilter: "blur(16px)",
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "space-between",
+          }}
+          onClick={() => setShowGalleryModal(false)}
+        >
+          {/* Top Bar */}
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              padding: "16px 24px",
+              background: "rgba(15, 23, 42, 0.8)",
+              borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
+              color: "white",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div>
+              <h3 style={{ margin: 0, fontSize: "1.1rem", fontWeight: 700, display: "flex", alignItems: "center", gap: 10 }}>
+                <span>🏨 {hotel?.name}</span>
+                <span style={{ fontSize: "0.75rem", background: "rgba(255,255,255,0.15)", padding: "2px 8px", borderRadius: 12, fontWeight: 600 }}>
+                  {allPhotos[galleryActiveIndex]?.label}
+                </span>
+              </h3>
+              <p style={{ margin: "2px 0 0 0", fontSize: "0.8rem", color: "#94a3b8" }}>
+                Photo {galleryActiveIndex + 1} of {allPhotos.length} • Use ◄ / ► arrow keys to browse
+              </p>
+            </div>
+
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <button
+                type="button"
+                onClick={() => setIsAutoPlaying(!isAutoPlaying)}
+                style={{
+                  background: isAutoPlaying ? "var(--brand-600)" : "rgba(255,255,255,0.12)",
+                  color: "white",
+                  border: "1px solid rgba(255,255,255,0.2)",
+                  borderRadius: 20,
+                  padding: "6px 14px",
+                  fontSize: "0.8rem",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                }}
+              >
+                <span>{isAutoPlaying ? "⏸ Pause Slideshow" : "▶ Auto Slideshow"}</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setShowGalleryModal(false)}
+                style={{
+                  background: "rgba(255,255,255,0.15)",
+                  border: "none",
+                  color: "white",
+                  width: 36,
+                  height: 36,
+                  borderRadius: "50%",
+                  cursor: "pointer",
+                  fontSize: "1.2rem",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  transition: "background 0.2s",
+                }}
+                title="Close (Esc)"
+              >
+                ✕
+              </button>
+            </div>
+          </div>
+
+          {/* Main Photo Display Area */}
+          <div
+            style={{
+              position: "relative",
+              flex: 1,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: "20px 80px",
+              overflow: "hidden",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Previous Button */}
+            <button
+              type="button"
+              onClick={() => setGalleryActiveIndex((prev) => (prev - 1 + allPhotos.length) % allPhotos.length)}
+              style={{
+                position: "absolute",
+                left: 24,
+                top: "50%",
+                transform: "translateY(-50%)",
+                background: "rgba(255, 255, 255, 0.2)",
+                backdropFilter: "blur(8px)",
+                border: "1px solid rgba(255, 255, 255, 0.3)",
+                color: "white",
+                width: 52,
+                height: 52,
+                borderRadius: "50%",
+                cursor: "pointer",
+                fontSize: "1.8rem",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                zIndex: 10,
+                transition: "all 0.2s",
+              }}
+              aria-label="Previous Photo"
+            >
+              ‹
+            </button>
+
+            {/* Active Main Image */}
+            <div
+              style={{
+                position: "relative",
+                width: "100%",
+                height: "100%",
+                maxHeight: "75vh",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <img
+                src={allPhotos[galleryActiveIndex]?.url}
+                alt={`${hotel?.name} photo ${galleryActiveIndex + 1}`}
+                style={{
+                  maxWidth: "100%",
+                  maxHeight: "100%",
+                  objectFit: "contain",
+                  borderRadius: 16,
+                  boxShadow: "0 25px 50px -12px rgba(0,0,0,0.8)",
+                  transition: "transform 0.2s ease-out",
+                }}
+              />
+            </div>
+
+            {/* Next Button */}
+            <button
+              type="button"
+              onClick={() => setGalleryActiveIndex((prev) => (prev + 1) % allPhotos.length)}
+              style={{
+                position: "absolute",
+                right: 24,
+                top: "50%",
+                transform: "translateY(-50%)",
+                background: "rgba(255, 255, 255, 0.2)",
+                backdropFilter: "blur(8px)",
+                border: "1px solid rgba(255, 255, 255, 0.3)",
+                color: "white",
+                width: 52,
+                height: 52,
+                borderRadius: "50%",
+                cursor: "pointer",
+                fontSize: "1.8rem",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                zIndex: 10,
+                transition: "all 0.2s",
+              }}
+              aria-label="Next Photo"
+            >
+              ›
+            </button>
+          </div>
+
+          {/* Bottom Thumbnails Filmstrip ("appear one by one") */}
+          <div
+            style={{
+              background: "rgba(15, 23, 42, 0.85)",
+              borderTop: "1px solid rgba(255, 255, 255, 0.1)",
+              padding: "14px 24px",
+              display: "flex",
+              gap: 12,
+              overflowX: "auto",
+              alignItems: "center",
+              justifyContent: allPhotos.length > 8 ? "flex-start" : "center",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {allPhotos.map((photo: any, pIdx: number) => {
+              const isActive = pIdx === galleryActiveIndex;
+              return (
+                <div
+                  key={pIdx}
+                  onClick={() => setGalleryActiveIndex(pIdx)}
+                  style={{
+                    position: "relative",
+                    flexShrink: 0,
+                    width: 76,
+                    height: 54,
+                    borderRadius: 8,
+                    overflow: "hidden",
+                    cursor: "pointer",
+                    border: isActive ? "2.5px solid var(--brand-500)" : "1.5px solid rgba(255,255,255,0.2)",
+                    transform: isActive ? "scale(1.08)" : "scale(1)",
+                    opacity: isActive ? 1 : 0.65,
+                    transition: "all 0.2s",
+                  }}
+                  title={photo.label}
+                >
+                  <img
+                    src={photo.url}
+                    alt={`Thumbnail ${pIdx + 1}`}
+                    style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                  />
+                  <span
+                    style={{
+                      position: "absolute",
+                      bottom: 2,
+                      right: 2,
+                      background: "rgba(0,0,0,0.7)",
+                      color: "white",
+                      fontSize: "0.6rem",
+                      fontWeight: 700,
+                      padding: "1px 4px",
+                      borderRadius: 4,
+                    }}
+                  >
+                    {pIdx + 1}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
       )}
     </div>
   );

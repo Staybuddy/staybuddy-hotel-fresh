@@ -166,6 +166,10 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
     // If rooms are sent in the update, sync them with the rooms collection
     if (updateData.rooms && Array.isArray(updateData.rooms)) {
+      const roomPhotos = updateData.rooms.flatMap((r: any) => Array.isArray(r.images) ? r.images : []).filter(Boolean);
+      if ((!updateData.images || updateData.images.length === 0) && roomPhotos.length > 0) {
+        updateData.images = Array.from(new Set(roomPhotos));
+      }
       const batch = db.batch();
       for (const r of updateData.rooms) {
         const roomId = r._id || r.id;
