@@ -51,7 +51,26 @@ export async function GET(request: NextRequest) {
       paginatedHotels.map(async (hotel: any) => {
         const roomsSnap = await db.collection('rooms').where('hotelId', '==', hotel._id).get();
         const rooms = roomsSnap.docs.map((doc: any) => doc.data());
-        const cheapestRoom = rooms.sort((a: any, b: any) => a.priceDouble - b.priceDouble)[0];
+        
+        // Calculate true minimum least rate among all room options
+        const validPrices: number[] = [];
+        rooms.forEach((r: any) => {
+          [r.priceSingle, r.priceDouble, r.priceTriple, r.b2bPrice, r.pricePerNight].forEach(p => {
+            const num = Number(p);
+            if (!isNaN(num) && num > 0) validPrices.push(num);
+          });
+        });
+        if (hotel.basePrice && Number(hotel.basePrice) > 0) {
+          validPrices.push(Number(hotel.basePrice));
+        }
+        const startingPrice = validPrices.length > 0 ? Math.min(...validPrices) : 0;
+
+        // Image fallback: if hotel.images is empty, use any uploaded room images
+        const roomImages = rooms.flatMap((r: any) => r.images || []).filter(Boolean);
+        const hotelImages = (Array.isArray(hotel.images) && hotel.images.length > 0)
+          ? hotel.images
+          : roomImages;
+
         let baseAllocation = hotel.staybuddyAllocation 
           ? Number(hotel.staybuddyAllocation) 
           : rooms.reduce((sum: number, r: any) => sum + Number(r.staybuddyAllocation || 0) + Number(r.extraInventoryToday || 0), 0);
@@ -94,7 +113,7 @@ export async function GET(request: NextRequest) {
           console.error('Error fetching bookings for availability', e);
         }
 
-        return { ...hotel, startingPrice: cheapestRoom?.priceSingle || cheapestRoom?.priceDouble, roomsLeft };
+        return { ...hotel, images: hotelImages, startingPrice, roomsLeft };
       })
     );
 

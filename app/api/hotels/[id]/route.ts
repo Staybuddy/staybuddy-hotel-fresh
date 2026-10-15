@@ -22,13 +22,19 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     if (!hotel) return NextResponse.json({ error: 'Hotel not found' }, { status: 404 });
 
-    // Fetch rooms from Firestore if not embedded
-    let rooms: any[] = [];
-    if (hotel.rooms && hotel.rooms.length > 0) {
+    // Fetch rooms from Firestore rooms collection first
+    const roomsSnapshot = await db.collection('rooms').where('hotelId', '==', resolvedParams.id).where('isActive', '==', true).get();
+    let rooms: any[] = roomsSnapshot.docs.map(doc => ({ _id: doc.id, ...doc.data() }));
+    if (rooms.length === 0 && hotel.rooms && hotel.rooms.length > 0) {
       rooms = hotel.rooms;
-    } else {
-      const roomsSnapshot = await db.collection('rooms').where('hotelId', '==', resolvedParams.id).where('isActive', '==', true).get();
-      rooms = roomsSnapshot.docs.map(doc => ({ _id: doc.id, ...doc.data() }));
+    }
+
+    // Image fallback: if hotel.images is empty, fallback to room images
+    if (!hotel.images || hotel.images.length === 0) {
+      const roomImages = rooms.flatMap((r: any) => r.images || []).filter(Boolean);
+      if (roomImages.length > 0) {
+        hotel.images = roomImages;
+      }
     }
     
     // Fetch active bookings to calculate live availability for each room
@@ -108,8 +114,30 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       rooms = rooms.map(room => ({ ...room, availableRooms: (Number(room.staybuddyAllocation) || 0) + (Number(room.extraInventoryToday) || 0) }));
     }
 
-    // Note: Reviews are not fully migrated, but we will return an empty array for now to prevent crashes
-    const reviews: any[] = [];
+    // Fetch reviews for the hotel
+    let reviews: any[] = [];
+    try {
+      const targetHotelId = hotel._id || resolvedParams.id;
+      const rSnap = await db.collection('reviews')
+        .where('hotelId', '==', targetHotelId)
+        .get();
+      
+      reviews = rSnap.docs.map(doc => {
+        const data = doc.data();
+        return {
+          _id: doc.id,
+          ...data,
+          customerId: {
+            _id: data.customerId,
+            name: data.guestName || data.userName || 'Guest',
+            image: data.customerImage || data.userAvatar || ''
+          }
+        };
+      });
+      reviews.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+    } catch (rErr) {
+      console.warn('Error fetching hotel reviews:', rErr);
+    }
 
     return NextResponse.json({ hotel, rooms, reviews });
   } catch (error) {
@@ -132,8 +160,35 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       if (snapshot.empty) return NextResponse.json({ error: 'Hotel not found' }, { status: 404 });
       docRef = db.collection('hotels').doc(snapshot.docs[0].id);
     }
+
+    const { _id, id, ...updateData } = body;
+    updateData.updatedAt = new Date().toISOString();
+
+    // If rooms are sent in the update, sync them with the rooms collection
+    if (updateData.rooms && Array.isArray(updateData.rooms)) {
+      const batch = db.batch();
+      for (const r of updateData.rooms) {
+        const roomId = r._id || r.id;
+        if (roomId && !String(roomId).startsWith('new_')) {
+          const rRef = db.collection('rooms').doc(String(roomId));
+          const { _id: r_id, id: rId, ...rFields } = r;
+          batch.set(rRef, { ...rFields, hotelId: docRef.id, updatedAt: new Date().toISOString() }, { merge: true });
+        } else {
+          const newRoomRef = db.collection('rooms').doc();
+          const { _id: r_id, id: rId, ...rFields } = r;
+          batch.set(newRoomRef, {
+            ...rFields,
+            _id: newRoomRef.id,
+            hotelId: docRef.id,
+            isActive: true,
+            createdAt: new Date().toISOString()
+          });
+        }
+      }
+      await batch.commit().catch(console.error);
+    }
     
-    await docRef.update(body);
+    await docRef.update(updateData);
     const updated = await docRef.get();
     
     return NextResponse.json({ hotel: { _id: updated.id, ...updated.data() } });

@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Fragment } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -256,29 +256,20 @@ export default function PartnerDashboard() {
     if (!files.length) return;
     setUploadingImage(true);
     try {
-      const res = await fetch('/api/upload');
-      const { signature, timestamp, cloudName, apiKey } = await res.json();
-      
-      const uploadPromises = files.map(async (file) => {
-        const formData = new FormData();
-        formData.append('file', file);
-        formData.append('api_key', apiKey);
-        formData.append('timestamp', timestamp);
-        formData.append('signature', signature);
-        const uploadRes = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
-          method: 'POST',
-          body: formData,
-        });
-        const data = await uploadRes.json();
-        if (data.secure_url) return data.secure_url;
-        console.error('Upload failed:', data.error?.message);
-        return null;
+      const formData = new FormData();
+      files.forEach(f => formData.append('files', f));
+
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
       });
-      
-      const urls = await Promise.all(uploadPromises);
-      const validUrls = urls.filter(Boolean) as string[];
-      if (validUrls.length > 0) {
-        callback(validUrls);
+      const data = await res.json();
+      if (data.urls && data.urls.length > 0) {
+        callback(data.urls);
+      } else if (data.url) {
+        callback([data.url]);
+      } else {
+        alert(data.error || 'Failed to upload images');
       }
     } catch (err) {
       console.error(err);
@@ -1038,39 +1029,200 @@ export default function PartnerDashboard() {
                   </div>
                 )}
 
-                {/* STEP 5: Photos & Submit */}
+                {/* STEP 5: Photos & Hero Landing Spaces */}
                 {formStep === 5 && (
                   <div className="card fade-in">
-                    <div className="card-header"><h3 style={{ fontSize: '1rem' }}>📸 Property Images</h3></div>
-                    <div className="card-body">
-                      <div className="form-group">
-                        <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <span>Property Images</span>
-                          {uploadingImage && <span style={{ fontSize: '0.8rem', color: 'var(--brand-600)', fontWeight: 600 }}>Uploading...</span>}
-                        </label>
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', padding: '16px', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', background: 'var(--bg-primary)', minHeight: '150px' }}>
-                          {Array.isArray(hotelForm.images) && hotelForm.images.map((url: string, i: number) => (
-                            <div key={i} style={{ position: 'relative', width: '100px', height: '100px', flexShrink: 0 }}>
-                              <img src={url} alt="Property" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '8px', border: '1px solid var(--border)' }} />
-                              <button 
-                                type="button" 
-                                onClick={() => setHotelForm(p => ({ ...p, images: p.images.filter((_, imgIndex) => imgIndex !== i) }))}
-                                style={{ position: 'absolute', top: '-8px', right: '-8px', background: 'var(--danger)', color: 'white', borderRadius: '50%', width: '22px', height: '22px', border: 'none', cursor: 'pointer', fontSize: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0, lineHeight: 1 }}
-                              >
-                                &times;
-                              </button>
-                            </div>
-                          ))}
-                          <label style={{ width: '100px', height: '100px', border: '2px dashed var(--border-dark)', borderRadius: '8px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', background: 'var(--bg-secondary)', color: 'var(--text-secondary)', flexShrink: 0 }}>
-                            <span style={{ fontSize: '28px', lineHeight: 1 }}>+</span>
-                            <span style={{ fontSize: '12px', marginTop: '4px', fontWeight: 600 }}>Upload</span>
-                            <input type="file" multiple accept="image/*" style={{ display: 'none' }} disabled={uploadingImage} onChange={(e) => handleMultipleImageUpload(e, (urls) => {
-                              setHotelForm(p => ({ ...p, images: [...(p.images || []), ...urls] }));
-                            })} />
-                          </label>
-                        </div>
-                        <span className="form-hint" style={{ marginTop: '8px', display: 'block' }}>Upload high-quality images. You can select multiple files at once.</span>
+                    <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div>
+                        <h3 style={{ fontSize: '1.1rem', margin: '0 0 4px 0' }}>📸 Property Photos & Hero Landing Spaces</h3>
+                        <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                          Photos uploaded here land directly into the Hero Gallery Spaces on your hotel page and search card.
+                        </p>
                       </div>
+                      {uploadingImage && <span style={{ fontSize: '0.8rem', color: 'var(--brand-600)', fontWeight: 600 }}>Uploading...</span>}
+                    </div>
+                    <div className="card-body">
+                      {/* Hero Spaces Layout Preview */}
+                      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 12, minHeight: 220, borderRadius: 12, overflow: 'hidden', background: '#f8fafc', border: '2px dashed #cbd5e1', padding: 8, marginBottom: 16 }}>
+                        {/* Space 1: Main Cover */}
+                        <div style={{ position: 'relative', minHeight: 200, borderRadius: 8, overflow: 'hidden', background: '#e2e8f0', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                          {hotelForm.images?.[0] ? (
+                            <>
+                              <img src={hotelForm.images[0]} alt="Space 1" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                              <div style={{ position: 'absolute', top: 6, left: 6, background: 'rgba(15,23,42,0.85)', color: 'white', padding: '3px 8px', borderRadius: 6, fontSize: '0.7rem', fontWeight: 700 }}>
+                                ⭐ Space 1 (Main Cover & Card)
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => setHotelForm(p => ({ ...p, images: p.images.filter((_, idx) => idx !== 0) }))}
+                                style={{ position: 'absolute', top: 6, right: 6, background: '#ef4444', color: 'white', border: 'none', borderRadius: '50%', width: 22, height: 22, cursor: 'pointer', fontWeight: 700 }}
+                              >
+                                ✕
+                              </button>
+                            </>
+                          ) : (
+                            <label style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', width: '100%', height: '100%', padding: 12 }}>
+                              <span style={{ fontSize: '2rem' }}>🏨</span>
+                              <span style={{ fontWeight: 700, color: '#2563eb', fontSize: '0.85rem', marginTop: 4 }}>+ Add Space 1 (Main Cover)</span>
+                              <span style={{ fontSize: '0.7rem', color: '#64748b' }}>Lands on Large Left Hero Spot</span>
+                              <input
+                                type="file"
+                                accept="image/*"
+                                style={{ display: 'none' }}
+                                disabled={uploadingImage}
+                                onChange={e => handleMultipleImageUpload(e, (urls) => {
+                                  setHotelForm(p => ({ ...p, images: [...urls, ...(p.images || [])] }));
+                                })}
+                              />
+                            </label>
+                          )}
+                        </div>
+
+                        {/* Space 2 & 3 */}
+                        <div style={{ display: 'grid', gridTemplateRows: '1fr 1fr', gap: 10 }}>
+                          {/* Space 2 */}
+                          <div style={{ position: 'relative', minHeight: 95, borderRadius: 8, overflow: 'hidden', background: '#e2e8f0', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                            {hotelForm.images?.[1] ? (
+                              <>
+                                <img src={hotelForm.images[1]} alt="Space 2" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                <div style={{ position: 'absolute', top: 4, left: 4, background: 'rgba(15,23,42,0.85)', color: 'white', padding: '2px 6px', borderRadius: 4, fontSize: '0.65rem', fontWeight: 700 }}>
+                                  📷 Space 2
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={() => setHotelForm(p => ({ ...p, images: p.images.filter((_, idx) => idx !== 1) }))}
+                                  style={{ position: 'absolute', top: 4, right: 4, background: '#ef4444', color: 'white', border: 'none', borderRadius: '50%', width: 20, height: 20, cursor: 'pointer', fontSize: '0.7rem' }}
+                                >
+                                  ✕
+                                </button>
+                              </>
+                            ) : (
+                              <label style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', width: '100%', height: '100%', padding: 4 }}>
+                                <span style={{ fontSize: '1.2rem' }}>📷</span>
+                                <span style={{ fontWeight: 600, color: '#2563eb', fontSize: '0.7rem' }}>+ Space 2 (Top Right)</span>
+                                <input
+                                  type="file"
+                                  accept="image/*"
+                                  style={{ display: 'none' }}
+                                  disabled={uploadingImage}
+                                  onChange={e => handleMultipleImageUpload(e, (urls) => {
+                                    setHotelForm(p => ({ ...p, images: [...(p.images || []), ...urls] }));
+                                  })}
+                                />
+                              </label>
+                            )}
+                          </div>
+
+                          {/* Space 3 */}
+                          <div style={{ position: 'relative', minHeight: 95, borderRadius: 8, overflow: 'hidden', background: '#e2e8f0', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                            {hotelForm.images?.[2] ? (
+                              <>
+                                <img src={hotelForm.images[2]} alt="Space 3" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                <div style={{ position: 'absolute', top: 4, left: 4, background: 'rgba(15,23,42,0.85)', color: 'white', padding: '2px 6px', borderRadius: 4, fontSize: '0.65rem', fontWeight: 700 }}>
+                                  📷 Space 3
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={() => setHotelForm(p => ({ ...p, images: p.images.filter((_, idx) => idx !== 2) }))}
+                                  style={{ position: 'absolute', top: 4, right: 4, background: '#ef4444', color: 'white', border: 'none', borderRadius: '50%', width: 20, height: 20, cursor: 'pointer', fontSize: '0.7rem' }}
+                                >
+                                  ✕
+                                </button>
+                              </>
+                            ) : (
+                              <label style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', width: '100%', height: '100%', padding: 4 }}>
+                                <span style={{ fontSize: '1.2rem' }}>📷</span>
+                                <span style={{ fontWeight: 600, color: '#2563eb', fontSize: '0.7rem' }}>+ Space 3 (Btm Right)</span>
+                                <input
+                                  type="file"
+                                  accept="image/*"
+                                  style={{ display: 'none' }}
+                                  disabled={uploadingImage}
+                                  onChange={e => handleMultipleImageUpload(e, (urls) => {
+                                    setHotelForm(p => ({ ...p, images: [...(p.images || []), ...urls] }));
+                                  })}
+                                />
+                              </label>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Upload Multiple Button & URL Paste */}
+                      <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
+                        <label className="btn btn-primary" style={{ padding: '10px 20px', cursor: uploadingImage ? 'not-allowed' : 'pointer', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                          <span>{uploadingImage ? '⏳ Uploading...' : '📤 Select & Upload Multiple Photos'}</span>
+                          <input
+                            type="file"
+                            multiple
+                            accept="image/*"
+                            style={{ display: 'none' }}
+                            disabled={uploadingImage}
+                            onChange={e => handleMultipleImageUpload(e, (urls) => {
+                              setHotelForm(p => ({ ...p, images: [...(p.images || []), ...urls] }));
+                            })}
+                          />
+                        </label>
+
+                        <div style={{ display: 'flex', gap: 6, flex: 1, minWidth: 240 }}>
+                          <input
+                            type="text"
+                            placeholder="Or paste photo URL and press Enter"
+                            id="onboardingPhotoPaste"
+                            onKeyDown={e => {
+                              if (e.key === 'Enter') {
+                                e.preventDefault();
+                                const val = e.currentTarget.value.trim();
+                                if (val) {
+                                  setHotelForm(p => ({ ...p, images: [...(p.images || []), val] }));
+                                  e.currentTarget.value = '';
+                                }
+                              }
+                            }}
+                            className="form-input"
+                            style={{ height: 42, fontSize: '0.85rem' }}
+                          />
+                          <button
+                            type="button"
+                            className="btn btn-secondary"
+                            onClick={() => {
+                              const input = document.getElementById('onboardingPhotoPaste') as HTMLInputElement;
+                              if (input && input.value.trim()) {
+                                setHotelForm(p => ({ ...p, images: [...(p.images || []), input.value.trim()] }));
+                                input.value = '';
+                              }
+                            }}
+                          >
+                            Add
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Additional Photos Thumbnails */}
+                      {(hotelForm.images || []).length > 3 && (
+                        <div style={{ marginTop: 16 }}>
+                          <div style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 8 }}>
+                            Additional Gallery Photos ({(hotelForm.images || []).length - 3}):
+                          </div>
+                          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                            {(hotelForm.images || []).slice(3).map((url, subIdx) => {
+                              const actualIdx = subIdx + 3;
+                              return (
+                                <div key={actualIdx} style={{ position: 'relative', width: 90, height: 70, borderRadius: 6, overflow: 'hidden', border: '1px solid var(--border)' }}>
+                                  <img src={url} alt={`Gallery ${actualIdx + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                  <button
+                                    type="button"
+                                    onClick={() => setHotelForm(p => ({ ...p, images: p.images.filter((_, idx) => idx !== actualIdx) }))}
+                                    style={{ position: 'absolute', top: 2, right: 2, background: 'var(--danger)', color: 'white', borderRadius: '50%', width: 18, height: 18, border: 'none', cursor: 'pointer', fontSize: '11px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                  >
+                                    ✕
+                                  </button>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}
@@ -1385,7 +1537,7 @@ export default function PartnerDashboard() {
                       </thead>
                       <tbody>
                         {hotelRooms.map((room, i) => (
-                          <React.Fragment key={room._id}>
+                          <Fragment key={room._id}>
                             <tr style={{ borderBottom: '1px solid var(--border-color)', background: i % 2 === 0 ? 'white' : '#fcfcfc' }}>
                               <td style={{ padding: '12px 10px', fontWeight: 600 }}>{room.type}</td>
                               <td style={{ padding: '12px 10px' }}><input type="number" style={{ width: 60, padding: '4px 6px', borderRadius: 4, border: '1px solid #cbd5e1' }} value={room.priceSingle || ''} onChange={e => saveRoomInventory(i, 'priceSingle', Number(e.target.value))} /></td>
@@ -1468,7 +1620,7 @@ export default function PartnerDashboard() {
                                 </td>
                               </tr>
                             )}
-                          </React.Fragment>
+                          </Fragment>
                         ))}
                       </tbody>
                     </table>
@@ -1551,27 +1703,229 @@ export default function PartnerDashboard() {
                   </div>
                 </div>
 
-                {/* Photos */}
+                {/* Photos & Hero Landing Spaces */}
                 <div style={{ background: 'white', padding: 24, borderRadius: 16, border: '1px solid #e2e8f0' }}>
-                  <h3 style={{ fontSize: '1.1rem', marginBottom: 16, color: '#0f172a' }}>Property Photos</h3>
-                  <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 16 }}>
-                    {(extranetModal.images || []).map((img: string, i: number) => (
-                      <div key={i} style={{ position: 'relative', width: 120, height: 120 }}>
-                        <img src={img} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 8 }} />
-                        <button type="button" onClick={() => setExtranetModal({...extranetModal, images: extranetModal.images.filter((_: any, idx: number) => idx !== i)})} style={{ position: 'absolute', top: 4, right: 4, background: 'red', color: 'white', border: 'none', borderRadius: '50%', width: 24, height: 24, cursor: 'pointer' }}>×</button>
-                      </div>
-                    ))}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12, marginBottom: 16 }}>
+                    <div>
+                      <h3 style={{ fontSize: '1.2rem', margin: '0 0 4px 0', color: '#0f172a', display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span>📸 Property Photos & Hero Landing Spaces</span>
+                        <span style={{ fontSize: '0.75rem', background: '#dbeafe', color: '#1d4ed8', padding: '2px 8px', borderRadius: 12, fontWeight: 700 }}>
+                          {(extranetModal.images || []).length} Photos
+                        </span>
+                      </h3>
+                      <p style={{ margin: 0, fontSize: '0.85rem', color: '#64748b' }}>
+                        Photos added here land directly into the Hero Gallery Spaces on your hotel page and search card.
+                      </p>
+                    </div>
+
+                    <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                      <label className="btn btn-primary" style={{ padding: '8px 16px', fontSize: '0.85rem', cursor: uploadingImage ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: 6, margin: 0 }}>
+                        <span>{uploadingImage ? '⏳ Uploading...' : '📤 Upload Photos'}</span>
+                        <input
+                          type="file"
+                          multiple
+                          accept="image/*"
+                          style={{ display: 'none' }}
+                          disabled={uploadingImage}
+                          onChange={e => handleMultipleImageUpload(e, (urls) => {
+                            setExtranetModal({ ...extranetModal, images: [...(extranetModal.images || []), ...urls] });
+                          })}
+                        />
+                      </label>
+                    </div>
                   </div>
-                  <input type="text" placeholder="Paste image URL and press Enter to Add" onKeyDown={e => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      const val = e.currentTarget.value;
-                      if (val) {
-                        setExtranetModal({...extranetModal, images: [...(extranetModal.images || []), val]});
-                        e.currentTarget.value = '';
-                      }
-                    }
-                  }} style={{ width: '100%', padding: '10px 14px', borderRadius: 8, border: '1px solid #cbd5e1' }} />
+
+                  {/* 3-Box Hero Spaces Visual Preview (Matches Hotel Detail Page) */}
+                  <div style={{ marginBottom: 20 }}>
+                    <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                      ⚡ Live Hero Gallery Spaces (Top of Hotel Page)
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 12, minHeight: 260, borderRadius: 16, overflow: 'hidden', background: '#f8fafc', border: '2px dashed #cbd5e1', padding: 8 }}>
+                      {/* Space 1: Main Cover */}
+                      <div style={{ position: 'relative', minHeight: 240, borderRadius: 12, overflow: 'hidden', background: '#e2e8f0', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                        {extranetModal.images?.[0] ? (
+                          <>
+                            <img src={extranetModal.images[0]} alt="Space 1" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            <div style={{ position: 'absolute', top: 8, left: 8, background: 'rgba(15,23,42,0.85)', color: 'white', padding: '4px 10px', borderRadius: 8, fontSize: '0.75rem', fontWeight: 700, backdropFilter: 'blur(4px)' }}>
+                              ⭐ Space 1 (Main Cover & Card Thumbnail)
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => setExtranetModal({ ...extranetModal, images: extranetModal.images.filter((_: any, idx: number) => idx !== 0) })}
+                              style={{ position: 'absolute', top: 8, right: 8, background: '#ef4444', color: 'white', border: 'none', borderRadius: '50%', width: 26, height: 26, cursor: 'pointer', fontWeight: 700 }}
+                              title="Remove photo"
+                            >
+                              ✕
+                            </button>
+                          </>
+                        ) : (
+                          <label style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', width: '100%', height: '100%', padding: 16 }}>
+                            <span style={{ fontSize: '2.5rem' }}>🏨</span>
+                            <span style={{ fontWeight: 700, color: '#2563eb', fontSize: '0.9rem', marginTop: 6 }}>+ Add Space 1 (Main Cover)</span>
+                            <span style={{ fontSize: '0.75rem', color: '#64748b' }}>Lands on Large Left Hero Spot & Card</span>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              style={{ display: 'none' }}
+                              onChange={e => handleMultipleImageUpload(e, (urls) => {
+                                const current = [...(extranetModal.images || [])];
+                                current[0] = urls[0];
+                                setExtranetModal({ ...extranetModal, images: current.filter(Boolean) });
+                              })}
+                            />
+                          </label>
+                        )}
+                      </div>
+
+                      {/* Right Column: Space 2 & Space 3 */}
+                      <div style={{ display: 'grid', gridTemplateRows: '1fr 1fr', gap: 12 }}>
+                        {/* Space 2 */}
+                        <div style={{ position: 'relative', minHeight: 114, borderRadius: 12, overflow: 'hidden', background: '#e2e8f0', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                          {extranetModal.images?.[1] ? (
+                            <>
+                              <img src={extranetModal.images[1]} alt="Space 2" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                              <div style={{ position: 'absolute', top: 6, left: 6, background: 'rgba(15,23,42,0.85)', color: 'white', padding: '3px 8px', borderRadius: 6, fontSize: '0.7rem', fontWeight: 700 }}>
+                                📷 Space 2 (Top Right)
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => setExtranetModal({ ...extranetModal, images: extranetModal.images.filter((_: any, idx: number) => idx !== 1) })}
+                                style={{ position: 'absolute', top: 6, right: 6, background: '#ef4444', color: 'white', border: 'none', borderRadius: '50%', width: 22, height: 22, cursor: 'pointer', fontSize: '0.75rem', fontWeight: 700 }}
+                              >
+                                ✕
+                              </button>
+                            </>
+                          ) : (
+                            <label style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', width: '100%', height: '100%', padding: 8 }}>
+                              <span style={{ fontSize: '1.4rem' }}>📷</span>
+                              <span style={{ fontWeight: 600, color: '#2563eb', fontSize: '0.75rem' }}>+ Space 2 (Top Right)</span>
+                              <input
+                                type="file"
+                                accept="image/*"
+                                style={{ display: 'none' }}
+                                onChange={e => handleMultipleImageUpload(e, (urls) => {
+                                  const current = [...(extranetModal.images || [])];
+                                  if (current.length === 0) current[0] = urls[0];
+                                  else current[1] = urls[0];
+                                  setExtranetModal({ ...extranetModal, images: current.filter(Boolean) });
+                                })}
+                              />
+                            </label>
+                          )}
+                        </div>
+
+                        {/* Space 3 */}
+                        <div style={{ position: 'relative', minHeight: 114, borderRadius: 12, overflow: 'hidden', background: '#e2e8f0', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                          {extranetModal.images?.[2] ? (
+                            <>
+                              <img src={extranetModal.images[2]} alt="Space 3" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                              <div style={{ position: 'absolute', top: 6, left: 6, background: 'rgba(15,23,42,0.85)', color: 'white', padding: '3px 8px', borderRadius: 6, fontSize: '0.7rem', fontWeight: 700 }}>
+                                📷 Space 3 (Bottom Right)
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => setExtranetModal({ ...extranetModal, images: extranetModal.images.filter((_: any, idx: number) => idx !== 2) })}
+                                style={{ position: 'absolute', top: 6, right: 6, background: '#ef4444', color: 'white', border: 'none', borderRadius: '50%', width: 22, height: 22, cursor: 'pointer', fontSize: '0.75rem', fontWeight: 700 }}
+                              >
+                                ✕
+                              </button>
+                            </>
+                          ) : (
+                            <label style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', width: '100%', height: '100%', padding: 8 }}>
+                              <span style={{ fontSize: '1.4rem' }}>📷</span>
+                              <span style={{ fontWeight: 600, color: '#2563eb', fontSize: '0.75rem' }}>+ Space 3 (Bottom Right)</span>
+                              <input
+                                type="file"
+                                accept="image/*"
+                                style={{ display: 'none' }}
+                                onChange={e => handleMultipleImageUpload(e, (urls) => {
+                                  const current = [...(extranetModal.images || [])];
+                                  while (current.length < 2) current.push(urls[0]);
+                                  current[2] = urls[0];
+                                  setExtranetModal({ ...extranetModal, images: current.filter(Boolean) });
+                                })}
+                              />
+                            </label>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Additional Photos List */}
+                  {(extranetModal.images || []).length > 3 && (
+                    <div style={{ marginBottom: 16 }}>
+                      <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: 8 }}>
+                        🖼️ Additional Gallery Photos (Viewable in Photo Viewer Modal):
+                      </div>
+                      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                        {(extranetModal.images || []).slice(3).map((img: string, subIdx: number) => {
+                          const actualIdx = subIdx + 3;
+                          return (
+                            <div key={actualIdx} style={{ position: 'relative', width: 110, height: 90, borderRadius: 8, overflow: 'hidden', border: '1px solid #cbd5e1' }}>
+                              <img src={img} alt={`Gallery ${actualIdx + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  // Make this image the main cover (swap with index 0)
+                                  const arr = [...extranetModal.images];
+                                  const temp = arr[0];
+                                  arr[0] = arr[actualIdx];
+                                  arr[actualIdx] = temp;
+                                  setExtranetModal({ ...extranetModal, images: arr });
+                                }}
+                                style={{ position: 'absolute', bottom: 4, left: 4, background: 'rgba(0,0,0,0.7)', color: 'white', border: 'none', borderRadius: 4, padding: '2px 4px', fontSize: '0.65rem', cursor: 'pointer', fontWeight: 600 }}
+                                title="Make this the Cover Photo (Space 1)"
+                              >
+                                Set Cover ⭐
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setExtranetModal({ ...extranetModal, images: extranetModal.images.filter((_: any, idx: number) => idx !== actualIdx) })}
+                                style={{ position: 'absolute', top: 4, right: 4, background: '#ef4444', color: 'white', border: 'none', borderRadius: '50%', width: 20, height: 20, cursor: 'pointer', fontSize: '0.7rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                              >
+                                ✕
+                              </button>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* URL Paste Option */}
+                  <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+                    <input
+                      type="text"
+                      placeholder="Or paste image URL and press Enter or click Add"
+                      id="extranetImagePasteInput"
+                      onKeyDown={e => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          const val = e.currentTarget.value.trim();
+                          if (val) {
+                            setExtranetModal({ ...extranetModal, images: [...(extranetModal.images || []), val] });
+                            e.currentTarget.value = '';
+                          }
+                        }
+                      }}
+                      style={{ flex: 1, padding: '8px 12px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '0.85rem' }}
+                    />
+                    <button
+                      type="button"
+                      className="btn btn-secondary"
+                      style={{ padding: '8px 16px', fontSize: '0.85rem', whiteSpace: 'nowrap' }}
+                      onClick={() => {
+                        const input = document.getElementById('extranetImagePasteInput') as HTMLInputElement;
+                        if (input && input.value.trim()) {
+                          setExtranetModal({ ...extranetModal, images: [...(extranetModal.images || []), input.value.trim()] });
+                          input.value = '';
+                        }
+                      }}
+                    >
+                      + Add URL
+                    </button>
+                  </div>
                 </div>
 
                 {/* Amenities */}

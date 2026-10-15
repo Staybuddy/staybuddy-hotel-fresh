@@ -15,8 +15,24 @@ async function getFeaturedHotels() {
       hotels.map(async (hotel: any) => {
         const roomsSnap = await db.collection('rooms').where('hotelId', '==', hotel._id).where('isActive', '==', true).get();
         const rooms = roomsSnap.docs.map(doc => doc.data());
-        rooms.sort((a: any, b: any) => (a.priceDouble || 0) - (b.priceDouble || 0));
-        const cheapestRoom = rooms[0];
+        // Calculate true minimum least rate among all room options
+        const validPrices: number[] = [];
+        rooms.forEach((r: any) => {
+          [r.priceSingle, r.priceDouble, r.priceTriple, r.b2bPrice, r.pricePerNight].forEach(p => {
+            const num = Number(p);
+            if (!isNaN(num) && num > 0) validPrices.push(num);
+          });
+        });
+        if (hotel.basePrice && Number(hotel.basePrice) > 0) {
+          validPrices.push(Number(hotel.basePrice));
+        }
+        const startingPrice = validPrices.length > 0 ? Math.min(...validPrices) : null;
+
+        const roomImages = rooms.flatMap((r: any) => r.images || []).filter(Boolean);
+        const hotelImages = (Array.isArray(hotel.images) && hotel.images.length > 0)
+          ? hotel.images
+          : roomImages;
+
         let roomsLeft = rooms.reduce((sum: number, r: any) => sum + (r.staybuddyAllocation || 0), 0);
 
         try {
@@ -44,7 +60,8 @@ async function getFeaturedHotels() {
         
         return {
           ...hotel,
-          startingPrice: cheapestRoom?.priceSingle || cheapestRoom?.priceDouble || null,
+          images: hotelImages,
+          startingPrice,
           roomsLeft
         };
       })

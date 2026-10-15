@@ -207,7 +207,7 @@ export default function AdminDashboard() {
     });
     setShowCreateInvoice(false);
     setNewInvoiceData({ 
-      guestName: '', companyName: '', gstNumber: '', address: '', bookingId: `SB-${Math.floor(1000000 + Math.random() * 9000000)}`, placeOfSupply: 'Telangana', hotelName: '',
+      guestName: '', companyName: '', gstNumber: '', address: '', bookingId: `SB-${Math.floor(1000000 + Math.random() * 9000000)}`, placeOfSupply: 'Telangana', hotelName: '', hotelCity: '',
       checkInDate: '', checkOutDate: '', noOfNights: '', noOfRooms: '1', noOfGuests: '1', totalAmount: '', 
       invoiceNo: `INV-${Math.floor(100000 + Math.random() * 900000)}`, 
       invoiceDate: getLocalDateString() 
@@ -703,7 +703,7 @@ export default function AdminDashboard() {
                       <div>
                         <h3 style={{ margin: '0 0 4px 0', color: '#0f172a', fontSize: '1.1rem', fontWeight: 700 }}>{hotel.name}</h3>
                         <div style={{ color: '#64748b', fontSize: '0.85rem' }}>Partner: <span style={{ color: '#334155', fontWeight: 600 }}>{partner?.name || 'Unknown'}</span> &nbsp;|&nbsp; Email: {partner?.email || 'N/A'}</div>
-                        <div style={{ color: '#059669', fontSize: '0.8rem', fontWeight: 600, marginTop: 12, display: 'flex', alignItems: 'center', gap: 6, background: '#ecfdf5', padding: '4px 10px', borderRadius: 6, display: 'inline-flex' }}>
+                        <div style={{ color: '#059669', fontSize: '0.8rem', fontWeight: 600, marginTop: 12, display: 'inline-flex', alignItems: 'center', gap: 6, background: '#ecfdf5', padding: '4px 10px', borderRadius: 6 }}>
                           <span style={{ fontSize: '1rem' }}>✓</span> Accepted StayBuddy Policies
                         </div>
                       </div>

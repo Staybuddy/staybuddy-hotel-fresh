@@ -893,8 +893,18 @@ function HotelCard({ hotel, isWishlisted }: { hotel: any, isWishlisted?: boolean
           )}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 12 }}>
             <div>
-              <span className="price" style={{ fontSize: '1.25rem' }}>₹{hotel.startingPrice || 'Check rates'}</span>
-              {hotel.startingPrice && <span className="price-suffix"> /night</span>}
+              {hotel.startingPrice && Number(hotel.startingPrice) > 0 ? (
+                <>
+                  <span className="price" style={{ fontSize: '1.25rem', fontWeight: 800 }}>
+                    ₹{Number(hotel.startingPrice).toLocaleString('en-IN')}
+                  </span>
+                  <span className="price-suffix" style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}> /night</span>
+                </>
+              ) : (
+                <span className="price" style={{ fontSize: '1.05rem', color: 'var(--text-muted)' }}>
+                  Check rates
+                </span>
+              )}
             </div>
             <span style={{ fontSize: '0.8rem', background: 'var(--brand-50)', color: 'var(--brand-700)', padding: '4px 10px', borderRadius: 'var(--radius-full)', fontWeight: 600 }}>Book Now →</span>
           </div>

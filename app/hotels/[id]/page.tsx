@@ -483,63 +483,115 @@ export default function HotelDetailPage() {
           <div>
             {/* Hero Images Gallery */}
             <div style={{ marginBottom: "var(--space-6)" }}>
-              <div
-                className="hotel-gallery-grid"
-                style={{
-                  gap: "16px",
-                  borderRadius: "24px",
-                  overflow: "hidden",
-                  height: 400,
-                }}
-              >
-                <div
-                  style={{
-                    position: "relative",
-                    overflow: "hidden",
-                    cursor: "pointer",
-                  }}
-                  onClick={() => setActiveImg(0)}
-                >
-                  {hotel.images?.[0] ? (
-                    <Image
-                      src={hotel.images[0]}
-                      alt={hotel.name}
-                      fill
-                      sizes="(max-width: 768px) 100vw, 66vw"
-                      style={{ objectFit: "cover" }}
-                    />
-                  ) : (
-                    <div style={{ background: "#e2e8f0", width: "100%", height: "100%" }} />
-                  )}
-                </div>
-                <div
-                  style={{
-                    display: "grid",
-                    gridTemplateRows: "1fr 1fr",
-                    gap: "16px",
-                  }}
-                >
-                  {[1, 2].map((idx) => (
+              {(() => {
+                const displayPhotos = [
+                  ...(Array.isArray(hotel.images) ? hotel.images : []),
+                  ...rooms.flatMap((r: any) => Array.isArray(r.images) ? r.images : [])
+                ].filter((url: any) => typeof url === 'string' && url.trim().length > 0);
+
+                const photo0 = displayPhotos[0] || null;
+                const photo1 = displayPhotos[1] || displayPhotos[0] || null;
+                const photo2 = displayPhotos[2] || displayPhotos[1] || displayPhotos[0] || null;
+
+                return (
+                  <div
+                    className="hotel-gallery-grid"
+                    style={{
+                      gap: "16px",
+                      borderRadius: "24px",
+                      overflow: "hidden",
+                      height: 400,
+                      position: "relative",
+                    }}
+                  >
                     <div
-                      key={idx}
-                      style={{ position: "relative", overflow: "hidden", cursor: "pointer" }}
-                      onClick={() => setActiveImg(idx)}
+                      style={{
+                        position: "relative",
+                        overflow: "hidden",
+                        cursor: "pointer",
+                      }}
+                      onClick={() => setActiveImg(0)}
                     >
-                      {hotel.images?.[idx] ? (
+                      {photo0 ? (
                         <Image
-                          src={hotel.images[idx]}
-                          alt={`${hotel.name} ${idx + 1}`}
+                          src={photo0}
+                          alt={hotel.name}
                           fill
-                          sizes="(max-width: 768px) 100vw, 33vw"
+                          sizes="(max-width: 768px) 100vw, 66vw"
                           style={{ objectFit: "cover" }}
+                          unoptimized
+                          priority
                         />
                       ) : (
-                        <div style={{ background: "#e2e8f0", width: "100%", height: "100%" }} />
+                        <div style={{ background: "linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)", width: "100%", height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 10 }}>
+                          <span style={{ fontSize: "3.5rem" }}>🏨</span>
+                          <span style={{ color: "#64748b", fontWeight: 700, fontSize: "0.95rem" }}>{hotel.name}</span>
+                          <span style={{ color: "#94a3b8", fontSize: "0.8rem" }}>Hero Main Photo Space</span>
+                        </div>
                       )}
                     </div>
-                  ))}
-                </div>
-              </div>
+                    <div
+                      style={{
+                        display: "grid",
+                        gridTemplateRows: "1fr 1fr",
+                        gap: "16px",
+                      }}
+                    >
+                      {[photo1, photo2].map((imgSrc, idx) => (
+                        <div
+                          key={idx}
+                          style={{ position: "relative", overflow: "hidden", cursor: "pointer" }}
+                          onClick={() => setActiveImg(idx + 1)}
+                        >
+                          {imgSrc ? (
+                            <Image
+                              src={imgSrc}
+                              alt={`${hotel.name} ${idx + 2}`}
+                              fill
+                              sizes="(max-width: 768px) 100vw, 33vw"
+                              style={{ objectFit: "cover" }}
+                              unoptimized
+                            />
+                          ) : (
+                            <div style={{ background: "linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)", width: "100%", height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 6 }}>
+                              <span style={{ fontSize: "2rem" }}>📷</span>
+                              <span style={{ color: "#94a3b8", fontSize: "0.75rem" }}>Photo Space {idx + 2}</span>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+
+                    {displayPhotos.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => setActiveImg(0)}
+                        style={{
+                          position: "absolute",
+                          bottom: 16,
+                          right: 16,
+                          background: "rgba(15, 23, 42, 0.8)",
+                          backdropFilter: "blur(8px)",
+                          color: "white",
+                          border: "1px solid rgba(255,255,255,0.2)",
+                          borderRadius: "12px",
+                          padding: "8px 16px",
+                          fontSize: "0.85rem",
+                          fontWeight: 700,
+                          cursor: "pointer",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 6,
+                          boxShadow: "0 4px 12px rgba(0,0,0,0.2)",
+                          zIndex: 2,
+                        }}
+                      >
+                        📷 View All Photos ({displayPhotos.length})
+                      </button>
+                    )}
+                  </div>
+                );
+              })()}
             </div>
 
             {/* Description */}

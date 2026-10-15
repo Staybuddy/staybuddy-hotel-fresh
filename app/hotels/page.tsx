@@ -381,10 +381,18 @@ function HotelSearch() {
                         )}
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                           <div>
-                            <span className="price" style={{ fontSize: '1.2rem' }}>
-                              {hotel.startingPrice ? `₹${hotel.startingPrice.toLocaleString()}` : 'Check rates'}
-                            </span>
-                            {hotel.startingPrice && <span className="price-suffix"> /night</span>}
+                            {hotel.startingPrice && Number(hotel.startingPrice) > 0 ? (
+                              <>
+                                <span className="price" style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--brand-700)' }}>
+                                  ₹{Number(hotel.startingPrice).toLocaleString('en-IN')}
+                                </span>
+                                <span className="price-suffix" style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}> /night</span>
+                              </>
+                            ) : (
+                              <span className="price" style={{ fontSize: '1rem', color: 'var(--text-muted)' }}>
+                                Check rates
+                              </span>
+                            )}
                           </div>
                           <span style={{ fontSize: '0.8rem', color: 'var(--brand-600)', fontWeight: 600 }}>View →</span>
                         </div>
