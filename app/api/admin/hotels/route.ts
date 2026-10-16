@@ -30,12 +30,11 @@ export async function GET(request: NextRequest) {
     const allRooms = roomsSnapshot.docs.map(doc => doc.data());
 
     const hotelsWithRooms = hotels.map(hotel => {
-      const hRooms = allRooms.filter(r => String(r.hotelId) === String(hotel._id));
-      // If the hotel has embedded rooms array, use that for totals as fallback
+      const hRooms = allRooms.filter(r => String(r.hotelId) === String(hotel._id) || (hotel.id && String(r.hotelId) === String(hotel.id)));
       const embeddedRooms = hotel.rooms || [];
-      const totalRooms = hRooms.reduce((sum, r) => sum + (r.totalRooms || 0), 0) || embeddedRooms.reduce((sum: number, r: any) => sum + (r.totalRooms || parseInt(r.quantity) || 0), 0);
-      const staybuddyAllocation = hRooms.reduce((sum, r) => sum + (r.staybuddyAllocation || 0), 0) || embeddedRooms.reduce((sum: number, r: any) => sum + (r.staybuddyAllocation || 0), 0);
-      const finalRooms = (embeddedRooms && embeddedRooms.length > 0) ? embeddedRooms : hRooms;
+      const totalRooms = hRooms.reduce((sum, r) => sum + (Number(r.totalRooms) || 0), 0) || embeddedRooms.reduce((sum: number, r: any) => sum + (Number(r.totalRooms) || parseInt(r.quantity) || 0), 0);
+      const staybuddyAllocation = hRooms.reduce((sum, r) => sum + (Number(r.staybuddyAllocation) || 0), 0) || embeddedRooms.reduce((sum: number, r: any) => sum + (Number(r.staybuddyAllocation) || 0), 0);
+      const finalRooms = (hRooms && hRooms.length > 0) ? hRooms : (embeddedRooms || []);
       return { ...hotel, rooms: finalRooms, totalRooms, staybuddyAllocation };
     });
 

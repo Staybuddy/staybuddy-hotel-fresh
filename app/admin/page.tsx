@@ -227,6 +227,25 @@ export default function AdminDashboard() {
     }
   }
 
+  async function openReviewModal(hotel: any) {
+    setEditingHotel(hotel);
+    try {
+      const res = await fetch(`/api/hotels/${hotel._id}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.hotel) {
+          setEditingHotel((prev: any) => ({
+            ...prev,
+            ...data.hotel,
+            rooms: (data.rooms && data.rooms.length > 0) ? data.rooms : (prev?.rooms || [])
+          }));
+        }
+      }
+    } catch (e) {
+      console.warn('Could not fetch latest hotel rooms for review:', e);
+    }
+  }
+
   async function updateUser(id: string, updates: any) {
     await fetch(`/api/admin/users/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(updates) });
     fetchAll(false);
@@ -663,7 +682,7 @@ export default function AdminDashboard() {
                           <span style={{ fontSize: '0.7rem', fontWeight: 700, background: '#fef3c7', color: '#d97706', padding: '2px 8px', borderRadius: 12 }}>NEW</span>
                         </div>
                         <div style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: 16 }}>{hotel.city}, {hotel.country} • Partner: {hotel.partnerId?.name || 'Unknown'}</div>
-                        <button onClick={() => setEditingHotel(hotel)} style={{ width: '100%', padding: '10px', background: '#f8fafc', color: '#0f172a', border: '1px solid #e2e8f0', borderRadius: 8, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, transition: 'all 0.2s' }} onMouseEnter={e => e.currentTarget.style.background = '#f1f5f9'} onMouseLeave={e => e.currentTarget.style.background = '#f8fafc'}>
+                        <button onClick={() => openReviewModal(hotel)} style={{ width: '100%', padding: '10px', background: '#f8fafc', color: '#0f172a', border: '1px solid #e2e8f0', borderRadius: 8, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, transition: 'all 0.2s' }} onMouseEnter={e => e.currentTarget.style.background = '#f1f5f9'} onMouseLeave={e => e.currentTarget.style.background = '#f8fafc'}>
                           📝 Review & Edit
                         </button>
                       </div>
@@ -1349,9 +1368,56 @@ export default function AdminDashboard() {
       {/* ===== EDITING HOTEL MODAL ===== */}
       {editingHotel && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 999, background: 'rgba(15, 23, 42, 0.7)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }} onClick={() => setEditingHotel(null)}>
-          <div style={{ background: 'white', borderRadius: 16, width: '100%', maxWidth: 700, maxHeight: '90vh', overflowY: 'auto', padding: 32, boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)', position: 'relative' }} onClick={e => e.stopPropagation()}>
+          <div style={{ background: 'white', borderRadius: 16, width: '100%', maxWidth: 900, maxHeight: '92vh', overflowY: 'auto', padding: '28px 32px', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)', position: 'relative' }} onClick={e => e.stopPropagation()}>
             <button onClick={() => setEditingHotel(null)} style={{ position: 'absolute', top: 20, right: 20, background: '#f1f5f9', border: 'none', width: 36, height: 36, borderRadius: '50%', cursor: 'pointer', fontSize: '1.2rem', color: '#64748b' }}>✕</button>
-            <h2 style={{ fontSize: '1.5rem', color: '#0f172a', marginBottom: 24, fontWeight: 800 }}>Review & Edit Property</h2>
+            
+            {/* Header with badges */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 8 }}>
+              <span style={{ background: '#fef3c7', color: '#b45309', padding: '3px 10px', borderRadius: 20, fontSize: '0.78rem', fontWeight: 800, textTransform: 'uppercase' }}>
+                {editingHotel.status === 'approved' ? '✅ Approved' : '⏳ Pending Review'}
+              </span>
+              <span style={{ background: '#e0e7ff', color: '#4338ca', padding: '3px 10px', borderRadius: 20, fontSize: '0.78rem', fontWeight: 700 }}>
+                {editingHotel.propertyType || 'Hotel'}
+              </span>
+              <span style={{ background: '#f1f5f9', color: '#475569', padding: '3px 10px', borderRadius: 20, fontSize: '0.78rem', fontWeight: 700 }}>
+                ⭐ {editingHotel.starRating || 3} Stars
+              </span>
+              <span style={{ background: '#f1f5f9', color: 'var(--brand-600)', padding: '3px 10px', borderRadius: 20, fontSize: '0.78rem', fontWeight: 700 }}>
+                ID: {editingHotel.hotelId || editingHotel._id?.slice(-8)}
+              </span>
+            </div>
+
+            <h2 style={{ fontSize: '1.5rem', color: '#0f172a', marginBottom: 16, fontWeight: 800 }}>
+              Review Property: {editingHotel.name}
+            </h2>
+
+            {/* Partner Details Banner */}
+            <div style={{ background: '#f8fafc', padding: '14px 18px', borderRadius: 12, border: '1px solid #e2e8f0', marginBottom: 20, display: 'flex', flexWrap: 'wrap', gap: 16, alignItems: 'center', fontSize: '0.85rem' }}>
+              <div><strong>🧑‍💼 Submitted by:</strong> {editingHotel.partnerId?.name || editingHotel.contactName || 'Partner'}</div>
+              <div><strong>✉️ Email:</strong> {editingHotel.partnerId?.email || editingHotel.contactEmail || 'N/A'}</div>
+              <div><strong>📞 Phone:</strong> {editingHotel.partnerId?.phone || editingHotel.contactPhone || 'N/A'}</div>
+              {editingHotel.contactDesignation && <div><strong>💼 Designation:</strong> {editingHotel.contactDesignation}</div>}
+              <div style={{ color: '#64748b' }}><strong>📅 Date:</strong> {new Date(editingHotel.createdAt || Date.now()).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</div>
+            </div>
+
+            {/* Photos Gallery Preview */}
+            {editingHotel.images && editingHotel.images.length > 0 && (
+              <div style={{ marginBottom: 20 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                  <label style={{ fontSize: '0.82rem', fontWeight: 700, color: '#334155' }}>
+                    📸 Uploaded Property Photos ({editingHotel.images.length} Photos)
+                  </label>
+                  <span style={{ fontSize: '0.75rem', color: '#64748b' }}>Scroll to view all</span>
+                </div>
+                <div style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 8 }}>
+                  {editingHotel.images.map((img: string, idx: number) => (
+                    <div key={idx} style={{ position: 'relative', width: 130, height: 90, borderRadius: 8, overflow: 'hidden', flexShrink: 0, border: '1px solid #e2e8f0', boxShadow: '0 2px 6px rgba(0,0,0,0.06)' }}>
+                      <img src={img} alt={`Photo ${idx + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
             
             <form onSubmit={async (e) => {
               e.preventDefault();
@@ -1360,9 +1426,10 @@ export default function AdminDashboard() {
                 name: fd.get('name'),
                 description: fd.get('description'),
                 city: fd.get('city'),
+                area: fd.get('area') || editingHotel.area,
                 address: fd.get('address'),
-                basePrice: parseFloat(fd.get('basePrice') as string),
-                marginPercentage: parseFloat(fd.get('marginPercentage') as string),
+                basePrice: parseFloat(fd.get('basePrice') as string) || 0,
+                marginPercentage: parseFloat(fd.get('marginPercentage') as string) || 15,
                 isExtranet: true,
                 status: 'approved'
               };
@@ -1370,7 +1437,7 @@ export default function AdminDashboard() {
               await updateHotelStatus(editingHotel._id, updates);
               setEditingHotel(null);
             }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 14, marginBottom: 14 }}>
                 <div>
                   <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#475569', marginBottom: 6 }}>Property Name</label>
                   <input name="name" defaultValue={editingHotel.name} required style={{ width: '100%', padding: '10px 14px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '0.95rem' }} />
@@ -1379,41 +1446,164 @@ export default function AdminDashboard() {
                   <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#475569', marginBottom: 6 }}>City</label>
                   <input name="city" defaultValue={editingHotel.city} required style={{ width: '100%', padding: '10px 14px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '0.95rem' }} />
                 </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#475569', marginBottom: 6 }}>Area / Locality</label>
+                  <input name="area" defaultValue={editingHotel.area || ''} placeholder="e.g. Shamshabad" style={{ width: '100%', padding: '10px 14px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '0.95rem' }} />
+                </div>
               </div>
 
-              <div style={{ marginBottom: 16 }}>
+              <div style={{ marginBottom: 14 }}>
                 <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#475569', marginBottom: 6 }}>Full Address</label>
                 <input name="address" defaultValue={editingHotel.address} required style={{ width: '100%', padding: '10px 14px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '0.95rem' }} />
               </div>
 
-              <div style={{ marginBottom: 16 }}>
-                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#475569', marginBottom: 6 }}>Description</label>
-                <textarea name="description" defaultValue={editingHotel.description} required rows={3} style={{ width: '100%', padding: '10px 14px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '0.95rem', resize: 'vertical' }} />
+              {/* Property Specs bar */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 10, background: '#f8fafc', padding: '12px 16px', borderRadius: 10, border: '1px solid #e2e8f0', marginBottom: 16, fontSize: '0.85rem' }}>
+                <div><span style={{ color: '#64748b' }}>Total Rooms:</span> <strong>{editingHotel.totalPropertyRooms || 'N/A'}</strong></div>
+                <div><span style={{ color: '#64748b' }}>SB Allocation:</span> <strong>{editingHotel.staybuddyAllocation || 'N/A'}</strong></div>
+                <div><span style={{ color: '#64748b' }}>Total Floors:</span> <strong>{editingHotel.totalFloors || 'N/A'}</strong></div>
+                <div><span style={{ color: '#64748b' }}>Check-in:</span> <strong>{editingHotel.checkInTime || '14:00'}</strong></div>
+                <div><span style={{ color: '#64748b' }}>Check-out:</span> <strong>{editingHotel.checkOutTime || '11:00'}</strong></div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 32, background: '#f8fafc', padding: 20, borderRadius: 12, border: '1px solid #e2e8f0' }}>
+              <div style={{ marginBottom: 16 }}>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#475569', marginBottom: 6 }}>Description</label>
+                <textarea name="description" defaultValue={editingHotel.description} required rows={2} style={{ width: '100%', padding: '10px 14px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '0.95rem', resize: 'vertical' }} />
+              </div>
+
+              {/* Hotel Amenities chips */}
+              {editingHotel.amenities && editingHotel.amenities.length > 0 && (
+                <div style={{ marginBottom: 20 }}>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#475569', marginBottom: 6 }}>Hotel Amenities Selected</label>
+                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                    {editingHotel.amenities.map((am: string, i: number) => (
+                      <span key={i} style={{ background: '#f1f5f9', color: '#334155', padding: '3px 10px', borderRadius: 6, fontSize: '0.78rem', fontWeight: 600 }}>
+                        ✓ {am}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* ===== ALL ROOMS & OCCUPANCY PRICING SECTION ===== */}
+              <div style={{ marginBottom: 24, borderTop: '2px solid #e2e8f0', paddingTop: 18 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                  <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0f172a', margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
+                    🛏️ Rooms & Occupancy Pricing ({(editingHotel.rooms || []).length} Types)
+                  </h3>
+                  <span style={{ fontSize: '0.8rem', color: '#64748b' }}>Single, Double, Triple & B2B rates</span>
+                </div>
+
+                {(!editingHotel.rooms || editingHotel.rooms.length === 0) ? (
+                  <div style={{ padding: '24px', background: '#f8fafc', borderRadius: 10, color: '#64748b', textAlign: 'center', border: '1px dashed #cbd5e1' }}>
+                    No specific rooms attached to this submission. Partner will configure via Extranet Manager.
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                    {editingHotel.rooms.map((room: any, rIdx: number) => (
+                      <div key={room._id || rIdx} style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: 12, padding: '16px', boxShadow: '0 2px 6px rgba(0,0,0,0.03)' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 10, marginBottom: 10 }}>
+                          <div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                              <h4 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 800, color: '#0f172a' }}>{room.type}</h4>
+                              <span style={{ background: '#f1f5f9', color: '#475569', fontSize: '0.72rem', padding: '2px 8px', borderRadius: 4, fontWeight: 700 }}>
+                                ☕ {room.ratePlan || 'EP'} ({room.ratePlan === 'CP' ? 'Free Breakfast' : room.ratePlan === 'MAP' ? 'Breakfast & Dinner' : room.ratePlan === 'AP' ? 'All Meals' : 'Room Only'})
+                              </span>
+                            </div>
+                            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', fontSize: '0.8rem', color: '#64748b', marginTop: 4 }}>
+                              <span>🛏️ {room.bedType || 'Double'}</span>
+                              <span>👥 Max {room.maxGuests || 3} Guests</span>
+                              {room.size && <span>📐 {room.size} m²</span>}
+                              {room.description && <span>• {room.description}</span>}
+                            </div>
+                          </div>
+                          <div style={{ display: 'flex', gap: 8, fontSize: '0.82rem' }}>
+                            <span style={{ background: '#f8fafc', padding: '4px 10px', borderRadius: 6, border: '1px solid #cbd5e1', fontWeight: 600 }}>
+                              Total Rooms: {room.totalRooms !== undefined ? room.totalRooms : 'N/A'}
+                            </span>
+                            <span style={{ background: '#eff6ff', color: '#1d4ed8', padding: '4px 10px', borderRadius: 6, border: '1px solid #bfdbfe', fontWeight: 700 }}>
+                              SB Allocation: {room.staybuddyAllocation !== undefined ? room.staybuddyAllocation : 'N/A'}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Occupancy Pricing Cards */}
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 10, marginTop: 10 }}>
+                          <div style={{ background: '#fff7ed', padding: '10px 12px', borderRadius: 8, border: '1px solid #fed7aa', borderLeft: '4px solid #f97316' }}>
+                            <div style={{ fontSize: '0.7rem', textTransform: 'uppercase', color: '#9a3412', fontWeight: 800 }}>👤 Single (1 Adult)</div>
+                            <div style={{ fontSize: '1.15rem', fontWeight: 800, color: '#c2410c', marginTop: 2 }}>₹{room.priceSingle || 0}</div>
+                          </div>
+                          <div style={{ background: '#f0fdf4', padding: '10px 12px', borderRadius: 8, border: '1px solid #bbf7d0', borderLeft: '4px solid #22c55e' }}>
+                            <div style={{ fontSize: '0.7rem', textTransform: 'uppercase', color: '#166534', fontWeight: 800 }}>👥 Double (2 Adults)</div>
+                            <div style={{ fontSize: '1.15rem', fontWeight: 800, color: '#15803d', marginTop: 2 }}>₹{room.priceDouble || room.priceSingle || 0}</div>
+                          </div>
+                          <div style={{ background: '#eff6ff', padding: '10px 12px', borderRadius: 8, border: '1px solid #bfdbfe', borderLeft: '4px solid #3b82f6' }}>
+                            <div style={{ fontSize: '0.7rem', textTransform: 'uppercase', color: '#1e40af', fontWeight: 800 }}>👨‍👩‍👦 Triple (3 Adults)</div>
+                            <div style={{ fontSize: '1.15rem', fontWeight: 800, color: '#1d4ed8', marginTop: 2 }}>₹{room.priceTriple || 0}</div>
+                          </div>
+                          <div style={{ background: '#faf5ff', padding: '10px 12px', borderRadius: 8, border: '1px solid #e9d5ff', borderLeft: '4px solid #a855f7' }}>
+                            <div style={{ fontSize: '0.7rem', textTransform: 'uppercase', color: '#6b21a8', fontWeight: 800 }}>💼 B2B Partner Rate</div>
+                            <div style={{ fontSize: '1.15rem', fontWeight: 800, color: '#7e22ce', marginTop: 2 }}>₹{room.b2bPrice || 0}</div>
+                          </div>
+                        </div>
+
+                        {/* Room Amenities */}
+                        {room.amenities && room.amenities.length > 0 && (
+                          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 10 }}>
+                            {room.amenities.map((am: string, aIdx: number) => (
+                              <span key={aIdx} style={{ fontSize: '0.74rem', background: '#f1f5f9', color: '#475569', padding: '2px 8px', borderRadius: 4, fontWeight: 500 }}>
+                                ✓ {am}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+
+                        {/* Room Photos */}
+                        {room.images && room.images.length > 0 && (
+                          <div style={{ display: 'flex', gap: 8, marginTop: 10, overflowX: 'auto', paddingBottom: 4 }}>
+                            {room.images.map((img: string, iIdx: number) => (
+                              <div key={iIdx} style={{ position: 'relative', width: 90, height: 60, borderRadius: 6, overflow: 'hidden', flexShrink: 0, border: '1px solid #cbd5e1' }}>
+                                <img src={img} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Commercials & Pricing (Margin & Approval) */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 28, background: '#f8fafc', padding: 20, borderRadius: 12, border: '1px solid #e2e8f0' }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#475569', marginBottom: 6 }}>Base Price (₹) / night</label>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#475569', marginBottom: 6 }}>Base Starting Rate (₹) / night</label>
                   <input name="basePrice" type="number" defaultValue={editingHotel.basePrice || 0} required style={{ width: '100%', padding: '10px 14px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '1rem', fontWeight: 600, color: '#0f172a' }} />
+                  <span style={{ fontSize: '0.74rem', color: '#64748b', marginTop: 4, display: 'block' }}>Default catalog starting rate if rooms are unconfigured</span>
                 </div>
                 <div>
                   <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#475569', marginBottom: 6 }}>StayBuddy Margin (%)</label>
-                  <input name="marginPercentage" type="number" defaultValue={editingHotel.marginPercentage || 15} required style={{ width: '100%', padding: '10px 14px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '1rem', fontWeight: 600, color: '#10b981' }} />
+                  <input name="marginPercentage" type="number" defaultValue={editingHotel.marginPercentage || 15} required style={{ width: '100%', padding: '10px 14px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '1rem', fontWeight: 700, color: '#10b981' }} />
+                  <span style={{ fontSize: '0.74rem', color: '#64748b', marginTop: 4, display: 'block' }}>StayBuddy profit margin added on top of B2B rates</span>
                 </div>
               </div>
 
               <div style={{ display: 'flex', gap: 12 }}>
-                <button type="submit" disabled={approveLoading === editingHotel._id} style={{ flex: 1, padding: '14px', background: '#2563eb', color: 'white', border: 'none', borderRadius: 8, fontSize: '1.05rem', fontWeight: 700, cursor: 'pointer', boxShadow: '0 4px 12px rgba(37,99,235,0.2)' }}>
-                  {approveLoading === editingHotel._id ? 'Approving...' : '✓ Save & Approve'}
+                <button type="submit" disabled={approveLoading === editingHotel._id} style={{ flex: 1.5, padding: '14px', background: '#10b981', color: 'white', border: 'none', borderRadius: 8, fontSize: '1.05rem', fontWeight: 800, cursor: 'pointer', boxShadow: '0 4px 12px rgba(16,185,129,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                  {approveLoading === editingHotel._id ? 'Approving...' : '✓ Save & Approve Property'}
                 </button>
                 <button type="button" onClick={() => { const r = prompt('Rejection reason:'); if (r) { updateHotelStatus(editingHotel._id, { status: 'rejected', rejectionReason: r }); setEditingHotel(null); } }} disabled={approveLoading === editingHotel._id} style={{ flex: 1, padding: '14px', background: '#ef4444', color: 'white', border: 'none', borderRadius: 8, fontSize: '1.05rem', fontWeight: 700, cursor: 'pointer', boxShadow: '0 4px 12px rgba(239,68,68,0.2)' }}>
                   ✕ Reject Request
+                </button>
+                <button type="button" onClick={() => setEditingHotel(null)} style={{ padding: '14px 24px', background: '#f1f5f9', color: '#475569', border: '1px solid #cbd5e1', borderRadius: 8, fontSize: '1rem', fontWeight: 600, cursor: 'pointer' }}>
+                  Cancel
                 </button>
               </div>
             </form>
           </div>
         </div>
       )}
+
       
       {/* Extranet Edit Modal */}
       {extranetModal && (

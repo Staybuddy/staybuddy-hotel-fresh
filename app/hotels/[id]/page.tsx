@@ -1233,7 +1233,7 @@ export default function HotelDetailPage() {
                         style={{
                           display: "grid",
                           gridTemplateColumns: room.images?.[0]
-                            ? "140px 1fr auto"
+                            ? "minmax(180px, 240px) 1fr auto"
                             : "1fr auto",
                           gap: "var(--space-4)",
                           alignItems: "center",
@@ -1241,7 +1241,19 @@ export default function HotelDetailPage() {
                       >
                         {room.images?.[0] ? (
                           <div
-                            style={{ position: "relative", width: 140, height: 100, borderRadius: "var(--radius-md)", overflow: "hidden", cursor: "pointer", flexShrink: 0 }}
+                            style={{ 
+                              position: "relative", 
+                              width: "100%", 
+                              height: 155, 
+                              minWidth: 170, 
+                              maxWidth: 250, 
+                              borderRadius: "14px", 
+                              overflow: "hidden", 
+                              cursor: "pointer", 
+                              flexShrink: 0,
+                              boxShadow: "0 6px 16px rgba(0,0,0,0.1)",
+                              border: "1px solid rgba(0,0,0,0.06)"
+                            }}
                             onClick={(e) => {
                               e.stopPropagation();
                               const foundIdx = allPhotos.findIndex(p => p.url === room.images[0]);
@@ -1262,18 +1274,19 @@ export default function HotelDetailPage() {
                               <div
                                 style={{
                                   position: "absolute",
-                                  bottom: 4,
-                                  right: 4,
-                                  background: "rgba(15, 23, 42, 0.8)",
+                                  bottom: 8,
+                                  right: 8,
+                                  background: "rgba(15, 23, 42, 0.85)",
                                   color: "white",
-                                  fontSize: "0.65rem",
+                                  fontSize: "0.72rem",
                                   fontWeight: 700,
-                                  padding: "2px 6px",
-                                  borderRadius: 4,
+                                  padding: "3px 8px",
+                                  borderRadius: 6,
                                   backdropFilter: "blur(4px)",
+                                  boxShadow: "0 2px 8px rgba(0,0,0,0.3)"
                                 }}
                               >
-                                📷 {room.images.length}
+                                📷 {room.images.length} Photos
                               </div>
                             )}
                           </div>
