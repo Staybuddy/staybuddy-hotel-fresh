@@ -741,6 +741,7 @@ export default function HotelDetailPage() {
                     {displayPhotos.length > 0 && (
                       <button
                         type="button"
+                        className="hotel-gallery-view-btn"
                         onClick={() => openPhotoViewer(0)}
                         style={{
                           position: "absolute",
@@ -759,7 +760,7 @@ export default function HotelDetailPage() {
                           alignItems: "center",
                           gap: 6,
                           boxShadow: "0 4px 12px rgba(0,0,0,0.2)",
-                          zIndex: 2,
+                          zIndex: 5,
                         }}
                       >
                         📷 View All Photos ({displayPhotos.length})
