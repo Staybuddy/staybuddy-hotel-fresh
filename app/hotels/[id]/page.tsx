@@ -6,7 +6,13 @@ import { useSession } from "next-auth/react";
 import Navbar from "@/components/Navbar";
 import DateRangePicker from "@/components/DateRangePicker";
 import Image from "next/image";
-import { calculateBookingPricing, adjustRoomsAndAdults, MAX_ADULTS_PER_ROOM } from "@/lib/occupancyPricing";
+import {
+  calculateBookingPricing,
+  calculateMultiRoomPricing,
+  adjustRoomsAndAdults,
+  getRoomPriceForOccupancy,
+  MAX_ADULTS_PER_ROOM,
+} from "@/lib/occupancyPricing";
 
 const formatDate = (dateString: string | null) => {
   if (!dateString) return "Select date";
@@ -49,6 +55,7 @@ export default function HotelDetailPage() {
   const [galleryActiveIndex, setGalleryActiveIndex] = useState(0);
   const [isAutoPlaying, setIsAutoPlaying] = useState(false);
   const [selectedRoom, setSelectedRoom] = useState<any>(null);
+  const [selectedRoomsMap, setSelectedRoomsMap] = useState<Record<string, number>>({});
   const [bookingData, setBookingData] = useState({
     checkIn: searchParams.get("checkIn") || "",
     checkOut: searchParams.get("checkOut") || "",
@@ -185,10 +192,87 @@ export default function HotelDetailPage() {
     return () => clearInterval(timer);
   }, [showGalleryModal, isAutoPlaying, allPhotos.length]);
 
+  const totalSelectedRoomsCount = useMemo(() => {
+    return Object.values(selectedRoomsMap).reduce((sum, count) => sum + (count || 0), 0);
+  }, [selectedRoomsMap]);
+
+  const selectedRoomsList = useMemo(() => {
+    return rooms
+      .filter((r) => (selectedRoomsMap[r._id] || 0) > 0)
+      .map((r) => ({
+        room: r,
+        quantity: selectedRoomsMap[r._id] || 0,
+        pricePerNight: getRoomPriceForOccupancy(
+          r,
+          Math.min(3, Math.max(1, Math.round(bookingData.adults / Math.max(1, bookingData.rooms))))
+        ),
+      }));
+  }, [rooms, selectedRoomsMap, bookingData.adults, bookingData.rooms]);
+
+  // Keep selectedRoom in sync with the first selected room
+  useEffect(() => {
+    if (selectedRoomsList.length > 0) {
+      setSelectedRoom(selectedRoomsList[0].room);
+    }
+  }, [selectedRoomsList]);
+
+  // If bookingData.rooms decreases, cap total selected rooms
+  useEffect(() => {
+    setSelectedRoomsMap((prev) => {
+      const total = Object.values(prev).reduce((a, b) => a + (b || 0), 0);
+      if (total <= bookingData.rooms) return prev;
+      const next: Record<string, number> = {};
+      let remaining = bookingData.rooms;
+      for (const [rId, qty] of Object.entries(prev)) {
+        if (remaining <= 0) break;
+        const keep = Math.min(qty, remaining);
+        if (keep > 0) next[rId] = keep;
+        remaining -= keep;
+      }
+      return next;
+    });
+  }, [bookingData.rooms]);
+
+  const handleAddRoom = (room: any) => {
+    if (!room) return;
+    if (bookingData.rooms === 1) {
+      setSelectedRoomsMap({ [room._id]: 1 });
+      setSelectedRoom(room);
+      return;
+    }
+
+    if (totalSelectedRoomsCount >= bookingData.rooms) return;
+
+    setSelectedRoomsMap((prev) => ({
+      ...prev,
+      [room._id]: (prev[room._id] || 0) + 1,
+    }));
+    if (!selectedRoom) setSelectedRoom(room);
+  };
+
+  const handleRemoveRoom = (room: any) => {
+    if (!room) return;
+    setSelectedRoomsMap((prev) => {
+      const cur = prev[room._id] || 0;
+      if (cur <= 1) {
+        const next = { ...prev };
+        delete next[room._id];
+        return next;
+      }
+      return { ...prev, [room._id]: cur - 1 };
+    });
+  };
+
+  const handleSelectAllOfRoom = (room: any) => {
+    if (!room) return;
+    setSelectedRoomsMap({ [room._id]: bookingData.rooms });
+    setSelectedRoom(room);
+  };
+
   const getRoomPrice = (room: any) => {
     if (!room) return 0;
-    const p = calculateBookingPricing(room, bookingData.adults, bookingData.rooms, 1);
-    return p.basePricePerNight;
+    const occPerRoom = Math.min(3, Math.max(1, Math.round(bookingData.adults / Math.max(1, bookingData.rooms))));
+    return getRoomPriceForOccupancy(room, occPerRoom);
   };
 
   async function handleBooking() {
@@ -224,12 +308,27 @@ export default function HotelDetailPage() {
       return;
     }
 
-    const calculatedPricing = calculateBookingPricing(
-      selectedRoom,
-      bookingData.adults,
-      bookingData.rooms,
-      nights
-    );
+    const calculatedPricing = selectedRoomsList.length > 0
+      ? calculateMultiRoomPricing(selectedRoomsList, bookingData.adults, nights)
+      : calculateBookingPricing(
+          selectedRoom,
+          bookingData.adults,
+          bookingData.rooms,
+          nights
+        );
+
+    const primaryRoom = selectedRoomsList[0]?.room || selectedRoom;
+    const selectedRoomsPayload = selectedRoomsList.length > 0
+      ? selectedRoomsList.map((sr) => ({
+          roomId: sr.room._id,
+          roomType: sr.room.type,
+          quantity: sr.quantity,
+        }))
+      : [{
+          roomId: primaryRoom?._id,
+          roomType: primaryRoom?.type,
+          quantity: bookingData.rooms,
+        }];
 
     const res = await fetch("/api/bookings", {
       method: "POST",
@@ -237,11 +336,12 @@ export default function HotelDetailPage() {
       body: JSON.stringify({
         customerId: (session.user as any).id,
         hotelId: id,
-        roomId: selectedRoom._id,
+        roomId: primaryRoom._id,
         rooms: bookingData.rooms,
         adults: bookingData.adults,
         guests: bookingData.adults + (bookingData.children || 0),
         occupancy: bookingData.adults === 1 ? 'single' : (bookingData.adults === 3 ? 'triple' : 'double'),
+        selectedRooms: selectedRoomsPayload,
         roomBreakdowns: calculatedPricing.roomBreakdowns,
         occupancySummary: calculatedPricing.summaryText,
         checkIn: bookingData.checkIn,
@@ -391,7 +491,7 @@ export default function HotelDetailPage() {
     return () => window.removeEventListener("popstate", handlePopState);
   }, []);
 
-  const openReview = (room: any) => {
+  const openReview = (room?: any) => {
     if (!bookingData.checkIn || !bookingData.checkOut) {
       const bar = document.getElementById("availability-bar");
       if (bar) {
@@ -400,7 +500,17 @@ export default function HotelDetailPage() {
       }
       return;
     }
-    setSelectedRoom(room);
+    if (room) {
+      if (bookingData.rooms === 1 || totalSelectedRoomsCount === 0) {
+        setSelectedRoomsMap({ [room._id]: bookingData.rooms });
+        setSelectedRoom(room);
+      }
+    }
+    if (bookingData.rooms > 1 && totalSelectedRoomsCount < bookingData.rooms && !room) {
+      const roomSection = document.getElementById("rooms-section");
+      if (roomSection) roomSection.scrollIntoView({ behavior: "smooth" });
+      return;
+    }
     setBookingStep(1);
     setTimeout(() => window.scrollTo(0, 0), 10);
     window.history.pushState(
@@ -432,13 +542,20 @@ export default function HotelDetailPage() {
       : 1;
 
   const currentPricing = useMemo(() => {
+    if (selectedRoomsList.length > 0) {
+      return calculateMultiRoomPricing(
+        selectedRoomsList,
+        bookingData.adults,
+        nights
+      );
+    }
     return calculateBookingPricing(
       selectedRoom,
       bookingData.adults,
       bookingData.rooms,
       nights
     );
-  }, [selectedRoom, bookingData.adults, bookingData.rooms, nights]);
+  }, [selectedRoomsList, selectedRoom, bookingData.adults, bookingData.rooms, nights]);
 
   if (loading)
     return (
@@ -1202,6 +1319,79 @@ export default function HotelDetailPage() {
                   gap: "var(--space-4)",
                 }}
               >
+                {bookingData.rooms > 1 && (
+                  <div
+                    style={{
+                      background: totalSelectedRoomsCount === bookingData.rooms ? "#ecfdf5" : "#eff6ff",
+                      border: `1px solid ${totalSelectedRoomsCount === bookingData.rooms ? "#a7f3d0" : "#bfdbfe"}`,
+                      borderRadius: "var(--radius-md)",
+                      padding: "14px 16px",
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 6,
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        flexWrap: "wrap",
+                        gap: 8,
+                      }}
+                    >
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <span style={{ fontSize: "1.2rem" }}>
+                          {totalSelectedRoomsCount === bookingData.rooms ? "🎉" : "🛏️"}
+                        </span>
+                        <span
+                          style={{
+                            fontWeight: 800,
+                            fontSize: "0.95rem",
+                            color: totalSelectedRoomsCount === bookingData.rooms ? "#065f46" : "#1e40af",
+                          }}
+                        >
+                          {totalSelectedRoomsCount === bookingData.rooms
+                            ? `All ${bookingData.rooms} Rooms Selected (${currentPricing.roomSummaryText})`
+                            : `Select ${bookingData.rooms} Rooms: ${totalSelectedRoomsCount} of ${bookingData.rooms} Selected`}
+                        </span>
+                      </div>
+
+                      <div
+                        style={{
+                          background: totalSelectedRoomsCount === bookingData.rooms ? "#059669" : "#2563eb",
+                          color: "white",
+                          padding: "3px 10px",
+                          borderRadius: "var(--radius-full)",
+                          fontWeight: 700,
+                          fontSize: "0.8rem",
+                        }}
+                      >
+                        {totalSelectedRoomsCount} / {bookingData.rooms} Chosen
+                      </div>
+                    </div>
+
+                    <div
+                      style={{
+                        fontSize: "0.82rem",
+                        color: totalSelectedRoomsCount === bookingData.rooms ? "#047857" : "#3b82f6",
+                      }}
+                    >
+                      {totalSelectedRoomsCount === bookingData.rooms ? (
+                        <span>
+                          ✓ Perfect! You can proceed to booking with this room combination, or modify below.
+                        </span>
+                      ) : (
+                        <span>
+                          You can choose mixed room types (e.g., 1 Standard + 1 Deluxe) or choose both in the same room category.
+                          {" "}
+                          <strong>({bookingData.rooms - totalSelectedRoomsCount} more room{bookingData.rooms - totalSelectedRoomsCount > 1 ? "s" : ""} needed)</strong>
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                )}
+
                 {rooms.length === 0 ? (
                   <p
                     style={{
@@ -1213,148 +1403,303 @@ export default function HotelDetailPage() {
                     No rooms available
                   </p>
                 ) : (
-                  rooms.map((room) => (
-                    <div
-                      key={room._id}
-                      className="room-card"
-                      style={{
-                        border: `2px solid ${selectedRoom?._id === room._id ? "var(--brand-500)" : "var(--border)"}`,
-                        borderRadius: "var(--radius-lg)",
-                        padding: "var(--space-4)",
-                        transition: "all 0.3s ease",
-                        cursor: "pointer",
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: "var(--space-4)",
-                        background:
-                          selectedRoom?._id === room._id
-                            ? "var(--brand-50)"
-                            : "transparent",
-                      }}
-                      onClick={() => {
-                        setRoomDetailsModal(room);
-                        setModalImageIndex(0);
-                      }}
-                    >
-                      <div className="room-card-grid">
-                        {room.images?.[0] ? (
-                          <div
-                            className="room-card-thumbnail"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              const foundIdx = allPhotos.findIndex(p => p.url === room.images[0]);
-                              openPhotoViewer(foundIdx >= 0 ? foundIdx : 0);
-                            }}
-                            title="Click to view full photo gallery"
-                          >
-                            <Image
-                              src={room.images[0]}
-                              alt={room.type}
-                              fill
-                              style={{
-                                objectFit: "cover",
+                  rooms.map((room) => {
+                    const allocatedCount = selectedRoomsMap[room._id] || 0;
+                    const unitPrice = getRoomPrice(room);
+                    const isCardSelected = allocatedCount > 0 || (bookingData.rooms === 1 && selectedRoom?._id === room._id);
+
+                    return (
+                      <div
+                        key={room._id}
+                        className="room-card"
+                        style={{
+                          border: `2px solid ${isCardSelected ? "var(--brand-500)" : "var(--border)"}`,
+                          borderRadius: "var(--radius-lg)",
+                          padding: "var(--space-4)",
+                          transition: "all 0.3s ease",
+                          cursor: "pointer",
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: "var(--space-4)",
+                          background: isCardSelected ? "var(--brand-50)" : "transparent",
+                        }}
+                        onClick={() => {
+                          setRoomDetailsModal(room);
+                          setModalImageIndex(0);
+                        }}
+                      >
+                        <div className="room-card-grid">
+                          {room.images?.[0] ? (
+                            <div
+                              className="room-card-thumbnail"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                const foundIdx = allPhotos.findIndex(p => p.url === room.images[0]);
+                                openPhotoViewer(foundIdx >= 0 ? foundIdx : 0);
                               }}
-                              unoptimized
-                            />
-                            {room.images.length > 1 && (
+                              title="Click to view full photo gallery"
+                            >
+                              <Image
+                                src={room.images[0]}
+                                alt={room.type}
+                                fill
+                                style={{
+                                  objectFit: "cover",
+                                }}
+                                unoptimized
+                              />
+                              {room.images.length > 1 && (
+                                <div
+                                  style={{
+                                    position: "absolute",
+                                    bottom: 8,
+                                    right: 8,
+                                    background: "rgba(15, 23, 42, 0.85)",
+                                    color: "white",
+                                    fontSize: "0.72rem",
+                                    fontWeight: 700,
+                                    padding: "3px 8px",
+                                    borderRadius: 6,
+                                    backdropFilter: "blur(4px)",
+                                    boxShadow: "0 2px 8px rgba(0,0,0,0.3)"
+                                  }}
+                                >
+                                  📷 {room.images.length} Photos
+                                </div>
+                              )}
+                            </div>
+                          ) : null}
+                          <div className="room-card-info" style={{ minWidth: 0 }}>
+                            {allocatedCount > 0 && (
                               <div
                                 style={{
-                                  position: "absolute",
-                                  bottom: 8,
-                                  right: 8,
-                                  background: "rgba(15, 23, 42, 0.85)",
-                                  color: "white",
-                                  fontSize: "0.72rem",
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  gap: 6,
+                                  background: "#eff6ff",
+                                  color: "#1d4ed8",
+                                  border: "1px solid #bfdbfe",
+                                  padding: "2px 8px",
+                                  borderRadius: 4,
                                   fontWeight: 700,
-                                  padding: "3px 8px",
-                                  borderRadius: 6,
-                                  backdropFilter: "blur(4px)",
-                                  boxShadow: "0 2px 8px rgba(0,0,0,0.3)"
+                                  fontSize: "0.75rem",
+                                  marginBottom: 6,
+                                  width: "fit-content",
                                 }}
                               >
-                                📷 {room.images.length} Photos
+                                <span>✓</span> {allocatedCount} {allocatedCount > 1 ? "Rooms" : "Room"} Selected
+                              </div>
+                            )}
+                            <h4 style={{ marginBottom: 4 }}>{room.type}</h4>
+                            <p
+                              style={{
+                                color: "var(--text-muted)",
+                                fontSize: "0.875rem",
+                                marginBottom: 8,
+                              }}
+                            >
+                              {room.description}
+                            </p>
+                            <div
+                              style={{
+                                display: "flex",
+                                gap: 8,
+                                flexWrap: "wrap",
+                                fontSize: "0.8rem",
+                                color: "var(--text-secondary)",
+                              }}
+                            >
+                              <span>🛏️ {room.bedType}</span>
+                              <span>👥 Max {room.maxGuests} guests</span>
+                              {room.size && <span>📐 {room.size} m²</span>}
+                              {room.ratePlan === 'CP' ? (
+                                <span style={{ backgroundColor: '#ecfdf5', color: '#059669', padding: '2px 8px', borderRadius: 4, fontWeight: 700, fontSize: '0.75rem', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                                  🍳 Free Breakfast Included
+                                </span>
+                              ) : room.ratePlan === 'MAP' ? (
+                                <span style={{ backgroundColor: '#ecfdf5', color: '#059669', padding: '2px 8px', borderRadius: 4, fontWeight: 700, fontSize: '0.75rem', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                                  🍽️ Breakfast & Dinner Included
+                                </span>
+                              ) : room.ratePlan === 'AP' ? (
+                                <span style={{ backgroundColor: '#ecfdf5', color: '#059669', padding: '2px 8px', borderRadius: 4, fontWeight: 700, fontSize: '0.75rem', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                                  🍴 All Meals Included
+                                </span>
+                              ) : (
+                                <span style={{ backgroundColor: '#f1f5f9', color: '#64748b', padding: '2px 8px', borderRadius: 4, fontWeight: 600, fontSize: '0.75rem', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                                  ☕ Room Only (No Breakfast)
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          <div className="room-card-action" style={{ textAlign: "right", flexShrink: 0 }}>
+                            <div>
+                              <div
+                                style={{
+                                  fontSize: "1.3rem",
+                                  fontWeight: 800,
+                                  color: "var(--brand-600)",
+                                }}
+                              >
+                                ₹{unitPrice.toLocaleString()}
+                              </div>
+                              <div
+                                style={{
+                                  fontSize: "0.75rem",
+                                  color: "var(--text-muted)",
+                                }}
+                              >
+                                {bookingData.rooms > 1
+                                  ? allocatedCount > 1
+                                    ? `₹${(unitPrice * allocatedCount).toLocaleString()} for ${allocatedCount} rooms`
+                                    : "per room / night"
+                                  : "per night"}
+                              </div>
+                            </div>
+
+                            {bookingData.rooms === 1 ? (
+                              <button
+                                className="btn btn-primary btn-sm"
+                                style={{ marginTop: 8 }}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedRoom(room);
+                                  setSelectedRoomsMap({ [room._id]: 1 });
+                                }}
+                              >
+                                {selectedRoom?._id === room._id ? "Selected ✓" : "Select"}
+                              </button>
+                            ) : (
+                              <div style={{ marginTop: 8, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4 }}>
+                                {allocatedCount > 0 ? (
+                                  <div
+                                    style={{
+                                      display: "flex",
+                                      alignItems: "center",
+                                      gap: 6,
+                                      background: "white",
+                                      border: "2px solid var(--brand-500)",
+                                      borderRadius: "var(--radius-md)",
+                                      padding: "2px 4px",
+                                    }}
+                                  >
+                                    <button
+                                      type="button"
+                                      className="btn-ghost"
+                                      style={{
+                                        width: 28,
+                                        height: 28,
+                                        padding: 0,
+                                        fontSize: "1.1rem",
+                                        fontWeight: 800,
+                                        color: "var(--brand-600)",
+                                        cursor: "pointer",
+                                      }}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleRemoveRoom(room);
+                                      }}
+                                      title="Remove 1 room"
+                                    >
+                                      −
+                                    </button>
+                                    <span
+                                      style={{
+                                        fontWeight: 800,
+                                        fontSize: "0.9rem",
+                                        minWidth: 20,
+                                        textAlign: "center",
+                                        color: "var(--brand-700)",
+                                      }}
+                                    >
+                                      {allocatedCount}
+                                    </span>
+                                    <button
+                                      type="button"
+                                      className="btn-ghost"
+                                      style={{
+                                        width: 28,
+                                        height: 28,
+                                        padding: 0,
+                                        fontSize: "1.1rem",
+                                        fontWeight: 800,
+                                        color:
+                                          totalSelectedRoomsCount >= bookingData.rooms
+                                            ? "#94a3b8"
+                                            : "var(--brand-600)",
+                                        cursor:
+                                          totalSelectedRoomsCount >= bookingData.rooms
+                                            ? "not-allowed"
+                                            : "pointer",
+                                      }}
+                                      disabled={totalSelectedRoomsCount >= bookingData.rooms}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleAddRoom(room);
+                                      }}
+                                      title={
+                                        totalSelectedRoomsCount >= bookingData.rooms
+                                          ? `All ${bookingData.rooms} rooms selected`
+                                          : "Add 1 room"
+                                      }
+                                    >
+                                      +
+                                    </button>
+                                  </div>
+                                ) : (
+                                  <button
+                                    className="btn btn-primary btn-sm"
+                                    disabled={totalSelectedRoomsCount >= bookingData.rooms}
+                                    style={{
+                                      opacity: totalSelectedRoomsCount >= bookingData.rooms ? 0.6 : 1,
+                                      cursor:
+                                        totalSelectedRoomsCount >= bookingData.rooms
+                                          ? "not-allowed"
+                                          : "pointer",
+                                    }}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleAddRoom(room);
+                                    }}
+                                    title={
+                                      totalSelectedRoomsCount >= bookingData.rooms
+                                        ? `All ${bookingData.rooms} rooms already selected`
+                                        : "Select this room"
+                                    }
+                                  >
+                                    + Add Room
+                                  </button>
+                                )}
+
+                                {bookingData.rooms > 1 &&
+                                  allocatedCount < bookingData.rooms &&
+                                  totalSelectedRoomsCount < bookingData.rooms && (
+                                    <button
+                                      type="button"
+                                      style={{
+                                        background: "none",
+                                        border: "none",
+                                        padding: 0,
+                                        color: "var(--brand-600)",
+                                        fontSize: "0.72rem",
+                                        fontWeight: 700,
+                                        textDecoration: "underline",
+                                        cursor: "pointer",
+                                      }}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleSelectAllOfRoom(room);
+                                      }}
+                                    >
+                                      Select all {bookingData.rooms} here
+                                    </button>
+                                  )}
                               </div>
                             )}
                           </div>
-                        ) : null}
-                        <div className="room-card-info" style={{ minWidth: 0 }}>
-                          <h4 style={{ marginBottom: 4 }}>{room.type}</h4>
-                          <p
-                            style={{
-                              color: "var(--text-muted)",
-                              fontSize: "0.875rem",
-                              marginBottom: 8,
-                            }}
-                          >
-                            {room.description}
-                          </p>
-                          <div
-                            style={{
-                              display: "flex",
-                              gap: 8,
-                              flexWrap: "wrap",
-                              fontSize: "0.8rem",
-                              color: "var(--text-secondary)",
-                            }}
-                          >
-                            <span>🛏️ {room.bedType}</span>
-                            <span>👥 Max {room.maxGuests} guests</span>
-                            {room.size && <span>📐 {room.size} m²</span>}
-                            {room.ratePlan === 'CP' ? (
-                              <span style={{ backgroundColor: '#ecfdf5', color: '#059669', padding: '2px 8px', borderRadius: 4, fontWeight: 700, fontSize: '0.75rem', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                                🍳 Free Breakfast Included
-                              </span>
-                            ) : room.ratePlan === 'MAP' ? (
-                              <span style={{ backgroundColor: '#ecfdf5', color: '#059669', padding: '2px 8px', borderRadius: 4, fontWeight: 700, fontSize: '0.75rem', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                                🍽️ Breakfast & Dinner Included
-                              </span>
-                            ) : room.ratePlan === 'AP' ? (
-                              <span style={{ backgroundColor: '#ecfdf5', color: '#059669', padding: '2px 8px', borderRadius: 4, fontWeight: 700, fontSize: '0.75rem', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                                🍴 All Meals Included
-                              </span>
-                            ) : (
-                              <span style={{ backgroundColor: '#f1f5f9', color: '#64748b', padding: '2px 8px', borderRadius: 4, fontWeight: 600, fontSize: '0.75rem', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                                ☕ Room Only (No Breakfast)
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                        <div className="room-card-action" style={{ textAlign: "right", flexShrink: 0 }}>
-                          <div>
-                            <div
-                              style={{
-                                fontSize: "1.3rem",
-                                fontWeight: 800,
-                                color: "var(--brand-600)",
-                              }}
-                            >
-                              ₹{getRoomPrice(room).toLocaleString()}
-                            </div>
-                            <div
-                              style={{
-                                fontSize: "0.75rem",
-                                color: "var(--text-muted)",
-                              }}
-                            >
-                              {bookingData.rooms > 1 ? `for ${bookingData.rooms} rooms / night` : "per night"}
-                            </div>
-                          </div>
-                          <button
-                            className="btn btn-primary btn-sm"
-                            style={{ marginTop: 8 }}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setSelectedRoom(room);
-                            }}
-                          >
-                            {selectedRoom?._id === room._id
-                              ? "Selected"
-                              : "Select"}
-                          </button>
                         </div>
                       </div>
-                    </div>
-                  ))
+                    );
+                  })
                 )}
               </div>
             </div>
@@ -1604,7 +1949,7 @@ export default function HotelDetailPage() {
 
             {bookingStep === 0 &&
               (() => {
-                if (!selectedRoom) {
+                if (totalSelectedRoomsCount === 0 && !selectedRoom) {
                   return (
                     <div
                       className="card"
@@ -1626,7 +1971,7 @@ export default function HotelDetailPage() {
                           margin: 0,
                         }}
                       >
-                        Select a Room
+                        {bookingData.rooms > 1 ? `Select ${bookingData.rooms} Rooms` : "Select a Room"}
                       </h3>
                       <p
                         style={{
@@ -1635,14 +1980,24 @@ export default function HotelDetailPage() {
                           margin: 0,
                         }}
                       >
-                        Please choose a room category from the available options
-                        to view pricing and continue with your booking.
+                        {bookingData.rooms > 1
+                          ? `Please choose ${bookingData.rooms} rooms from the available options (you can mix categories like Standard and Deluxe or choose both the same).`
+                          : "Please choose a room category from the available options to view pricing and continue with your booking."}
                       </p>
+                      <button
+                        className="btn btn-primary"
+                        onClick={() => {
+                          const el = document.getElementById("rooms-section");
+                          if (el) el.scrollIntoView({ behavior: "smooth" });
+                        }}
+                      >
+                        Browse Rooms ↓
+                      </button>
                     </div>
                   );
                 }
 
-                const displayRoom = selectedRoom;
+                const displayRoom = selectedRoomsList[0]?.room || selectedRoom;
 
                 return (
                   <div className="card" style={{ padding: "var(--space-5)" }}>
@@ -1737,6 +2092,40 @@ export default function HotelDetailPage() {
                             ✏️ Edit Guests/Rooms
                           </button>
                         </div>
+
+                        {selectedRoomsList.length > 0 && (
+                          <div
+                            style={{
+                              borderBottom: "1px dashed #bfdbfe",
+                              paddingBottom: 8,
+                              marginBottom: 8,
+                              display: "flex",
+                              flexDirection: "column",
+                              gap: 6,
+                            }}
+                          >
+                            {selectedRoomsList.map((item, idx) => (
+                              <div
+                                key={idx}
+                                style={{
+                                  display: "flex",
+                                  justifyContent: "space-between",
+                                  fontSize: "0.85rem",
+                                  fontWeight: 600,
+                                  color: "#1e293b",
+                                }}
+                              >
+                                <span>
+                                  {item.quantity} × {item.room.type}
+                                </span>
+                                <span style={{ color: "var(--brand-600)", fontWeight: 700 }}>
+                                  ₹{(item.pricePerNight * item.quantity).toLocaleString()}/night
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
                         <div
                           style={{
                             fontSize: "0.82rem",
@@ -1745,18 +2134,35 @@ export default function HotelDetailPage() {
                             marginBottom: 6,
                           }}
                         >
-                          Allocation: {currentPricing.summaryText}
+                          Allocation: {currentPricing.summaryText || `${bookingData.rooms} Rooms`}
                         </div>
-                        <div
-                          style={{
-                            fontSize: "0.75rem",
-                            color: "var(--text-muted)",
-                            borderTop: "1px dashed #bfdbfe",
-                            paddingTop: 6,
-                          }}
-                        >
-                          Rule: Max 3 adults per room. Price automatically accounts for all {bookingData.rooms} rooms and {bookingData.adults} guests.
-                        </div>
+
+                        {totalSelectedRoomsCount < bookingData.rooms ? (
+                          <div
+                            style={{
+                              fontSize: "0.78rem",
+                              color: "#b45309",
+                              background: "#fef3c7",
+                              padding: "6px 8px",
+                              borderRadius: 4,
+                              fontWeight: 700,
+                              marginTop: 6,
+                            }}
+                          >
+                            ⚠️ Select {bookingData.rooms - totalSelectedRoomsCount} more room(s) from the room list to complete booking.
+                          </div>
+                        ) : (
+                          <div
+                            style={{
+                              fontSize: "0.75rem",
+                              color: "var(--text-muted)",
+                              borderTop: "1px dashed #bfdbfe",
+                              paddingTop: 6,
+                            }}
+                          >
+                            Rule: Max 3 adults per room. Price automatically accounts for all {bookingData.rooms} rooms and {bookingData.adults} guests.
+                          </div>
+                        )}
                       </div>
                     ) : (
                       <div
@@ -1892,28 +2298,53 @@ export default function HotelDetailPage() {
                       Free Cancellation till 24 hrs before check in
                     </div>
 
-                    <button
-                      className="btn"
-                      style={{
-                        width: "100%",
-                        fontSize: "1.1rem",
-                        padding: "14px",
-                        background: "#f97316",
-                        color: "white",
-                        border: "none",
-                        marginBottom: 20,
-                        textTransform: "uppercase",
-                        fontWeight: 800,
-                        cursor: "pointer",
-                        borderRadius: "var(--radius-md)",
-                        boxShadow: "0 4px 12px rgba(249, 115, 22, 0.3)",
-                      }}
-                      onClick={() => {
-                        openReview(displayRoom);
-                      }}
-                    >
-                      🚀 Book This Now
-                    </button>
+                    {bookingData.rooms > 1 && totalSelectedRoomsCount < bookingData.rooms ? (
+                      <button
+                        className="btn"
+                        style={{
+                          width: "100%",
+                          fontSize: "1rem",
+                          padding: "14px",
+                          background: "#94a3b8",
+                          color: "white",
+                          border: "none",
+                          marginBottom: 20,
+                          textTransform: "uppercase",
+                          fontWeight: 800,
+                          cursor: "pointer",
+                          borderRadius: "var(--radius-md)",
+                        }}
+                        onClick={() => {
+                          const el = document.getElementById("rooms-section");
+                          if (el) el.scrollIntoView({ behavior: "smooth" });
+                        }}
+                      >
+                        Select {bookingData.rooms - totalSelectedRoomsCount} More Room{bookingData.rooms - totalSelectedRoomsCount > 1 ? "s" : ""}
+                      </button>
+                    ) : (
+                      <button
+                        className="btn"
+                        style={{
+                          width: "100%",
+                          fontSize: "1.1rem",
+                          padding: "14px",
+                          background: "#f97316",
+                          color: "white",
+                          border: "none",
+                          marginBottom: 20,
+                          textTransform: "uppercase",
+                          fontWeight: 800,
+                          cursor: "pointer",
+                          borderRadius: "var(--radius-md)",
+                          boxShadow: "0 4px 12px rgba(249, 115, 22, 0.3)",
+                        }}
+                        onClick={() => {
+                          openReview(displayRoom);
+                        }}
+                      >
+                        🚀 Book {bookingData.rooms > 1 ? `${bookingData.rooms} Rooms Now` : "This Now"}
+                      </button>
+                    )}
 
                     <div
                       style={{
@@ -2367,7 +2798,7 @@ export default function HotelDetailPage() {
                             marginBottom: 4,
                           }}
                         >
-                          {selectedRoom.type} {bookingData.rooms > 1 ? `(${bookingData.rooms} Rooms)` : ""}
+                          {currentPricing.roomSummaryText || selectedRoom?.type || "Rooms"} {bookingData.rooms > 1 && !currentPricing.roomSummaryText ? `(${bookingData.rooms} Rooms)` : ""}
                         </h3>
                         <div
                           style={{
@@ -2393,6 +2824,42 @@ export default function HotelDetailPage() {
                         See Inclusions
                       </a>
                     </div>
+
+                    {selectedRoomsList.length > 1 && (
+                      <div
+                        style={{
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: 6,
+                          padding: "10px 14px",
+                          background: "#f8fafc",
+                          borderRadius: "var(--radius-md)",
+                          border: "1px solid var(--border)",
+                          marginBottom: 14,
+                        }}
+                      >
+                        <div style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase" }}>
+                          Room Breakdown:
+                        </div>
+                        {selectedRoomsList.map((item, idx) => (
+                          <div
+                            key={idx}
+                            style={{
+                              display: "flex",
+                              justifyContent: "space-between",
+                              fontSize: "0.88rem",
+                            }}
+                          >
+                            <span style={{ fontWeight: 700 }}>
+                              {item.quantity} × {item.room.type}
+                            </span>
+                            <span style={{ color: "var(--brand-600)", fontWeight: 700 }}>
+                              ₹{(item.pricePerNight * item.quantity).toLocaleString()}/night
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                     <ul
                       style={{
                         listStyle: "none",
@@ -3686,10 +4153,14 @@ export default function HotelDetailPage() {
                   onClick={() => {
                     const room = roomDetailsModal;
                     setRoomDetailsModal(null);
-                    setTimeout(() => openReview(room), 100);
+                    if (bookingData.rooms === 1) {
+                      setTimeout(() => openReview(room), 100);
+                    } else {
+                      handleAddRoom(room);
+                    }
                   }}
                 >
-                  Select this Room
+                  {bookingData.rooms > 1 ? "+ Add this Room" : "Select this Room"}
                 </button>
               </div>
             </div>

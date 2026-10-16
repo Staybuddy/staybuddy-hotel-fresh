@@ -2,6 +2,8 @@ export const MAX_ADULTS_PER_ROOM = 3;
 
 export interface RoomOccupancyBreakdown {
   roomIndex: number;
+  roomId?: string;
+  roomType?: string;
   occupancy: 'single' | 'double' | 'triple';
   adults: number;
   pricePerNight: number;
@@ -20,7 +22,17 @@ export interface BookingPricingResult {
   totalAmount: number;
   savingsAmount: number;
   summaryText: string;
+  roomSummaryText?: string;
   roomBreakdowns: RoomOccupancyBreakdown[];
+}
+
+export interface MultiRoomItem {
+  room: any;
+  quantity: number;
+}
+
+export interface MultiRoomPricingResult extends BookingPricingResult {
+  roomSummaryText: string;
 }
 
 /**
@@ -171,7 +183,144 @@ export function calculateBookingPricing(
     totalAmount,
     savingsAmount,
     summaryText: summaryParts.join(' + '),
+    roomSummaryText: room ? `${safeRooms} × ${room.type || 'Room'}` : '',
     roomBreakdowns
+  };
+}
+
+/**
+ * Calculates pricing for multiple rooms across different or same room types.
+ */
+export function calculateMultiRoomPricing(
+  selectedRooms: MultiRoomItem[],
+  adults: number,
+  nights: number
+): MultiRoomPricingResult {
+  const safeAdults = Math.max(1, adults || 1);
+  const safeNights = Math.max(1, nights || 1);
+
+  // Flatten selectedRooms by quantity
+  const roomInstances: any[] = [];
+  selectedRooms.forEach((item) => {
+    const qty = Math.max(0, item.quantity || 0);
+    for (let i = 0; i < qty; i++) {
+      roomInstances.push(item.room);
+    }
+  });
+
+  const totalRooms = roomInstances.length;
+  if (totalRooms === 0) {
+    return {
+      distributions: [1],
+      singleCount: 0,
+      doubleCount: 0,
+      tripleCount: 0,
+      basePricePerNight: 0,
+      originalPriceBeforeDiscount: 0,
+      discountAmount: 0,
+      priceAfterDiscount: 0,
+      gstAmount: 0,
+      totalAmount: 0,
+      savingsAmount: 0,
+      summaryText: '',
+      roomSummaryText: '',
+      roomBreakdowns: [],
+    };
+  }
+
+  const distributions = distributeAdultsAcrossRooms(safeAdults, totalRooms);
+
+  let singleCount = 0;
+  let doubleCount = 0;
+  let tripleCount = 0;
+  let basePricePerNight = 0;
+  const roomBreakdowns: RoomOccupancyBreakdown[] = [];
+
+  distributions.forEach((occ, idx) => {
+    const r = roomInstances[idx];
+    const price = getRoomPriceForOccupancy(r, occ);
+    basePricePerNight += price;
+
+    let occType: 'single' | 'double' | 'triple' = 'double';
+    if (occ === 1) {
+      singleCount++;
+      occType = 'single';
+    } else if (occ === 3) {
+      tripleCount++;
+      occType = 'triple';
+    } else {
+      doubleCount++;
+      occType = 'double';
+    }
+
+    roomBreakdowns.push({
+      roomIndex: idx + 1,
+      roomId: r?._id,
+      roomType: r?.type || `Room ${idx + 1}`,
+      occupancy: occType,
+      adults: occ,
+      pricePerNight: price,
+    });
+  });
+
+  const priceAfterDiscount = basePricePerNight * safeNights;
+  const originalPriceBeforeDiscount = Math.round(priceAfterDiscount / 0.85);
+  const discountAmount = originalPriceBeforeDiscount - priceAfterDiscount;
+  const gstAmount = Math.round(priceAfterDiscount * 0.05);
+  const totalAmount = priceAfterDiscount + gstAmount;
+  const savingsAmount = discountAmount;
+
+  // Build roomSummaryText (e.g. "1 × Standard Room, 1 × Deluxe Room" or "2 × Standard Room")
+  const roomSummaryParts: string[] = [];
+  selectedRooms
+    .filter((sr) => sr.quantity > 0)
+    .forEach((sr) => {
+      roomSummaryParts.push(`${sr.quantity} × ${sr.room?.type || 'Room'}`);
+    });
+  const roomSummaryText = roomSummaryParts.join(', ');
+
+  // Build occupancy summary
+  const summaryParts: string[] = [];
+  const distinctRoomTypes = new Set(roomInstances.map((r) => r?.type || 'Room'));
+
+  if (distinctRoomTypes.size > 1) {
+    // If mixed room types, format clearly per room:
+    roomBreakdowns.forEach((rb) => {
+      summaryParts.push(
+        `${rb.roomType}: ${rb.adults} Adult${rb.adults > 1 ? 's' : ''} (${rb.occupancy.toUpperCase()} @ ₹${rb.pricePerNight.toLocaleString()})`
+      );
+    });
+  } else {
+    // Same room category across all rooms
+    if (tripleCount > 0) {
+      const pTriple = getRoomPriceForOccupancy(roomInstances[0], 3);
+      summaryParts.push(`${tripleCount} Triple (${tripleCount * 3} Adults @ ₹${pTriple.toLocaleString()})`);
+    }
+    if (doubleCount > 0) {
+      const pDouble = getRoomPriceForOccupancy(roomInstances[0], 2);
+      summaryParts.push(`${doubleCount} Double (${doubleCount * 2} Adults @ ₹${pDouble.toLocaleString()})`);
+    }
+    if (singleCount > 0) {
+      const pSingle = getRoomPriceForOccupancy(roomInstances[0], 1);
+      summaryParts.push(`${singleCount} Single (${singleCount * 1} Adult @ ₹${pSingle.toLocaleString()})`);
+    }
+  }
+
+  return {
+    distributions,
+    singleCount,
+    doubleCount,
+    tripleCount,
+    basePricePerNight,
+    originalPriceBeforeDiscount,
+    discountAmount,
+    priceAfterDiscount,
+    gstAmount,
+    totalAmount,
+    savingsAmount,
+    summaryText: summaryParts.join(' + '),
+    roomSummaryText,
+    roomBreakdowns,
   };
 }
 

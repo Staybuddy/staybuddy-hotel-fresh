@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/firebaseAdmin';
-import { calculateBookingPricing } from '@/lib/occupancyPricing';
+import { calculateBookingPricing, calculateMultiRoomPricing } from '@/lib/occupancyPricing';
 
 export async function GET(request: NextRequest) {
   try {
@@ -138,41 +138,106 @@ export async function POST(request: NextRequest) {
       currDate.setDate(currDate.getDate() + 1);
     }
 
-    // Fetch existing confirmed bookings for this room to ensure smart inventory availability
-    const existingBookingsSnap = await db.collection('bookings')
-      .where('roomId', '==', roomId)
-      .where('status', '==', 'confirmed')
-      .get();
+    const hasMultiRooms = Array.isArray(body.selectedRooms) && body.selectedRooms.length > 0;
+    const requestedAdults = Number(body.adults || body.guests || 1);
 
-    const confirmedBookings = existingBookingsSnap.docs.map((doc: any) => doc.data());
-    const baseAlloc = Number(room.staybuddyAllocation !== undefined ? room.staybuddyAllocation : (room.totalRooms || 0));
+    let pricing: any;
+    let selectedRoomsPayload: Array<{ roomId: string; roomType: string; quantity: number }> = [];
 
-    // Validate capacity on each night
-    for (const nightStr of stayNights) {
-      const extraForNight = (nightStr === todayStr) ? Number(room.extraInventoryToday || 0) : 0;
-      const nightCapacity = baseAlloc + extraForNight;
+    if (hasMultiRooms) {
+      selectedRoomsPayload = body.selectedRooms.map((sr: any) => ({
+        roomId: String(sr.roomId),
+        roomType: String(sr.roomType || 'Room'),
+        quantity: Math.max(1, Number(sr.quantity || 1)),
+      }));
 
-      let bookedOnNight = 0;
-      confirmedBookings.forEach((b: any) => {
-        if (b.checkIn && b.checkOut) {
-          const bIn = getDateStr(b.checkIn);
-          const bOut = getDateStr(b.checkOut);
-          if (bIn <= nightStr && bOut > nightStr) {
-            bookedOnNight += Number(b.rooms || 1);
+      // Validate capacity for each selected room type
+      const loadedRoomItems: Array<{ room: any; quantity: number }> = [];
+
+      for (const sr of selectedRoomsPayload) {
+        const roomDocSnap = await db.collection('rooms').doc(sr.roomId).get();
+        if (!roomDocSnap.exists) {
+          return NextResponse.json({ error: `Room ${sr.roomType} not found` }, { status: 404 });
+        }
+        const rData: any = { _id: roomDocSnap.id, ...(roomDocSnap.data() || {}) };
+        loadedRoomItems.push({ room: rData, quantity: sr.quantity });
+
+        // Existing bookings for this specific room
+        const existingBookingsSnap = await db.collection('bookings')
+          .where('roomId', '==', sr.roomId)
+          .where('status', '==', 'confirmed')
+          .get();
+
+        const confirmedBookings = existingBookingsSnap.docs.map((doc: any) => doc.data());
+        const baseAlloc = Number(rData.staybuddyAllocation !== undefined ? rData.staybuddyAllocation : (rData.totalRooms || 0));
+
+        for (const nightStr of stayNights) {
+          const extraForNight = (nightStr === todayStr) ? Number(rData.extraInventoryToday || 0) : 0;
+          const nightCapacity = baseAlloc + extraForNight;
+
+          let bookedOnNight = 0;
+          confirmedBookings.forEach((b: any) => {
+            if (b.checkIn && b.checkOut) {
+              const bIn = getDateStr(b.checkIn);
+              const bOut = getDateStr(b.checkOut);
+              if (bIn <= nightStr && bOut > nightStr) {
+                if (Array.isArray(b.selectedRooms) && b.selectedRooms.length > 0) {
+                  const match = b.selectedRooms.find((item: any) => item.roomId === sr.roomId);
+                  if (match) bookedOnNight += Number(match.quantity || 1);
+                  else if (b.roomId === sr.roomId) bookedOnNight += Number(b.rooms || 1);
+                } else if (b.roomId === sr.roomId) {
+                  bookedOnNight += Number(b.rooms || 1);
+                }
+              }
+            }
+          });
+
+          const remaining = nightCapacity - bookedOnNight;
+          if (remaining < sr.quantity) {
+            return NextResponse.json({
+              error: `Only ${Math.max(0, remaining)} room(s) available for "${rData.type}" on ${nightStr}. Requested: ${sr.quantity}.`
+            }, { status: 400 });
           }
         }
-      });
-
-      const remaining = nightCapacity - bookedOnNight;
-      if (remaining < requestedRooms) {
-        return NextResponse.json({ 
-          error: `Only ${Math.max(0, remaining)} room(s) available on ${nightStr}. Requested: ${requestedRooms}.` 
-        }, { status: 400 });
       }
-    }
 
-    const requestedAdults = Number(body.adults || body.guests || 1);
-    const pricing = calculateBookingPricing(room, requestedAdults, requestedRooms, nights);
+      pricing = calculateMultiRoomPricing(loadedRoomItems, requestedAdults, nights);
+    } else {
+      // Single room booking (fallback)
+      selectedRoomsPayload = [{ roomId, roomType: room.type, quantity: requestedRooms }];
+      const existingBookingsSnap = await db.collection('bookings')
+        .where('roomId', '==', roomId)
+        .where('status', '==', 'confirmed')
+        .get();
+
+      const confirmedBookings = existingBookingsSnap.docs.map((doc: any) => doc.data());
+      const baseAlloc = Number(room.staybuddyAllocation !== undefined ? room.staybuddyAllocation : (room.totalRooms || 0));
+
+      for (const nightStr of stayNights) {
+        const extraForNight = (nightStr === todayStr) ? Number(room.extraInventoryToday || 0) : 0;
+        const nightCapacity = baseAlloc + extraForNight;
+
+        let bookedOnNight = 0;
+        confirmedBookings.forEach((b: any) => {
+          if (b.checkIn && b.checkOut) {
+            const bIn = getDateStr(b.checkIn);
+            const bOut = getDateStr(b.checkOut);
+            if (bIn <= nightStr && bOut > nightStr) {
+              bookedOnNight += Number(b.rooms || 1);
+            }
+          }
+        });
+
+        const remaining = nightCapacity - bookedOnNight;
+        if (remaining < requestedRooms) {
+          return NextResponse.json({ 
+            error: `Only ${Math.max(0, remaining)} room(s) available on ${nightStr}. Requested: ${requestedRooms}.` 
+          }, { status: 400 });
+        }
+      }
+
+      pricing = calculateBookingPricing(room, requestedAdults, requestedRooms, nights);
+    }
 
     const clientPrice = Math.round(pricing.basePricePerNight / requestedRooms);
     const totalPrice = pricing.totalAmount;
@@ -206,6 +271,8 @@ export async function POST(request: NextRequest) {
       customerId, hotelId, roomId,
       rooms: requestedRooms,
       adults: requestedAdults,
+      selectedRooms: selectedRoomsPayload,
+      roomSummary: pricing.roomSummaryText || room.type,
       roomBreakdowns: pricing.roomBreakdowns,
       occupancySummary: pricing.summaryText,
       checkIn: checkInDate.toISOString(), checkOut: checkOutDate.toISOString(),
@@ -219,33 +286,46 @@ export async function POST(request: NextRequest) {
 
     await bookingRef.set(newBooking);
 
-    // If today is one of the booked nights, update today's availableRooms in the room doc immediately
+    // If today is one of the booked nights, update today's availableRooms in the room docs immediately
     if (stayNights.includes(todayStr)) {
       try {
-        const roomDocRef = db.collection('rooms').doc(roomId);
-        const roomDocSnap = await roomDocRef.get();
-        if (roomDocSnap.exists) {
-          const rData = roomDocSnap.data() || {};
-          const currentBase = Number(rData.staybuddyAllocation || rData.totalRooms || 0);
-          const currentExtra = Number(rData.extraInventoryToday || 0);
-          const currentTotal = currentBase + currentExtra;
+        const roomsToUpdate = Array.from(new Set(selectedRoomsPayload.map(sr => sr.roomId)));
+        for (const rId of roomsToUpdate) {
+          const roomDocRef = db.collection('rooms').doc(rId);
+          const roomDocSnap = await roomDocRef.get();
+          if (roomDocSnap.exists) {
+            const rData = roomDocSnap.data() || {};
+            const currentBase = Number(rData.staybuddyAllocation || rData.totalRooms || 0);
+            const currentExtra = Number(rData.extraInventoryToday || 0);
+            const currentTotal = currentBase + currentExtra;
 
-          // Recalculate today's occupied rooms including this new booking
-          let todayOccupied = requestedRooms;
-          confirmedBookings.forEach((b: any) => {
-            if (b.checkIn && b.checkOut) {
-              const bIn = getDateStr(b.checkIn);
-              const bOut = getDateStr(b.checkOut);
-              if (bIn <= todayStr && bOut > todayStr) {
-                todayOccupied += Number(b.rooms || 1);
+            const existingSnap = await db.collection('bookings')
+              .where('roomId', '==', rId)
+              .where('status', '==', 'confirmed')
+              .get();
+
+            let todayOccupied = 0;
+            existingSnap.docs.forEach((d: any) => {
+              const b = d.data();
+              if (b.checkIn && b.checkOut) {
+                const bIn = getDateStr(b.checkIn);
+                const bOut = getDateStr(b.checkOut);
+                if (bIn <= todayStr && bOut > todayStr) {
+                  if (Array.isArray(b.selectedRooms)) {
+                    const match = b.selectedRooms.find((item: any) => item.roomId === rId);
+                    todayOccupied += match ? Number(match.quantity || 1) : 0;
+                  } else if (b.roomId === rId) {
+                    todayOccupied += Number(b.rooms || 1);
+                  }
+                }
               }
-            }
-          });
+            });
 
-          await roomDocRef.update({
-            availableRooms: Math.max(0, currentTotal - todayOccupied),
-            updatedAt: new Date().toISOString()
-          });
+            await roomDocRef.update({
+              availableRooms: Math.max(0, currentTotal - todayOccupied),
+              updatedAt: new Date().toISOString()
+            });
+          }
         }
       } catch (err) {
         console.error('Failed to update room availableRooms after booking', err);
