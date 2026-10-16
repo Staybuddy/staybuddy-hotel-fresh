@@ -755,7 +755,7 @@ tbody tr:hover { background: var(--bg-secondary); }
     padding: 20px !important;
   }
   .invoice-container {
-    max-width: 100% !important;
+    box-sizing: border-box !important;
   }
   .card {
     box-sizing: border-box !important;
