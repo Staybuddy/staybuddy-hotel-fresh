@@ -514,6 +514,8 @@ export default function HotelDetailPage() {
             alignItems: "center",
             paddingTop: "var(--space-4)",
             paddingBottom: "var(--space-4)",
+            flexWrap: "wrap",
+            gap: 10,
           }}
         >
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
@@ -567,10 +569,13 @@ export default function HotelDetailPage() {
             gap: "var(--space-8)",
             alignItems: "flex-start",
             paddingBottom: "var(--space-16)",
+            width: "100%",
+            maxWidth: "100%",
+            boxSizing: "border-box",
           }}
         >
           {/* Left Column */}
-          <div>
+          <div style={{ minWidth: 0, width: "100%", maxWidth: "100%", boxSizing: "border-box" }}>
             {/* Hero Images Gallery */}
             <div style={{ marginBottom: "var(--space-6)" }}>
               {(() => {
@@ -850,7 +855,7 @@ export default function HotelDetailPage() {
 
             {/* Date & Guest Selection Bar */}
             <div
-              className="card"
+              className="card availability-selection-bar"
               id="availability-bar"
               style={{
                 marginBottom: "var(--space-5)",
@@ -1211,6 +1216,7 @@ export default function HotelDetailPage() {
                   rooms.map((room) => (
                     <div
                       key={room._id}
+                      className="room-card"
                       style={{
                         border: `2px solid ${selectedRoom?._id === room._id ? "var(--brand-500)" : "var(--border)"}`,
                         borderRadius: "var(--radius-lg)",
@@ -1230,31 +1236,10 @@ export default function HotelDetailPage() {
                         setModalImageIndex(0);
                       }}
                     >
-                      <div
-                        style={{
-                          display: "grid",
-                          gridTemplateColumns: room.images?.[0]
-                            ? "minmax(180px, 240px) 1fr auto"
-                            : "1fr auto",
-                          gap: "var(--space-4)",
-                          alignItems: "center",
-                        }}
-                      >
+                      <div className="room-card-grid">
                         {room.images?.[0] ? (
                           <div
-                            style={{ 
-                              position: "relative", 
-                              width: "100%", 
-                              height: 155, 
-                              minWidth: 170, 
-                              maxWidth: 250, 
-                              borderRadius: "14px", 
-                              overflow: "hidden", 
-                              cursor: "pointer", 
-                              flexShrink: 0,
-                              boxShadow: "0 6px 16px rgba(0,0,0,0.1)",
-                              border: "1px solid rgba(0,0,0,0.06)"
-                            }}
+                            className="room-card-thumbnail"
                             onClick={(e) => {
                               e.stopPropagation();
                               const foundIdx = allPhotos.findIndex(p => p.url === room.images[0]);
@@ -1292,7 +1277,7 @@ export default function HotelDetailPage() {
                             )}
                           </div>
                         ) : null}
-                        <div>
+                        <div className="room-card-info" style={{ minWidth: 0 }}>
                           <h4 style={{ marginBottom: 4 }}>{room.type}</h4>
                           <p
                             style={{
@@ -1334,23 +1319,25 @@ export default function HotelDetailPage() {
                             )}
                           </div>
                         </div>
-                        <div style={{ textAlign: "right", flexShrink: 0 }}>
-                          <div
-                            style={{
-                              fontSize: "1.3rem",
-                              fontWeight: 800,
-                              color: "var(--brand-600)",
-                            }}
-                          >
-                            ₹{getRoomPrice(room).toLocaleString()}
-                          </div>
-                          <div
-                            style={{
-                              fontSize: "0.75rem",
-                              color: "var(--text-muted)",
-                            }}
-                          >
-                            {bookingData.rooms > 1 ? `for ${bookingData.rooms} rooms / night` : "per night"}
+                        <div className="room-card-action" style={{ textAlign: "right", flexShrink: 0 }}>
+                          <div>
+                            <div
+                              style={{
+                                fontSize: "1.3rem",
+                                fontWeight: 800,
+                                color: "var(--brand-600)",
+                              }}
+                            >
+                              ₹{getRoomPrice(room).toLocaleString()}
+                            </div>
+                            <div
+                              style={{
+                                fontSize: "0.75rem",
+                                color: "var(--text-muted)",
+                              }}
+                            >
+                              {bookingData.rooms > 1 ? `for ${bookingData.rooms} rooms / night` : "per night"}
+                            </div>
                           </div>
                           <button
                             className="btn btn-primary btn-sm"
