@@ -108,12 +108,24 @@ function HotelSearch() {
       <style>{`
         @media (max-width: 1024px) {
           .hotels-search-wrapper {
-            flex-direction: column !important;
+            display: grid !important;
+            grid-template-columns: 1fr 1fr !important;
             gap: 8px !important;
-          }
-          .hotels-search-item {
             width: 100% !important;
-            flex: 1 1 100% !important;
+            box-sizing: border-box !important;
+          }
+          .hotels-search-item-location,
+          .hotels-search-item-guests,
+          .hotels-search-btn {
+            grid-column: 1 / -1 !important;
+            width: 100% !important;
+            flex: none !important;
+          }
+          .hotels-search-item-checkin,
+          .hotels-search-item-checkout {
+            grid-column: span 1 !important;
+            width: 100% !important;
+            flex: none !important;
           }
           .hotels-search-btn {
             width: 100% !important;
@@ -122,20 +134,63 @@ function HotelSearch() {
           .hotels-sidebar {
             display: none !important;
           }
+          .hotels-main-container {
+            display: block !important;
+            padding: 16px 12px 32px !important;
+            gap: 0 !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            box-sizing: border-box !important;
+          }
+          .hotels-content-wrapper {
+            width: 100% !important;
+            min-width: 0 !important;
+            flex: none !important;
+          }
+        }
+
+        @media (min-width: 640px) and (max-width: 1024px) {
+          .hotels-grid {
+            display: grid !important;
+            grid-template-columns: repeat(2, 1fr) !important;
+            gap: 16px !important;
+            width: 100% !important;
+          }
+        }
+
+        @media (max-width: 639px) {
+          .hotels-main-container {
+            padding: 12px 10px 24px !important;
+          }
+          .hotels-grid {
+            display: grid !important;
+            grid-template-columns: 1fr !important;
+            gap: 16px !important;
+            width: 100% !important;
+          }
+          .hotels-grid .hotel-card {
+            width: 100% !important;
+            box-sizing: border-box !important;
+            border-radius: 14px !important;
+          }
+          .hotels-grid .hotel-card-img-wrapper {
+            width: 100% !important;
+            height: 200px !important;
+          }
         }
       `}</style>
       <Navbar />
 
       {/* Search Bar */}
       <div style={{ background: 'var(--bg-secondary)', borderBottom: '1px solid var(--border)', padding: 'var(--space-4) 0', position: 'sticky', top: 68, zIndex: 100 }}>
-        <div className="container">
+        <div className="container" style={{ padding: '0 12px' }}>
           <div className="hotels-search-wrapper" style={{ display: 'flex', gap: 'var(--space-3)', flexWrap: 'wrap', alignItems: 'stretch' }}>
-            <div className="hotels-search-item" style={{ flex: '2 1 200px', position: 'relative' }}>
+            <div className="hotels-search-item hotels-search-item-location" style={{ flex: '2 1 200px', position: 'relative' }}>
               <LocationSearch city={filters.city} variant="compact" onChange={c => setFilters(p => ({ ...p, city: c }))} />
             </div>
             {/* Check-in */}
             <div 
-              className="hotels-search-item"
+              className="hotels-search-item hotels-search-item-checkin"
               onClick={() => { setActiveDateSelection('checkIn'); setShowDatePicker(true); }}
               style={{ flex: '1 1 140px', position: 'relative', background: 'white', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', padding: '6px 12px', cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: '2px', height: '54px', justifyContent: 'center' }}
             >
@@ -145,7 +200,7 @@ function HotelSearch() {
             
             {/* Check-out */}
             <div 
-              className="hotels-search-item"
+              className="hotels-search-item hotels-search-item-checkout"
               onClick={() => { setActiveDateSelection('checkOut'); setShowDatePicker(true); }}
               style={{ flex: '1 1 140px', position: 'relative', background: 'white', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', padding: '6px 12px', cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: '2px', height: '54px', justifyContent: 'center' }}
             >
@@ -154,7 +209,7 @@ function HotelSearch() {
             </div>
 
             {/* Guests & Rooms */}
-            <div className="hotels-search-item" style={{ flex: '1 1 160px', position: 'relative' }}>
+            <div className="hotels-search-item hotels-search-item-guests" style={{ flex: '1 1 160px', position: 'relative' }}>
               <div 
                 onClick={() => setShowGuestPicker(true)}
                 style={{ background: 'white', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', padding: '6px 12px', cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: '2px', height: '54px', justifyContent: 'center' }}
@@ -208,7 +263,7 @@ function HotelSearch() {
         </div>
       </div>
 
-      <div className="container" style={{ padding: 'var(--space-4) var(--space-6) var(--space-8)', display: 'flex', gap: 'var(--space-8)', alignItems: 'flex-start' }}>
+      <div className="container hotels-main-container" style={{ padding: 'var(--space-4) var(--space-6) var(--space-8)', display: 'flex', gap: 'var(--space-8)', alignItems: 'flex-start' }}>
 
         {/* Sidebar Filters */}
         <aside style={{ width: 260, flexShrink: 0, position: 'sticky', top: 160, display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }} className="hotels-sidebar hide-mobile">
@@ -300,7 +355,7 @@ function HotelSearch() {
         </aside>
 
         {/* Hotel Grid */}
-        <div style={{ flex: 1 }}>
+        <div className="hotels-content-wrapper" style={{ flex: 1, minWidth: 0, width: '100%' }}>
           {/* Results header */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-5)' }}>
             <div>
@@ -318,7 +373,7 @@ function HotelSearch() {
           </div>
 
           {loading ? (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 'var(--space-5)' }}>
+            <div className="hotels-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 'var(--space-5)' }}>
               {[1,2,3,4,5,6].map(i => (
                 <div key={i} className="card">
                   <div className="skeleton" style={{ height: 200 }} />
@@ -339,7 +394,7 @@ function HotelSearch() {
             </div>
           ) : (
             <>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 'var(--space-5)' }}>
+              <div className="hotels-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 'var(--space-5)' }}>
                 {hotels.map(hotel => (
                   <Link key={hotel._id} href={`/hotels/${hotel._id}${getQueryString()}`} style={{ textDecoration: 'none' }}>
                     <div className="card card-hover hotel-card" style={{ height: '100%' }}>
