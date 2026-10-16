@@ -35,7 +35,8 @@ export async function GET(request: NextRequest) {
       const embeddedRooms = hotel.rooms || [];
       const totalRooms = hRooms.reduce((sum, r) => sum + (r.totalRooms || 0), 0) || embeddedRooms.reduce((sum: number, r: any) => sum + (r.totalRooms || parseInt(r.quantity) || 0), 0);
       const staybuddyAllocation = hRooms.reduce((sum, r) => sum + (r.staybuddyAllocation || 0), 0) || embeddedRooms.reduce((sum: number, r: any) => sum + (r.staybuddyAllocation || 0), 0);
-      return { ...hotel, totalRooms, staybuddyAllocation };
+      const finalRooms = (embeddedRooms && embeddedRooms.length > 0) ? embeddedRooms : hRooms;
+      return { ...hotel, rooms: finalRooms, totalRooms, staybuddyAllocation };
     });
 
     return NextResponse.json({ hotels: hotelsWithRooms });

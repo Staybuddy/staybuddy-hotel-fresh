@@ -72,6 +72,40 @@ export default function AdminDashboard() {
     }
   }
 
+  const [uploadingImage, setUploadingImage] = useState(false);
+
+  async function handleMultipleImageUpload(
+    e: React.ChangeEvent<HTMLInputElement>,
+    callback: (urls: string[]) => void
+  ) {
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+    setUploadingImage(true);
+    try {
+      const formData = new FormData();
+      files.forEach((f) => formData.append('files', f));
+
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+      const data = await res.json();
+      if (data.urls && data.urls.length > 0) {
+        callback(data.urls);
+      } else if (data.url) {
+        callback([data.url]);
+      } else {
+        alert(data.error || 'Failed to upload images');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Failed to upload images');
+    } finally {
+      setUploadingImage(false);
+      e.target.value = '';
+    }
+  }
+
   useEffect(() => {
     let mounted = true;
     if (activeTab === 'bookings') {
@@ -1371,7 +1405,13 @@ export default function AdminDashboard() {
             <div className="hide-scrollbar" style={{ flex: 1, overflowY: 'auto', padding: '32px' }}>
               <form onSubmit={(e) => {
                 e.preventDefault();
-                updateHotelStatus(extranetModal._id, extranetModal);
+                const roomPhotos = (extranetModal.rooms || []).flatMap((r: any) => Array.isArray(r.images) ? r.images : (typeof r.images === 'string' ? r.images.split('\n').map((s: string) => s.trim()).filter(Boolean) : [])).filter(Boolean);
+                let finalImgs = [...(extranetModal.images || [])];
+                if (finalImgs.length === 0 && roomPhotos.length > 0) {
+                  finalImgs = Array.from(new Set(roomPhotos));
+                }
+                const updatedPayload = { ...extranetModal, images: finalImgs };
+                updateHotelStatus(extranetModal._id, updatedPayload);
                 setExtranetModal(null);
                 alert('Property updated successfully!');
               }} style={{ display: 'flex', flexDirection: 'column', gap: 32, paddingBottom: 80 }}>
@@ -1416,25 +1456,248 @@ export default function AdminDashboard() {
 
                 {/* Photos */}
                 <div style={{ background: 'white', padding: 24, borderRadius: 16, border: '1px solid #e2e8f0' }}>
-                  <h3 style={{ fontSize: '1.1rem', marginBottom: 16, color: '#0f172a' }}>Property Photos</h3>
-                  <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 16 }}>
-                    {(extranetModal.images || []).map((img: string, i: number) => (
-                      <div key={i} style={{ position: 'relative', width: 120, height: 120 }}>
-                        <img src={img} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 8 }} />
-                        <button type="button" onClick={() => setExtranetModal({...extranetModal, images: extranetModal.images.filter((_: any, idx: number) => idx !== i)})} style={{ position: 'absolute', top: 4, right: 4, background: 'red', color: 'white', border: 'none', borderRadius: '50%', width: 24, height: 24, cursor: 'pointer' }}>×</button>
-                      </div>
-                    ))}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, flexWrap: 'wrap', gap: 10 }}>
+                    <div>
+                      <h3 style={{ fontSize: '1.1rem', margin: 0, color: '#0f172a' }}>Property Photos</h3>
+                      <p style={{ margin: '4px 0 0', fontSize: '0.8rem', color: '#64748b' }}>
+                        Manage live hotel gallery images and hero landing spaces for this property.
+                      </p>
+                    </div>
+                    <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                      <label
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 6,
+                          padding: '8px 16px',
+                          background: '#2563eb',
+                          color: 'white',
+                          borderRadius: 8,
+                          fontSize: '0.85rem',
+                          fontWeight: 600,
+                          cursor: uploadingImage ? 'not-allowed' : 'pointer',
+                          boxShadow: '0 2px 6px rgba(37,99,235,0.25)',
+                          transition: 'all 0.2s',
+                        }}
+                      >
+                        <span>{uploadingImage ? '⏳ Uploading...' : '📤 Upload Photos from Device'}</span>
+                        <input
+                          type="file"
+                          multiple
+                          accept="image/*"
+                          style={{ display: 'none' }}
+                          disabled={uploadingImage}
+                          onChange={(e) =>
+                            handleMultipleImageUpload(e, (urls) => {
+                              setExtranetModal({
+                                ...extranetModal,
+                                images: [...(extranetModal.images || []), ...urls],
+                              });
+                            })
+                          }
+                        />
+                      </label>
+                    </div>
                   </div>
-                  <input type="text" placeholder="Paste image URL and press Enter to Add" onKeyDown={e => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      const val = e.currentTarget.value;
-                      if (val) {
-                        setExtranetModal({...extranetModal, images: [...(extranetModal.images || []), val]});
-                        e.currentTarget.value = '';
-                      }
+
+                  {/* Current Active Property Photos */}
+                  <div style={{ marginBottom: 16 }}>
+                    <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#475569', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                      Active Gallery Images ({(extranetModal.images || []).length}):
+                    </div>
+                    {(extranetModal.images || []).length === 0 ? (
+                      <div style={{ padding: '24px', textAlign: 'center', background: '#f8fafc', borderRadius: 8, border: '1px dashed #cbd5e1', color: '#64748b', fontSize: '0.85rem' }}>
+                        No photos added yet. Upload files, paste a URL, or import from B2B partner below.
+                      </div>
+                    ) : (
+                      <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+                        {(extranetModal.images || []).map((img: string, i: number) => {
+                          const badgeText = i === 0 ? '⭐ Space 1 (Hero Main)' : i === 1 ? '📷 Space 2' : i === 2 ? '📷 Space 3' : `Gallery #${i + 1}`;
+                          const badgeColor = i === 0 ? '#f59e0b' : i < 3 ? '#2563eb' : '#475569';
+                          return (
+                            <div key={i} style={{ position: 'relative', width: 130, height: 110, borderRadius: 8, overflow: 'hidden', border: '1px solid #cbd5e1', background: '#f1f5f9' }}>
+                              <img src={img} alt={`Photo ${i + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                              <div style={{ position: 'absolute', top: 4, left: 4, background: 'rgba(15, 23, 42, 0.85)', color: 'white', padding: '2px 6px', borderRadius: 4, fontSize: '0.65rem', fontWeight: 700, borderLeft: `3px solid ${badgeColor}` }}>
+                                {badgeText}
+                              </div>
+                              <button
+                                type="button"
+                                title="Remove photo"
+                                onClick={() => setExtranetModal({ ...extranetModal, images: extranetModal.images.filter((_: any, idx: number) => idx !== i) })}
+                                style={{ position: 'absolute', top: 4, right: 4, background: '#ef4444', color: 'white', border: 'none', borderRadius: '50%', width: 22, height: 22, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '0.75rem' }}
+                              >
+                                ×
+                              </button>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Add Image by URL Bar */}
+                  <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
+                    <input
+                      type="text"
+                      placeholder="Paste image URL and press Enter to Add"
+                      id="adminPhotoUrlInput"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          const val = e.currentTarget.value.trim();
+                          if (val) {
+                            setExtranetModal({ ...extranetModal, images: [...(extranetModal.images || []), val] });
+                            e.currentTarget.value = '';
+                          }
+                        }
+                      }}
+                      style={{ flex: 1, padding: '10px 14px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '0.9rem' }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const input = document.getElementById('adminPhotoUrlInput') as HTMLInputElement;
+                        if (input && input.value.trim()) {
+                          setExtranetModal({ ...extranetModal, images: [...(extranetModal.images || []), input.value.trim()] });
+                          input.value = '';
+                        }
+                      }}
+                      style={{ padding: '10px 20px', background: '#f1f5f9', color: '#0f172a', border: '1px solid #cbd5e1', borderRadius: 8, fontWeight: 700, cursor: 'pointer' }}
+                    >
+                      + Add URL
+                    </button>
+                  </div>
+
+                  {/* B2B Partner Photos Import Section */}
+                  {(() => {
+                    const b2bPhotos: { url: string; roomType: string }[] = [];
+                    const seenUrls = new Set<string>();
+
+                    (extranetModal.rooms || []).forEach((room: any) => {
+                      const rawImgs = Array.isArray(room.images)
+                        ? room.images
+                        : typeof room.images === 'string'
+                        ? room.images.split('\n').map((s: string) => s.trim()).filter(Boolean)
+                        : [];
+                      rawImgs.forEach((url: string) => {
+                        if (url && !seenUrls.has(url)) {
+                          seenUrls.add(url);
+                          b2bPhotos.push({ url, roomType: room.type || 'Room' });
+                        }
+                      });
+                    });
+
+                    if (Array.isArray(extranetModal.b2bImages)) {
+                      extranetModal.b2bImages.forEach((url: string) => {
+                        if (url && !seenUrls.has(url)) {
+                          seenUrls.add(url);
+                          b2bPhotos.push({ url, roomType: 'B2B Upload' });
+                        }
+                      });
                     }
-                  }} style={{ width: '100%', padding: '10px 14px', borderRadius: 8, border: '1px solid #cbd5e1' }} />
+
+                    const currentImgs = extranetModal.images || [];
+                    const pendingB2bPhotos = b2bPhotos.filter(p => !currentImgs.includes(p.url));
+
+                    return (
+                      <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 12, padding: 16 }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, flexWrap: 'wrap', gap: 10 }}>
+                          <div>
+                            <div style={{ fontSize: '0.95rem', fontWeight: 800, color: '#0f172a', display: 'flex', alignItems: 'center', gap: 8 }}>
+                              <span>🏢 Photos from B2B Partner</span>
+                              <span style={{ fontSize: '0.75rem', padding: '2px 8px', borderRadius: 12, background: b2bPhotos.length > 0 ? '#dbeafe' : '#f1f5f9', color: b2bPhotos.length > 0 ? '#1d4ed8' : '#64748b', fontWeight: 700 }}>
+                                {b2bPhotos.length} Available
+                              </span>
+                            </div>
+                            <div style={{ fontSize: '0.78rem', color: '#64748b', marginTop: 2 }}>
+                              Photos provided by the B2B partner for their rooms. Add them to make them appear in the main hotel gallery and hero spots.
+                            </div>
+                          </div>
+
+                          {pendingB2bPhotos.length > 0 && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const urlsToAdd = pendingB2bPhotos.map(p => p.url);
+                                setExtranetModal({
+                                  ...extranetModal,
+                                  images: [...currentImgs, ...urlsToAdd],
+                                });
+                              }}
+                              style={{
+                                background: '#10b981',
+                                color: 'white',
+                                border: 'none',
+                                padding: '8px 16px',
+                                borderRadius: 8,
+                                fontSize: '0.85rem',
+                                fontWeight: 700,
+                                cursor: 'pointer',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: 6,
+                                boxShadow: '0 2px 4px rgba(16,185,129,0.25)',
+                              }}
+                            >
+                              ⚡ Add All B2B Photos ({pendingB2bPhotos.length})
+                            </button>
+                          )}
+                        </div>
+
+                        {b2bPhotos.length === 0 ? (
+                          <div style={{ padding: '16px', textAlign: 'center', color: '#64748b', fontSize: '0.85rem', background: 'white', borderRadius: 8, border: '1px dashed #cbd5e1' }}>
+                            No room photos uploaded by the B2B partner yet for this property. You can upload photos above or add room photos below.
+                          </div>
+                        ) : (
+                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: 12 }}>
+                            {b2bPhotos.map((p, idx) => {
+                              const isAdded = currentImgs.includes(p.url);
+                              return (
+                                <div key={idx} style={{ background: 'white', border: `1px solid ${isAdded ? '#86efac' : '#cbd5e1'}`, borderRadius: 8, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+                                  <div style={{ position: 'relative', height: 90, background: '#f1f5f9' }}>
+                                    <img src={p.url} alt={p.roomType} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                    <div style={{ position: 'absolute', bottom: 4, left: 4, right: 4, background: 'rgba(15,23,42,0.75)', color: 'white', padding: '2px 4px', borderRadius: 4, fontSize: '0.65rem', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                      {p.roomType}
+                                    </div>
+                                  </div>
+                                  <div style={{ padding: '6px' }}>
+                                    {isAdded ? (
+                                      <div style={{ fontSize: '0.75rem', color: '#16a34a', fontWeight: 700, textAlign: 'center', padding: '4px 0' }}>
+                                        ✓ In Gallery
+                                      </div>
+                                    ) : (
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setExtranetModal({
+                                            ...extranetModal,
+                                            images: [...(extranetModal.images || []), p.url],
+                                          });
+                                        }}
+                                        style={{
+                                          width: '100%',
+                                          padding: '5px 8px',
+                                          background: '#2563eb',
+                                          color: 'white',
+                                          border: 'none',
+                                          borderRadius: 6,
+                                          fontSize: '0.75rem',
+                                          fontWeight: 700,
+                                          cursor: 'pointer',
+                                        }}
+                                      >
+                                        + Add Photo
+                                      </button>
+                                    )}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
                 </div>
 
                 {/* Amenities */}
@@ -1553,6 +1816,95 @@ export default function AdminDashboard() {
                               setExtranetModal({...extranetModal, rooms: updatedRooms});
                             }} style={{ width: '100%', padding: '8px 12px', borderRadius: 6, border: '1px solid #cbd5e1', fontSize: '0.9rem' }} />
                           </div>
+                        </div>
+
+                        {/* Room Images Management */}
+                        <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px dashed #e2e8f0' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8, flexWrap: 'wrap', gap: 6 }}>
+                            <label style={{ fontSize: '0.75rem', fontWeight: 700, color: '#475569' }}>
+                              Room Photos ({Array.isArray(room.images) ? room.images.length : (room.images ? 1 : 0)})
+                            </label>
+                            <div style={{ display: 'flex', gap: 6 }}>
+                              <label style={{ fontSize: '0.75rem', color: '#2563eb', fontWeight: 600, cursor: 'pointer', background: '#eff6ff', padding: '3px 8px', borderRadius: 4, border: '1px solid #bfdbfe' }}>
+                                + Upload Room Photo
+                                <input
+                                  type="file"
+                                  multiple
+                                  accept="image/*"
+                                  style={{ display: 'none' }}
+                                  disabled={uploadingImage}
+                                  onChange={(e) =>
+                                    handleMultipleImageUpload(e, (urls) => {
+                                      const updatedRooms = [...extranetModal.rooms];
+                                      const cur = Array.isArray(updatedRooms[rIdx].images) ? updatedRooms[rIdx].images : [];
+                                      updatedRooms[rIdx].images = [...cur, ...urls];
+                                      setExtranetModal({ ...extranetModal, rooms: updatedRooms });
+                                    })
+                                  }
+                                />
+                              </label>
+                              {Array.isArray(room.images) && room.images.length > 0 && (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const curImgs = extranetModal.images || [];
+                                    const toAdd = room.images.filter((u: string) => !curImgs.includes(u));
+                                    if (toAdd.length === 0) {
+                                      alert('All photos of this room are already in Property Photos!');
+                                    } else {
+                                      setExtranetModal({
+                                        ...extranetModal,
+                                        images: [...curImgs, ...toAdd],
+                                      });
+                                    }
+                                  }}
+                                  style={{ fontSize: '0.75rem', color: '#16a34a', fontWeight: 600, cursor: 'pointer', background: '#ecfdf5', padding: '3px 8px', borderRadius: 4, border: '1px solid #a7f3d0' }}
+                                >
+                                  + Copy to Property Photos
+                                </button>
+                              )}
+                            </div>
+                          </div>
+
+                          {Array.isArray(room.images) && room.images.length > 0 && (
+                            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 8 }}>
+                              {room.images.map((rImg: string, imgIdx: number) => (
+                                <div key={imgIdx} style={{ position: 'relative', width: 70, height: 60, borderRadius: 6, overflow: 'hidden', border: '1px solid #cbd5e1' }}>
+                                  <img src={rImg} alt="Room" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const updatedRooms = [...extranetModal.rooms];
+                                      updatedRooms[rIdx].images = updatedRooms[rIdx].images.filter((_: any, idx: number) => idx !== imgIdx);
+                                      setExtranetModal({ ...extranetModal, rooms: updatedRooms });
+                                    }}
+                                    style={{ position: 'absolute', top: 2, right: 2, background: 'rgba(239, 68, 68, 0.9)', color: 'white', border: 'none', borderRadius: '50%', width: 16, height: 16, cursor: 'pointer', fontSize: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                  >
+                                    ×
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+
+                          <input
+                            type="text"
+                            placeholder="Or paste room image URL and press Enter"
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                e.preventDefault();
+                                const val = e.currentTarget.value.trim();
+                                if (val) {
+                                  const updatedRooms = [...extranetModal.rooms];
+                                  const cur = Array.isArray(updatedRooms[rIdx].images) ? updatedRooms[rIdx].images : [];
+                                  updatedRooms[rIdx].images = [...cur, ...val.split(',').map((s: string) => s.trim()).filter(Boolean)];
+                                  setExtranetModal({ ...extranetModal, rooms: updatedRooms });
+                                  e.currentTarget.value = '';
+                                }
+                              }
+                            }}
+                            style={{ width: '100%', padding: '6px 10px', borderRadius: 6, border: '1px solid #cbd5e1', fontSize: '0.8rem' }}
+                          />
                         </div>
                       </div>
                     ))}
