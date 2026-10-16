@@ -109,18 +109,20 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { hotelId, type, description, priceSingle, priceDouble, priceTriple, b2bPrice, ratePlan, maxGuests, bedType, size, images, amenities, totalRooms, staybuddyAllocation } = body;
 
-    if (!hotelId || !type || priceSingle === undefined || !maxGuests) {
-      return NextResponse.json({ error: 'hotelId, type, priceSingle, maxGuests required' }, { status: 400 });
+    if (!hotelId || !type || priceSingle === undefined) {
+      return NextResponse.json({ error: 'hotelId, type, priceSingle required' }, { status: 400 });
     }
 
     const roomRef = db.collection('rooms').doc();
-    const baseAlloc = Number(staybuddyAllocation || totalRooms || 1);
+    const guests = maxGuests ? parseInt(maxGuests) : 3;
+    const numTotal = totalRooms !== undefined && totalRooms !== '' ? Math.max(0, Number(totalRooms)) : 0;
+    const baseAlloc = staybuddyAllocation !== undefined && staybuddyAllocation !== '' ? Math.max(0, Number(staybuddyAllocation)) : numTotal;
     const newRoom = {
       _id: roomRef.id,
       hotelId, type, description: description || '', 
       priceSingle, priceDouble, priceTriple, b2bPrice, 
-      ratePlan: ratePlan || 'EP', maxGuests, bedType: bedType || '', size: size || '', 
-      images: images || [], amenities: amenities || [], totalRooms, 
+      ratePlan: ratePlan || 'EP', maxGuests: guests, bedType: bedType || '', size: size || '', 
+      images: images || [], amenities: amenities || [], totalRooms: numTotal, 
       staybuddyAllocation: baseAlloc, 
       availableRooms: baseAlloc,
       extraInventoryToday: 0,

@@ -754,11 +754,12 @@ tbody tr:hover { background: var(--bg-secondary); }
     zoom: 0.85;
     padding: 20px !important;
   }
-  .admin-form-grid {
-    grid-template-columns: 1fr !important;
-  }
   .invoice-container {
-    zoom: 0.45;
+    max-width: 100% !important;
+  }
+  .card {
+    box-sizing: border-box !important;
+    max-width: 100% !important;
   }
   /* Partner Extranet responsive grids */
   .partner-grid-5 {

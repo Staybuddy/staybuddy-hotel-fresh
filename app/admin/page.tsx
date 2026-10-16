@@ -1746,7 +1746,7 @@ export default function AdminDashboard() {
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
                     <h3 style={{ fontSize: '1.1rem', color: '#0f172a', margin: 0 }}>Rooms Management</h3>
                     <button type="button" onClick={() => {
-                      const newRoom = { id: Date.now().toString(), type: 'Standard Room', priceDouble: 1000, priceSingle: 1000, b2bPrice: 800, maxGuests: 2, totalRooms: 5, staybuddyAllocation: 5, ratePlan: 'EP' };
+                      const newRoom = { id: Date.now().toString(), type: 'Standard Room', priceDouble: 1000, priceSingle: 1000, b2bPrice: 800, maxGuests: 3, totalRooms: 0, staybuddyAllocation: 0, ratePlan: 'EP' };
                       setExtranetModal({...extranetModal, rooms: [...(extranetModal.rooms || []), newRoom]});
                     }} style={{ background: 'var(--brand-100)', color: 'var(--brand-600)', border: 'none', padding: '6px 12px', borderRadius: 8, cursor: 'pointer', fontWeight: 600, fontSize: '0.8rem' }}>+ Add Room</button>
                   </div>
@@ -1789,9 +1789,10 @@ export default function AdminDashboard() {
                           </div>
                           <div>
                             <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: '#64748b', marginBottom: 4 }}>Staybuddy Allocation</label>
-                            <input type="number" value={room.staybuddyAllocation || ''} onChange={e => {
+                            <input type="number" min="0" placeholder="0" value={room.staybuddyAllocation ?? ''} onChange={e => {
                               const updatedRooms = [...extranetModal.rooms];
-                              updatedRooms[rIdx].staybuddyAllocation = Number(e.target.value);
+                              const val = e.target.value === '' ? 0 : Math.max(0, parseInt(e.target.value, 10) || 0);
+                              updatedRooms[rIdx].staybuddyAllocation = val;
                               setExtranetModal({...extranetModal, rooms: updatedRooms});
                             }} style={{ width: '100%', padding: '8px 12px', borderRadius: 6, border: '1px solid #cbd5e1', fontSize: '0.9rem' }} />
                           </div>
@@ -1809,10 +1810,11 @@ export default function AdminDashboard() {
                             </select>
                           </div>
                           <div>
-                            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: '#64748b', marginBottom: 4 }}>Max Guests</label>
-                            <input type="number" value={room.maxGuests || 2} onChange={e => {
+                            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: '#64748b', marginBottom: 4 }}>Total Rooms</label>
+                            <input type="number" min="0" placeholder="0" value={room.totalRooms ?? 0} onChange={e => {
                               const updatedRooms = [...extranetModal.rooms];
-                              updatedRooms[rIdx].maxGuests = Number(e.target.value);
+                              const val = e.target.value === '' ? 0 : Math.max(0, parseInt(e.target.value, 10) || 0);
+                              updatedRooms[rIdx].totalRooms = val;
                               setExtranetModal({...extranetModal, rooms: updatedRooms});
                             }} style={{ width: '100%', padding: '8px 12px', borderRadius: 6, border: '1px solid #cbd5e1', fontSize: '0.9rem' }} />
                           </div>

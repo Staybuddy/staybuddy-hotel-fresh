@@ -36,7 +36,7 @@ export default function PartnerDashboard() {
   });
   const [inventoryMeta, setInventoryMeta] = useState<any>({ isToday: true, todayStr: '' });
   const [expandedRoomBookings, setExpandedRoomBookings] = useState<string | null>(null);
-  const [roomForm, setRoomForm] = useState({ type: 'Standard', description: '', priceSingle: '', priceDouble: '', priceTriple: '', b2bPrice: '', ratePlan: 'EP', maxGuests: '2', bedType: 'Double', size: '', totalRooms: '1', staybuddyAllocation: '1', images: '' });
+  const [roomForm, setRoomForm] = useState({ type: 'Standard', description: '', priceSingle: '', priceDouble: '', priceTriple: '', b2bPrice: '', ratePlan: 'EP', maxGuests: '3', bedType: 'Double', size: '', totalRooms: '0', staybuddyAllocation: '0', images: '' });
   const [formStep, setFormStep] = useState(1);
   const [bookingFilter, setBookingFilter] = useState('All');
   const [agreedToTerms, setAgreedToTerms] = useState(false);
@@ -74,7 +74,7 @@ export default function PartnerDashboard() {
     contactName: '', contactDesignation: '', contactPhone: '', contactEmail: '',
     amenities: [] as string[], roomAmenities: [] as string[], extraAmenities: '', policies: '', images: [] as string[],
     rooms: [
-      { id: Date.now().toString(), type: 'Standard Room', priceSingle: '', priceDouble: '', priceTriple: '', b2bPrice: '', amenities: [] as string[], images: [] as string[], size: '', bedType: 'Double', maxGuests: 2, totalRooms: 1, ratePlan: 'EP', description: '' }
+      { id: Date.now().toString(), type: 'Standard Room', priceSingle: '', priceDouble: '', priceTriple: '', b2bPrice: '', amenities: [] as string[], images: [] as string[], size: '', bedType: 'Double', maxGuests: 3, totalRooms: 0, ratePlan: 'EP', description: '' }
     ]
   });
 
@@ -173,14 +173,14 @@ export default function PartnerDashboard() {
         priceDouble: parseInt(roomForm.priceDouble) || 0, 
         priceTriple: parseInt(roomForm.priceTriple) || 0, 
         b2bPrice: parseInt(roomForm.b2bPrice) || 0, 
-        maxGuests: parseInt(roomForm.maxGuests), 
-        totalRooms: parseInt(roomForm.totalRooms), 
-        staybuddyAllocation: parseInt(roomForm.staybuddyAllocation),
+        maxGuests: parseInt(roomForm.maxGuests) || 3, 
+        totalRooms: roomForm.totalRooms !== '' ? Math.max(0, parseInt(roomForm.totalRooms) || 0) : 0, 
+        staybuddyAllocation: roomForm.staybuddyAllocation !== '' ? Math.max(0, parseInt(roomForm.staybuddyAllocation) || 0) : 0,
         size: roomForm.size ? parseInt(roomForm.size) : undefined,
         images: roomForm.images.split('\n').filter(i => i.trim() !== '')
       }),
     });
-    if (res.ok) { setAddRoomModal(null); setRoomForm({ type: 'Standard', description: '', priceSingle: '', priceDouble: '', priceTriple: '', b2bPrice: '', ratePlan: 'EP', maxGuests: '2', bedType: 'Double', size: '', totalRooms: '1', staybuddyAllocation: '1', images: '' }); }
+    if (res.ok) { setAddRoomModal(null); setRoomForm({ type: 'Standard', description: '', priceSingle: '', priceDouble: '', priceTriple: '', b2bPrice: '', ratePlan: 'EP', maxGuests: '3', bedType: 'Double', size: '', totalRooms: '0', staybuddyAllocation: '0', images: '' }); }
   }
 
   async function openInventory(hotel: any, dateToFetch?: string) {
@@ -635,45 +635,56 @@ export default function PartnerDashboard() {
 
           {/* ===== ADD PROPERTY WIZARD ===== */}
           {activeTab === 'add-hotel' && (
-            <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'var(--bg-secondary)', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'var(--bg-secondary)', display: 'flex', flexDirection: 'column', width: '100%', maxWidth: '100vw', overflowX: 'hidden', boxSizing: 'border-box' }}>
               {/* Header */}
-              <div style={{ background: 'var(--brand-500)', color: 'white', padding: '16px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                  <div style={{ background: 'rgba(255,255,255,0.2)', padding: '10px 12px', borderRadius: 'var(--radius-lg)', display: 'flex', fontSize: '1.5rem', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>🏨</div>
-                  <div>
-                    <h2 style={{ margin: '0 0 4px 0', fontSize: '1.25rem', fontWeight: 800, letterSpacing: '-0.01em' }}>Add New Property — Extranet Onboarding</h2>
-                    <div style={{ fontSize: '0.85rem', opacity: 0.9, fontWeight: 500 }}>Step {formStep} of 6 — {
-                      ['Property Info', 'Location & Map', 'Room Types & Inventory', 'Photos & Gallery', 'Pricing & Rates', 'SEO & Publish'][formStep - 1] || 'Details'
+              <div style={{ background: 'var(--brand-500)', color: 'white', padding: '14px 18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', boxSizing: 'border-box' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
+                  <div style={{ background: 'rgba(255,255,255,0.2)', padding: '8px 10px', borderRadius: 'var(--radius-lg)', display: 'flex', fontSize: '1.3rem', flexShrink: 0 }}>🏨</div>
+                  <div style={{ minWidth: 0 }}>
+                    <h2 style={{ margin: '0 0 2px 0', fontSize: '1.15rem', fontWeight: 800, letterSpacing: '-0.01em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Add New Property — Extranet Onboarding</h2>
+                    <div style={{ fontSize: '0.8rem', opacity: 0.9, fontWeight: 500 }}>Step {formStep} of 6 — {
+                      ['Property Info', 'Location & Map', 'Amenities', 'Room Types & Inventory', 'Photos & Gallery (20+ Photos)', 'Policies & Agreement'][formStep - 1] || 'Details'
                     }</div>
                   </div>
                 </div>
-                <button onClick={() => setActiveTab('overview')} style={{ background: 'rgba(255,255,255,0.2)', border: 'none', color: 'white', width: 40, height: 40, borderRadius: 'var(--radius-md)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background 0.2s' }} onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.3)'} onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.2)'}>
+                <button onClick={() => setActiveTab('overview')} style={{ background: 'rgba(255,255,255,0.2)', border: 'none', color: 'white', width: 36, height: 36, borderRadius: 'var(--radius-md)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'background 0.2s' }} onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.3)'} onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.2)'}>
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
                 </button>
               </div>
 
-              {/* Progress Bar Segmented */}
-              <div style={{ display: 'flex', background: 'white', borderBottom: '1px solid var(--border)', padding: '0 16px' }}>
+              {/* Progress Bar Segmented - Responsive with scroll protection */}
+              <div style={{ 
+                display: 'flex', 
+                background: 'white', 
+                borderBottom: '1px solid var(--border)', 
+                padding: '0 8px',
+                overflowX: 'auto',
+                WebkitOverflowScrolling: 'touch',
+                scrollbarWidth: 'none',
+                width: '100%',
+                maxWidth: '100vw',
+                boxSizing: 'border-box'
+              }}>
                 {[
                   { step: 1, label: 'Property' },
                   { step: 2, label: 'Location' },
                   { step: 3, label: 'Amenities' },
                   { step: 4, label: 'Rooms' },
                   { step: 5, label: 'Photos' },
-                  { step: 6, label: 'Confirm' }
+                  { step: 6, label: 'Policies' }
                 ].map(s => (
-                  <div key={s.step} style={{ flex: 1, padding: '16px 8px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  <div key={s.step} onClick={() => setFormStep(s.step)} style={{ flex: '1 0 auto', minWidth: '55px', padding: '12px 6px', display: 'flex', flexDirection: 'column', gap: 8, cursor: 'pointer' }}>
                     <div style={{ height: 4, borderRadius: 2, background: formStep >= s.step ? 'var(--brand-500)' : 'var(--border)', transition: 'background 0.3s ease' }} />
-                    <div style={{ fontSize: '0.75rem', fontWeight: 700, color: formStep >= s.step ? 'var(--brand-600)' : 'var(--text-muted)', textAlign: 'center', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    <div style={{ fontSize: '0.72rem', fontWeight: 700, color: formStep >= s.step ? 'var(--brand-600)' : 'var(--text-muted)', textAlign: 'center', textTransform: 'uppercase', letterSpacing: '0.03em', whiteSpace: 'nowrap' }}>
                       {s.label}
                     </div>
                   </div>
                 ))}
               </div>
 
-              {/* Form Content Area */}
-              <div style={{ flex: 1, overflowY: 'auto', padding: 'var(--space-8)' }}>
-                <div style={{ maxWidth: 900, margin: '0 auto', paddingBottom: 100 }}>
+              {/* Form Content Area - Edge Safe with clean padding */}
+              <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', padding: '16px', width: '100%', maxWidth: '100vw', boxSizing: 'border-box' }}>
+                <div style={{ maxWidth: 900, width: '100%', margin: '0 auto', paddingBottom: 80, boxSizing: 'border-box' }}>
                   {addError && <div className="alert alert-error" style={{ marginBottom: 'var(--space-5)' }}><span>⚠️</span> {addError}</div>}
                   {addSuccess && <div className="alert alert-success" style={{ marginBottom: 'var(--space-5)' }}><span>✅</span> {addSuccess}</div>}
 
@@ -898,7 +909,7 @@ export default function PartnerDashboard() {
                         </div>
                         <div className="card-body" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-6)' }}>
                           
-                          <div className="partner-grid-3" style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: 'var(--space-4)' }}>
+                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 'var(--space-4)' }}>
                             <div className="form-group">
                               <label className="form-label">Room Category <span className="required">*</span></label>
                               <input className="form-input" type="text" placeholder="e.g. Standard Room, Deluxe Sea View" value={room.type} onChange={e => {
@@ -909,21 +920,22 @@ export default function PartnerDashboard() {
                             </div>
                             <div className="form-group">
                               <label className="form-label">Total Rooms <span className="required">*</span></label>
-                              <input className="form-input" type="number" min="1" value={room.totalRooms} onChange={e => {
-                                const newRooms = [...hotelForm.rooms];
-                                newRooms[index].totalRooms = parseInt(e.target.value) || 1;
-                                setHotelForm({ ...hotelForm, rooms: newRooms });
-                              }} required />
-                            </div>
-                            <div className="form-group">
-                              <label className="form-label">Max Guests <span className="required">*</span></label>
-                              <select className="form-input form-select" value={room.maxGuests} onChange={e => {
-                                const newRooms = [...hotelForm.rooms];
-                                newRooms[index].maxGuests = parseInt(e.target.value) || 2;
-                                setHotelForm({ ...hotelForm, rooms: newRooms });
-                              }}>
-                                {[1,2,3,4,5,6].map(n => <option key={n} value={n}>{n} Guests</option>)}
-                              </select>
+                              <input 
+                                className="form-input" 
+                                type="number" 
+                                min="0" 
+                                placeholder="0"
+                                value={room.totalRooms ?? 0} 
+                                onChange={e => {
+                                  const raw = e.target.value;
+                                  const val = raw === '' ? 0 : Math.max(0, parseInt(raw, 10) || 0);
+                                  const newRooms = [...hotelForm.rooms];
+                                  newRooms[index].totalRooms = val;
+                                  setHotelForm({ ...hotelForm, rooms: newRooms });
+                                }} 
+                                required 
+                              />
+                              <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Any number starting from 0</span>
                             </div>
                           </div>
 
@@ -1054,7 +1066,7 @@ export default function PartnerDashboard() {
                     <button type="button" className="btn btn-secondary" style={{ alignSelf: 'center', padding: '12px 24px', borderStyle: 'dashed', borderWidth: 2 }} onClick={() => {
                       setHotelForm(p => ({
                         ...p,
-                        rooms: [...p.rooms, { id: Date.now().toString(), type: '', priceSingle: '', priceDouble: '', priceTriple: '', b2bPrice: '', amenities: [], images: [], size: '', bedType: 'Double', maxGuests: 2, totalRooms: 1, ratePlan: 'EP', description: '' }]
+                        rooms: [...p.rooms, { id: Date.now().toString(), type: '', priceSingle: '', priceDouble: '', priceTriple: '', b2bPrice: '', amenities: [], images: [], size: '', bedType: 'Double', maxGuests: 3, totalRooms: 0, ratePlan: 'EP', description: '' }]
                       }))
                     }}>
                       + Add Another Room Type
@@ -1062,129 +1074,149 @@ export default function PartnerDashboard() {
                   </div>
                 )}
 
-                {/* STEP 5: Photos & Hero Landing Spaces */}
+                {/* STEP 5: Photos & Hero Landing Spaces (Up to 20+ Photos) */}
                 {formStep === 5 && (
-                  <div className="card fade-in">
-                    <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div className="card fade-in" style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
+                    <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10, padding: '14px 18px' }}>
                       <div>
-                        <h3 style={{ fontSize: '1.1rem', margin: '0 0 4px 0' }}>📸 Property Photos & Hero Landing Spaces</h3>
+                        <h3 style={{ fontSize: '1.1rem', margin: '0 0 4px 0', display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <span>📸 Property Photos</span>
+                          <span style={{ 
+                            background: (hotelForm.images || []).length >= 10 ? '#dcfce7' : '#eff6ff', 
+                            color: (hotelForm.images || []).length >= 10 ? '#166534' : '#1e40af', 
+                            padding: '2px 10px', 
+                            borderRadius: 16, 
+                            fontSize: '0.78rem', 
+                            fontWeight: 700 
+                          }}>
+                            {(hotelForm.images || []).length} / 20+ Photos Added
+                          </span>
+                        </h3>
                         <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                          Photos uploaded here land directly into the Hero Gallery Spaces on your hotel page and search card.
+                          Add around 20 high-quality photos (Exterior, Lobby, Rooms, Bathrooms, Dining, Amenities). First 3 photos form your Live Hero Gallery.
                         </p>
                       </div>
-                      {uploadingImage && <span style={{ fontSize: '0.8rem', color: 'var(--brand-600)', fontWeight: 600 }}>Uploading...</span>}
+                      {uploadingImage && <span style={{ fontSize: '0.8rem', color: 'var(--brand-600)', fontWeight: 700 }}>⏳ Uploading Photos...</span>}
                     </div>
-                    <div className="card-body">
+                    <div className="card-body" style={{ padding: '16px', boxSizing: 'border-box' }}>
                       {/* Hero Spaces Layout Preview */}
-                      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 12, minHeight: 220, borderRadius: 12, overflow: 'hidden', background: '#f8fafc', border: '2px dashed #cbd5e1', padding: 8, marginBottom: 16 }}>
-                        {/* Space 1: Main Cover */}
-                        <div style={{ position: 'relative', minHeight: 200, borderRadius: 8, overflow: 'hidden', background: '#e2e8f0', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                          {hotelForm.images?.[0] ? (
-                            <>
-                              <img src={hotelForm.images[0]} alt="Space 1" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                              <div style={{ position: 'absolute', top: 6, left: 6, background: 'rgba(15,23,42,0.85)', color: 'white', padding: '3px 8px', borderRadius: 6, fontSize: '0.7rem', fontWeight: 700 }}>
-                                ⭐ Space 1 (Main Cover & Card)
-                              </div>
-                              <button
-                                type="button"
-                                onClick={() => setHotelForm(p => ({ ...p, images: p.images.filter((_, idx) => idx !== 0) }))}
-                                style={{ position: 'absolute', top: 6, right: 6, background: '#ef4444', color: 'white', border: 'none', borderRadius: '50%', width: 22, height: 22, cursor: 'pointer', fontWeight: 700 }}
-                              >
-                                ✕
-                              </button>
-                            </>
-                          ) : (
-                            <label style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', width: '100%', height: '100%', padding: 12 }}>
-                              <span style={{ fontSize: '2rem' }}>🏨</span>
-                              <span style={{ fontWeight: 700, color: '#2563eb', fontSize: '0.85rem', marginTop: 4 }}>+ Add Space 1 (Main Cover)</span>
-                              <span style={{ fontSize: '0.7rem', color: '#64748b' }}>Lands on Large Left Hero Spot</span>
-                              <input
-                                type="file"
-                                accept="image/*"
-                                style={{ display: 'none' }}
-                                disabled={uploadingImage}
-                                onChange={e => handleMultipleImageUpload(e, (urls) => {
-                                  setHotelForm(p => ({ ...p, images: [...urls, ...(p.images || [])] }));
-                                })}
-                              />
-                            </label>
-                          )}
+                      <div style={{ marginBottom: 16 }}>
+                        <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                          ⚡ Live Hero Gallery Spaces (Top of Hotel Page)
                         </div>
-
-                        {/* Space 2 & 3 */}
-                        <div style={{ display: 'grid', gridTemplateRows: '1fr 1fr', gap: 10 }}>
-                          {/* Space 2 */}
-                          <div style={{ position: 'relative', minHeight: 95, borderRadius: 8, overflow: 'hidden', background: '#e2e8f0', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                            {hotelForm.images?.[1] ? (
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 12, borderRadius: 12, overflow: 'hidden', background: '#f8fafc', border: '2px dashed #cbd5e1', padding: 10 }}>
+                          {/* Space 1: Main Cover */}
+                          <div style={{ position: 'relative', minHeight: 180, borderRadius: 8, overflow: 'hidden', background: '#e2e8f0', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                            {hotelForm.images?.[0] ? (
                               <>
-                                <img src={hotelForm.images[1]} alt="Space 2" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                                <div style={{ position: 'absolute', top: 4, left: 4, background: 'rgba(15,23,42,0.85)', color: 'white', padding: '2px 6px', borderRadius: 4, fontSize: '0.65rem', fontWeight: 700 }}>
-                                  📷 Space 2
+                                <img src={hotelForm.images[0]} alt="Space 1" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                <div style={{ position: 'absolute', top: 6, left: 6, background: 'rgba(15,23,42,0.85)', color: 'white', padding: '3px 8px', borderRadius: 6, fontSize: '0.7rem', fontWeight: 700 }}>
+                                  ⭐ Space 1 (Main Cover & Card)
                                 </div>
                                 <button
                                   type="button"
-                                  onClick={() => setHotelForm(p => ({ ...p, images: p.images.filter((_, idx) => idx !== 1) }))}
-                                  style={{ position: 'absolute', top: 4, right: 4, background: '#ef4444', color: 'white', border: 'none', borderRadius: '50%', width: 20, height: 20, cursor: 'pointer', fontSize: '0.7rem' }}
+                                  onClick={() => setHotelForm(p => ({ ...p, images: p.images.filter((_, idx) => idx !== 0) }))}
+                                  style={{ position: 'absolute', top: 6, right: 6, background: '#ef4444', color: 'white', border: 'none', borderRadius: '50%', width: 22, height: 22, cursor: 'pointer', fontWeight: 700 }}
+                                  title="Remove Space 1 photo"
                                 >
                                   ✕
                                 </button>
                               </>
                             ) : (
-                              <label style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', width: '100%', height: '100%', padding: 4 }}>
-                                <span style={{ fontSize: '1.2rem' }}>📷</span>
-                                <span style={{ fontWeight: 600, color: '#2563eb', fontSize: '0.7rem' }}>+ Space 2 (Top Right)</span>
+                              <label style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', width: '100%', height: '100%', padding: 12 }}>
+                                <span style={{ fontSize: '2rem' }}>🏨</span>
+                                <span style={{ fontWeight: 700, color: '#2563eb', fontSize: '0.85rem', marginTop: 4 }}>+ Add Space 1 (Main Cover)</span>
+                                <span style={{ fontSize: '0.7rem', color: '#64748b' }}>Main Large Hero Photo & Search Card</span>
                                 <input
                                   type="file"
                                   accept="image/*"
                                   style={{ display: 'none' }}
                                   disabled={uploadingImage}
                                   onChange={e => handleMultipleImageUpload(e, (urls) => {
-                                    setHotelForm(p => ({ ...p, images: [...(p.images || []), ...urls] }));
+                                    setHotelForm(p => ({ ...p, images: [...urls, ...(p.images || [])] }));
                                   })}
                                 />
                               </label>
                             )}
                           </div>
 
-                          {/* Space 3 */}
-                          <div style={{ position: 'relative', minHeight: 95, borderRadius: 8, overflow: 'hidden', background: '#e2e8f0', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                            {hotelForm.images?.[2] ? (
-                              <>
-                                <img src={hotelForm.images[2]} alt="Space 3" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                                <div style={{ position: 'absolute', top: 4, left: 4, background: 'rgba(15,23,42,0.85)', color: 'white', padding: '2px 6px', borderRadius: 4, fontSize: '0.65rem', fontWeight: 700 }}>
-                                  📷 Space 3
-                                </div>
-                                <button
-                                  type="button"
-                                  onClick={() => setHotelForm(p => ({ ...p, images: p.images.filter((_, idx) => idx !== 2) }))}
-                                  style={{ position: 'absolute', top: 4, right: 4, background: '#ef4444', color: 'white', border: 'none', borderRadius: '50%', width: 20, height: 20, cursor: 'pointer', fontSize: '0.7rem' }}
-                                >
-                                  ✕
-                                </button>
-                              </>
-                            ) : (
-                              <label style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', width: '100%', height: '100%', padding: 4 }}>
-                                <span style={{ fontSize: '1.2rem' }}>📷</span>
-                                <span style={{ fontWeight: 600, color: '#2563eb', fontSize: '0.7rem' }}>+ Space 3 (Btm Right)</span>
-                                <input
-                                  type="file"
-                                  accept="image/*"
-                                  style={{ display: 'none' }}
-                                  disabled={uploadingImage}
-                                  onChange={e => handleMultipleImageUpload(e, (urls) => {
-                                    setHotelForm(p => ({ ...p, images: [...(p.images || []), ...urls] }));
-                                  })}
-                                />
-                              </label>
-                            )}
+                          {/* Space 2 & 3 */}
+                          <div style={{ display: 'grid', gridTemplateRows: '1fr 1fr', gap: 10 }}>
+                            {/* Space 2 */}
+                            <div style={{ position: 'relative', minHeight: 85, borderRadius: 8, overflow: 'hidden', background: '#e2e8f0', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                              {hotelForm.images?.[1] ? (
+                                <>
+                                  <img src={hotelForm.images[1]} alt="Space 2" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                  <div style={{ position: 'absolute', top: 4, left: 4, background: 'rgba(15,23,42,0.85)', color: 'white', padding: '2px 6px', borderRadius: 4, fontSize: '0.65rem', fontWeight: 700 }}>
+                                    📷 Space 2 (Top Right)
+                                  </div>
+                                  <button
+                                    type="button"
+                                    onClick={() => setHotelForm(p => ({ ...p, images: p.images.filter((_, idx) => idx !== 1) }))}
+                                    style={{ position: 'absolute', top: 4, right: 4, background: '#ef4444', color: 'white', border: 'none', borderRadius: '50%', width: 20, height: 20, cursor: 'pointer', fontSize: '0.7rem' }}
+                                    title="Remove Space 2 photo"
+                                  >
+                                    ✕
+                                  </button>
+                                </>
+                              ) : (
+                                <label style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', width: '100%', height: '100%', padding: 4 }}>
+                                  <span style={{ fontSize: '1.2rem' }}>📷</span>
+                                  <span style={{ fontWeight: 600, color: '#2563eb', fontSize: '0.75rem' }}>+ Space 2 (Top Right)</span>
+                                  <input
+                                    type="file"
+                                    accept="image/*"
+                                    style={{ display: 'none' }}
+                                    disabled={uploadingImage}
+                                    onChange={e => handleMultipleImageUpload(e, (urls) => {
+                                      setHotelForm(p => ({ ...p, images: [...(p.images || []), ...urls] }));
+                                    })}
+                                  />
+                                </label>
+                              )}
+                            </div>
+
+                            {/* Space 3 */}
+                            <div style={{ position: 'relative', minHeight: 85, borderRadius: 8, overflow: 'hidden', background: '#e2e8f0', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                              {hotelForm.images?.[2] ? (
+                                <>
+                                  <img src={hotelForm.images[2]} alt="Space 3" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                  <div style={{ position: 'absolute', top: 4, left: 4, background: 'rgba(15,23,42,0.85)', color: 'white', padding: '2px 6px', borderRadius: 4, fontSize: '0.65rem', fontWeight: 700 }}>
+                                    📷 Space 3 (Btm Right)
+                                  </div>
+                                  <button
+                                    type="button"
+                                    onClick={() => setHotelForm(p => ({ ...p, images: p.images.filter((_, idx) => idx !== 2) }))}
+                                    style={{ position: 'absolute', top: 4, right: 4, background: '#ef4444', color: 'white', border: 'none', borderRadius: '50%', width: 20, height: 20, cursor: 'pointer', fontSize: '0.7rem' }}
+                                    title="Remove Space 3 photo"
+                                  >
+                                    ✕
+                                  </button>
+                                </>
+                              ) : (
+                                <label style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', width: '100%', height: '100%', padding: 4 }}>
+                                  <span style={{ fontSize: '1.2rem' }}>📷</span>
+                                  <span style={{ fontWeight: 600, color: '#2563eb', fontSize: '0.75rem' }}>+ Space 3 (Btm Right)</span>
+                                  <input
+                                    type="file"
+                                    accept="image/*"
+                                    style={{ display: 'none' }}
+                                    disabled={uploadingImage}
+                                    onChange={e => handleMultipleImageUpload(e, (urls) => {
+                                      setHotelForm(p => ({ ...p, images: [...(p.images || []), ...urls] }));
+                                    })}
+                                  />
+                                </label>
+                              )}
+                            </div>
                           </div>
                         </div>
                       </div>
 
-                      {/* Upload Multiple Button & URL Paste */}
-                      <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
-                        <label className="btn btn-primary" style={{ padding: '10px 20px', cursor: uploadingImage ? 'not-allowed' : 'pointer', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-                          <span>{uploadingImage ? '⏳ Uploading...' : '📤 Select & Upload Multiple Photos'}</span>
+                      {/* Multi-File Upload & Bulk URL Paste Bar */}
+                      <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center', marginBottom: 16 }}>
+                        <label className="btn btn-primary" style={{ padding: '10px 20px', cursor: uploadingImage ? 'not-allowed' : 'pointer', display: 'inline-flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+                          <span>{uploadingImage ? '⏳ Uploading...' : '📤 Upload Multiple Photos (Up to 20+)'}</span>
                           <input
                             type="file"
                             multiple
@@ -1197,17 +1229,18 @@ export default function PartnerDashboard() {
                           />
                         </label>
 
-                        <div style={{ display: 'flex', gap: 6, flex: 1, minWidth: 240 }}>
+                        <div style={{ display: 'flex', gap: 6, flex: 1, minWidth: 220 }}>
                           <input
                             type="text"
-                            placeholder="Or paste photo URL and press Enter"
+                            placeholder="Or paste photo URL(s) (comma or enter separated)"
                             id="onboardingPhotoPaste"
                             onKeyDown={e => {
                               if (e.key === 'Enter') {
                                 e.preventDefault();
                                 const val = e.currentTarget.value.trim();
                                 if (val) {
-                                  setHotelForm(p => ({ ...p, images: [...(p.images || []), val] }));
+                                  const urls = val.split(/[,\s\n]+/).map(u => u.trim()).filter(Boolean);
+                                  setHotelForm(p => ({ ...p, images: [...(p.images || []), ...urls] }));
                                   e.currentTarget.value = '';
                                 }
                               }
@@ -1221,7 +1254,8 @@ export default function PartnerDashboard() {
                             onClick={() => {
                               const input = document.getElementById('onboardingPhotoPaste') as HTMLInputElement;
                               if (input && input.value.trim()) {
-                                setHotelForm(p => ({ ...p, images: [...(p.images || []), input.value.trim()] }));
+                                const urls = input.value.trim().split(/[,\s\n]+/).map(u => u.trim()).filter(Boolean);
+                                setHotelForm(p => ({ ...p, images: [...(p.images || []), ...urls] }));
                                 input.value = '';
                               }
                             }}
@@ -1231,41 +1265,117 @@ export default function PartnerDashboard() {
                         </div>
                       </div>
 
-                      {/* Additional Photos Thumbnails */}
-                      {(hotelForm.images || []).length > 3 && (
-                        <div style={{ marginTop: 16 }}>
-                          <div style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 8 }}>
-                            Additional Gallery Photos ({(hotelForm.images || []).length - 3}):
-                          </div>
-                          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-                            {(hotelForm.images || []).slice(3).map((url, subIdx) => {
-                              const actualIdx = subIdx + 3;
-                              return (
-                                <div key={actualIdx} style={{ position: 'relative', width: 90, height: 70, borderRadius: 6, overflow: 'hidden', border: '1px solid var(--border)' }}>
-                                  <img src={url} alt={`Gallery ${actualIdx + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      {/* Comprehensive Gallery of all Photos (Up to 20+ Photos) */}
+                      <div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                          <span style={{ fontSize: '0.82rem', fontWeight: 700, color: '#334155', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                            🖼️ All Hotel Photos ({(hotelForm.images || []).length} of 20+ Photos):
+                          </span>
+                          <span style={{ fontSize: '0.75rem', color: '#64748b' }}>
+                            Drag or click "+ Upload" to add more photos
+                          </span>
+                        </div>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(110px, 1fr))', gap: 10 }}>
+                          {(hotelForm.images || []).map((url, idx) => {
+                            const isSpace1 = idx === 0;
+                            const isSpace2 = idx === 1;
+                            const isSpace3 = idx === 2;
+                            const label = isSpace1 ? '⭐ Space 1' : isSpace2 ? '📷 Space 2' : isSpace3 ? '📷 Space 3' : `#${idx + 1}`;
+                            return (
+                              <div key={idx} style={{ position: 'relative', height: 90, borderRadius: 8, overflow: 'hidden', border: `1.5px solid ${isSpace1 ? '#f59e0b' : '#cbd5e1'}`, background: '#f1f5f9' }}>
+                                <img src={url} alt={`Hotel Photo ${idx + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                <div style={{ position: 'absolute', top: 3, left: 3, background: 'rgba(15,23,42,0.85)', color: 'white', padding: '1px 5px', borderRadius: 4, fontSize: '0.62rem', fontWeight: 700 }}>
+                                  {label}
+                                </div>
+                                {!isSpace1 && (
                                   <button
                                     type="button"
-                                    onClick={() => setHotelForm(p => ({ ...p, images: p.images.filter((_, idx) => idx !== actualIdx) }))}
-                                    style={{ position: 'absolute', top: 2, right: 2, background: 'var(--danger)', color: 'white', borderRadius: '50%', width: 18, height: 18, border: 'none', cursor: 'pointer', fontSize: '11px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                    onClick={() => {
+                                      const arr = [...hotelForm.images];
+                                      const [chosen] = arr.splice(idx, 1);
+                                      arr.unshift(chosen);
+                                      setHotelForm(p => ({ ...p, images: arr }));
+                                    }}
+                                    style={{ position: 'absolute', bottom: 3, left: 3, background: 'rgba(0,0,0,0.7)', color: 'white', border: 'none', borderRadius: 4, padding: '2px 4px', fontSize: '0.62rem', cursor: 'pointer', fontWeight: 600 }}
+                                    title="Make this the Cover Photo (Space 1)"
                                   >
-                                    ✕
+                                    Cover ⭐
                                   </button>
-                                </div>
-                              );
-                            })}
-                          </div>
+                                )}
+                                <button
+                                  type="button"
+                                  onClick={() => setHotelForm(p => ({ ...p, images: p.images.filter((_, i) => i !== idx) }))}
+                                  style={{ position: 'absolute', top: 3, right: 3, background: '#ef4444', color: 'white', border: 'none', borderRadius: '50%', width: 18, height: 18, cursor: 'pointer', fontSize: '0.7rem', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}
+                                  title="Delete photo"
+                                >
+                                  ✕
+                                </button>
+                              </div>
+                            );
+                          })}
+
+                          {/* Quick Add Photo Tile inside Grid */}
+                          <label style={{ 
+                            height: 90, 
+                            borderRadius: 8, 
+                            border: '2px dashed #94a3b8', 
+                            display: 'flex', 
+                            flexDirection: 'column', 
+                            alignItems: 'center', 
+                            justifyContent: 'center', 
+                            cursor: uploadingImage ? 'not-allowed' : 'pointer', 
+                            background: '#f8fafc',
+                            transition: 'all 0.2s',
+                            padding: 6
+                          }}>
+                            <span style={{ fontSize: '1.4rem', lineHeight: 1 }}>+</span>
+                            <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#2563eb', marginTop: 2, textAlign: 'center' }}>
+                              Add Photo #{(hotelForm.images || []).length + 1}
+                            </span>
+                            <span style={{ fontSize: '0.6rem', color: '#64748b' }}>Up to 20+</span>
+                            <input
+                              type="file"
+                              multiple
+                              accept="image/*"
+                              style={{ display: 'none' }}
+                              disabled={uploadingImage}
+                              onChange={e => handleMultipleImageUpload(e, (urls) => {
+                                setHotelForm(p => ({ ...p, images: [...(p.images || []), ...urls] }));
+                              })}
+                            />
+                          </label>
                         </div>
-                      )}
+                      </div>
+
                     </div>
                   </div>
                 )}
 
                 {/* STEP 6: Partner Agreement & Policies */}
                 {formStep === 6 && (
-                  <div className="card fade-in">
-                    <div className="card-header"><h3 style={{ fontSize: '1rem' }}>📜 Partner Agreement & Policies</h3></div>
-                    <div className="card-body">
-                      <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '0.9rem', color: '#334155', maxHeight: '300px', overflowY: 'auto', marginBottom: '16px', lineHeight: '1.6' }}>
+                  <div className="card fade-in" style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box', overflow: 'hidden' }}>
+                    <div className="card-header" style={{ padding: '14px 18px' }}>
+                      <h3 style={{ fontSize: '1.05rem', margin: 0 }}>📜 Partner Agreement & Policies</h3>
+                    </div>
+                    <div className="card-body" style={{ padding: '16px', boxSizing: 'border-box' }}>
+                      <div style={{ 
+                        background: '#f8fafc', 
+                        padding: '16px', 
+                        borderRadius: '8px', 
+                        border: '1px solid #e2e8f0', 
+                        fontSize: '0.88rem', 
+                        color: '#334155', 
+                        maxHeight: '320px', 
+                        overflowY: 'auto', 
+                        marginBottom: '16px', 
+                        lineHeight: '1.6',
+                        width: '100%',
+                        maxWidth: '100%',
+                        boxSizing: 'border-box',
+                        wordBreak: 'break-word',
+                        overflowWrap: 'break-word'
+                      }}>
                         <h4 style={{ color: '#0f172a', marginBottom: '12px' }}>StayBuddy Partner Program Agreement</h4>
                         <p style={{ marginBottom: '8px' }}><strong>1. B2B Inventory Model:</strong> You can add inventory on a daily basis (available rooms). If missed, the system will automatically roll over and continue the inventory provided during onboarding.</p>
                         <p style={{ marginBottom: '8px' }}><strong>2. Commission Charge:</strong> StayBuddy will not charge any commission from the owner currently. Properties can be listed free of cost.</p>
@@ -1275,9 +1385,11 @@ export default function PartnerDashboard() {
                         <p style={{ marginBottom: '8px' }}><strong>6. Room Confirmation:</strong> When a room is confirmed via StayBuddy, the hotel must block the room immediately.</p>
                         <p style={{ marginBottom: '8px' }}><strong>7. Room Blocking:</strong> A room blocking option is provided in the dashboard to avoid overflow and double bookings.</p>
                       </div>
-                      <label style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', cursor: 'pointer' }}>
-                        <input type="checkbox" checked={agreedToTerms} onChange={e => setAgreedToTerms(e.target.checked)} style={{ width: '20px', height: '20px', marginTop: '2px' }} />
-                        <span style={{ fontWeight: 600, color: '#0f172a' }}>I have read and agree to the StayBuddy Partner Policies and Terms & Conditions</span>
+                      <label style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', cursor: 'pointer', maxWidth: '100%', boxSizing: 'border-box', wordBreak: 'break-word' }}>
+                        <input type="checkbox" checked={agreedToTerms} onChange={e => setAgreedToTerms(e.target.checked)} style={{ width: '20px', height: '20px', marginTop: '2px', flexShrink: 0, accentColor: 'var(--brand-500)' }} />
+                        <span style={{ fontWeight: 600, color: '#0f172a', fontSize: '0.9rem', lineHeight: '1.4' }}>
+                          I have read and agree to the StayBuddy Partner Policies and Terms & Conditions
+                        </span>
                       </label>
                     </div>
                   </div>
@@ -1287,17 +1399,31 @@ export default function PartnerDashboard() {
                 </div>
               </div>
 
-              {/* Sticky Footer */}
-              <div style={{ background: 'white', padding: '16px 24px', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 -4px 12px rgba(0,0,0,0.02)' }}>
+              {/* Sticky Footer - Responsive & Edge Safe */}
+              <div style={{ 
+                background: 'white', 
+                padding: '12px 16px', 
+                borderTop: '1px solid var(--border)', 
+                display: 'flex', 
+                justifyContent: 'space-between', 
+                alignItems: 'center', 
+                gap: '8px',
+                boxShadow: '0 -4px 12px rgba(0,0,0,0.05)',
+                boxSizing: 'border-box',
+                width: '100%',
+                maxWidth: '100vw'
+              }}>
                 {formStep > 1 ? (
-                  <button type="button" className="btn btn-secondary" style={{ padding: '10px 24px', borderRadius: 'var(--radius-lg)', background: 'white', border: '1px solid var(--border)', fontWeight: 600 }} onClick={() => setFormStep(formStep - 1)}>← Previous</button>
-                ) : <div style={{ width: 120 }}></div>}
+                  <button type="button" className="btn btn-secondary" style={{ padding: '8px 16px', borderRadius: 'var(--radius-lg)', background: 'white', border: '1px solid var(--border)', fontWeight: 600, fontSize: '0.9rem', flexShrink: 0 }} onClick={() => setFormStep(formStep - 1)}>
+                    ← Previous
+                  </button>
+                ) : <div style={{ width: 80 }}></div>}
                 
-                <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 600 }}>
+                <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', fontWeight: 700, whiteSpace: 'nowrap' }}>
                   Step {formStep} / 6
                 </div>
 
-                <button type="submit" className="btn btn-primary" style={{ padding: '10px 32px', borderRadius: 'var(--radius-lg)', fontWeight: 600, fontSize: '1rem', boxShadow: '0 4px 12px rgba(234, 88, 12, 0.2)' }} disabled={addLoading || (formStep === 6 && !agreedToTerms)} onClick={e => {
+                <button type="submit" className="btn btn-primary" style={{ padding: '10px 20px', borderRadius: 'var(--radius-lg)', fontWeight: 700, fontSize: '0.95rem', boxShadow: '0 4px 12px rgba(234, 88, 12, 0.25)', flexShrink: 0 }} disabled={addLoading || (formStep === 6 && !agreedToTerms)} onClick={e => {
                   const form = e.currentTarget.closest('form');
                   if (form && !form.checkValidity()) {
                     return; // Let browser show native validation tooltip
@@ -1306,7 +1432,7 @@ export default function PartnerDashboard() {
                   if (formStep < 6) setFormStep(formStep + 1);
                   else handleAddHotel(e as any);
                 }}>
-                  {addLoading ? <><div className="spinner" style={{ width: 18, height: 18, borderColor: 'rgba(255,255,255,0.3)', borderTopColor: 'white' }} /> Submitting...</> : formStep < 6 ? 'Next Step →' : '🚀 Submit for Approval'}
+                  {addLoading ? <><div className="spinner" style={{ width: 16, height: 16, borderColor: 'rgba(255,255,255,0.3)', borderTopColor: 'white' }} /> Submitting...</> : formStep < 6 ? 'Next Step →' : '🚀 Submit for Approval'}
                 </button>
               </div>
             </div>
@@ -1350,22 +1476,14 @@ export default function PartnerDashboard() {
                     <input className="form-input" type="number" min="0" value={roomForm.b2bPrice} onChange={e => setRoomForm(p => ({ ...p, b2bPrice: e.target.value }))} />
                   </div>
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-4)', alignItems: 'center' }}>
-                  <div className="form-group" style={{ flexDirection: 'row', alignItems: 'center', gap: 8, margin: 0 }}>
-                    <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 'var(--space-2)' }}>
-                      <label htmlFor="ratePlan" style={{ margin: 0, fontWeight: 600, cursor: 'pointer' }}>Rate Plan</label>
-                      <select id="ratePlan" className="form-input form-select" value={roomForm.ratePlan} onChange={e => setRoomForm(p => ({ ...p, ratePlan: e.target.value }))}>
-                        <option value="EP">EP (Room Only)</option>
-                        <option value="CP">CP (Breakfast)</option>
-                        <option value="MAP">MAP (Half Board)</option>
-                        <option value="AP">AP (Full Board)</option>
-                      </select>
-                    </div>
-                  </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 'var(--space-4)', alignItems: 'center' }}>
                   <div className="form-group">
-                    <label className="form-label">Max Guests <span className="required">*</span></label>
-                    <select className="form-input form-select" value={roomForm.maxGuests} onChange={e => setRoomForm(p => ({ ...p, maxGuests: e.target.value }))}>
-                      {[1,2,3,4,5,6].map(n => <option key={n} value={n}>{n}</option>)}
+                    <label htmlFor="ratePlan" className="form-label">Rate Plan</label>
+                    <select id="ratePlan" className="form-input form-select" value={roomForm.ratePlan} onChange={e => setRoomForm(p => ({ ...p, ratePlan: e.target.value }))}>
+                      <option value="EP">EP (Room Only)</option>
+                      <option value="CP">CP (Breakfast)</option>
+                      <option value="MAP">MAP (Half Board)</option>
+                      <option value="AP">AP (Full Board)</option>
                     </select>
                   </div>
                 </div>
@@ -1384,15 +1502,16 @@ export default function PartnerDashboard() {
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-4)' }}>
                   <div className="form-group">
                     <label className="form-label">Total Rooms in Property</label>
-                    <input className="form-input" type="number" min="1" value={roomForm.totalRooms} onChange={e => {
+                    <input className="form-input" type="number" min="0" placeholder="0" value={roomForm.totalRooms} onChange={e => {
                       const val = e.target.value;
                       setRoomForm(p => ({ ...p, totalRooms: val, staybuddyAllocation: val }));
                     }} />
+                    <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Any number starting from 0</span>
                   </div>
                   <div className="form-group">
                     <label className="form-label">StayBuddy Allocation</label>
-                    <input className="form-input" type="number" min="1" max={roomForm.totalRooms} value={roomForm.staybuddyAllocation} onChange={e => setRoomForm(p => ({ ...p, staybuddyAllocation: e.target.value }))} />
-                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Rooms available on StayBuddy (defaults to total rooms)</span>
+                    <input className="form-input" type="number" min="0" placeholder="0" max={roomForm.totalRooms} value={roomForm.staybuddyAllocation} onChange={e => setRoomForm(p => ({ ...p, staybuddyAllocation: e.target.value }))} />
+                    <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Rooms available on StayBuddy (defaults to total rooms)</span>
                   </div>
                 </div>
                 <div className="form-group">
@@ -1936,14 +2055,15 @@ export default function PartnerDashboard() {
                   <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
                     <input
                       type="text"
-                      placeholder="Or paste image URL and press Enter or click Add"
+                      placeholder="Or paste photo URL(s) (comma or enter separated)"
                       id="extranetImagePasteInput"
                       onKeyDown={e => {
                         if (e.key === 'Enter') {
                           e.preventDefault();
                           const val = e.currentTarget.value.trim();
                           if (val) {
-                            setExtranetModal({ ...extranetModal, images: [...(extranetModal.images || []), val] });
+                            const urls = val.split(/[,\s\n]+/).map((u: string) => u.trim()).filter(Boolean);
+                            setExtranetModal({ ...extranetModal, images: [...(extranetModal.images || []), ...urls] });
                             e.currentTarget.value = '';
                           }
                         }
@@ -1957,7 +2077,8 @@ export default function PartnerDashboard() {
                       onClick={() => {
                         const input = document.getElementById('extranetImagePasteInput') as HTMLInputElement;
                         if (input && input.value.trim()) {
-                          setExtranetModal({ ...extranetModal, images: [...(extranetModal.images || []), input.value.trim()] });
+                          const urls = input.value.trim().split(/[,\s\n]+/).map((u: string) => u.trim()).filter(Boolean);
+                          setExtranetModal({ ...extranetModal, images: [...(extranetModal.images || []), ...urls] });
                           input.value = '';
                         }
                       }}
@@ -2013,7 +2134,7 @@ export default function PartnerDashboard() {
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
                     <h3 style={{ fontSize: '1.1rem', color: '#0f172a', margin: 0 }}>Rooms Management</h3>
                     <button type="button" onClick={() => {
-                      const newRoom = { id: Date.now().toString(), type: 'Standard Room', priceDouble: 1000, priceSingle: 1000, b2bPrice: 800, maxGuests: 2, totalRooms: 5, staybuddyAllocation: 5, ratePlan: 'EP' };
+                      const newRoom = { id: Date.now().toString(), type: 'Standard Room', priceDouble: 1000, priceSingle: 1000, b2bPrice: 800, maxGuests: 3, totalRooms: 0, staybuddyAllocation: 0, ratePlan: 'EP' };
                       setExtranetModal({...extranetModal, rooms: [...(extranetModal.rooms || []), newRoom]});
                     }} style={{ background: 'var(--brand-100)', color: 'var(--brand-600)', border: 'none', padding: '6px 12px', borderRadius: 8, cursor: 'pointer', fontWeight: 600, fontSize: '0.8rem' }}>+ Add Room</button>
                   </div>
@@ -2056,9 +2177,10 @@ export default function PartnerDashboard() {
                           </div>
                           <div>
                             <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: '#64748b', marginBottom: 4 }}>Staybuddy Allocation</label>
-                            <input type="number" value={room.staybuddyAllocation || ''} onChange={e => {
+                            <input type="number" min="0" placeholder="0" value={room.staybuddyAllocation ?? ''} onChange={e => {
                               const updatedRooms = [...extranetModal.rooms];
-                              updatedRooms[rIdx].staybuddyAllocation = Number(e.target.value);
+                              const val = e.target.value === '' ? 0 : Math.max(0, parseInt(e.target.value, 10) || 0);
+                              updatedRooms[rIdx].staybuddyAllocation = val;
                               setExtranetModal({...extranetModal, rooms: updatedRooms});
                             }} style={{ width: '100%', padding: '8px 12px', borderRadius: 6, border: '1px solid #cbd5e1', fontSize: '0.9rem' }} />
                           </div>
@@ -2076,10 +2198,11 @@ export default function PartnerDashboard() {
                             </select>
                           </div>
                           <div>
-                            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: '#64748b', marginBottom: 4 }}>Max Guests</label>
-                            <input type="number" value={room.maxGuests || 2} onChange={e => {
+                            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: '#64748b', marginBottom: 4 }}>Total Rooms</label>
+                            <input type="number" min="0" placeholder="0" value={room.totalRooms ?? 0} onChange={e => {
                               const updatedRooms = [...extranetModal.rooms];
-                              updatedRooms[rIdx].maxGuests = Number(e.target.value);
+                              const val = e.target.value === '' ? 0 : Math.max(0, parseInt(e.target.value, 10) || 0);
+                              updatedRooms[rIdx].totalRooms = val;
                               setExtranetModal({...extranetModal, rooms: updatedRooms});
                             }} style={{ width: '100%', padding: '8px 12px', borderRadius: 6, border: '1px solid #cbd5e1', fontSize: '0.9rem' }} />
                           </div>

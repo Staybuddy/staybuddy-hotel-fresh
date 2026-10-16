@@ -189,9 +189,11 @@ export async function POST(request: NextRequest) {
           priceDouble: parseInt(r.priceDouble) || parseInt(r.priceSingle) || 0,
           priceTriple: parseInt(r.priceTriple) || 0,
           b2bPrice: parseInt(r.b2bPrice) || 0,
-          maxGuests: parseInt(r.maxGuests) || 2,
-          totalRooms: parseInt(r.totalRooms) || 1,
-          staybuddyAllocation: parseInt(r.staybuddyAllocation) || parseInt(r.totalRooms) || 1,
+          maxGuests: parseInt(r.maxGuests) || 3,
+          totalRooms: r.totalRooms !== undefined && r.totalRooms !== '' ? Math.max(0, parseInt(r.totalRooms, 10) || 0) : 0,
+          staybuddyAllocation: r.staybuddyAllocation !== undefined && r.staybuddyAllocation !== ''
+            ? Math.max(0, parseInt(r.staybuddyAllocation, 10) || 0)
+            : (r.totalRooms !== undefined && r.totalRooms !== '' ? Math.max(0, parseInt(r.totalRooms, 10) || 0) : 0),
           ratePlan: r.ratePlan || 'EP',
           bedType: r.bedType || 'Double',
           size: r.size ? parseInt(r.size) : undefined,
