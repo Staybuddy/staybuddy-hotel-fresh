@@ -4,6 +4,7 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Logo from '@/components/Logo';
+import { compressImage } from '@/lib/imageUtils';
 
 const NAV_ITEMS = [
   { id: 'hotels', label: 'My Properties', icon: '🏨' },
@@ -130,35 +131,87 @@ export default function PartnerDashboard() {
     e.preventDefault();
     setAddError(''); setAddSuccess('');
     setAddLoading(true);
-    const partnerId = (session?.user as any)?.id;
-    const finalLocation = hotelForm.location || [hotelForm.area, hotelForm.city].filter(Boolean).join(', ');
 
-    const roomPhotos = (hotelForm.rooms || []).flatMap((r: any) => Array.isArray(r.images) ? r.images : []).filter(Boolean);
-    let finalHotelImages = Array.isArray(hotelForm.images) ? [...hotelForm.images] : [];
-    if (finalHotelImages.length === 0 && roomPhotos.length > 0) {
-      finalHotelImages = Array.from(new Set(roomPhotos));
+    try {
+      const partnerId = (session?.user as any)?.id || (session?.user as any)?.email;
+      if (!partnerId) {
+        setAddError('You must be logged in as a partner to submit a property. Please log in again.');
+        setAddLoading(false);
+        return;
+      }
+
+      if (!hotelForm.name.trim()) {
+        setAddError('Please enter the Property Name in Step 1.');
+        setFormStep(1);
+        setAddLoading(false);
+        return;
+      }
+      if (!hotelForm.city.trim()) {
+        setAddError('Please enter the City in Step 2.');
+        setFormStep(2);
+        setAddLoading(false);
+        return;
+      }
+      if (!hotelForm.description.trim()) {
+        setAddError('Please enter a Description in Step 1.');
+        setFormStep(1);
+        setAddLoading(false);
+        return;
+      }
+
+      const finalLocation = hotelForm.location || [hotelForm.area, hotelForm.city].filter(Boolean).join(', ');
+      const roomPhotos = (hotelForm.rooms || []).flatMap((r: any) => Array.isArray(r.images) ? r.images : []).filter(Boolean);
+      let finalHotelImages = Array.isArray(hotelForm.images) ? [...hotelForm.images] : [];
+      if (finalHotelImages.length === 0 && roomPhotos.length > 0) {
+        finalHotelImages = Array.from(new Set(roomPhotos));
+      }
+
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 25000); // 25s safety limit
+
+      const res = await fetch('/api/hotels', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        signal: controller.signal,
+        body: JSON.stringify({ 
+          ...hotelForm, 
+          images: finalHotelImages,
+          location: finalLocation, 
+          partnerId, 
+          starRating: parseInt(hotelForm.starRating) || 3
+        }),
+      });
+      clearTimeout(timeoutId);
+
+      let data: any = {};
+      const contentType = res.headers.get('content-type') || '';
+      if (contentType.includes('application/json')) {
+        data = await res.json();
+      } else {
+        const text = await res.text();
+        data = { error: text || `Server error (${res.status})` };
+      }
+
+      if (!res.ok) { 
+        setAddError(data.error || 'Failed to add property. Please verify your details.'); 
+        return; 
+      }
+
+      setAddSuccess('🎉 Property submitted for approval! Our team will review it within 24 hours.');
+      setHotelForm({ name: '', description: '', location: '', city: '', area: '', country: 'India', address: '', lat: '', lng: '', propertyType: 'Hotel', category: 'standard', starRating: '3', checkInTime: '14:00', checkOutTime: '11:00', totalPropertyRooms: '', staybuddyAllocation: '', totalFloors: '', providedRating: '4.5', contactName: '', contactDesignation: '', contactPhone: '', contactEmail: '', amenities: [], roomAmenities: [], extraAmenities: '', policies: '', images: [], rooms: [] });
+      setFormStep(1);
+      fetchData();
+      setTimeout(() => setActiveTab('hotels'), 2500);
+    } catch (err: any) {
+      console.error('Error submitting hotel:', err);
+      if (err.name === 'AbortError') {
+        setAddError('Submission timed out. Please check your internet connection and try again.');
+      } else {
+        setAddError(err.message || 'Network error occurred while submitting. Please try again.');
+      }
+    } finally {
+      setAddLoading(false);
     }
-
-    const res = await fetch('/api/hotels', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ 
-        ...hotelForm, 
-        images: finalHotelImages,
-        location: finalLocation, 
-        partnerId, 
-        starRating: parseInt(hotelForm.starRating)
-      }),
-    });
-    const data = await res.json();
-    setAddLoading(false);
-
-    if (!res.ok) { setAddError(data.error || 'Failed to add property'); return; }
-    setAddSuccess('Property submitted for approval! Our team will review it within 24 hours.');
-    setHotelForm({ name: '', description: '', location: '', city: '', area: '', country: 'India', address: '', lat: '', lng: '', propertyType: 'Hotel', category: 'standard', starRating: '3', checkInTime: '14:00', checkOutTime: '11:00', totalPropertyRooms: '', staybuddyAllocation: '', totalFloors: '', providedRating: '4.5', contactName: '', contactDesignation: '', contactPhone: '', contactEmail: '', amenities: [], roomAmenities: [], extraAmenities: '', policies: '', images: [], rooms: [] });
-    setFormStep(1);
-    fetchData();
-    setTimeout(() => setActiveTab('hotels'), 2000);
   }
 
   async function handleAddRoom(e: React.FormEvent) {
@@ -283,12 +336,14 @@ export default function PartnerDashboard() {
   const [uploadingImage, setUploadingImage] = useState(false);
 
   async function handleMultipleImageUpload(e: React.ChangeEvent<HTMLInputElement>, callback: (urls: string[]) => void) {
-    const files = Array.from(e.target.files || []);
-    if (!files.length) return;
+    const rawFiles = Array.from(e.target.files || []);
+    if (!rawFiles.length) return;
     setUploadingImage(true);
     try {
+      // Downsample large camera photos client-side to ~80-120KB web images in milliseconds
+      const compressedFiles = await Promise.all(rawFiles.map(f => compressImage(f)));
       const formData = new FormData();
-      files.forEach(f => formData.append('files', f));
+      compressedFiles.forEach(f => formData.append('files', f));
 
       const res = await fetch('/api/upload', {
         method: 'POST',
@@ -303,8 +358,8 @@ export default function PartnerDashboard() {
         alert(data.error || 'Failed to upload images');
       }
     } catch (err) {
-      console.error(err);
-      alert('Failed to upload images');
+      console.error('Image upload error:', err);
+      alert('Failed to upload images. Please check your connection and try again.');
     } finally {
       setUploadingImage(false);
       e.target.value = ''; // Reset input
@@ -1391,6 +1446,16 @@ export default function PartnerDashboard() {
                           I have read and agree to the StayBuddy Partner Policies and Terms & Conditions
                         </span>
                       </label>
+                      {addError && (
+                        <div className="alert alert-error" style={{ marginTop: '16px', fontSize: '0.88rem' }}>
+                          <span>⚠️</span> {addError}
+                        </div>
+                      )}
+                      {addSuccess && (
+                        <div className="alert alert-success" style={{ marginTop: '16px', fontSize: '0.88rem' }}>
+                          <span>✅</span> {addSuccess}
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}

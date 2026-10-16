@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import fs from 'fs';
 import path from 'path';
+import { db } from '@/lib/firebaseAdmin';
+
+export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
   try {
@@ -71,7 +74,8 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      // Local disk storage fallback in public/uploads
+      // Local disk storage fallback in public/uploads (for local dev)
+      let savedUrl: string | null = null;
       try {
         const uploadsDir = path.join(process.cwd(), 'public', 'uploads');
         if (!fs.existsSync(uploadsDir)) {
@@ -83,12 +87,34 @@ export async function POST(request: NextRequest) {
         const filePath = path.join(uploadsDir, filename);
 
         fs.writeFileSync(filePath, buffer);
-        uploadedUrls.push(`/uploads/${filename}`);
+        savedUrl = `/uploads/${filename}`;
       } catch (err) {
-        // In serverless read-only environment, fallback to Base64 data URI
-        const base64 = buffer.toString('base64');
-        const mimeType = file.type || 'image/jpeg';
-        uploadedUrls.push(`data:${mimeType};base64,${base64}`);
+        // Read-only filesystem (e.g. Vercel serverless)
+        savedUrl = null;
+      }
+
+      if (savedUrl) {
+        uploadedUrls.push(savedUrl);
+      } else {
+        // Dedicated persistent storage in Firestore hotel_images collection
+        try {
+          const base64 = buffer.toString('base64');
+          const mimeType = file.type || 'image/jpeg';
+          const imgDocRef = db.collection('hotel_images').doc();
+          await imgDocRef.set({
+            data: base64,
+            contentType: mimeType,
+            name: file.name || 'hotel-photo.jpg',
+            size: buffer.length,
+            createdAt: new Date().toISOString()
+          });
+          uploadedUrls.push(`/api/images/${imgDocRef.id}`);
+        } catch (dbErr) {
+          console.error('Failed to store image in Firestore:', dbErr);
+          const base64 = buffer.toString('base64');
+          const mimeType = file.type || 'image/jpeg';
+          uploadedUrls.push(`data:${mimeType};base64,${base64}`);
+        }
       }
     }
 

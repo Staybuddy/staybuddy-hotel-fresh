@@ -124,13 +124,37 @@ export async function GET(request: NextRequest) {
   }
 }
 
+import { getServerSession } from 'next-auth/next';
+import { authOptions } from '../auth/[...nextauth]/route';
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const { partnerId, name, description, location, city, area, country, address, images, amenities, extraAmenities, propertyType, category, starRating, checkInTime, checkOutTime, policies, lat, lng, rooms, totalPropertyRooms, staybuddyAllocation, totalFloors, contactName, contactDesignation, contactPhone, contactEmail, providedRating } = body;
 
+    let finalPartnerId = partnerId;
+    if (!finalPartnerId) {
+      try {
+        const session = await getServerSession(authOptions);
+        finalPartnerId = (session?.user as any)?.id;
+        if (!finalPartnerId && session?.user?.email) {
+          const userSnap = await db.collection('users').where('email', '==', session.user.email).limit(1).get();
+          if (!userSnap.empty) finalPartnerId = userSnap.docs[0].id;
+        }
+      } catch (e) {
+        console.warn('Could not resolve server session:', e);
+      }
+    }
+
+    if (!finalPartnerId && contactEmail) {
+      try {
+        const userSnap = await db.collection('users').where('email', '==', contactEmail).limit(1).get();
+        if (!userSnap.empty) finalPartnerId = userSnap.docs[0].id;
+      } catch (e) {}
+    }
+
     const missing = [];
-    if (!partnerId) missing.push('partnerId (user session ID)');
+    if (!finalPartnerId) missing.push('partnerId (user session ID)');
     if (!name) missing.push('Property Name');
     if (!city) missing.push('City');
     if (!description) missing.push('Description');
@@ -144,9 +168,9 @@ export async function POST(request: NextRequest) {
     const hotelRef = db.collection('hotels').doc();
     const counterRef = db.collection('metadata').doc('counters');
 
-    let hotelIdString = 'SBHO-001';
+    let hotelIdString = `SBHO-${Math.floor(Math.random() * 900) + 100}`;
     try {
-      await db.runTransaction(async (t) => {
+      const counterPromise = db.runTransaction(async (t) => {
         const doc = await t.get(counterRef);
         let count = 1;
         if (doc.exists) {
@@ -155,22 +179,76 @@ export async function POST(request: NextRequest) {
         } else {
           t.set(counterRef, { hotelCount: count });
         }
-        hotelIdString = `SBHO-${count.toString().padStart(3, '0')}`;
+        return `SBHO-${count.toString().padStart(3, '0')}`;
       });
+      // Safety timeout: 2000ms max
+      hotelIdString = await Promise.race([
+        counterPromise,
+        new Promise<string>((_, reject) => setTimeout(() => reject(new Error('timeout')), 2000))
+      ]);
     } catch (e) {
-      console.error('Hotel counter transaction failed, falling back', e);
-      hotelIdString = `SBHO-${Math.floor(Math.random() * 900) + 100}`;
+      console.warn('Hotel counter transaction skipped or timed out, used fallback ID:', hotelIdString);
     }
+
+    // Ensure no oversized Base64 data URLs are saved into the hotel or room documents
+    const sanitizeImage = async (img: string): Promise<string> => {
+      if (typeof img === 'string' && img.startsWith('data:image/')) {
+        try {
+          const parts = img.split(';base64,');
+          const contentType = parts[0].replace('data:', '') || 'image/jpeg';
+          const base64Data = parts[1];
+          if (base64Data) {
+            const imgDoc = db.collection('hotel_images').doc();
+            await imgDoc.set({
+              data: base64Data,
+              contentType,
+              createdAt: new Date().toISOString()
+            });
+            return `/api/images/${imgDoc.id}`;
+          }
+        } catch (err) {
+          console.warn('Failed to offload base64 image:', err);
+        }
+      }
+      return img;
+    };
 
     let finalHotelImages = Array.isArray(images) ? images.filter(Boolean) : [];
     if (finalHotelImages.length === 0 && rooms && Array.isArray(rooms)) {
       finalHotelImages = Array.from(new Set(rooms.flatMap((r: any) => Array.isArray(r.images) ? r.images : []).filter(Boolean)));
     }
+    finalHotelImages = await Promise.all(finalHotelImages.map(sanitizeImage));
 
     const hotel = {
       _id: hotelRef.id,
       hotelId: hotelIdString,
-      partnerId, name, description, location, city, area, country, address, coordinates, images: finalHotelImages, amenities, extraAmenities, propertyType: propertyType || 'Hotel', category, starRating, checkInTime, checkOutTime, policies, status: 'pending', totalPropertyRooms, staybuddyAllocation: staybuddyAllocation ? parseInt(staybuddyAllocation) : undefined, totalFloors, contactName, contactDesignation, contactPhone, contactEmail, avgRating: providedRating ? parseFloat(providedRating) : 0,
+      partnerId: finalPartnerId, 
+      name, 
+      description, 
+      location, 
+      city, 
+      area, 
+      country, 
+      address, 
+      coordinates, 
+      images: finalHotelImages, 
+      amenities, 
+      extraAmenities, 
+      propertyType: propertyType || 'Hotel', 
+      category, 
+      starRating, 
+      checkInTime, 
+      checkOutTime, 
+      policies, 
+      status: 'pending', 
+      totalPropertyRooms, 
+      staybuddyAllocation: staybuddyAllocation ? parseInt(staybuddyAllocation) : undefined, 
+      totalFloors, 
+      contactName, 
+      contactDesignation, 
+      contactPhone, 
+      contactEmail, 
+      avgRating: providedRating ? parseFloat(providedRating) : 0,
       createdAt: new Date().toISOString()
     };
 
@@ -180,6 +258,10 @@ export async function POST(request: NextRequest) {
       const batch = db.batch();
       for (const r of rooms) {
         const roomRef = db.collection('rooms').doc();
+        const sanitizedRoomImages = Array.isArray(r.images)
+          ? await Promise.all(r.images.filter(Boolean).map(sanitizeImage))
+          : [];
+
         batch.set(roomRef, {
           _id: roomRef.id,
           hotelId: hotelRef.id,
@@ -198,7 +280,7 @@ export async function POST(request: NextRequest) {
           bedType: r.bedType || 'Double',
           size: r.size ? parseInt(r.size) : undefined,
           amenities: r.amenities || [],
-          images: r.images || [],
+          images: sanitizedRoomImages,
           isActive: true
         });
       }

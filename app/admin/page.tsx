@@ -5,6 +5,7 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
+import { compressImage } from '@/lib/imageUtils';
 
 const NAV = [
   { id: 'overview', label: 'Dashboard', icon: '📊' },
@@ -78,12 +79,13 @@ export default function AdminDashboard() {
     e: React.ChangeEvent<HTMLInputElement>,
     callback: (urls: string[]) => void
   ) {
-    const files = Array.from(e.target.files || []);
-    if (!files.length) return;
+    const rawFiles = Array.from(e.target.files || []);
+    if (!rawFiles.length) return;
     setUploadingImage(true);
     try {
+      const compressedFiles = await Promise.all(rawFiles.map((f) => compressImage(f)));
       const formData = new FormData();
-      files.forEach((f) => formData.append('files', f));
+      compressedFiles.forEach((f) => formData.append('files', f));
 
       const res = await fetch('/api/upload', {
         method: 'POST',
