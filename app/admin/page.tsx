@@ -210,6 +210,23 @@ export default function AdminDashboard() {
     fetchAll(false);
   }
 
+  async function deleteHotel(id: string) {
+    if (!confirm('Are you sure you want to permanently delete this property and all its rooms?')) return;
+    setApproveLoading(id);
+    try {
+      const res = await fetch(`/api/hotels/${id}`, { method: 'DELETE' });
+      if (!res.ok) {
+        alert('Failed to delete property');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Error deleting property');
+    } finally {
+      setApproveLoading(null);
+      fetchAll(false);
+    }
+  }
+
   async function updateUser(id: string, updates: any) {
     await fetch(`/api/admin/users/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(updates) });
     fetchAll(false);
@@ -743,12 +760,19 @@ export default function AdminDashboard() {
                             style={{ width: 80, padding: '6px 12px', borderRadius: 6, border: '1px solid #cbd5e1', fontSize: '0.9rem', fontWeight: 600, color: '#0f172a' }}
                           /> %
                         </td>
-                        <td style={{ padding: '16px 24px' }}>
+                        <td style={{ padding: '16px 24px', whiteSpace: 'nowrap' }}>
                           <button 
                             onClick={() => updateHotelStatus(h._id, { isExtranet: !h.isExtranet })}
                             style={{ padding: '6px 12px', background: 'transparent', border: '1px solid #cbd5e1', borderRadius: 6, fontSize: '0.85rem', fontWeight: 600, color: '#475569', cursor: 'pointer' }}
                           >
                             Toggle Type
+                          </button>
+                          <button 
+                            onClick={() => deleteHotel(h._id)}
+                            disabled={approveLoading === h._id}
+                            style={{ marginLeft: 8, padding: '6px 12px', background: '#fff1f2', border: '1px solid #fecdd3', borderRadius: 6, fontSize: '0.85rem', fontWeight: 700, color: '#e11d48', cursor: 'pointer' }}
+                          >
+                            {approveLoading === h._id ? 'Deleting...' : '🗑️ Delete'}
                           </button>
                         </td>
                       </tr>

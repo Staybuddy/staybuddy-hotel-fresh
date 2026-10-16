@@ -214,10 +214,30 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
       if (snapshot.empty) return NextResponse.json({ error: 'Hotel not found' }, { status: 404 });
       docRef = db.collection('hotels').doc(snapshot.docs[0].id);
     }
+
+    const hotelId = docRef.id;
+
+    // 1. Delete all associated rooms
+    const roomsSnap = await db.collection('rooms').where('hotelId', '==', hotelId).get();
+    if (!roomsSnap.empty) {
+      const roomBatch = db.batch();
+      roomsSnap.docs.forEach((doc: any) => roomBatch.delete(doc.ref));
+      await roomBatch.commit().catch(console.error);
+    }
+
+    // 2. Delete any associated reviews
+    const reviewsSnap = await db.collection('reviews').where('hotelId', '==', hotelId).get();
+    if (!reviewsSnap.empty) {
+      const revBatch = db.batch();
+      reviewsSnap.docs.forEach((doc: any) => revBatch.delete(doc.ref));
+      await revBatch.commit().catch(console.error);
+    }
     
+    // 3. Delete the hotel
     await docRef.delete();
-    return NextResponse.json({ message: 'Hotel deleted' });
-  } catch (error) {
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json({ success: true, message: 'Hotel and all associated rooms deleted successfully' });
+  } catch (error: any) {
+    console.error('Hotel DELETE error:', error);
+    return NextResponse.json({ error: error.message || 'Internal server error' }, { status: 500 });
   }
 }

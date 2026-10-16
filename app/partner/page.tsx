@@ -44,6 +44,8 @@ export default function PartnerDashboard() {
   const [bookingSearch, setBookingSearch] = useState('');
   const [extranetModal, setExtranetModal] = useState<any>(null);
   const [approveLoading, setApproveLoading] = useState<string | null>(null);
+  const [deleteHotelModal, setDeleteHotelModal] = useState<any>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
   const [isLocating, setIsLocating] = useState(false);
 
   function getCurrentLocation() {
@@ -366,6 +368,31 @@ export default function PartnerDashboard() {
     }
   }
 
+  async function handleDeleteHotel(hotelId: string) {
+    if (!hotelId) return;
+    setDeleteLoading(true);
+    try {
+      const res = await fetch(`/api/hotels/${hotelId}`, {
+        method: 'DELETE',
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        alert(data.error || 'Failed to delete property');
+        return;
+      }
+      setDeleteHotelModal(null);
+      if (extranetModal?._id === hotelId) {
+        setExtranetModal(null);
+      }
+      await fetchData();
+    } catch (err: any) {
+      console.error('Delete hotel error:', err);
+      alert('Error deleting property. Please check your connection.');
+    } finally {
+      setDeleteLoading(false);
+    }
+  }
+
   if (status === 'authenticated' && (session.user as any)?.role === 'partner' && (session.user as any)?.partnerStatus !== 'approved') {
     return (
       <div style={{ 
@@ -502,9 +529,36 @@ export default function PartnerDashboard() {
                         ) : (
                           <div style={{ width: '100%', height: 200, background: 'linear-gradient(135deg, var(--brand-100), var(--brand-200))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '3rem' }}>🏨</div>
                         )}
-                        <div style={{ position: 'absolute', top: 12, right: 12 }}>
+                        <div style={{ position: 'absolute', top: 12, right: 12, display: 'flex', gap: 6, alignItems: 'center' }}>
                           <span className={`badge ${hotel.status === 'approved' ? 'badge-success' : hotel.status === 'rejected' ? 'badge-danger' : 'badge-warning'}`} style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>{hotel.status}</span>
                         </div>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setDeleteHotelModal(hotel);
+                          }}
+                          title="Delete entire property"
+                          style={{
+                            position: 'absolute',
+                            top: 12,
+                            left: 12,
+                            background: 'rgba(255, 255, 255, 0.95)',
+                            border: '1px solid #fecdd3',
+                            borderRadius: '8px',
+                            padding: '4px 10px',
+                            fontSize: '0.78rem',
+                            fontWeight: 700,
+                            color: '#e11d48',
+                            cursor: 'pointer',
+                            boxShadow: '0 2px 8px rgba(0,0,0,0.12)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 4
+                          }}
+                        >
+                          🗑️ Delete
+                        </button>
                       </div>
                       <div className="card-body" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
                         <div style={{ marginBottom: 16 }}>
@@ -541,6 +595,30 @@ export default function PartnerDashboard() {
                             {approveLoading === hotel._id ? <div className="spinner" style={{ width: 14, height: 14, borderWidth: 2, borderColor: 'rgba(239, 68, 68, 0.3)', borderTopColor: '#ef4444' }} /> : hotel.isBlocked ? 'Blocked 🔓' : 'Block 🚫'}
                           </button>
                         </div>
+                        <button
+                          type="button"
+                          className="btn"
+                          style={{
+                            width: '100%',
+                            marginTop: 8,
+                            padding: '9px 0',
+                            fontSize: '0.82rem',
+                            fontWeight: 700,
+                            background: '#fff1f2',
+                            color: '#e11d48',
+                            border: '1px solid #fecdd3',
+                            borderRadius: 'var(--radius-md)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: 6,
+                            cursor: 'pointer',
+                            transition: 'all 0.2s'
+                          }}
+                          onClick={() => setDeleteHotelModal(hotel)}
+                        >
+                          🗑️ Delete Entire Property
+                        </button>
                       </div>
                     </div>
                   ))}
@@ -2368,11 +2446,105 @@ export default function PartnerDashboard() {
                   </div>
                 </div>
                 
-                <div style={{ position: 'sticky', bottom: 0, background: '#f8fafc', padding: '16px 0', borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'flex-end', gap: 16 }}>
-                  <button type="button" onClick={() => setExtranetModal(null)} className="btn btn-outline" style={{ background: 'white' }}>Cancel</button>
-                  <button type="submit" className="btn btn-primary" style={{ padding: '12px 32px' }}>Save Changes</button>
+                <div style={{ position: 'sticky', bottom: 0, background: '#f8fafc', padding: '16px 0', borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 16 }}>
+                  <button 
+                    type="button" 
+                    onClick={() => setDeleteHotelModal(extranetModal)} 
+                    className="btn" 
+                    style={{ background: '#fff1f2', color: '#e11d48', border: '1px solid #fecdd3', fontWeight: 700, fontSize: '0.85rem', padding: '10px 16px' }}
+                  >
+                    🗑️ Delete Property
+                  </button>
+                  <div style={{ display: 'flex', gap: 12 }}>
+                    <button type="button" onClick={() => setExtranetModal(null)} className="btn btn-outline" style={{ background: 'white' }}>Cancel</button>
+                    <button type="submit" className="btn btn-primary" style={{ padding: '12px 32px' }}>Save Changes</button>
+                  </div>
                 </div>
               </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Entire Property Confirmation Modal */}
+      {deleteHotelModal && (
+        <div className="modal-overlay" onClick={() => !deleteLoading && setDeleteHotelModal(null)} style={{ zIndex: 10000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
+          <div 
+            className="modal-content fade-in" 
+            onClick={e => e.stopPropagation()} 
+            style={{ 
+              maxWidth: 480, 
+              width: '100%', 
+              background: 'white', 
+              borderRadius: '16px', 
+              padding: '28px', 
+              boxShadow: '0 20px 50px rgba(0,0,0,0.2)',
+              border: '1px solid #fee2e2'
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 16 }}>
+              <div style={{ width: 48, height: 48, borderRadius: '50%', background: '#fee2e2', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem', flexShrink: 0 }}>
+                ⚠️
+              </div>
+              <div>
+                <h3 style={{ margin: 0, fontSize: '1.25rem', color: '#991b1b', fontWeight: 800 }}>Delete Entire Property?</h3>
+                <p style={{ margin: '4px 0 0', fontSize: '0.85rem', color: '#64748b' }}>This action cannot be undone.</p>
+              </div>
+            </div>
+
+            <div style={{ background: '#f8fafc', padding: '14px 16px', borderRadius: '10px', border: '1px solid #e2e8f0', marginBottom: 20 }}>
+              <div style={{ fontWeight: 700, color: '#0f172a', fontSize: '1rem', marginBottom: 4 }}>
+                {deleteHotelModal.name}
+              </div>
+              <div style={{ fontSize: '0.85rem', color: '#64748b' }}>
+                📍 {deleteHotelModal.city}, {deleteHotelModal.country}
+              </div>
+              <div style={{ fontSize: '0.8rem', color: 'var(--brand-600)', marginTop: 4, fontWeight: 600 }}>
+                Hotel ID: {deleteHotelModal.hotelId || deleteHotelModal._id?.slice(-8)}
+              </div>
+            </div>
+
+            <p style={{ fontSize: '0.88rem', color: '#475569', lineHeight: 1.5, marginBottom: 24 }}>
+              Are you sure you want to permanently delete this property? All rooms, daily allocations, inventory settings, and photo galleries for this property will be completely removed from StayBuddy.
+            </p>
+
+            <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
+              <button 
+                type="button" 
+                className="btn btn-secondary" 
+                disabled={deleteLoading}
+                onClick={() => setDeleteHotelModal(null)}
+                style={{ padding: '10px 20px', fontWeight: 600 }}
+              >
+                Cancel
+              </button>
+              <button 
+                type="button" 
+                className="btn" 
+                disabled={deleteLoading}
+                onClick={() => handleDeleteHotel(deleteHotelModal._id)}
+                style={{ 
+                  padding: '10px 22px', 
+                  fontWeight: 700, 
+                  background: '#dc2626', 
+                  color: 'white', 
+                  border: 'none', 
+                  borderRadius: 'var(--radius-md)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  cursor: deleteLoading ? 'not-allowed' : 'pointer'
+                }}
+              >
+                {deleteLoading ? (
+                  <>
+                    <div className="spinner" style={{ width: 16, height: 16, borderWidth: 2, borderColor: 'rgba(255,255,255,0.3)', borderTopColor: 'white' }} />
+                    <span>Deleting...</span>
+                  </>
+                ) : (
+                  <>🗑️ Yes, Delete Property</>
+                )}
+              </button>
             </div>
           </div>
         </div>
