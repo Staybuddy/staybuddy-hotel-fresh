@@ -380,13 +380,27 @@ export default function HotelDetailPage() {
 
     const actualOrder = orderData.order || orderData;
 
+    const hotelIdDisplay = orderData.hotelId || hotel.hotelId || hotel._id?.slice(-8) || hotel._id;
+    const bookingCode = orderData.bookingCode || data.booking?.bookingId || data.booking?._id;
+    const formattedAmount = orderData.formattedAmount || `₹${Math.round(actualOrder.amount / 100).toLocaleString('en-IN')}`;
+    const auditDescription = orderData.auditDescription || `Hotel ID: ${hotelIdDisplay} | Booking: ${bookingCode} | ${formattedAmount}`;
+
     const options = {
       key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_live_Tjoj98t74vGXMx', 
       amount: actualOrder.amount,
       currency: "INR",
       name: "StayBuddy",
-      description: `Booking at ${hotel.name}`,
+      description: auditDescription,
       order_id: actualOrder.id,
+      notes: orderData.notes || {
+        "Hotel ID": String(hotelIdDisplay),
+        "Booking ID": String(bookingCode),
+        "Amount": formattedAmount,
+        "Hotel Name": String(hotel.name || '').slice(0, 50),
+        "Audit Note": auditDescription,
+        bookingId: String(data.booking._id),
+        hotelId: String(hotel._id)
+      },
       handler: async function (response: any) {
         const verifyRes = await fetch('/api/payments/verify', {
           method: 'POST',

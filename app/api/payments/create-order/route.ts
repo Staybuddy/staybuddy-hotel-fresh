@@ -23,36 +23,79 @@ export async function POST(request: NextRequest) {
     }
     const booking = docSnap.data() as any;
 
+    // Fetch hotel details for clear audit notes in Razorpay
+    let hotelName = 'StayBuddy Hotel';
+    let hotelIdDisplay = String(booking.hotelId || '');
+    let hotelRawId = String(booking.hotelId || '');
+
+    if (booking.hotelId) {
+      try {
+        let hSnap = await db.collection('hotels').doc(booking.hotelId).get();
+        if (!hSnap.exists) {
+          const hQuery = await db.collection('hotels').where('_id', '==', booking.hotelId).limit(1).get();
+          if (!hQuery.empty) hSnap = hQuery.docs[0];
+        }
+        if (hSnap.exists) {
+          const hData = hSnap.data() as any;
+          if (hData.name) hotelName = hData.name;
+          hotelRawId = hSnap.id;
+          hotelIdDisplay = hData.hotelId || hSnap.id;
+        }
+      } catch (hErr) {
+        console.warn('Error fetching hotel for Razorpay order:', hErr);
+      }
+    }
+
+    const bookingCode = String(booking.bookingId || docSnap.id);
+    const totalPriceNum = Math.round(Number(booking.totalPrice) || 0);
+    const formattedAmount = `₹${totalPriceNum.toLocaleString('en-IN')}`;
+    const auditDescription = `Hotel ID: ${hotelIdDisplay} | Booking: ${bookingCode} | ${formattedAmount}`;
+
     const razorpay = getRazorpayClient();
 
     const options = {
-      amount: Math.round(Number(booking.totalPrice) * 100), // Amount in paise
+      amount: Math.round(totalPriceNum * 100), // Amount in paise
       currency: 'INR',
-      receipt: `receipt_${bookingId}`,
+      receipt: `BK-${bookingCode}`.slice(0, 40),
       notes: {
-        bookingId: String(bookingId),
-        customerId: String(booking.customerId || ''),
-        hotelId: String(booking.hotelId || ''),
+        "Hotel ID": String(hotelIdDisplay),
+        "Booking ID": String(bookingCode),
+        "Amount": formattedAmount,
+        "Hotel Name": String(hotelName).slice(0, 50),
+        "Audit Note": auditDescription.slice(0, 255),
+        // Machine-readable fields for backend & webhook compatibility:
+        bookingId: String(docSnap.id),
+        hotelId: String(hotelRawId),
+        bookingCode: String(bookingCode),
         guestEmail: String(booking.guestEmail || ''),
         guestPhone: String(booking.guestPhone || ''),
+        guestName: String(booking.guestName || '')
       }
     };
 
     const order = await razorpay.orders.create(options);
     
-    // Crucial: Persist razorpayOrderId and receipt onto booking in Firestore
+    // Crucial: Persist razorpayOrderId and audit details onto booking in Firestore
     await bookingRef.update({
       razorpayOrderId: order.id,
       razorpayReceipt: options.receipt,
       paymentMethod: 'razorpay',
-      lastOrderCreatedAt: new Date().toISOString()
+      lastOrderCreatedAt: new Date().toISOString(),
+      hotelIdDisplay,
+      bookingAuditRef: auditDescription
     });
 
     return NextResponse.json({ 
       order, 
       id: order.id, 
       amount: order.amount, 
-      currency: order.currency 
+      currency: order.currency,
+      hotelId: hotelIdDisplay,
+      hotelName,
+      bookingCode,
+      formattedAmount,
+      auditDescription,
+      notes: options.notes
     });
   } catch (error) {
     console.error('Razorpay Create Order Error:', error);

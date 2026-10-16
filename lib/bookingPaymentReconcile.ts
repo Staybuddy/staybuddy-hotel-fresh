@@ -1,5 +1,5 @@
 import { db } from '@/lib/firebaseAdmin';
-import { sendBookingConfirmationEmail, sendPartnerNotificationEmail } from '@/lib/email';
+import { sendBookingConfirmationEmail, sendPartnerNotificationEmail, sendPaymentAuditEmail } from '@/lib/email';
 
 export interface PaymentReconcileOptions {
   paymentId?: string;
@@ -104,6 +104,16 @@ export async function reconcileBookingPayment(bookingId: string, options: Paymen
   try {
     sendBookingConfirmationEmail(populatedBooking).catch(err => {
       console.error('Failed to send booking confirmation email:', err);
+    });
+
+    // Send internal audit email to StayBuddy accounts team
+    sendPaymentAuditEmail(populatedBooking, {
+      paymentId: options.paymentId,
+      orderId: options.orderId,
+      paymentMethod: options.paymentMethod,
+      source: options.source
+    }).catch(err => {
+      console.error('Failed to send payment audit email:', err);
     });
 
     if (hotel) {

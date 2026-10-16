@@ -38,11 +38,13 @@ export async function POST(request: NextRequest) {
       // 1. Try to extract bookingId from notes
       let bookingId =
         paymentEntity?.notes?.bookingId ||
-        orderEntity?.notes?.bookingId;
+        paymentEntity?.notes?.booking_id ||
+        orderEntity?.notes?.bookingId ||
+        orderEntity?.notes?.booking_id;
 
-      // 2. Try to extract bookingId from receipt (e.g. receipt_BOOKINGID)
+      // 2. Try to extract bookingId from receipt (e.g. BK-SB-001 or receipt_...)
       if (!bookingId && orderEntity?.receipt) {
-        bookingId = orderEntity.receipt.replace(/^receipt_/, '');
+        bookingId = orderEntity.receipt.replace(/^receipt_/, '').replace(/^BK-/, '');
       }
 
       // 3. Fallback: Search Firestore for booking with razorpayOrderId
@@ -50,6 +52,17 @@ export async function POST(request: NextRequest) {
         const snap = await db.collection('bookings').where('razorpayOrderId', '==', orderId).limit(1).get();
         if (!snap.empty) {
           bookingId = snap.docs[0].id;
+        }
+      }
+
+      // 4. Fallback: If bookingId is a human-readable code (e.g. SB-001) instead of doc ID
+      if (bookingId) {
+        const docCheck = await db.collection('bookings').doc(bookingId).get();
+        if (!docCheck.exists) {
+          const snap = await db.collection('bookings').where('bookingId', '==', bookingId).limit(1).get();
+          if (!snap.empty) {
+            bookingId = snap.docs[0].id;
+          }
         }
       }
 
