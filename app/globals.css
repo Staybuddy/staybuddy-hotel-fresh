@@ -19,9 +19,14 @@ html, body {
 }
 
 /* 3. Make all media elements automatically shrink to fit small screens */
-img, video, canvas, svg, iframe {
+img, video, canvas, svg {
   max-width: 100%;
   height: auto;
+}
+
+iframe {
+  max-width: 100%;
+  border: 0;
 }
 
 /* 4. Ensure large text or long links break cleanly without pushing layout */
@@ -183,7 +188,7 @@ input, textarea, select { font-family: inherit; font-size: 16px; /* prevent zoom
 
 /* ===== LAYOUT ===== */
 .container { width: 100%; max-width: 1280px; margin: 0 auto; padding: 0 var(--space-6); box-sizing: border-box; }
-.section { padding: var(--space-16) 0; }
+.section { padding: var(--space-12) 0; }
 
 /* ===== TYPOGRAPHY ===== */
 h1, h2, h3, h4, h5, h6 { font-weight: 700; line-height: 1.2; }
@@ -274,9 +279,9 @@ h4 { font-size: 1.125rem; }
 }
 .card:hover { box-shadow: var(--shadow-lg); }
 .card-hover:hover { transform: translateY(-4px); }
-.card-body { padding: var(--space-6); }
-.card-header { padding: var(--space-4) var(--space-6); border-bottom: 1px solid var(--border); border-radius: calc(var(--radius-lg) - 1px) calc(var(--radius-lg) - 1px) 0 0; }
-.card-footer { padding: var(--space-4) var(--space-6); border-top: 1px solid var(--border); background: var(--bg-secondary); }
+.card-body { padding: var(--space-5); }
+.card-header { padding: 14px var(--space-5); border-bottom: 1px solid var(--border); border-radius: calc(var(--radius-lg) - 1px) calc(var(--radius-lg) - 1px) 0 0; }
+.card-footer { padding: 14px var(--space-5); border-top: 1px solid var(--border); background: var(--bg-secondary); }
 
 /* ===== BADGES ===== */
 .badge {
@@ -445,9 +450,14 @@ tbody tr:hover { background: var(--bg-secondary); }
     box-sizing: border-box !important;
   }
   
-  img, video, iframe, canvas {
+  img, video, canvas {
     max-width: 100% !important;
     height: auto !important;
+  }
+  
+  iframe {
+    max-width: 100% !important;
+    border: 0 !important;
   }
 
   p, h1, h2, h3, h4, h5, h6, div, span, a, button {
@@ -541,6 +551,8 @@ tbody tr:hover { background: var(--bg-secondary); }
 .hotel-details-grid {
   display: grid;
   grid-template-columns: 1fr 360px;
+  gap: 20px;
+  align-items: flex-start;
 }
 .hotel-gallery-grid {
   display: grid;

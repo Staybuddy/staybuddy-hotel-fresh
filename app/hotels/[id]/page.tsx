@@ -737,9 +737,9 @@ export default function HotelDetailPage() {
         <div
           className="container hotel-details-grid"
           style={{
-            gap: "var(--space-8)",
+            gap: 20,
             alignItems: "flex-start",
-            paddingBottom: "var(--space-16)",
+            paddingBottom: "var(--space-8)",
             width: "100%",
             maxWidth: "100%",
             boxSizing: "border-box",
@@ -748,7 +748,7 @@ export default function HotelDetailPage() {
           {/* Left Column */}
           <div style={{ minWidth: 0, width: "100%", maxWidth: "100%", boxSizing: "border-box" }}>
             {/* Hero Images Gallery */}
-            <div style={{ marginBottom: "var(--space-6)" }}>
+            <div style={{ marginBottom: 16 }}>
               {(() => {
                 const displayPhotos = [
                   ...(Array.isArray(hotel.images) ? hotel.images : []),
@@ -948,24 +948,24 @@ export default function HotelDetailPage() {
             </div>
 
             {/* Description */}
-            <div className="card" style={{ marginBottom: "var(--space-5)" }}>
+            <div className="card" style={{ marginBottom: 16 }}>
               <div className="card-header">
-                <h3 style={{ fontSize: "1.2rem", fontWeight: 800 }}>About Property</h3>
+                <h3 style={{ fontSize: "1.15rem", fontWeight: 800 }}>About Property</h3>
               </div>
               <div className="card-body">
-                <p style={{ color: "var(--text-secondary)", lineHeight: 1.6, fontSize: "0.95rem" }}>
+                <p style={{ color: "var(--text-secondary)", lineHeight: 1.6, fontSize: "0.95rem", margin: 0 }}>
                   {hotel.description || "Experience a wonderful stay at our property, offering premium amenities and excellent service. Perfectly located for both business and leisure travelers."}
                 </p>
               </div>
             </div>
 
             {/* Amenities */}
-            <div className="card" style={{ marginBottom: "var(--space-5)" }}>
+            <div className="card" style={{ marginBottom: 16 }}>
               <div className="card-header">
-                <h3 style={{ fontSize: "1.2rem", fontWeight: 800 }}>Amenities</h3>
+                <h3 style={{ fontSize: "1.15rem", fontWeight: 800 }}>Amenities</h3>
               </div>
               <div className="card-body">
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
                   {hotel.amenities?.map((amenity: string, idx: number) => (
                     <div key={idx} style={{ display: "flex", alignItems: "center", gap: 8 }}>
                       <span style={{ fontSize: "1.2rem" }}>{AMENITY_ICONS[amenity] || "✨"}</span>
@@ -977,16 +977,16 @@ export default function HotelDetailPage() {
             </div>
 
             {/* House Rules */}
-            <div className="card" style={{ marginBottom: "var(--space-5)" }}>
+            <div className="card" style={{ marginBottom: 16 }}>
               <div className="card-header">
-                <h3 style={{ fontSize: "1.2rem", fontWeight: 800 }}>House Rules</h3>
+                <h3 style={{ fontSize: "1.15rem", fontWeight: 800 }}>House Rules</h3>
               </div>
-              <div className="card-body" style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                <div style={{ display: "flex", justifyContent: "space-between", paddingBottom: 12, borderBottom: "1px solid var(--border)" }}>
+              <div className="card-body" style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", paddingBottom: 10, borderBottom: "1px solid var(--border)" }}>
                   <span style={{ fontWeight: 600, color: "var(--text-primary)", fontSize: "0.95rem" }}>Check-in</span>
                   <span style={{ color: "var(--text-secondary)", fontSize: "0.95rem" }}>From 12:00 PM</span>
                 </div>
-                <div style={{ display: "flex", justifyContent: "space-between", paddingBottom: 12, borderBottom: "1px solid var(--border)" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", paddingBottom: 10, borderBottom: "1px solid var(--border)" }}>
                   <span style={{ fontWeight: 600, color: "var(--text-primary)", fontSize: "0.95rem" }}>Check-out</span>
                   <span style={{ color: "var(--text-secondary)", fontSize: "0.95rem" }}>Until 11:00 AM</span>
                 </div>
@@ -998,23 +998,29 @@ export default function HotelDetailPage() {
             </div>
             {/* Location / Map */}
             {hotel.coordinates?.lat && hotel.coordinates?.lng && (
-              <div className="card" style={{ marginBottom: "var(--space-5)" }}>
-                <div className="card-header">
-                  <h3 style={{ fontSize: "1rem" }}>Location</h3>
+              <div className="card" style={{ marginBottom: 16, overflow: "hidden" }}>
+                <div className="card-header" style={{ padding: "12px 16px" }}>
+                  <h3 style={{ fontSize: "1rem", margin: 0, fontWeight: 700 }}>Location & Map</h3>
                 </div>
                 <div
                   className="card-body"
                   style={{
                     padding: 0,
                     overflow: "hidden",
-                    height: 300,
+                    height: 280,
                     position: "relative",
                   }}
                 >
                   <iframe
                     width="100%"
                     height="100%"
-                    style={{ border: 0 }}
+                    style={{
+                      border: 0,
+                      width: "100%",
+                      height: "100%",
+                      minHeight: 280,
+                      display: "block",
+                    }}
                     loading="lazy"
                     allowFullScreen
                     referrerPolicy="no-referrer-when-downgrade"
@@ -1029,10 +1035,10 @@ export default function HotelDetailPage() {
               className="card availability-selection-bar"
               id="availability-bar"
               style={{
-                marginBottom: "var(--space-5)",
-                padding: "16px",
+                marginBottom: 16,
+                padding: "14px 16px",
                 display: "flex",
-                gap: 16,
+                gap: 12,
                 alignItems: "center",
                 background: "#f8fafc",
                 border: "1px solid #e2e8f0",
@@ -1360,7 +1366,7 @@ export default function HotelDetailPage() {
             <div
               className="card"
               id="rooms-section"
-              style={{ marginBottom: "var(--space-5)" }}
+              style={{ marginBottom: 16 }}
             >
               <div className="card-header">
                 <h3 style={{ fontSize: "1rem" }}>Available Rooms</h3>
@@ -1919,13 +1925,13 @@ export default function HotelDetailPage() {
 
 
           {/* Right: Booking Panel */}
-          <div style={{ position: "sticky", top: 90 }}>
+          <div style={{ position: "sticky", top: 80 }}>
             {/* Location Card (Moved from left) */}
             <div
               className="card"
               style={{
-                marginBottom: "var(--space-5)",
-                padding: "var(--space-5)",
+                marginBottom: 16,
+                padding: "16px 20px",
                 border: "1px solid var(--border)",
                 borderRadius: "var(--radius-xl)",
               }}
