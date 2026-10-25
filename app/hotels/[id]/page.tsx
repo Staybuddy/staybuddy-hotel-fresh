@@ -3962,7 +3962,7 @@ export default function HotelDetailPage() {
             {roomDetailsModal.images && roomDetailsModal.images.length > 0 && (
               <div
                 style={{
-                  margin: "-var(--space-6) -var(--space-6) var(--space-4)",
+                  margin: "calc(-1 * var(--space-6, 24px)) calc(-1 * var(--space-6, 24px)) var(--space-4, 16px)",
                   position: "relative",
                 }}
               >
