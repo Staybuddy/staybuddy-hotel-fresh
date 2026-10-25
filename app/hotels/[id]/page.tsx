@@ -54,6 +54,8 @@ export default function HotelDetailPage() {
   const [showGalleryModal, setShowGalleryModal] = useState(false);
   const [galleryActiveIndex, setGalleryActiveIndex] = useState(0);
   const [isAutoPlaying, setIsAutoPlaying] = useState(false);
+  const [galleryFitMode, setGalleryFitMode] = useState<"contain" | "cover">("contain");
+  const [showFilmstrip, setShowFilmstrip] = useState(true);
   const [selectedRoom, setSelectedRoom] = useState<any>(null);
   const [selectedRoomsMap, setSelectedRoomsMap] = useState<Record<string, number>>({});
   const [bookingData, setBookingData] = useState({
@@ -167,6 +169,44 @@ export default function HotelDetailPage() {
     if (allPhotos.length === 0) return;
     setGalleryActiveIndex(Math.max(0, Math.min(index, allPhotos.length - 1)));
     setShowGalleryModal(true);
+  };
+
+  // Lock body scroll when photo modal or room details is open
+  useEffect(() => {
+    if (showGalleryModal || roomDetailsModal) {
+      const prevOverflow = document.body.style.overflow;
+      document.body.style.overflow = "hidden";
+      return () => {
+        document.body.style.overflow = prevOverflow;
+      };
+    }
+  }, [showGalleryModal, roomDetailsModal]);
+
+  const [touchStartX, setTouchStartX] = useState<number | null>(null);
+  const [touchEndX, setTouchEndX] = useState<number | null>(null);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setTouchStartX(e.targetTouches[0].clientX);
+    setTouchEndX(null);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    setTouchEndX(e.targetTouches[0].clientX);
+  };
+
+  const handleTouchEnd = () => {
+    if (!touchStartX || !touchEndX) return;
+    const distance = touchStartX - touchEndX;
+    const minSwipeDistance = 45;
+    if (distance > minSwipeDistance) {
+      // Swiped left -> next photo
+      setGalleryActiveIndex((prev) => (prev + 1) % (allPhotos.length || 1));
+    } else if (distance < -minSwipeDistance) {
+      // Swiped right -> previous photo
+      setGalleryActiveIndex((prev) => (prev - 1 + allPhotos.length) % (allPhotos.length || 1));
+    }
+    setTouchStartX(null);
+    setTouchEndX(null);
   };
 
   useEffect(() => {
@@ -2118,25 +2158,30 @@ export default function HotelDetailPage() {
                               gap: 6,
                             }}
                           >
-                            {selectedRoomsList.map((item, idx) => (
-                              <div
-                                key={idx}
-                                style={{
-                                  display: "flex",
-                                  justifyContent: "space-between",
-                                  fontSize: "0.85rem",
-                                  fontWeight: 600,
-                                  color: "#1e293b",
-                                }}
-                              >
-                                <span>
-                                  {item.quantity} × {item.room.type}
-                                </span>
-                                <span style={{ color: "var(--brand-600)", fontWeight: 700 }}>
-                                  ₹{(item.pricePerNight * item.quantity).toLocaleString()}/night
-                                </span>
-                              </div>
-                            ))}
+                            {selectedRoomsList.map((item, idx) => {
+                              const roomTypeTotal = currentPricing.roomBreakdowns
+                                ?.filter((rb) => rb.roomId === item.room._id)
+                                .reduce((sum, rb) => sum + rb.pricePerNight, 0) || (item.pricePerNight * item.quantity);
+                              return (
+                                <div
+                                  key={idx}
+                                  style={{
+                                    display: "flex",
+                                    justifyContent: "space-between",
+                                    fontSize: "0.85rem",
+                                    fontWeight: 600,
+                                    color: "#1e293b",
+                                  }}
+                                >
+                                  <span>
+                                    {item.quantity} × {item.room.type}
+                                  </span>
+                                  <span style={{ color: "var(--brand-600)", fontWeight: 700 }}>
+                                    ₹{roomTypeTotal.toLocaleString()}/night
+                                  </span>
+                                </div>
+                              );
+                            })}
                           </div>
                         )}
 
@@ -2855,23 +2900,28 @@ export default function HotelDetailPage() {
                         <div style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase" }}>
                           Room Breakdown:
                         </div>
-                        {selectedRoomsList.map((item, idx) => (
-                          <div
-                            key={idx}
-                            style={{
-                              display: "flex",
-                              justifyContent: "space-between",
-                              fontSize: "0.88rem",
-                            }}
-                          >
-                            <span style={{ fontWeight: 700 }}>
-                              {item.quantity} × {item.room.type}
-                            </span>
-                            <span style={{ color: "var(--brand-600)", fontWeight: 700 }}>
-                              ₹{(item.pricePerNight * item.quantity).toLocaleString()}/night
-                            </span>
-                          </div>
-                        ))}
+                        {selectedRoomsList.map((item, idx) => {
+                          const roomTypeTotal = currentPricing.roomBreakdowns
+                            ?.filter((rb) => rb.roomId === item.room._id)
+                            .reduce((sum, rb) => sum + rb.pricePerNight, 0) || (item.pricePerNight * item.quantity);
+                          return (
+                            <div
+                              key={idx}
+                              style={{
+                                display: "flex",
+                                justifyContent: "space-between",
+                                fontSize: "0.88rem",
+                              }}
+                            >
+                              <span style={{ fontWeight: 700 }}>
+                                {item.quantity} × {item.room.type}
+                              </span>
+                              <span style={{ color: "var(--brand-600)", fontWeight: 700 }}>
+                                ₹{roomTypeTotal.toLocaleString()}/night
+                              </span>
+                            </div>
+                          );
+                        })}
                       </div>
                     )}
                     <ul
@@ -3879,9 +3929,9 @@ export default function HotelDetailPage() {
               transform: "translate(-50%, -50%)",
               background: "white",
               borderRadius: "var(--radius-xl)",
-              width: "90%",
-              maxWidth: 600,
-              maxHeight: "90vh",
+              width: "92%",
+              maxWidth: 820,
+              maxHeight: "92vh",
               overflowY: "auto",
               zIndex: 1001,
               boxShadow: "var(--shadow-xl)",
@@ -3917,19 +3967,47 @@ export default function HotelDetailPage() {
                 }}
               >
                 <div
-                  style={{ width: "100%", height: 350, position: "relative" }}
+                  style={{ width: "100%", height: 440, position: "relative", cursor: "zoom-in" }}
+                  onClick={() => {
+                    const currentImg = roomDetailsModal.images[modalImageIndex];
+                    const foundIdx = allPhotos.findIndex((p) => p.url === currentImg);
+                    setRoomDetailsModal(null);
+                    openPhotoViewer(foundIdx >= 0 ? foundIdx : 0);
+                  }}
+                  title="Click to view full screen"
                 >
                   <Image
                     src={roomDetailsModal.images[modalImageIndex]}
                     alt={roomDetailsModal.type}
                     fill
-                    sizes="(max-width: 768px) 100vw, 800px"
+                    sizes="(max-width: 768px) 100vw, 900px"
                     style={{
                       objectFit: "cover",
                       borderTopLeftRadius: "var(--radius-xl)",
                       borderTopRightRadius: "var(--radius-xl)",
                     }}
                   />
+                  <div
+                    style={{
+                      position: "absolute",
+                      bottom: 12,
+                      right: 12,
+                      background: "rgba(15, 23, 42, 0.75)",
+                      backdropFilter: "blur(6px)",
+                      color: "white",
+                      padding: "6px 14px",
+                      borderRadius: 20,
+                      fontSize: "0.8rem",
+                      fontWeight: 700,
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 6,
+                      border: "1px solid rgba(255,255,255,0.25)",
+                      boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
+                    }}
+                  >
+                    <span>⤢ View Full Screen</span>
+                  </div>
                 </div>
 
                 {roomDetailsModal.images.length > 1 && (
@@ -4188,48 +4266,90 @@ export default function HotelDetailPage() {
           style={{
             position: "fixed",
             inset: 0,
+            width: "100vw",
+            height: "100vh",
+            height: "100dvh",
             zIndex: 99999,
-            background: "rgba(10, 15, 29, 0.96)",
-            backdropFilter: "blur(16px)",
+            background: "#080c16",
+            overflow: "hidden",
             display: "flex",
             flexDirection: "column",
-            justifyContent: "space-between",
+            userSelect: "none",
+            touchAction: "pan-y",
           }}
           onClick={() => setShowGalleryModal(false)}
         >
-          {/* Top Bar */}
+          {/* Floating Top Bar Overlay */}
           <div
             style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              right: 0,
+              zIndex: 50,
               display: "flex",
               justifyContent: "space-between",
               alignItems: "center",
-              padding: "16px 24px",
-              background: "rgba(15, 23, 42, 0.8)",
-              borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
-              color: "white",
+              padding: "12px 16px",
+              background: "linear-gradient(180deg, rgba(8, 12, 22, 0.95) 0%, rgba(8, 12, 22, 0.7) 60%, rgba(8, 12, 22, 0) 100%)",
+              pointerEvents: "none",
             }}
-            onClick={(e) => e.stopPropagation()}
           >
-            <div>
-              <h3 style={{ margin: 0, fontSize: "1.1rem", fontWeight: 700, display: "flex", alignItems: "center", gap: 10 }}>
-                <span>🏨 {hotel?.name}</span>
-                <span style={{ fontSize: "0.75rem", background: "rgba(255,255,255,0.15)", padding: "2px 8px", borderRadius: 12, fontWeight: 600 }}>
+            <div style={{ pointerEvents: "auto", display: "flex", flexDirection: "column", gap: 3, maxWidth: "60%" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                <h3 style={{ margin: 0, fontSize: "0.95rem", fontWeight: 800, color: "white", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                  🏨 {hotel?.name}
+                </h3>
+                <span style={{ fontSize: "0.7rem", background: "rgba(255,255,255,0.18)", color: "#f1f5f9", padding: "2px 8px", borderRadius: 12, fontWeight: 700 }}>
                   {allPhotos[galleryActiveIndex]?.label}
                 </span>
-              </h3>
-              <p style={{ margin: "2px 0 0 0", fontSize: "0.8rem", color: "#94a3b8" }}>
-                Photo {galleryActiveIndex + 1} of {allPhotos.length} • Use ◄ / ► arrow keys to browse
-              </p>
+              </div>
+              <div style={{ fontSize: "0.75rem", color: "#94a3b8", fontWeight: 600 }}>
+                Photo {galleryActiveIndex + 1} of {allPhotos.length} • Swipe or tap arrows
+              </div>
             </div>
 
-            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <div style={{ pointerEvents: "auto", display: "flex", alignItems: "center", gap: 8 }}>
+              {/* Fill Screen vs Fit Photo Toggle */}
               <button
                 type="button"
-                onClick={() => setIsAutoPlaying(!isAutoPlaying)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setGalleryFitMode((prev) => (prev === "contain" ? "cover" : "contain"));
+                }}
                 style={{
-                  background: isAutoPlaying ? "var(--brand-600)" : "rgba(255,255,255,0.12)",
+                  background: galleryFitMode === "cover" ? "var(--brand-600)" : "rgba(255,255,255,0.18)",
+                  backdropFilter: "blur(8px)",
                   color: "white",
-                  border: "1px solid rgba(255,255,255,0.2)",
+                  border: "1px solid rgba(255,255,255,0.25)",
+                  borderRadius: 20,
+                  padding: "6px 14px",
+                  fontSize: "0.8rem",
+                  fontWeight: 700,
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                  transition: "all 0.2s",
+                }}
+                title={galleryFitMode === "contain" ? "Fill Screen (Edge-to-Edge)" : "Fit Entire Photo"}
+              >
+                <span>{galleryFitMode === "cover" ? "⤡ Fit Photo" : "⤢ Fill Screen"}</span>
+              </button>
+
+              {/* Toggle Thumbnails (Desktop/Tablet) */}
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowFilmstrip((prev) => !prev);
+                }}
+                className="desktop-only-btn"
+                style={{
+                  background: showFilmstrip ? "rgba(255,255,255,0.15)" : "var(--brand-600)",
+                  backdropFilter: "blur(8px)",
+                  color: "white",
+                  border: "1px solid rgba(255,255,255,0.25)",
                   borderRadius: 20,
                   padding: "6px 14px",
                   fontSize: "0.8rem",
@@ -4238,27 +4358,66 @@ export default function HotelDetailPage() {
                   display: "flex",
                   alignItems: "center",
                   gap: 6,
+                  transition: "all 0.2s",
                 }}
+                title="Toggle Thumbnails"
               >
-                <span>{isAutoPlaying ? "⏸ Pause Slideshow" : "▶ Auto Slideshow"}</span>
+                <span>🖼️ {showFilmstrip ? "Hide Thumbnails" : "Show Thumbnails"}</span>
               </button>
 
+              {/* Fullscreen Button (Desktop/Tablet) */}
               <button
                 type="button"
-                onClick={() => setShowGalleryModal(false)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (!document.fullscreenElement) {
+                    document.documentElement.requestFullscreen().catch(() => {});
+                  } else {
+                    document.exitFullscreen().catch(() => {});
+                  }
+                }}
+                className="desktop-only-btn"
                 style={{
                   background: "rgba(255,255,255,0.15)",
-                  border: "none",
+                  backdropFilter: "blur(8px)",
                   color: "white",
-                  width: 36,
-                  height: 36,
+                  border: "1px solid rgba(255,255,255,0.25)",
+                  borderRadius: 20,
+                  padding: "6px 12px",
+                  fontSize: "0.8rem",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                  transition: "all 0.2s",
+                }}
+                title="Fullscreen"
+              >
+                <span>⛶ Fullscreen</span>
+              </button>
+
+              {/* Close Button */}
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowGalleryModal(false);
+                }}
+                style={{
+                  background: "rgba(255,255,255,0.25)",
+                  backdropFilter: "blur(8px)",
+                  border: "1px solid rgba(255,255,255,0.3)",
+                  color: "white",
+                  width: 38,
+                  height: 38,
                   borderRadius: "50%",
                   cursor: "pointer",
-                  fontSize: "1.2rem",
+                  fontSize: "1.3rem",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  transition: "background 0.2s",
+                  transition: "all 0.2s",
                 }}
                 title="Close (Esc)"
               >
@@ -4267,41 +4426,51 @@ export default function HotelDetailPage() {
             </div>
           </div>
 
-          {/* Main Photo Display Area */}
+          {/* Main Photo Display Canvas (Full-Screen, Zero Restraints) */}
           <div
             style={{
               position: "relative",
+              width: "100%",
+              height: "100%",
               flex: 1,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              padding: "20px 80px",
+              padding: galleryFitMode === "cover" ? 0 : (showFilmstrip ? "64px 8px 84px 8px" : "64px 8px 16px 8px"),
               overflow: "hidden",
+              boxSizing: "border-box",
             }}
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Previous Button */}
+            {/* Previous Arrow Button */}
             <button
               type="button"
-              onClick={() => setGalleryActiveIndex((prev) => (prev - 1 + allPhotos.length) % allPhotos.length)}
+              onClick={(e) => {
+                e.stopPropagation();
+                setGalleryActiveIndex((prev) => (prev - 1 + allPhotos.length) % allPhotos.length);
+              }}
               style={{
                 position: "absolute",
-                left: 24,
+                left: 12,
                 top: "50%",
                 transform: "translateY(-50%)",
-                background: "rgba(255, 255, 255, 0.2)",
-                backdropFilter: "blur(8px)",
-                border: "1px solid rgba(255, 255, 255, 0.3)",
+                background: "rgba(8, 12, 22, 0.75)",
+                backdropFilter: "blur(12px)",
+                border: "1px solid rgba(255, 255, 255, 0.35)",
                 color: "white",
-                width: 52,
-                height: 52,
+                width: 48,
+                height: 48,
                 borderRadius: "50%",
                 cursor: "pointer",
-                fontSize: "1.8rem",
+                fontSize: "2rem",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                zIndex: 10,
+                zIndex: 35,
+                boxShadow: "0 10px 25px rgba(0,0,0,0.6)",
                 transition: "all 0.2s",
               }}
               aria-label="Previous Photo"
@@ -4309,54 +4478,62 @@ export default function HotelDetailPage() {
               ‹
             </button>
 
-            {/* Active Main Image */}
+            {/* Active Main Image Container */}
             <div
               style={{
                 position: "relative",
                 width: "100%",
                 height: "100%",
-                maxHeight: "75vh",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
               }}
+              onClick={() => setGalleryFitMode((prev) => (prev === "contain" ? "cover" : "contain"))}
+              title="Click photo to toggle Fit / Fill Screen"
             >
               <img
                 src={allPhotos[galleryActiveIndex]?.url}
                 alt={`${hotel?.name} photo ${galleryActiveIndex + 1}`}
                 style={{
-                  maxWidth: "100%",
-                  maxHeight: "100%",
-                  objectFit: "contain",
-                  borderRadius: 16,
-                  boxShadow: "0 25px 50px -12px rgba(0,0,0,0.8)",
-                  transition: "transform 0.2s ease-out",
+                  width: galleryFitMode === "cover" ? "100%" : "auto",
+                  height: galleryFitMode === "cover" ? "100%" : "auto",
+                  maxWidth: galleryFitMode === "cover" ? "100%" : "100%",
+                  maxHeight: galleryFitMode === "cover" ? "100%" : "100%",
+                  objectFit: galleryFitMode === "cover" ? "cover" : "contain",
+                  borderRadius: galleryFitMode === "cover" ? 0 : 12,
+                  boxShadow: galleryFitMode === "cover" ? "none" : "0 25px 60px rgba(0,0,0,0.9)",
+                  transition: "all 0.25s ease-out",
+                  cursor: galleryFitMode === "cover" ? "zoom-out" : "zoom-in",
                 }}
               />
             </div>
 
-            {/* Next Button */}
+            {/* Next Arrow Button */}
             <button
               type="button"
-              onClick={() => setGalleryActiveIndex((prev) => (prev + 1) % allPhotos.length)}
+              onClick={(e) => {
+                e.stopPropagation();
+                setGalleryActiveIndex((prev) => (prev + 1) % allPhotos.length);
+              }}
               style={{
                 position: "absolute",
-                right: 24,
+                right: 12,
                 top: "50%",
                 transform: "translateY(-50%)",
-                background: "rgba(255, 255, 255, 0.2)",
-                backdropFilter: "blur(8px)",
-                border: "1px solid rgba(255, 255, 255, 0.3)",
+                background: "rgba(8, 12, 22, 0.75)",
+                backdropFilter: "blur(12px)",
+                border: "1px solid rgba(255, 255, 255, 0.35)",
                 color: "white",
-                width: 52,
-                height: 52,
+                width: 48,
+                height: 48,
                 borderRadius: "50%",
                 cursor: "pointer",
-                fontSize: "1.8rem",
+                fontSize: "2rem",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                zIndex: 10,
+                zIndex: 35,
+                boxShadow: "0 10px 25px rgba(0,0,0,0.6)",
                 transition: "all 0.2s",
               }}
               aria-label="Next Photo"
@@ -4365,65 +4542,73 @@ export default function HotelDetailPage() {
             </button>
           </div>
 
-          {/* Bottom Thumbnails Filmstrip ("appear one by one") */}
-          <div
-            style={{
-              background: "rgba(15, 23, 42, 0.85)",
-              borderTop: "1px solid rgba(255, 255, 255, 0.1)",
-              padding: "14px 24px",
-              display: "flex",
-              gap: 12,
-              overflowX: "auto",
-              alignItems: "center",
-              justifyContent: allPhotos.length > 8 ? "flex-start" : "center",
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            {allPhotos.map((photo: any, pIdx: number) => {
-              const isActive = pIdx === galleryActiveIndex;
-              return (
-                <div
-                  key={pIdx}
-                  onClick={() => setGalleryActiveIndex(pIdx)}
-                  style={{
-                    position: "relative",
-                    flexShrink: 0,
-                    width: 76,
-                    height: 54,
-                    borderRadius: 8,
-                    overflow: "hidden",
-                    cursor: "pointer",
-                    border: isActive ? "2.5px solid var(--brand-500)" : "1.5px solid rgba(255,255,255,0.2)",
-                    transform: isActive ? "scale(1.08)" : "scale(1)",
-                    opacity: isActive ? 1 : 0.65,
-                    transition: "all 0.2s",
-                  }}
-                  title={photo.label}
-                >
-                  <img
-                    src={photo.url}
-                    alt={`Thumbnail ${pIdx + 1}`}
-                    style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                  />
-                  <span
+          {/* Floating Bottom Thumbnails Filmstrip */}
+          {showFilmstrip && (
+            <div
+              style={{
+                position: "absolute",
+                bottom: 0,
+                left: 0,
+                right: 0,
+                zIndex: 50,
+                background: "linear-gradient(0deg, rgba(8, 12, 22, 0.95) 0%, rgba(8, 12, 22, 0.65) 70%, rgba(8, 12, 22, 0) 100%)",
+                padding: "16px 16px 14px 16px",
+                display: "flex",
+                gap: 10,
+                overflowX: "auto",
+                alignItems: "center",
+                justifyContent: allPhotos.length > 8 ? "flex-start" : "center",
+                pointerEvents: "auto",
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {allPhotos.map((photo: any, pIdx: number) => {
+                const isActive = pIdx === galleryActiveIndex;
+                return (
+                  <div
+                    key={pIdx}
+                    onClick={() => setGalleryActiveIndex(pIdx)}
                     style={{
-                      position: "absolute",
-                      bottom: 2,
-                      right: 2,
-                      background: "rgba(0,0,0,0.7)",
-                      color: "white",
-                      fontSize: "0.6rem",
-                      fontWeight: 700,
-                      padding: "1px 4px",
-                      borderRadius: 4,
+                      position: "relative",
+                      flexShrink: 0,
+                      width: 68,
+                      height: 46,
+                      borderRadius: 8,
+                      overflow: "hidden",
+                      cursor: "pointer",
+                      border: isActive ? "2.5px solid var(--brand-500)" : "1.5px solid rgba(255,255,255,0.25)",
+                      transform: isActive ? "scale(1.12)" : "scale(1)",
+                      opacity: isActive ? 1 : 0.65,
+                      transition: "all 0.2s",
+                      boxShadow: isActive ? "0 0 14px rgba(249, 115, 22, 0.6)" : "none",
                     }}
+                    title={photo.label}
                   >
-                    {pIdx + 1}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
+                    <img
+                      src={photo.url}
+                      alt={`Thumbnail ${pIdx + 1}`}
+                      style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                    />
+                    <span
+                      style={{
+                        position: "absolute",
+                        bottom: 2,
+                        right: 2,
+                        background: "rgba(0,0,0,0.75)",
+                        color: "white",
+                        fontSize: "0.6rem",
+                        fontWeight: 700,
+                        padding: "1px 4px",
+                        borderRadius: 3,
+                      }}
+                    >
+                      {pIdx + 1}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
     </div>

@@ -676,7 +676,11 @@ tbody tr:hover { background: var(--bg-secondary); }
   }
 }
 
-
+@media (max-width: 640px) {
+  .desktop-only-btn {
+    display: none !important;
+  }
+}
 @media (max-width: 1024px) {
   .hero-search-wrapper {
     flex-direction: column !important;

@@ -59,28 +59,34 @@ export function getRoomPriceForOccupancy(room: any, occCount: number): number {
 
 /**
  * Distributes adults across rooms ensuring max 3 adults per room.
- * For example, 4 adults in 2 rooms -> Room 1: 3 adults (triple), Room 2: 1 adult (single).
+ * Priority:
+ * 1. Each room gets at least 1 adult (single occupancy).
+ * 2. Extra adults are distributed 1 per room to fill rooms to Double occupancy (2 adults per room).
+ * 3. Any remaining extra adults beyond all double rooms are distributed 1 per room up to Triple occupancy (3 adults per room).
+ *
+ * Examples:
+ * - 2 rooms, 2 adults -> [1, 1] (2 Single rooms - 1 member each)
+ * - 2 rooms, 5 adults -> [3, 2] (1 Triple room, 1 Double room)
+ * - 6 rooms, 8 adults -> [2, 2, 1, 1, 1, 1] (2 Double rooms, 4 Single rooms)
  */
 export function distributeAdultsAcrossRooms(totalAdults: number, totalRooms: number): number[] {
   const roomsCount = Math.max(1, totalRooms || 1);
   const adultsCount = Math.max(1, totalAdults || 1);
 
-  const distributions: number[] = [];
-  if (adultsCount <= roomsCount) {
-    for (let i = 0; i < roomsCount; i++) {
-      distributions.push(1); // each room gets minimum single occupancy
-    }
-  } else {
-    for (let i = 0; i < roomsCount; i++) {
-      distributions.push(1);
-    }
-    let rem = adultsCount - roomsCount;
-    for (let i = 0; i < roomsCount; i++) {
-      const add = Math.min(2, rem); // max 1 + 2 = 3 adults per room
-      distributions[i] += add;
-      rem -= add;
-      if (rem <= 0) break;
-    }
+  // Phase 1: Give 1 adult to each room (minimum single occupancy)
+  const distributions: number[] = new Array(roomsCount).fill(1);
+  let rem = Math.max(0, adultsCount - roomsCount);
+
+  // Phase 2: Prioritize standard Double occupancy first (bring each room up to 2 adults)
+  for (let i = 0; i < roomsCount && rem > 0; i++) {
+    distributions[i] += 1;
+    rem -= 1;
+  }
+
+  // Phase 3: If additional adults remain beyond all double rooms, add Triple occupancy (up to 3 adults)
+  for (let i = 0; i < roomsCount && rem > 0; i++) {
+    distributions[i] += 1;
+    rem -= 1;
   }
 
   return distributions;
@@ -167,7 +173,7 @@ export function calculateBookingPricing(
   }
   if (singleCount > 0) {
     const pSingle = getRoomPriceForOccupancy(room, 1);
-    summaryParts.push(`${singleCount} Single (${singleCount * 1} Adult @ ₹${pSingle.toLocaleString()})`);
+    summaryParts.push(`${singleCount} Single (${singleCount * 1} Adult${singleCount > 1 ? 's' : ''} @ ₹${pSingle.toLocaleString()})`);
   }
 
   return {
@@ -302,7 +308,7 @@ export function calculateMultiRoomPricing(
     }
     if (singleCount > 0) {
       const pSingle = getRoomPriceForOccupancy(roomInstances[0], 1);
-      summaryParts.push(`${singleCount} Single (${singleCount * 1} Adult @ ₹${pSingle.toLocaleString()})`);
+      summaryParts.push(`${singleCount} Single (${singleCount * 1} Adult${singleCount > 1 ? 's' : ''} @ ₹${pSingle.toLocaleString()})`);
     }
   }
 
@@ -326,6 +332,7 @@ export function calculateMultiRoomPricing(
 
 /**
  * Validates and adjusts room and adult counts ensuring max 3 adults per room constraint.
+ * Also ensures that there is at least 1 adult member per room (rooms <= adults <= rooms * 3).
  */
 export function adjustRoomsAndAdults(
   currentRooms: number,
@@ -342,12 +349,20 @@ export function adjustRoomsAndAdults(
     if (a > r * MAX_ADULTS_PER_ROOM) {
       a = r * MAX_ADULTS_PER_ROOM;
     }
+    // Each room requires at least 1 adult member
+    if (a < r) {
+      a = r;
+    }
   } else if (fieldChanged === 'adults') {
     a = Math.max(1, newValue);
     // If adults increased, ensure at least Math.ceil(a / MAX_ADULTS_PER_ROOM) rooms
     const minRequiredRooms = Math.ceil(a / MAX_ADULTS_PER_ROOM);
     if (r < minRequiredRooms) {
       r = minRequiredRooms;
+    }
+    // Cannot have more rooms than adults (at least 1 adult per room)
+    if (r > a) {
+      r = a;
     }
   }
 
