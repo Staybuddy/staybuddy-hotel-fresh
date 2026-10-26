@@ -357,6 +357,15 @@ export default function HotelDetailPage() {
           nights
         );
 
+    if (!calculatedPricing.canBook) {
+      setBookingError(
+        calculatedPricing.validationError ||
+        "The selected room configuration cannot accommodate the requested number of guests. Please adjust your room selection."
+      );
+      setBookingLoading(false);
+      return;
+    }
+
     const primaryRoom = selectedRoomsList[0]?.room || selectedRoom;
     const selectedRoomsPayload = selectedRoomsList.length > 0
       ? selectedRoomsList.map((sr) => ({
@@ -1570,8 +1579,21 @@ export default function HotelDetailPage() {
                               }}
                             >
                               <span>🛏️ {room.bedType}</span>
-                              <span>👥 Max {room.maxGuests} guests</span>
+                              {(() => {
+                                const hasTriple = Boolean(room.priceTriple && Number(room.priceTriple) > 0);
+                                const maxCap = hasTriple ? 3 : 2;
+                                return (
+                                  <span style={{ fontWeight: 600 }}>
+                                    👥 Max {maxCap} guests {hasTriple ? '(1-3 Guests)' : '(1-2 Guests Only)'}
+                                  </span>
+                                );
+                              })()}
                               {room.size && <span>📐 {room.size} m²</span>}
+                              {Boolean(bookingData.rooms === 1 && bookingData.adults === 3 && !(Number(room.priceTriple) > 0)) && (
+                                <span style={{ backgroundColor: '#fee2e2', color: '#b91c1c', padding: '2px 8px', borderRadius: 4, fontWeight: 700, fontSize: '0.75rem', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                                  ⚠️ 3-Occupancy Not Available (Max 2 Guests)
+                                </span>
+                              )}
                               {room.ratePlan === 'CP' ? (
                                 <span style={{ backgroundColor: '#ecfdf5', color: '#059669', padding: '2px 8px', borderRadius: 4, fontWeight: 700, fontSize: '0.75rem', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                                   🍳 Free Breakfast Included
@@ -1617,17 +1639,30 @@ export default function HotelDetailPage() {
                             </div>
 
                             {bookingData.rooms === 1 ? (
-                              <button
-                                className="btn btn-primary btn-sm"
-                                style={{ marginTop: 8 }}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setSelectedRoom(room);
-                                  setSelectedRoomsMap({ [room._id]: 1 });
-                                }}
-                              >
-                                {selectedRoom?._id === room._id ? "Selected ✓" : "Select"}
-                              </button>
+                              Boolean(bookingData.adults === 3 && !(Number(room.priceTriple) > 0)) ? (
+                                <button
+                                  type="button"
+                                  disabled={true}
+                                  className="btn btn-sm"
+                                  style={{ marginTop: 8, background: '#e2e8f0', color: '#64748b', cursor: 'not-allowed', border: 'none', fontWeight: 700 }}
+                                  title="3-occupancy is not offered for this room. Max 2 guests allowed."
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  Max 2 Guests Only
+                                </button>
+                              ) : (
+                                <button
+                                  className="btn btn-primary btn-sm"
+                                  style={{ marginTop: 8 }}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setSelectedRoom(room);
+                                    setSelectedRoomsMap({ [room._id]: 1 });
+                                  }}
+                                >
+                                  {selectedRoom?._id === room._id ? "Selected ✓" : "Select"}
+                                </button>
+                              )
                             ) : (
                               <div style={{ marginTop: 8, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4 }}>
                                 {allocatedCount > 0 ? (
@@ -2363,6 +2398,27 @@ export default function HotelDetailPage() {
                       Free Cancellation till 24 hrs before check in
                     </div>
 
+                    {!currentPricing.canBook && (
+                      <div
+                        style={{
+                          background: "#fef2f2",
+                          border: "1px solid #fecaca",
+                          color: "#991b1b",
+                          padding: "10px 14px",
+                          borderRadius: "var(--radius-md)",
+                          fontSize: "0.85rem",
+                          fontWeight: 700,
+                          marginBottom: 16,
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 8,
+                        }}
+                      >
+                        <span>⚠️</span>
+                        <span>{currentPricing.validationError || "Room capacity exceeded for requested guests."}</span>
+                      </div>
+                    )}
+
                     {bookingData.rooms > 1 && totalSelectedRoomsCount < bookingData.rooms ? (
                       <button
                         className="btn"
@@ -2385,6 +2441,25 @@ export default function HotelDetailPage() {
                         }}
                       >
                         Select {bookingData.rooms - totalSelectedRoomsCount} More Room{bookingData.rooms - totalSelectedRoomsCount > 1 ? "s" : ""}
+                      </button>
+                    ) : !currentPricing.canBook ? (
+                      <button
+                        className="btn"
+                        disabled={true}
+                        style={{
+                          width: "100%",
+                          fontSize: "0.95rem",
+                          padding: "14px",
+                          background: "#e2e8f0",
+                          color: "#64748b",
+                          border: "none",
+                          marginBottom: 20,
+                          fontWeight: 800,
+                          cursor: "not-allowed",
+                          borderRadius: "var(--radius-md)",
+                        }}
+                      >
+                        🚫 Cannot Book: Capacity Exceeded
                       </button>
                     ) : (
                       <button

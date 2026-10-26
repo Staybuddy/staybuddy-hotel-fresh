@@ -1073,54 +1073,158 @@ export default function PartnerDashboard() {
                           </div>
 
                           <div>
-                            <h4 style={{ fontSize: '0.9rem', marginBottom: 'var(--space-3)', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Pricing Configuration</h4>
-                            <div className="partner-grid-5" style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 'var(--space-4)' }}>
-                              <div className="form-group">
-                                <label className="form-label" style={{ fontSize: '0.75rem' }}>Single Price (₹) <span className="required">*</span></label>
-                                <input className="form-input" type="number" min="0" value={room.priceSingle} onChange={e => {
-                                  const newRooms = [...hotelForm.rooms];
-                                  newRooms[index].priceSingle = e.target.value;
-                                  setHotelForm({ ...hotelForm, rooms: newRooms });
-                                }} required />
-                              </div>
-                              <div className="form-group">
-                                <label className="form-label" style={{ fontSize: '0.75rem' }}>Double Price (₹) <span className="required">*</span></label>
-                                <input className="form-input" type="number" min="0" value={room.priceDouble} onChange={e => {
-                                  const newRooms = [...hotelForm.rooms];
-                                  newRooms[index].priceDouble = e.target.value;
-                                  setHotelForm({ ...hotelForm, rooms: newRooms });
-                                }} required />
-                              </div>
-                              <div className="form-group">
-                                <label className="form-label" style={{ fontSize: '0.75rem' }}>Triple Price (₹)</label>
-                                <input className="form-input" type="number" min="0" value={room.priceTriple} onChange={e => {
-                                  const newRooms = [...hotelForm.rooms];
-                                  newRooms[index].priceTriple = e.target.value;
-                                  setHotelForm({ ...hotelForm, rooms: newRooms });
-                                }} />
-                              </div>
-                              <div className="form-group">
-                                <label className="form-label" style={{ fontSize: '0.75rem' }}>B2B Price (₹)</label>
-                                <input className="form-input" type="number" min="0" value={room.b2bPrice} onChange={e => {
-                                  const newRooms = [...hotelForm.rooms];
-                                  newRooms[index].b2bPrice = e.target.value;
-                                  setHotelForm({ ...hotelForm, rooms: newRooms });
-                                }} />
-                              </div>
-                              <div className="form-group">
-                                <label className="form-label" style={{ fontSize: '0.75rem' }}>Rate Plan</label>
-                                <select className="form-input form-select" value={room.ratePlan} onChange={e => {
-                                  const newRooms = [...hotelForm.rooms];
-                                  newRooms[index].ratePlan = e.target.value;
-                                  setHotelForm({ ...hotelForm, rooms: newRooms });
-                                }}>
-                                  <option value="EP">EP (Room Only)</option>
-                                  <option value="CP">CP (Breakfast)</option>
-                                  <option value="MAP">MAP (Half Board)</option>
-                                  <option value="AP">AP (Full Board)</option>
-                                </select>
-                              </div>
-                            </div>
+                            {(() => {
+                              const isTripleActive = (room as any).hasTriple !== undefined 
+                                ? Boolean((room as any).hasTriple) 
+                                : Boolean(room.priceTriple && Number(room.priceTriple) > 0);
+
+                              return (
+                                <>
+                                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-2)', flexWrap: 'wrap', gap: 8 }}>
+                                    <h4 style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>
+                                      Pricing Configuration
+                                    </h4>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                                      <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#64748b' }}>Allowed Occupancy:</span>
+                                      <span style={{ background: '#f1f5f9', color: '#0f172a', padding: '2px 8px', borderRadius: 10, fontSize: '0.72rem', fontWeight: 600 }}>1 Guest (Single)</span>
+                                      <span style={{ background: '#f1f5f9', color: '#0f172a', padding: '2px 8px', borderRadius: 10, fontSize: '0.72rem', fontWeight: 600 }}>2 Guests (Double)</span>
+                                      {isTripleActive ? (
+                                        <span style={{ background: '#ecfdf5', color: '#059669', border: '1px solid #a7f3d0', padding: '2px 8px', borderRadius: 10, fontSize: '0.72rem', fontWeight: 700 }}>
+                                          ✓ 3 Guests (Triple Active)
+                                        </span>
+                                      ) : (
+                                        <span style={{ background: '#fef2f2', color: '#991b1b', border: '1px solid #fecaca', padding: '2px 8px', borderRadius: 10, fontSize: '0.72rem', fontWeight: 700 }} title="Guests cannot book 3 adults for this room">
+                                          ✕ 3-Occupancy Not Added (Max 2 Guests)
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+
+                                  <div className="partner-grid-5" style={{ display: 'grid', gridTemplateColumns: isTripleActive ? 'repeat(5, 1fr)' : 'repeat(5, 1fr)', gap: 'var(--space-4)' }}>
+                                    <div className="form-group">
+                                      <label className="form-label" style={{ fontSize: '0.75rem' }}>Single Price (₹) <span className="required">*</span></label>
+                                      <input className="form-input" type="number" min="0" value={room.priceSingle} onChange={e => {
+                                        const newRooms = [...hotelForm.rooms];
+                                        newRooms[index].priceSingle = e.target.value;
+                                        setHotelForm({ ...hotelForm, rooms: newRooms });
+                                      }} required />
+                                    </div>
+                                    <div className="form-group">
+                                      <label className="form-label" style={{ fontSize: '0.75rem' }}>Double Price (₹) <span className="required">*</span></label>
+                                      <input className="form-input" type="number" min="0" value={room.priceDouble} onChange={e => {
+                                        const newRooms = [...hotelForm.rooms];
+                                        newRooms[index].priceDouble = e.target.value;
+                                        setHotelForm({ ...hotelForm, rooms: newRooms });
+                                      }} required />
+                                    </div>
+                                    
+                                    {isTripleActive ? (
+                                      <div className="form-group" style={{ position: 'relative' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 }}>
+                                          <label className="form-label" style={{ fontSize: '0.75rem', margin: 0 }}>
+                                            Triple Price (₹) <span className="required">*</span>
+                                          </label>
+                                          <button
+                                            type="button"
+                                            onClick={() => {
+                                              const newRooms = [...hotelForm.rooms];
+                                              (newRooms[index] as any).hasTriple = false;
+                                              newRooms[index].priceTriple = '';
+                                              newRooms[index].maxGuests = 2;
+                                              setHotelForm({ ...hotelForm, rooms: newRooms });
+                                            }}
+                                            style={{
+                                              background: '#fee2e2',
+                                              border: 'none',
+                                              color: '#dc2626',
+                                              borderRadius: 4,
+                                              padding: '2px 6px',
+                                              fontSize: '0.68rem',
+                                              fontWeight: 700,
+                                              cursor: 'pointer',
+                                              display: 'inline-flex',
+                                              alignItems: 'center',
+                                              gap: 2,
+                                            }}
+                                            title="Delete 3-Occupancy: Room will be restricted to max 2 guests"
+                                          >
+                                            <span>🗑️</span> Remove
+                                          </button>
+                                        </div>
+                                        <input className="form-input" type="number" min="0" placeholder="e.g. 2500" value={room.priceTriple} onChange={e => {
+                                          const newRooms = [...hotelForm.rooms];
+                                          newRooms[index].priceTriple = e.target.value;
+                                          if (Number(e.target.value) > 0) {
+                                            newRooms[index].maxGuests = 3;
+                                          }
+                                          setHotelForm({ ...hotelForm, rooms: newRooms });
+                                        }} required />
+                                      </div>
+                                    ) : (
+                                      <div className="form-group" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            const newRooms = [...hotelForm.rooms];
+                                            (newRooms[index] as any).hasTriple = true;
+                                            newRooms[index].maxGuests = 3;
+                                            setHotelForm({ ...hotelForm, rooms: newRooms });
+                                          }}
+                                          style={{
+                                            background: '#fff7ed',
+                                            border: '1px dashed #f97316',
+                                            color: '#c2410c',
+                                            padding: '8px 10px',
+                                            borderRadius: 8,
+                                            fontSize: '0.75rem',
+                                            fontWeight: 700,
+                                            cursor: 'pointer',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            gap: 4,
+                                            height: '42px',
+                                            transition: 'all 0.2s',
+                                          }}
+                                          title="Add 3-Occupancy if this room accommodates 3 people"
+                                        >
+                                          <span>➕</span> Add 3-Occupancy
+                                        </button>
+                                      </div>
+                                    )}
+
+                                    <div className="form-group">
+                                      <label className="form-label" style={{ fontSize: '0.75rem' }}>B2B Price (₹)</label>
+                                      <input className="form-input" type="number" min="0" value={room.b2bPrice} onChange={e => {
+                                        const newRooms = [...hotelForm.rooms];
+                                        newRooms[index].b2bPrice = e.target.value;
+                                        setHotelForm({ ...hotelForm, rooms: newRooms });
+                                      }} />
+                                    </div>
+                                    <div className="form-group">
+                                      <label className="form-label" style={{ fontSize: '0.75rem' }}>Rate Plan</label>
+                                      <select className="form-input form-select" value={room.ratePlan} onChange={e => {
+                                        const newRooms = [...hotelForm.rooms];
+                                        newRooms[index].ratePlan = e.target.value;
+                                        setHotelForm({ ...hotelForm, rooms: newRooms });
+                                      }}>
+                                        <option value="EP">EP (Room Only)</option>
+                                        <option value="CP">CP (Breakfast)</option>
+                                        <option value="MAP">MAP (Half Board)</option>
+                                        <option value="AP">AP (Full Board)</option>
+                                      </select>
+                                    </div>
+                                  </div>
+
+                                  {!isTripleActive && (
+                                    <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: 6, display: 'flex', alignItems: 'center', gap: 6 }}>
+                                      <span>ℹ️</span>
+                                      <span>This room accommodates <strong>up to 2 guests only</strong>. If guests search for 3 adults in 1 room, this room cannot be booked. Click &quot;Add 3-Occupancy&quot; to allow 3 guests.</span>
+                                    </div>
+                                  )}
+                                </>
+                              );
+                            })()}
                           </div>
 
                           <div>
@@ -1601,24 +1705,103 @@ export default function PartnerDashboard() {
                   <label className="form-label">Description</label>
                   <textarea className="form-input form-textarea" style={{ minHeight: 80 }} placeholder="Room features and highlights..." value={roomForm.description} onChange={e => setRoomForm(p => ({ ...p, description: e.target.value }))} />
                 </div>
-                <div className="partner-grid-4" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 'var(--space-4)' }}>
-                  <div className="form-group">
-                    <label className="form-label" style={{ fontSize: '0.75rem' }}>Single Price (₹) <span className="required">*</span></label>
-                    <input className="form-input" type="number" min="0" value={roomForm.priceSingle} onChange={e => setRoomForm(p => ({ ...p, priceSingle: e.target.value }))} required />
-                  </div>
-                  <div className="form-group">
-                    <label className="form-label" style={{ fontSize: '0.75rem' }}>Double Price (₹) <span className="required">*</span></label>
-                    <input className="form-input" type="number" min="0" value={roomForm.priceDouble} onChange={e => setRoomForm(p => ({ ...p, priceDouble: e.target.value }))} required />
-                  </div>
-                  <div className="form-group">
-                    <label className="form-label" style={{ fontSize: '0.75rem' }}>Triple Price (₹)</label>
-                    <input className="form-input" type="number" min="0" value={roomForm.priceTriple} onChange={e => setRoomForm(p => ({ ...p, priceTriple: e.target.value }))} />
-                  </div>
-                  <div className="form-group">
-                    <label className="form-label" style={{ fontSize: '0.75rem' }}>B2B Price (₹)</label>
-                    <input className="form-input" type="number" min="0" value={roomForm.b2bPrice} onChange={e => setRoomForm(p => ({ ...p, b2bPrice: e.target.value }))} />
-                  </div>
-                </div>
+                {(() => {
+                  const isModalTripleActive = (roomForm as any).hasTriple !== undefined 
+                    ? Boolean((roomForm as any).hasTriple) 
+                    : Boolean(roomForm.priceTriple && Number(roomForm.priceTriple) > 0);
+
+                  return (
+                    <div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8, flexWrap: 'wrap', gap: 8 }}>
+                        <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#475569' }}>Occupancy Pricing:</span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <span style={{ background: '#f1f5f9', color: '#0f172a', padding: '2px 8px', borderRadius: 10, fontSize: '0.72rem', fontWeight: 600 }}>1-2 Guests (Standard)</span>
+                          {isModalTripleActive ? (
+                            <span style={{ background: '#ecfdf5', color: '#059669', border: '1px solid #a7f3d0', padding: '2px 8px', borderRadius: 10, fontSize: '0.72rem', fontWeight: 700 }}>✓ 3 Guests (Active)</span>
+                          ) : (
+                            <span style={{ background: '#fef2f2', color: '#991b1b', border: '1px solid #fecaca', padding: '2px 8px', borderRadius: 10, fontSize: '0.72rem', fontWeight: 700 }}>✕ 3-Occupancy Disabled (Max 2 Guests)</span>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="partner-grid-4" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 'var(--space-4)' }}>
+                        <div className="form-group">
+                          <label className="form-label" style={{ fontSize: '0.75rem' }}>Single Price (₹) <span className="required">*</span></label>
+                          <input className="form-input" type="number" min="0" value={roomForm.priceSingle} onChange={e => setRoomForm(p => ({ ...p, priceSingle: e.target.value }))} required />
+                        </div>
+                        <div className="form-group">
+                          <label className="form-label" style={{ fontSize: '0.75rem' }}>Double Price (₹) <span className="required">*</span></label>
+                          <input className="form-input" type="number" min="0" value={roomForm.priceDouble} onChange={e => setRoomForm(p => ({ ...p, priceDouble: e.target.value }))} required />
+                        </div>
+                        
+                        {isModalTripleActive ? (
+                          <div className="form-group" style={{ position: 'relative' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 }}>
+                              <label className="form-label" style={{ fontSize: '0.75rem', margin: 0 }}>Triple Price (₹) <span className="required">*</span></label>
+                              <button
+                                type="button"
+                                onClick={() => setRoomForm(p => ({ ...p, priceTriple: '', hasTriple: false, maxGuests: '2' }))}
+                                style={{
+                                  background: '#fee2e2',
+                                  border: 'none',
+                                  color: '#dc2626',
+                                  borderRadius: 4,
+                                  padding: '2px 6px',
+                                  fontSize: '0.68rem',
+                                  fontWeight: 700,
+                                  cursor: 'pointer',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: 2,
+                                }}
+                                title="Delete 3-Occupancy: Guests cannot book 3 people in this room"
+                              >
+                                <span>🗑️</span> Remove
+                              </button>
+                            </div>
+                            <input className="form-input" type="number" min="0" placeholder="e.g. 2500" value={roomForm.priceTriple} onChange={e => setRoomForm(p => ({ ...p, priceTriple: e.target.value, maxGuests: Number(e.target.value) > 0 ? '3' : '2' }))} required />
+                          </div>
+                        ) : (
+                          <div className="form-group" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
+                            <button
+                              type="button"
+                              onClick={() => setRoomForm(p => ({ ...p, hasTriple: true, maxGuests: '3' }))}
+                              style={{
+                                background: '#fff7ed',
+                                border: '1px dashed #f97316',
+                                color: '#c2410c',
+                                padding: '8px 10px',
+                                borderRadius: 8,
+                                fontSize: '0.75rem',
+                                fontWeight: 700,
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: 4,
+                                height: '42px',
+                              }}
+                              title="Add 3-Occupancy price to allow 3 guests in this room"
+                            >
+                              <span>➕</span> Add 3-Occupancy
+                            </button>
+                          </div>
+                        )}
+
+                        <div className="form-group">
+                          <label className="form-label" style={{ fontSize: '0.75rem' }}>B2B Price (₹)</label>
+                          <input className="form-input" type="number" min="0" value={roomForm.b2bPrice} onChange={e => setRoomForm(p => ({ ...p, b2bPrice: e.target.value }))} />
+                        </div>
+                      </div>
+
+                      {!isModalTripleActive && (
+                        <div style={{ fontSize: '0.72rem', color: '#64748b', marginTop: 4 }}>
+                          ℹ️ Max 2 guests allowed. If customer books for 3 adults, this room won&apos;t be bookable unless 3-Occupancy is added.
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 'var(--space-4)', alignItems: 'center' }}>
                   <div className="form-group">
                     <label htmlFor="ratePlan" className="form-label">Rate Plan</label>
@@ -1837,7 +2020,37 @@ export default function PartnerDashboard() {
                               <td style={{ padding: '12px 10px', fontWeight: 600 }}>{room.type}</td>
                               <td style={{ padding: '12px 10px' }}><input type="number" style={{ width: 60, padding: '4px 6px', borderRadius: 4, border: '1px solid #cbd5e1' }} value={room.priceSingle || ''} onChange={e => saveRoomInventory(i, 'priceSingle', Number(e.target.value))} /></td>
                               <td style={{ padding: '12px 10px' }}><input type="number" style={{ width: 60, padding: '4px 6px', borderRadius: 4, border: '1px solid #cbd5e1' }} value={room.priceDouble || ''} onChange={e => saveRoomInventory(i, 'priceDouble', Number(e.target.value))} /></td>
-                              <td style={{ padding: '12px 10px' }}><input type="number" style={{ width: 60, padding: '4px 6px', borderRadius: 4, border: '1px solid #cbd5e1' }} value={room.priceTriple || ''} onChange={e => saveRoomInventory(i, 'priceTriple', Number(e.target.value))} /></td>
+                              <td style={{ padding: '12px 10px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+                                  <input 
+                                    type="number" 
+                                    style={{ width: 55, padding: '4px 6px', borderRadius: 4, border: '1px solid #cbd5e1' }} 
+                                    value={room.priceTriple || ''} 
+                                    placeholder="—"
+                                    onChange={e => saveRoomInventory(i, 'priceTriple', Number(e.target.value))} 
+                                    title="Triple occupancy price. If blank or 0, max capacity is 2 guests."
+                                  />
+                                  {Number(room.priceTriple) > 0 && (
+                                    <button
+                                      type="button"
+                                      onClick={() => saveRoomInventory(i, 'priceTriple', 0)}
+                                      style={{
+                                        background: '#fee2e2',
+                                        border: 'none',
+                                        color: '#dc2626',
+                                        borderRadius: 3,
+                                        padding: '2px 4px',
+                                        fontSize: '0.65rem',
+                                        fontWeight: 800,
+                                        cursor: 'pointer',
+                                      }}
+                                      title="Delete 3-occupancy (restricts room to max 2 guests)"
+                                    >
+                                      ✕
+                                    </button>
+                                  )}
+                                </div>
+                              </td>
                               <td style={{ padding: '12px 10px' }}><input type="number" style={{ width: 60, padding: '4px 6px', borderRadius: 4, border: '1px solid #cbd5e1' }} value={room.b2bPrice || ''} onChange={e => saveRoomInventory(i, 'b2bPrice', Number(e.target.value))} /></td>
                               <td style={{ padding: '12px 10px', textAlign: 'center', color: 'var(--text-muted)' }}>{room.totalRooms}</td>
                               <td style={{ padding: '12px 10px', textAlign: 'center' }}>

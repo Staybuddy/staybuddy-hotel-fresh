@@ -114,7 +114,8 @@ export async function POST(request: NextRequest) {
     }
 
     const roomRef = db.collection('rooms').doc();
-    const guests = maxGuests ? parseInt(maxGuests) : 3;
+    const numTriple = Number(priceTriple) || 0;
+    const guests = numTriple > 0 ? (maxGuests ? parseInt(maxGuests) : 3) : 2;
     const numTotal = totalRooms !== undefined && totalRooms !== '' ? Math.max(0, Number(totalRooms)) : 0;
     const baseAlloc = staybuddyAllocation !== undefined && staybuddyAllocation !== '' ? Math.max(0, Number(staybuddyAllocation)) : numTotal;
     const newRoom = {
@@ -156,7 +157,10 @@ export async function PUT(request: NextRequest) {
     const updateFields: any = {};
     if (priceSingle !== undefined) updateFields.priceSingle = priceSingle;
     if (priceDouble !== undefined) updateFields.priceDouble = priceDouble;
-    if (priceTriple !== undefined) updateFields.priceTriple = priceTriple;
+    if (priceTriple !== undefined) {
+      updateFields.priceTriple = priceTriple;
+      updateFields.maxGuests = Number(priceTriple) > 0 ? 3 : 2;
+    }
     if (b2bPrice !== undefined) updateFields.b2bPrice = b2bPrice;
     if (ratePlan !== undefined) updateFields.ratePlan = ratePlan;
 

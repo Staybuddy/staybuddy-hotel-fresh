@@ -239,6 +239,12 @@ export async function POST(request: NextRequest) {
       pricing = calculateBookingPricing(room, requestedAdults, requestedRooms, nights);
     }
 
+    if (!pricing || !pricing.canBook) {
+      return NextResponse.json({
+        error: pricing?.validationError || 'Requested occupancy exceeds room capacity or is not offered by the hotel.'
+      }, { status: 400 });
+    }
+
     const clientPrice = Math.round(pricing.basePricePerNight / requestedRooms);
     const totalPrice = pricing.totalAmount;
     const totalPartnerPrice = pricing.priceAfterDiscount;

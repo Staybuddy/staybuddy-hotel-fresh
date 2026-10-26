@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useState, useRef } from 'react';
-import Link from 'next/link';
 import Navbar from '@/components/Navbar';
+import Logo, { StayBuddyIconMark, StayBuddyAppIcon } from '@/components/Logo';
 
 export default function VisitingCardPage() {
   const [name, setName] = useState('Arif Shaik');
@@ -213,24 +213,12 @@ export default function VisitingCardPage() {
 
                     {/* Center Brand Emblem */}
                     <div style={{ position: 'relative', zIndex: 2, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                      {/* Shield Pin + Bed Logo Icon */}
-                      <div
-                        style={{
-                          width: 64,
-                          height: 64,
-                          borderRadius: 20,
-                          background: 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)',
-                          boxShadow: '0 8px 24px rgba(234,88,12,0.35)',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          marginBottom: 12,
-                        }}
-                      >
-                        <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z" />
-                          <circle cx="12" cy="10" r="3" fill="white" />
-                        </svg>
+                      {/* Official StayBuddy Emblem (Roof + Pin + Smile Cradle) */}
+                      <div style={{ marginBottom: 10, display: 'flex', justifyContent: 'center' }}>
+                        <StayBuddyIconMark
+                          size={60}
+                          colorScheme={theme === 'light' ? 'gradient' : 'white'}
+                        />
                       </div>
 
                       {/* Brand Wordmark */}
@@ -342,7 +330,7 @@ export default function VisitingCardPage() {
                           gap: 6,
                         }}
                       >
-                        <span>🏨</span>
+                        <StayBuddyIconMark size={16} colorScheme="white" />
                         <span>{badgeText}</span>
                       </div>
                     </div>
