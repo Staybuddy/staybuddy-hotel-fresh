@@ -6,6 +6,7 @@ export interface LogoProps {
   size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | number;
   light?: boolean;
   variant?: 'full' | 'horizontal' | 'icon' | 'app-icon' | 'stacked' | 'minimal';
+  concept?: 'pin-roof' | 'fluid-s' | 'sun-horizon' | 'cradle';
   showTagline?: boolean;
   taglineText?: string;
   animated?: boolean;
@@ -14,13 +15,11 @@ export interface LogoProps {
 }
 
 /**
- * StayBuddy Official Vector Icon Emblem
- * Consists of:
- * 1. Warm Gable Roof with Chimney (Home / Stay / Shelter)
- * 2. Precision Location Pin with 'S' Monogram (Destination / Discovery)
- * 3. Welcoming Smile Arc Cradle (Buddy / Hospitality / Trust)
+ * Concept A (The Minimalist Pin-Roof) - THE CLEAN WINNER
+ * A bold, modern location pin with an architectural hotel roof, chimney, and doorway carved out.
+ * Ultra-sharp, scalable, legible at 16px to 1000px.
  */
-export function StayBuddyIconMark({
+export function PinRoofMark({
   size = 36,
   colorScheme = 'gradient',
   className = '',
@@ -39,14 +38,203 @@ export function StayBuddyIconMark({
     ? '#ffffff'
     : isDark
     ? '#0f172a'
-    : `url(#${gradientId}-orange)`;
+    : `url(#${gradientId}-pin-grad)`;
 
-  const pinFill = isWhite
-    ? '#ffffff'
-    : isDark
-    ? '#0f172a'
-    : `url(#${gradientId}-pin)`;
+  const innerColor = isWhite ? '#ea580c' : '#ffffff';
 
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 100 100"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className={className}
+      style={{ display: 'inline-block', verticalAlign: 'middle', flexShrink: 0 }}
+      aria-label="StayBuddy Pin-Roof Mark"
+    >
+      <defs>
+        <linearGradient id={`${gradientId}-pin-grad`} x1="16" y1="12" x2="84" y2="92" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="#fb923c" />
+          <stop offset="50%" stopColor="#f97316" />
+          <stop offset="100%" stopColor="#ea580c" />
+        </linearGradient>
+
+        <filter id={`${shadowId}-glow`} x="-15%" y="-15%" width="130%" height="130%">
+          <feDropShadow dx="0" dy="2" stdDeviation="2" floodColor="#f97316" floodOpacity="0.28" />
+        </filter>
+      </defs>
+
+      <g filter={colorScheme === 'gradient' ? `url(#${shadowId}-glow)` : undefined}>
+        {/* Outer Location Pin (Destination) */}
+        <path
+          d="M50 8C31.2 8 16 23.2 16 42C16 59.8 45.8 88.5 48.1 90.6C49.2 91.6 50.8 91.6 51.9 90.6C54.2 88.5 84 59.8 84 42C84 23.2 68.8 8 50 8Z"
+          fill={primaryFill}
+        />
+
+        {/* Chimney */}
+        <path
+          d="M60 33V25.5C60 24.7 60.7 24 61.5 24H65.5C66.3 24 67 24.7 67 25.5V39"
+          stroke={innerColor}
+          strokeWidth="4"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+
+        {/* Architectural Hotel Roof (Stay) */}
+        <path
+          d="M31 46.5L47.9 30.5C49.1 29.4 50.9 29.4 52.1 30.5L69 46.5"
+          stroke={innerColor}
+          strokeWidth="5.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+
+        {/* House Walls & Welcoming Arched Gateway */}
+        <path
+          d="M36 45V61C36 62.1 36.9 63 38 63H44.5V52.5C44.5 50.6 46.1 49 48 49H52C53.9 49 55.5 50.6 55.5 52.5V63H62C63.1 63 64 62.1 64 61V45"
+          fill={innerColor}
+        />
+      </g>
+    </svg>
+  );
+}
+
+/**
+ * Concept B (The Fluid S-Ribbon)
+ * Continuous folded S ribbon with a friendly smiling arc.
+ */
+export function FluidSRibbonMark({
+  size = 36,
+  colorScheme = 'gradient',
+  className = '',
+}: {
+  size?: number;
+  colorScheme?: 'gradient' | 'white' | 'orange' | 'dark';
+  className?: string;
+}) {
+  const gradientId = React.useId();
+  const isWhite = colorScheme === 'white';
+  const isDark = colorScheme === 'dark';
+
+  const fillOrange = isWhite ? '#ffffff' : isDark ? '#0f172a' : `url(#${gradientId}-s-grad)`;
+  const fillAccent = isWhite ? '#fed7aa' : isDark ? '#334155' : '#fb923c';
+
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 100 100"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className={className}
+      style={{ display: 'inline-block', verticalAlign: 'middle', flexShrink: 0 }}
+      aria-label="StayBuddy S-Ribbon Mark"
+    >
+      <defs>
+        <linearGradient id={`${gradientId}-s-grad`} x1="20" y1="10" x2="80" y2="90" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="#fb923c" />
+          <stop offset="50%" stopColor="#f97316" />
+          <stop offset="100%" stopColor="#ea580c" />
+        </linearGradient>
+      </defs>
+
+      {/* Top Loop */}
+      <path
+        d="M65 24C65 17.4 59.6 12 53 12H44C32.9 12 24 20.9 24 32C24 43.1 32.9 52 44 52H56C67.1 52 76 60.9 76 72C76 83.1 67.1 92 56 92H44C37.4 92 32 86.6 32 80"
+        stroke={fillOrange}
+        strokeWidth="13"
+        strokeLinecap="round"
+      />
+
+      {/* Internal Smile Accent */}
+      <path
+        d="M42 66C46 70 54 70 58 66"
+        stroke={fillAccent}
+        strokeWidth="5"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+/**
+ * Concept C (The Rising Sun & Horizon)
+ * Warm morning sun over a clean hotel roofline.
+ */
+export function SunHorizonMark({
+  size = 36,
+  colorScheme = 'gradient',
+  className = '',
+}: {
+  size?: number;
+  colorScheme?: 'gradient' | 'white' | 'orange' | 'dark';
+  className?: string;
+}) {
+  const gradientId = React.useId();
+  const isWhite = colorScheme === 'white';
+  const isDark = colorScheme === 'dark';
+
+  const primaryFill = isWhite ? '#ffffff' : isDark ? '#0f172a' : `url(#${gradientId}-sun-grad)`;
+
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 100 100"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className={className}
+      style={{ display: 'inline-block', verticalAlign: 'middle', flexShrink: 0 }}
+      aria-label="StayBuddy Sun Horizon Mark"
+    >
+      <defs>
+        <linearGradient id={`${gradientId}-sun-grad`} x1="50" y1="10" x2="50" y2="85" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="#fb923c" />
+          <stop offset="100%" stopColor="#ea580c" />
+        </linearGradient>
+      </defs>
+
+      {/* Rising Sun */}
+      <circle cx="50" cy="45" r="28" fill={primaryFill} opacity="0.9" />
+
+      {/* Horizon Roofline */}
+      <path
+        d="M12 78C28 66 38 52 50 42C62 52 72 66 88 78"
+        stroke={isWhite ? '#ea580c' : '#ffffff'}
+        strokeWidth="7"
+        strokeLinecap="round"
+      />
+
+      {/* Chimney */}
+      <path
+        d="M62 48V42H67V52"
+        stroke={isWhite ? '#ea580c' : '#ffffff'}
+        strokeWidth="4"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+/**
+ * Concept D (The Original Hospitality Cradle)
+ */
+export function CradleMark({
+  size = 36,
+  colorScheme = 'gradient',
+  className = '',
+}: {
+  size?: number;
+  colorScheme?: 'gradient' | 'white' | 'orange' | 'dark';
+  className?: string;
+}) {
+  const gradientId = React.useId();
+  const isWhite = colorScheme === 'white';
+  const isDark = colorScheme === 'dark';
+
+  const primaryFill = isWhite ? '#ffffff' : isDark ? '#0f172a' : `url(#${gradientId}-orange)`;
+  const pinFill = isWhite ? '#ffffff' : isDark ? '#0f172a' : `url(#${gradientId}-pin)`;
   const innerTextFill = isWhite ? '#ea580c' : '#ffffff';
 
   return (
@@ -58,87 +246,57 @@ export function StayBuddyIconMark({
       xmlns="http://www.w3.org/2000/svg"
       className={className}
       style={{ display: 'inline-block', verticalAlign: 'middle', flexShrink: 0 }}
-      aria-label="StayBuddy Logo Mark"
+      aria-label="StayBuddy Cradle Mark"
     >
       <defs>
-        {/* Vibrant Sunset Orange Gradient */}
         <linearGradient id={`${gradientId}-orange`} x1="10" y1="15" x2="90" y2="90" gradientUnits="userSpaceOnUse">
           <stop offset="0%" stopColor="#fb923c" />
           <stop offset="50%" stopColor="#f97316" />
           <stop offset="100%" stopColor="#ea580c" />
         </linearGradient>
-
-        {/* Pin Accent Gradient */}
         <linearGradient id={`${gradientId}-pin`} x1="30" y1="30" x2="70" y2="75" gradientUnits="userSpaceOnUse">
           <stop offset="0%" stopColor="#ff7828" />
           <stop offset="100%" stopColor="#c2410c" />
         </linearGradient>
-
-        {/* Soft Drop Shadow */}
-        <filter id={`${shadowId}-glow`} x="-20%" y="-20%" width="140%" height="140%">
-          <feDropShadow dx="0" dy="2" stdDeviation="2.5" floodColor="#f97316" floodOpacity="0.25" />
-        </filter>
       </defs>
 
-      {/* Group with slight glow */}
-      <g filter={colorScheme === 'gradient' ? `url(#${shadowId}-glow)` : undefined}>
-        {/* Chimney */}
-        <path
-          d="M68 28.5V20C68 18.9 68.9 18 70 18H74C75.1 18 76 18.9 76 20V36.5"
-          stroke={primaryFill}
-          strokeWidth="6"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-
-        {/* Modern Roof Peak (Stay / Home) */}
-        <path
-          d="M17 48L46.8 20.8C48.6 19.2 51.4 19.2 53.2 20.8L83 48"
-          stroke={primaryFill}
-          strokeWidth="7"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-
-        {/* Location Pin (Destination) with 'S' monogram */}
-        <g>
-          {/* Pin Body */}
-          <path
-            d="M50 33C42.8 33 37 38.8 37 46C37 54.5 48.2 66.2 49.2 67.2C49.6 67.7 50.4 67.7 50.8 67.2C51.8 66.2 63 54.5 63 46C63 38.8 57.2 33 50 33Z"
-            fill={pinFill}
-          />
-
-          {/* Letter 'S' Monogram inside Pin */}
-          <text
-            x="50"
-            y="49.5"
-            textAnchor="middle"
-            fill={innerTextFill}
-            fontSize="11.5"
-            fontFamily="system-ui, -apple-system, sans-serif"
-            fontWeight="900"
-            letterSpacing="-0.5px"
-          >
-            S
-          </text>
-        </g>
-
-        {/* Friendly Hospitality Smile Arc Cradle (Buddy) */}
-        <path
-          d="M23 58C25 72.5 36.5 83 50 83C63.5 83 75 72.5 77 58"
-          stroke={primaryFill}
-          strokeWidth="6.5"
-          strokeLinecap="round"
-        />
-
-        {/* Left Cheek Dimple Dot */}
-        <circle cx="21.5" cy="53.5" r="3.2" fill={primaryFill} />
-
-        {/* Right Cheek Dimple Dot */}
-        <circle cx="78.5" cy="53.5" r="3.2" fill={primaryFill} />
-      </g>
+      <path d="M68 28.5V20C68 18.9 68.9 18 70 18H74C75.1 18 76 18.9 76 20V36.5" stroke={primaryFill} strokeWidth="6" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M17 48L46.8 20.8C48.6 19.2 51.4 19.2 53.2 20.8L83 48" stroke={primaryFill} strokeWidth="7" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M50 33C42.8 33 37 38.8 37 46C37 54.5 48.2 66.2 49.2 67.2C49.6 67.7 50.4 67.7 50.8 67.2C51.8 66.2 63 54.5 63 46C63 38.8 57.2 33 50 33Z" fill={pinFill} />
+      <text x="50" y="49.5" textAnchor="middle" fill={innerTextFill} fontSize="11.5" fontFamily="system-ui, sans-serif" fontWeight="900">S</text>
+      <path d="M23 58C25 72.5 36.5 83 50 83C63.5 83 75 72.5 77 58" stroke={primaryFill} strokeWidth="6.5" strokeLinecap="round" />
+      <circle cx="21.5" cy="53.5" r="3.2" fill={primaryFill} />
+      <circle cx="78.5" cy="53.5" r="3.2" fill={primaryFill} />
     </svg>
   );
+}
+
+/**
+ * Dynamic StayBuddy Icon Mark
+ * Renders the chosen concept mark (default: 'pin-roof')
+ */
+export function StayBuddyIconMark({
+  size = 36,
+  colorScheme = 'gradient',
+  concept = 'pin-roof',
+  className = '',
+}: {
+  size?: number;
+  colorScheme?: 'gradient' | 'white' | 'orange' | 'dark';
+  concept?: 'pin-roof' | 'fluid-s' | 'sun-horizon' | 'cradle';
+  className?: string;
+}) {
+  switch (concept) {
+    case 'fluid-s':
+      return <FluidSRibbonMark size={size} colorScheme={colorScheme} className={className} />;
+    case 'sun-horizon':
+      return <SunHorizonMark size={size} colorScheme={colorScheme} className={className} />;
+    case 'cradle':
+      return <CradleMark size={size} colorScheme={colorScheme} className={className} />;
+    case 'pin-roof':
+    default:
+      return <PinRoofMark size={size} colorScheme={colorScheme} className={className} />;
+  }
 }
 
 /**
@@ -147,13 +305,14 @@ export function StayBuddyIconMark({
 export function StayBuddyAppIcon({
   size = 64,
   rounded = 16,
+  concept = 'pin-roof',
   className = '',
 }: {
   size?: number;
   rounded?: number;
+  concept?: 'pin-roof' | 'fluid-s' | 'sun-horizon' | 'cradle';
   className?: string;
 }) {
-  const gradId = React.useId();
   return (
     <div
       className={className}
@@ -171,7 +330,6 @@ export function StayBuddyAppIcon({
         overflow: 'hidden',
       }}
     >
-      {/* Top subtle highlight gleam */}
       <div
         style={{
           position: 'absolute',
@@ -183,7 +341,7 @@ export function StayBuddyAppIcon({
           pointerEvents: 'none',
         }}
       />
-      <StayBuddyIconMark size={size * 0.76} colorScheme="white" />
+      <StayBuddyIconMark size={size * 0.72} colorScheme="white" concept={concept} />
     </div>
   );
 }
@@ -195,13 +353,13 @@ export default function Logo({
   size = 'md',
   light = false,
   variant = 'horizontal',
+  concept = 'pin-roof',
   showTagline = false,
   taglineText = 'HOTELS & STAYS',
   animated = false,
   className = '',
   style = {},
 }: LogoProps) {
-  // Dimension mappings
   const dimensions = {
     xs: { icon: 20, font: '1rem', tag: '0.5rem', gap: 6 },
     sm: { icon: 26, font: '1.25rem', tag: '0.55rem', gap: 8 },
@@ -229,6 +387,7 @@ export default function Logo({
       <StayBuddyIconMark
         size={currentDim.icon}
         colorScheme={light ? 'white' : 'gradient'}
+        concept={concept}
         className={className}
       />
     );
@@ -240,6 +399,7 @@ export default function Logo({
       <StayBuddyAppIcon
         size={currentDim.icon * 1.3}
         rounded={Math.round(currentDim.icon * 0.35)}
+        concept={concept}
         className={className}
       />
     );
@@ -266,7 +426,7 @@ export default function Logo({
     );
   }
 
-  // Variant: Stacked (Emblem on top, Wordmark below)
+  // Variant: Stacked
   if (variant === 'stacked') {
     return (
       <div
@@ -284,6 +444,7 @@ export default function Logo({
           <StayBuddyIconMark
             size={currentDim.icon * 1.35}
             colorScheme={light ? 'white' : 'gradient'}
+            concept={concept}
           />
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
@@ -318,7 +479,7 @@ export default function Logo({
     );
   }
 
-  // Default: Horizontal Combination Mark (Icon + Text)
+  // Default: Horizontal Combination Mark
   return (
     <div
       className={className}
@@ -342,6 +503,7 @@ export default function Logo({
         <StayBuddyIconMark
           size={currentDim.icon}
           colorScheme={light ? 'white' : 'gradient'}
+          concept={concept}
         />
       </div>
 

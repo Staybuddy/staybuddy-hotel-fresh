@@ -7,6 +7,8 @@ import Logo, { StayBuddyIconMark, StayBuddyAppIcon } from '@/components/Logo';
 
 export default function LogoBrandPage() {
   const [bgMode, setBgMode] = useState<'white' | 'dark' | 'orange' | 'cream' | 'checker'>('white');
+  const [activeBoard, setActiveBoard] = useState<'minimal' | 'concepts' | 'hero'>('minimal');
+  const [activeConcept, setActiveConcept] = useState<'pin-roof' | 'fluid-s' | 'sun-horizon' | 'cradle'>('pin-roof');
   const [activeVariant, setActiveVariant] = useState<'horizontal' | 'stacked' | 'app-icon' | 'icon' | 'minimal'>('horizontal');
   const [showTagline, setShowTagline] = useState(true);
   const [taglineText, setTaglineText] = useState('HOTELS & STAYS');
@@ -318,23 +320,75 @@ export default function LogoBrandPage() {
             overflow: 'hidden',
           }}
         >
-          <div style={{ padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <div style={{ width: 12, height: 12, borderRadius: '50%', background: '#ef4444' }} />
-              <div style={{ width: 12, height: 12, borderRadius: '50%', background: '#f59e0b' }} />
-              <div style={{ width: 12, height: 12, borderRadius: '50%', background: '#10b981' }} />
-              <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#64748b', marginLeft: 8 }}>
-                StayBuddy Official Brand Presentation Board (8K Architecture & Identity)
-              </span>
+          <div style={{ padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10 }}>
+            <div style={{ display: 'flex', gap: 8, background: '#f1f5f9', padding: 4, borderRadius: 12, flexWrap: 'wrap' }}>
+              <button
+                type="button"
+                onClick={() => setActiveBoard('minimal')}
+                style={{
+                  padding: '6px 14px',
+                  borderRadius: 8,
+                  border: 'none',
+                  fontWeight: 800,
+                  fontSize: '0.82rem',
+                  cursor: 'pointer',
+                  background: activeBoard === 'minimal' ? '#ffffff' : 'transparent',
+                  color: activeBoard === 'minimal' ? '#f97316' : '#64748b',
+                  boxShadow: activeBoard === 'minimal' ? '0 2px 6px rgba(0,0,0,0.06)' : 'none',
+                }}
+              >
+                ✨ Minimalist Concepts (A, B, C, D)
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveBoard('concepts')}
+                style={{
+                  padding: '6px 14px',
+                  borderRadius: 8,
+                  border: 'none',
+                  fontWeight: 800,
+                  fontSize: '0.82rem',
+                  cursor: 'pointer',
+                  background: activeBoard === 'concepts' ? '#ffffff' : 'transparent',
+                  color: activeBoard === 'concepts' ? '#f97316' : '#64748b',
+                  boxShadow: activeBoard === 'concepts' ? '0 2px 6px rgba(0,0,0,0.06)' : 'none',
+                }}
+              >
+                🎨 Brand Exploration (Infinity, Monogram, Bed & Pin)
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveBoard('hero')}
+                style={{
+                  padding: '6px 14px',
+                  borderRadius: 8,
+                  border: 'none',
+                  fontWeight: 800,
+                  fontSize: '0.82rem',
+                  cursor: 'pointer',
+                  background: activeBoard === 'hero' ? '#ffffff' : 'transparent',
+                  color: activeBoard === 'hero' ? '#f97316' : '#64748b',
+                  boxShadow: activeBoard === 'hero' ? '0 2px 6px rgba(0,0,0,0.06)' : 'none',
+                }}
+              >
+                📐 8K Blueprint Presentation
+              </button>
             </div>
+
             <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#f97316', background: '#fff7ed', padding: '4px 10px', borderRadius: 12 }}>
-              BEHANCE & DRIBBBLE FEATURE QUALITY
+              AWARD WINNING IDENTITY
             </span>
           </div>
 
           <div style={{ borderRadius: 16, overflow: 'hidden', position: 'relative' }}>
             <img
-              src="/staybuddy-logo-presentation.jpg"
+              src={
+                activeBoard === 'minimal'
+                  ? '/staybuddy-logo-concepts-2.jpg'
+                  : activeBoard === 'concepts'
+                  ? '/staybuddy-logo-concepts-1.jpg'
+                  : '/staybuddy-logo-presentation.jpg'
+              }
               alt="StayBuddy Brand Logo Presentation Board"
               style={{ width: '100%', height: 'auto', display: 'block' }}
             />
@@ -490,7 +544,41 @@ export default function LogoBrandPage() {
           </div>
 
           {/* Controls Bar */}
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, alignItems: 'center', marginBottom: 24 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 24 }}>
+            {/* Concept Selector */}
+            <div style={{ display: 'flex', gap: 6, background: '#fff7ed', padding: 6, borderRadius: 14, border: '1px solid #fed7aa', width: '100%', overflowX: 'auto' }}>
+              {(
+                [
+                  { id: 'pin-roof', label: '📍 Option 1: Pin-Roof (Recommended - Clean Minimalist)' },
+                  { id: 'fluid-s', label: '♾️ Option 2: Fluid S-Ribbon' },
+                  { id: 'sun-horizon', label: '🌅 Option 3: Sun & Horizon' },
+                  { id: 'cradle', label: '🧡 Option 4: Hospitality Cradle' },
+                ] as const
+              ).map((c) => (
+                <button
+                  key={c.id}
+                  type="button"
+                  onClick={() => setActiveConcept(c.id)}
+                  style={{
+                    padding: '8px 14px',
+                    borderRadius: 8,
+                    border: 'none',
+                    fontWeight: 800,
+                    fontSize: '0.82rem',
+                    cursor: 'pointer',
+                    whiteSpace: 'nowrap',
+                    background: activeConcept === c.id ? '#f97316' : 'transparent',
+                    color: activeConcept === c.id ? '#ffffff' : '#c2410c',
+                    boxShadow: activeConcept === c.id ? '0 2px 6px rgba(249,115,22,0.3)' : 'none',
+                    transition: 'all 0.2s',
+                  }}
+                >
+                  {c.label}
+                </button>
+              ))}
+            </div>
+
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, alignItems: 'center' }}>
             {/* Variant Selector */}
             <div style={{ display: 'flex', gap: 6, background: '#f1f5f9', padding: 4, borderRadius: 12 }}>
               {(
@@ -559,6 +647,7 @@ export default function LogoBrandPage() {
               />
               Show Tagline
             </label>
+            </div>
           </div>
 
           {/* Active Logo Render Canvas */}
@@ -580,6 +669,7 @@ export default function LogoBrandPage() {
             }}
           >
             <Logo
+              concept={activeConcept}
               variant={activeVariant}
               size={activeSize === '2xl' ? 68 : activeSize}
               light={isLightText}
