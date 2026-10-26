@@ -488,7 +488,7 @@ export default function PartnerDashboard() {
           ))}
           <div className="sidebar-section-label" style={{ marginTop: 'var(--space-4)' }}>Account</div>
           <Link href="/profile" className="sidebar-link">👤 Profile</Link>
-          <Link href="/partner-agreement" className="sidebar-link" target="_blank">📜 Partner Agreement</Link>
+          <Link href={hotels[0]?._id ? `/partner-agreement?hotelId=${hotels[0]._id}` : '/partner-agreement'} className="sidebar-link" target="_blank">📜 Partner Agreement</Link>
           <Link href="/" className="sidebar-link">🌐 View Site</Link>
         </nav>
         <div style={{ padding: 'var(--space-4)', borderTop: '1px solid var(--border)' }}>
@@ -595,6 +595,30 @@ export default function PartnerDashboard() {
                             {approveLoading === hotel._id ? <div className="spinner" style={{ width: 14, height: 14, borderWidth: 2, borderColor: 'rgba(239, 68, 68, 0.3)', borderTopColor: '#ef4444' }} /> : hotel.isBlocked ? 'Blocked 🔓' : 'Block 🚫'}
                           </button>
                         </div>
+                        <Link
+                          href={`/partner-agreement?hotelId=${hotel._id}`}
+                          target="_blank"
+                          className="btn"
+                          style={{
+                            width: '100%',
+                            marginTop: 8,
+                            padding: '9px 0',
+                            fontSize: '0.82rem',
+                            fontWeight: 600,
+                            background: '#eff6ff',
+                            color: '#1d4ed8',
+                            border: '1px solid #bfdbfe',
+                            borderRadius: 'var(--radius-md)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: 6,
+                            textDecoration: 'none',
+                            transition: 'all 0.2s'
+                          }}
+                        >
+                          📜 View Partner Agreement & Tariffs
+                        </Link>
                         <button
                           type="button"
                           className="btn"
@@ -1100,18 +1124,23 @@ export default function PartnerDashboard() {
                                     </div>
                                   </div>
 
-                                  <div className="partner-grid-5" style={{ display: 'grid', gridTemplateColumns: isTripleActive ? 'repeat(5, 1fr)' : 'repeat(5, 1fr)', gap: 'var(--space-4)' }}>
+                                  <div className="partner-pricing-grid">
                                     <div className="form-group">
-                                      <label className="form-label" style={{ fontSize: '0.75rem' }}>Single Price (₹) <span className="required">*</span></label>
-                                      <input className="form-input" type="number" min="0" value={room.priceSingle} onChange={e => {
+                                      <div className="pricing-header-row">
+                                        <label className="form-label">Single Price (₹)<span className="required">*</span></label>
+                                      </div>
+                                      <input className="form-input" type="number" min="0" placeholder="e.g. 1500" value={room.priceSingle} onChange={e => {
                                         const newRooms = [...hotelForm.rooms];
                                         newRooms[index].priceSingle = e.target.value;
                                         setHotelForm({ ...hotelForm, rooms: newRooms });
                                       }} required />
                                     </div>
+
                                     <div className="form-group">
-                                      <label className="form-label" style={{ fontSize: '0.75rem' }}>Double Price (₹) <span className="required">*</span></label>
-                                      <input className="form-input" type="number" min="0" value={room.priceDouble} onChange={e => {
+                                      <div className="pricing-header-row">
+                                        <label className="form-label">Double Price (₹)<span className="required">*</span></label>
+                                      </div>
+                                      <input className="form-input" type="number" min="0" placeholder="e.g. 2000" value={room.priceDouble} onChange={e => {
                                         const newRooms = [...hotelForm.rooms];
                                         newRooms[index].priceDouble = e.target.value;
                                         setHotelForm({ ...hotelForm, rooms: newRooms });
@@ -1119,11 +1148,9 @@ export default function PartnerDashboard() {
                                     </div>
                                     
                                     {isTripleActive ? (
-                                      <div className="form-group" style={{ position: 'relative' }}>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 }}>
-                                          <label className="form-label" style={{ fontSize: '0.75rem', margin: 0 }}>
-                                            Triple Price (₹) <span className="required">*</span>
-                                          </label>
+                                      <div className="form-group">
+                                        <div className="pricing-header-row">
+                                          <label className="form-label">Triple Price (₹)<span className="required">*</span></label>
                                           <button
                                             type="button"
                                             onClick={() => {
@@ -1135,20 +1162,23 @@ export default function PartnerDashboard() {
                                             }}
                                             style={{
                                               background: '#fee2e2',
-                                              border: 'none',
+                                              border: '1px solid #fecaca',
                                               color: '#dc2626',
                                               borderRadius: 4,
                                               padding: '2px 6px',
-                                              fontSize: '0.68rem',
+                                              fontSize: '0.65rem',
                                               fontWeight: 700,
                                               cursor: 'pointer',
                                               display: 'inline-flex',
                                               alignItems: 'center',
                                               gap: 2,
+                                              lineHeight: 1,
+                                              whiteSpace: 'nowrap',
+                                              flexShrink: 0
                                             }}
                                             title="Delete 3-Occupancy: Room will be restricted to max 2 guests"
                                           >
-                                            <span>🗑️</span> Remove
+                                            ✕ Remove
                                           </button>
                                         </div>
                                         <input className="form-input" type="number" min="0" placeholder="e.g. 2500" value={room.priceTriple} onChange={e => {
@@ -1161,7 +1191,10 @@ export default function PartnerDashboard() {
                                         }} required />
                                       </div>
                                     ) : (
-                                      <div className="form-group" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
+                                      <div className="form-group">
+                                        <div className="pricing-header-row">
+                                          <label className="form-label" style={{ color: 'var(--text-muted)' }}>Triple (3 Guests)</label>
+                                        </div>
                                         <button
                                           type="button"
                                           onClick={() => {
@@ -1170,12 +1203,14 @@ export default function PartnerDashboard() {
                                             newRooms[index].maxGuests = 3;
                                             setHotelForm({ ...hotelForm, rooms: newRooms });
                                           }}
+                                          className="pricing-action-btn"
                                           style={{
+                                            width: '100%',
                                             background: '#fff7ed',
                                             border: '1px dashed #f97316',
                                             color: '#c2410c',
-                                            padding: '8px 10px',
-                                            borderRadius: 8,
+                                            padding: '0 8px',
+                                            borderRadius: 'var(--radius-md)',
                                             fontSize: '0.75rem',
                                             fontWeight: 700,
                                             cursor: 'pointer',
@@ -1183,8 +1218,8 @@ export default function PartnerDashboard() {
                                             alignItems: 'center',
                                             justifyContent: 'center',
                                             gap: 4,
-                                            height: '42px',
                                             transition: 'all 0.2s',
+                                            whiteSpace: 'nowrap'
                                           }}
                                           title="Add 3-Occupancy if this room accommodates 3 people"
                                         >
@@ -1194,15 +1229,20 @@ export default function PartnerDashboard() {
                                     )}
 
                                     <div className="form-group">
-                                      <label className="form-label" style={{ fontSize: '0.75rem' }}>B2B Price (₹)</label>
-                                      <input className="form-input" type="number" min="0" value={room.b2bPrice} onChange={e => {
+                                      <div className="pricing-header-row">
+                                        <label className="form-label">B2B Price (₹)</label>
+                                      </div>
+                                      <input className="form-input" type="number" min="0" placeholder="e.g. 1200" value={room.b2bPrice} onChange={e => {
                                         const newRooms = [...hotelForm.rooms];
                                         newRooms[index].b2bPrice = e.target.value;
                                         setHotelForm({ ...hotelForm, rooms: newRooms });
                                       }} />
                                     </div>
-                                    <div className="form-group">
-                                      <label className="form-label" style={{ fontSize: '0.75rem' }}>Rate Plan</label>
+
+                                    <div className="form-group pricing-col-span-mobile">
+                                      <div className="pricing-header-row">
+                                        <label className="form-label">Rate Plan</label>
+                                      </div>
                                       <select className="form-input form-select" value={room.ratePlan} onChange={e => {
                                         const newRooms = [...hotelForm.rooms];
                                         newRooms[index].ratePlan = e.target.value;
@@ -1724,54 +1764,67 @@ export default function PartnerDashboard() {
                         </div>
                       </div>
 
-                      <div className="partner-grid-4" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 'var(--space-4)' }}>
+                      <div className="partner-pricing-grid-4" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 'var(--space-4)' }}>
                         <div className="form-group">
-                          <label className="form-label" style={{ fontSize: '0.75rem' }}>Single Price (₹) <span className="required">*</span></label>
-                          <input className="form-input" type="number" min="0" value={roomForm.priceSingle} onChange={e => setRoomForm(p => ({ ...p, priceSingle: e.target.value }))} required />
+                          <div className="pricing-header-row">
+                            <label className="form-label">Single Price (₹)<span className="required">*</span></label>
+                          </div>
+                          <input className="form-input" type="number" min="0" placeholder="e.g. 1500" value={roomForm.priceSingle} onChange={e => setRoomForm(p => ({ ...p, priceSingle: e.target.value }))} required />
                         </div>
+
                         <div className="form-group">
-                          <label className="form-label" style={{ fontSize: '0.75rem' }}>Double Price (₹) <span className="required">*</span></label>
-                          <input className="form-input" type="number" min="0" value={roomForm.priceDouble} onChange={e => setRoomForm(p => ({ ...p, priceDouble: e.target.value }))} required />
+                          <div className="pricing-header-row">
+                            <label className="form-label">Double Price (₹)<span className="required">*</span></label>
+                          </div>
+                          <input className="form-input" type="number" min="0" placeholder="e.g. 2000" value={roomForm.priceDouble} onChange={e => setRoomForm(p => ({ ...p, priceDouble: e.target.value }))} required />
                         </div>
                         
                         {isModalTripleActive ? (
-                          <div className="form-group" style={{ position: 'relative' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 }}>
-                              <label className="form-label" style={{ fontSize: '0.75rem', margin: 0 }}>Triple Price (₹) <span className="required">*</span></label>
+                          <div className="form-group">
+                            <div className="pricing-header-row" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                              <label className="form-label" style={{ whiteSpace: 'nowrap' }}>Triple Price (₹)<span className="required">*</span></label>
                               <button
                                 type="button"
                                 onClick={() => setRoomForm(p => ({ ...p, priceTriple: '', hasTriple: false, maxGuests: '2' }))}
                                 style={{
                                   background: '#fee2e2',
-                                  border: 'none',
+                                  border: '1px solid #fecaca',
                                   color: '#dc2626',
                                   borderRadius: 4,
-                                  padding: '2px 6px',
+                                  padding: '2px 8px',
                                   fontSize: '0.68rem',
                                   fontWeight: 700,
                                   cursor: 'pointer',
                                   display: 'inline-flex',
                                   alignItems: 'center',
                                   gap: 2,
+                                  lineHeight: 1.2,
+                                  whiteSpace: 'nowrap',
+                                  flexShrink: 0
                                 }}
                                 title="Delete 3-Occupancy: Guests cannot book 3 people in this room"
                               >
-                                <span>🗑️</span> Remove
+                                ✕ Remove
                               </button>
                             </div>
                             <input className="form-input" type="number" min="0" placeholder="e.g. 2500" value={roomForm.priceTriple} onChange={e => setRoomForm(p => ({ ...p, priceTriple: e.target.value, maxGuests: Number(e.target.value) > 0 ? '3' : '2' }))} required />
                           </div>
                         ) : (
-                          <div className="form-group" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
+                          <div className="form-group">
+                            <div className="pricing-header-row">
+                              <label className="form-label" style={{ color: 'var(--text-muted)' }}>Triple (3 Guests)</label>
+                            </div>
                             <button
                               type="button"
                               onClick={() => setRoomForm(p => ({ ...p, hasTriple: true, maxGuests: '3' }))}
+                              className="pricing-action-btn"
                               style={{
+                                width: '100%',
                                 background: '#fff7ed',
                                 border: '1px dashed #f97316',
                                 color: '#c2410c',
-                                padding: '8px 10px',
-                                borderRadius: 8,
+                                padding: '0 8px',
+                                borderRadius: 'var(--radius-md)',
                                 fontSize: '0.75rem',
                                 fontWeight: 700,
                                 cursor: 'pointer',
@@ -1779,7 +1832,8 @@ export default function PartnerDashboard() {
                                 alignItems: 'center',
                                 justifyContent: 'center',
                                 gap: 4,
-                                height: '42px',
+                                transition: 'all 0.2s',
+                                whiteSpace: 'nowrap'
                               }}
                               title="Add 3-Occupancy price to allow 3 guests in this room"
                             >
@@ -1789,8 +1843,10 @@ export default function PartnerDashboard() {
                         )}
 
                         <div className="form-group">
-                          <label className="form-label" style={{ fontSize: '0.75rem' }}>B2B Price (₹)</label>
-                          <input className="form-input" type="number" min="0" value={roomForm.b2bPrice} onChange={e => setRoomForm(p => ({ ...p, b2bPrice: e.target.value }))} />
+                          <div className="pricing-header-row">
+                            <label className="form-label">B2B Price (₹)</label>
+                          </div>
+                          <input className="form-input" type="number" min="0" placeholder="e.g. 1200" value={roomForm.b2bPrice} onChange={e => setRoomForm(p => ({ ...p, b2bPrice: e.target.value }))} />
                         </div>
                       </div>
 

@@ -1000,3 +1000,128 @@ tbody tr:hover { background: var(--bg-secondary); }
     width: 100%;
   }
 }
+
+/* ===== PARTNER PRICING GRID & ALIGNMENT ===== */
+.partner-pricing-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: var(--space-4);
+  align-items: start;
+}
+
+.partner-pricing-grid-4 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-4);
+  align-items: start;
+}
+
+.pricing-header-row {
+  min-height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+  margin-bottom: 6px;
+}
+
+.pricing-header-row .form-label {
+  font-size: 0.75rem !important;
+  margin: 0 !important;
+  white-space: nowrap !important;
+  display: flex !important;
+  align-items: center !important;
+}
+
+.pricing-action-btn {
+  height: 42px !important;
+  box-sizing: border-box !important;
+}
+
+@media (max-width: 992px) {
+  .partner-pricing-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+  }
+  .partner-pricing-grid-4 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+}
+
+@media (max-width: 640px) {
+  .partner-pricing-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+  .partner-pricing-grid .pricing-col-span-mobile {
+    grid-column: span 2;
+  }
+  .partner-pricing-grid-4 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+}
+
+@media (max-width: 400px) {
+  .partner-pricing-grid,
+  .partner-pricing-grid-4 {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  .partner-pricing-grid .pricing-col-span-mobile {
+    grid-column: span 1;
+  }
+}
+
+/* ===== PARTNER AGREEMENT RESPONSIVE TARIFF SCHEDULE ===== */
+.agreement-tariff-table-wrap {
+  display: block;
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.agreement-mobile-cards {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .agreement-desktop-table {
+    display: none !important;
+  }
+  .agreement-mobile-cards {
+    display: flex !important;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .agreement-container {
+    padding: 20px 14px !important;
+  }
+  .agreement-inner-card {
+    padding: 20px 16px !important;
+  }
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  .agreement-container {
+    padding: 0 !important;
+    background: white !important;
+  }
+  .agreement-inner-card {
+    box-shadow: none !important;
+    border: none !important;
+    padding: 0 !important;
+  }
+  .agreement-desktop-table {
+    display: table !important;
+    width: 100% !important;
+  }
+  .agreement-mobile-cards {
+    display: none !important;
+  }
+}
+
