@@ -103,6 +103,7 @@ export default function Navbar({ middleContent, extendedContent }: { middleConte
                           { label: 'My Wallet', href: '/wallet', icon: '💰' },
                           { label: 'My Bookings', href: '/my-bookings', icon: '📋' },
                           { label: 'My Wishlist', href: '/wishlist', icon: '❤️' },
+                          { label: 'Visiting Card', href: '/visiting-card', icon: '🪪' },
                         ].map(item => (
                           <Link key={item.href} href={item.href} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 16px', fontSize: '0.875rem', color: 'var(--text-primary)', transition: 'background var(--transition-fast)' }}
                             onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-secondary)')}

@@ -813,7 +813,7 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
               <p style={{ fontSize: '0.875rem', lineHeight: 1.7, color: '#64748b' }}>India&apos;s trusted OTA platform for hotel bookings — from budget to luxury.</p>
             </div>
             {[
-              { title: 'Explore', links: ['Hotels', 'Destinations', 'Deals', 'Luxury Stays'] },
+              { title: 'Explore', links: ['Hotels', 'Destinations', 'Deals', 'Visiting Card'] },
               { title: 'Partners', links: ['List Your Hotel', 'Partner Login', 'Partner Resources', 'Success Stories'] },
               { title: 'Support', links: ['Help Center', 'Contact Us', 'Privacy Policy', 'Terms of Service'] },
             ].map(col => (
@@ -821,7 +821,7 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
                 <div style={{ fontWeight: 700, color: 'white', marginBottom: 12, fontSize: '0.9rem' }}>{col.title}</div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                   {col.links.map(link => (
-                    <Link key={link} href={link === 'Partner Login' || link === 'List Your Hotel' ? '/partner/login' : '#'} style={{ fontSize: '0.875rem', color: '#64748b', transition: 'color var(--transition-fast)', textDecoration: 'none' }}
+                    <Link key={link} href={link === 'Partner Login' || link === 'List Your Hotel' ? '/partner/login' : link === 'Hotels' ? '/hotels' : link === 'Visiting Card' ? '/visiting-card' : '#'} style={{ fontSize: '0.875rem', color: '#64748b', transition: 'color var(--transition-fast)', textDecoration: 'none' }}
                       onMouseEnter={e => (e.currentTarget.style.color = 'var(--brand-400)')}
                       onMouseLeave={e => (e.currentTarget.style.color = '#64748b')}>{link}</Link>
                   ))}
