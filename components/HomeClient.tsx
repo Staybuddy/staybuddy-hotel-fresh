@@ -1,6 +1,6 @@
 /* eslint-disable */
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -11,17 +11,22 @@ import LocationSearch from '@/components/LocationSearch';
 import AppPromoCard from '@/components/AppPromoCard';
 import HomeReferralSection from '@/components/HomeReferralSection';
 import HomeStatsSection from '@/components/HomeStatsSection';
+import CityDestinationCard from '@/components/CityDestinationCard';
 import Image from 'next/image';
 import WishlistButton from '@/components/WishlistButton';
 import { adjustRoomsAndAdults, MAX_ADULTS_PER_ROOM } from '@/lib/occupancyPricing';
 
 const DESTINATIONS = [
-  { city: 'Mumbai', country: 'India', emoji: '🏙️', hotels: 342 },
-  { city: 'Goa', country: 'India', emoji: '🏖️', hotels: 218 },
-  { city: 'Delhi', country: 'India', emoji: '🕌', hotels: 485 },
-  { city: 'Jaipur', country: 'India', emoji: '🏰', hotels: 196 },
-  { city: 'Manali', country: 'India', emoji: '⛰️', hotels: 87 },
-  { city: 'Kerala', country: 'India', emoji: '🌴', hotels: 154 },
+  { city: 'Mumbai', country: 'India', hotels: 342 },
+  { city: 'Goa', country: 'India', hotels: 218 },
+  { city: 'Delhi', country: 'India', hotels: 485 },
+  { city: 'Jaipur', country: 'India', hotels: 196 },
+  { city: 'Manali', country: 'India', hotels: 87 },
+  { city: 'Kerala', country: 'India', hotels: 154 },
+  { city: 'Hyderabad', country: 'India', hotels: 310 },
+  { city: 'Bangalore', country: 'India', hotels: 290 },
+  { city: 'Udaipur', country: 'India', hotels: 142 },
+  { city: 'Ooty', country: 'India', hotels: 95 },
 ];
 
 const AMENITY_ICONS: Record<string, string> = {
@@ -36,6 +41,32 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
   const [loading, setLoading] = useState(false);
   const [searchError, setSearchError] = useState('');
   const [userWishlistIds, setUserWishlistIds] = useState<string[]>([]);
+  
+  // Smart Dynamic Destinations: Merges base destinations with any new cities added by partners
+  const allDestinations = useMemo(() => {
+    const map = new Map<string, { city: string; country: string; hotels: number }>();
+    DESTINATIONS.forEach(d => map.set(d.city.toLowerCase(), { ...d }));
+
+    (hotels || []).forEach((h: any) => {
+      if (h.city && typeof h.city === 'string') {
+        const raw = h.city.trim();
+        const lower = raw.toLowerCase();
+        if (map.has(lower)) {
+          const item = map.get(lower)!;
+          item.hotels = Math.max(item.hotels, 1);
+        } else if (raw.length > 1) {
+          const formatted = raw.charAt(0).toUpperCase() + raw.slice(1);
+          map.set(lower, {
+            city: formatted,
+            country: h.country || 'India',
+            hotels: 1,
+          });
+        }
+      }
+    });
+
+    return Array.from(map.values());
+  }, [hotels]);
   
   // Fetch Wishlist on load
   useEffect(() => {
@@ -467,33 +498,19 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
             <p style={{ color: 'var(--text-secondary)', marginTop: 8 }}>Top-rated destinations loved by millions of travelers</p>
           </div>
           <div style={{
-            display: 'flex', gap: 12, overflowX: 'auto',
-            padding: '10px 4px 16px', scrollSnapType: 'x mandatory',
+            display: 'flex', gap: 14, overflowX: 'auto',
+            padding: '10px 4px 18px', scrollSnapType: 'x mandatory',
             scrollbarWidth: 'thin', scrollbarColor: 'var(--brand-200) transparent',
             margin: '-10px -4px 0'
           }}>
-            {DESTINATIONS.map((dest, index) => (
-              <Link key={dest.city} href={`/hotels?city=${dest.city}`} style={{ 
-                textDecoration: 'none', 
-                flexShrink: 0, 
-                scrollSnapAlign: 'start',
-                display: 'block',
-                width: 180,
-                marginRight: index === DESTINATIONS.length - 1 ? '16px' : '0' // ensures right spacing on last item
-              }}>
-                <div style={{
-                  background: 'var(--surface)', borderRadius: 'var(--radius-lg)', padding: 'var(--space-4)',
-                  textAlign: 'center', border: '2px solid var(--border)',
-                  transition: 'all var(--transition-base)', cursor: 'pointer',
-                  display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center'
-                }}
-                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--brand-400)'; (e.currentTarget as HTMLElement).style.transform = 'translateY(-4px)'; (e.currentTarget as HTMLElement).style.boxShadow = 'var(--shadow-lg)'; }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--border)'; (e.currentTarget as HTMLElement).style.transform = 'translateY(0)'; (e.currentTarget as HTMLElement).style.boxShadow = 'none'; }}>
-                  <div style={{ fontSize: '2.5rem', marginBottom: 4, lineHeight: 1 }}>{dest.emoji}</div>
-                  <div style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--text-primary)', marginTop: 4 }}>{dest.city}</div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 2 }}>{dest.hotels} hotels</div>
-                </div>
-              </Link>
+            {allDestinations.map((dest, index) => (
+              <CityDestinationCard
+                key={dest.city}
+                city={dest.city}
+                country={dest.country}
+                hotels={dest.hotels}
+                isLast={index === allDestinations.length - 1}
+              />
             ))}
           </div>
         </div>
