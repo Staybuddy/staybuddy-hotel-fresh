@@ -260,6 +260,78 @@ export default function AdminDashboard() {
     fetchAll(false);
   }
 
+  const calculateNightsDifference = (inStr: string, outStr: string): string => {
+    if (!inStr || !outStr) return '';
+    const [y1, m1, d1] = inStr.split('-').map(Number);
+    const [y2, m2, d2] = outStr.split('-').map(Number);
+    if (!y1 || !m1 || !d1 || !y2 || !m2 || !d2) return '';
+    const date1 = new Date(y1, m1 - 1, d1);
+    const date2 = new Date(y2, m2 - 1, d2);
+    const diffTime = date2.getTime() - date1.getTime();
+    const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays > 0 ? String(diffDays) : '1';
+  };
+
+  const handleCheckInChange = (newIn: string) => {
+    setNewInvoiceData(prev => {
+      let nextOut = prev.checkOutDate;
+      if (newIn) {
+        if (!nextOut) {
+          const [y, m, d] = newIn.split('-').map(Number);
+          if (y && m && d) {
+            const nextDay = new Date(y, m - 1, d + 1);
+            nextOut = `${nextDay.getFullYear()}-${String(nextDay.getMonth() + 1).padStart(2, '0')}-${String(nextDay.getDate()).padStart(2, '0')}`;
+          }
+        } else {
+          const [y1, m1, d1] = newIn.split('-').map(Number);
+          const [y2, m2, d2] = nextOut.split('-').map(Number);
+          if (y1 && m1 && d1 && y2 && m2 && d2) {
+            const date1 = new Date(y1, m1 - 1, d1);
+            const date2 = new Date(y2, m2 - 1, d2);
+            if (date2 <= date1) {
+              const nextDay = new Date(y1, m1 - 1, d1 + 1);
+              nextOut = `${nextDay.getFullYear()}-${String(nextDay.getMonth() + 1).padStart(2, '0')}-${String(nextDay.getDate()).padStart(2, '0')}`;
+            }
+          }
+        }
+      }
+      const nights = calculateNightsDifference(newIn, nextOut);
+      return {
+        ...prev,
+        checkInDate: newIn,
+        checkOutDate: nextOut,
+        ...(nights ? { noOfNights: nights } : {})
+      };
+    });
+  };
+
+  const handleCheckOutChange = (newOut: string) => {
+    setNewInvoiceData(prev => {
+      const nights = calculateNightsDifference(prev.checkInDate, newOut);
+      return {
+        ...prev,
+        checkOutDate: newOut,
+        ...(nights ? { noOfNights: nights } : {})
+      };
+    });
+  };
+
+  const openCreateInvoiceModal = () => {
+    const today = getLocalDateString();
+    const d = new Date();
+    d.setDate(d.getDate() + 1);
+    const tomorrow = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    setNewInvoiceData(prev => ({
+      ...prev,
+      invoiceDate: prev.invoiceDate || today,
+      checkInDate: prev.checkInDate || today,
+      checkOutDate: prev.checkOutDate || tomorrow,
+      noOfNights: prev.noOfNights || '1',
+      invoiceNo: prev.invoiceNo || `INV-${Math.floor(100000 + Math.random() * 900000)}`
+    }));
+    setShowCreateInvoice(true);
+  };
+
   async function handleCreateInvoice(e: React.FormEvent) {
     e.preventDefault();
     setApproveLoading('invoice');
@@ -1030,7 +1102,7 @@ export default function AdminDashboard() {
                   <h1 style={{ fontSize: '2rem', color: '#0f172a', marginBottom: 8 }}>Tax Invoices / Extra Bills</h1>
                   <p style={{ color: '#64748b' }}>Generate and manage standalone tax invoices and extra bills for customers.</p>
                 </div>
-                <button onClick={() => setShowCreateInvoice(true)} className="btn btn-primary" style={{ padding: '10px 20px', borderRadius: 8, fontWeight: 600, boxShadow: '0 4px 12px rgba(37,99,235,0.2)' }}>
+                <button onClick={openCreateInvoiceModal} className="btn btn-primary" style={{ padding: '10px 20px', borderRadius: 8, fontWeight: 600, boxShadow: '0 4px 12px rgba(37,99,235,0.2)' }}>
                   + Generate New Invoice
                 </button>
               </div>
@@ -1091,90 +1163,160 @@ export default function AdminDashboard() {
 
       {/* ===== CREATE TAX INVOICE MODAL ===== */}
       {showCreateInvoice && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 999, background: 'rgba(15, 23, 42, 0.7)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px', overflowY: 'auto' }}>
-          <div className="admin-modal-box" style={{ background: 'white', borderRadius: 16, width: '100%', maxWidth: 700, padding: 32, boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)', maxHeight: '90vh', overflowY: 'auto' }}>
-            <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#0f172a', marginBottom: 24 }}>Generate Tax Invoice</h2>
-            <form onSubmit={handleCreateInvoice} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-              <div className="admin-form-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: '#475569', marginBottom: 8 }}>Invoice No.</label>
-                  <input required type="text" value={newInvoiceData.invoiceNo} onChange={e => setNewInvoiceData({...newInvoiceData, invoiceNo: e.target.value})} style={{ width: '100%', padding: '10px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '0.95rem' }} />
+        <div className="admin-tax-modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) setShowCreateInvoice(false); }}>
+          <div className="admin-tax-modal-box">
+            {/* Modal Header */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, borderBottom: '1px solid #f1f5f9', paddingBottom: 14 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <div style={{ width: 40, height: 40, borderRadius: 10, background: '#eff6ff', color: '#2563eb', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.25rem', fontWeight: 800 }}>
+                  📄
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: '#475569', marginBottom: 8 }}>Invoice Date</label>
-                  <input required type="date" value={newInvoiceData.invoiceDate} onChange={e => setNewInvoiceData({...newInvoiceData, invoiceDate: e.target.value})} style={{ width: '100%', padding: '10px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '0.95rem' }} />
+                  <h2 style={{ fontSize: '1.3rem', fontWeight: 800, color: '#0f172a', margin: 0, lineHeight: 1.2 }}>Generate Tax Invoice</h2>
+                  <p style={{ margin: '3px 0 0', fontSize: '0.78rem', color: '#64748b' }}>Create official GST tax bill / invoice for guests</p>
+                </div>
+              </div>
+              <button 
+                type="button" 
+                onClick={() => setShowCreateInvoice(false)} 
+                style={{ background: '#f8fafc', border: '1px solid #e2e8f0', width: 34, height: 34, borderRadius: '50%', cursor: 'pointer', fontSize: '1rem', color: '#64748b', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.15s ease' }}
+                aria-label="Close"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateInvoice} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              {/* Row 1: Invoice No & Invoice Date */}
+              <div className="tax-grid-2">
+                <div>
+                  <label className="tax-modal-label">Invoice No.</label>
+                  <input required type="text" className="tax-modal-input" value={newInvoiceData.invoiceNo} onChange={e => setNewInvoiceData({...newInvoiceData, invoiceNo: e.target.value})} />
+                </div>
+                <div>
+                  <label className="tax-modal-label">Invoice Date</label>
+                  <input required type="date" className="tax-modal-input" value={newInvoiceData.invoiceDate} onChange={e => setNewInvoiceData({...newInvoiceData, invoiceDate: e.target.value})} />
                 </div>
               </div>
               
-              <div className="admin-form-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+              {/* Row 2: Guest Name & Company Name */}
+              <div className="tax-grid-split">
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: '#475569', marginBottom: 8 }}>Guest Name</label>
-                  <input required type="text" value={newInvoiceData.guestName} onChange={e => setNewInvoiceData({...newInvoiceData, guestName: e.target.value})} style={{ width: '100%', padding: '10px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '0.95rem' }} />
+                  <label className="tax-modal-label">Guest Name</label>
+                  <input required type="text" className="tax-modal-input" placeholder="e.g. John Doe" value={newInvoiceData.guestName} onChange={e => setNewInvoiceData({...newInvoiceData, guestName: e.target.value})} />
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: '#475569', marginBottom: 8 }}>Company Name (Optional)</label>
-                  <input type="text" value={newInvoiceData.companyName} onChange={e => setNewInvoiceData({...newInvoiceData, companyName: e.target.value})} style={{ width: '100%', padding: '10px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '0.95rem' }} />
-                </div>
-              </div>
-
-              <div className="admin-form-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: '#475569', marginBottom: 8 }}>GST Number (Optional)</label>
-                  <input type="text" value={newInvoiceData.gstNumber} onChange={e => setNewInvoiceData({...newInvoiceData, gstNumber: e.target.value})} style={{ width: '100%', padding: '10px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '0.95rem' }} />
-                </div>
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: '#475569', marginBottom: 8 }}>Address</label>
-                  <input type="text" value={newInvoiceData.address} onChange={e => setNewInvoiceData({...newInvoiceData, address: e.target.value})} style={{ width: '100%', padding: '10px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '0.95rem' }} />
+                  <label className="tax-modal-label">
+                    <span>Company Name</span>
+                    <span style={{ fontSize: '0.72rem', color: '#94a3b8', fontWeight: 500 }}>Optional</span>
+                  </label>
+                  <input type="text" className="tax-modal-input" placeholder="e.g. Acme Corp" value={newInvoiceData.companyName} onChange={e => setNewInvoiceData({...newInvoiceData, companyName: e.target.value})} />
                 </div>
               </div>
 
-              <div className="admin-form-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 16 }}>
+              {/* Row 3: GST Number & Address */}
+              <div className="tax-grid-split">
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: '#475569', marginBottom: 8 }}>Booking ID (Optional)</label>
-                  <input type="text" value={newInvoiceData.bookingId} onChange={e => setNewInvoiceData({...newInvoiceData, bookingId: e.target.value})} style={{ width: '100%', padding: '10px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '0.95rem' }} />
+                  <label className="tax-modal-label">
+                    <span>GST Number</span>
+                    <span style={{ fontSize: '0.72rem', color: '#94a3b8', fontWeight: 500 }}>Optional</span>
+                  </label>
+                  <input type="text" className="tax-modal-input" placeholder="e.g. 36AABCU9603R1ZM" value={newInvoiceData.gstNumber} onChange={e => setNewInvoiceData({...newInvoiceData, gstNumber: e.target.value})} />
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: '#475569', marginBottom: 8 }}>Place of Supply (State)</label>
-                  <input type="text" value={newInvoiceData.placeOfSupply} onChange={e => setNewInvoiceData({...newInvoiceData, placeOfSupply: e.target.value})} style={{ width: '100%', padding: '10px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '0.95rem' }} />
-                </div>
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: '#475569', marginBottom: 8 }}>Hotel Name</label>
-                  <input type="text" value={newInvoiceData.hotelName} onChange={e => setNewInvoiceData({...newInvoiceData, hotelName: e.target.value})} style={{ width: '100%', padding: '10px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '0.95rem' }} placeholder="e.g. Hotel RK Grand" />
-                </div>
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: '#475569', marginBottom: 8 }}>Hotel City</label>
-                  <input type="text" value={newInvoiceData.hotelCity} onChange={e => setNewInvoiceData({...newInvoiceData, hotelCity: e.target.value})} style={{ width: '100%', padding: '10px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '0.95rem' }} placeholder="e.g. Hyderabad" />
+                  <label className="tax-modal-label">Address</label>
+                  <input type="text" className="tax-modal-input" placeholder="Guest / Company Address" value={newInvoiceData.address} onChange={e => setNewInvoiceData({...newInvoiceData, address: e.target.value})} />
                 </div>
               </div>
 
-
-              <div className="admin-form-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 16 }}>
+              {/* Row 4: Booking ID, Place of Supply, Hotel Name, Hotel City */}
+              <div className="tax-grid-4">
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: '#475569', marginBottom: 8 }}>Check-In</label>
-                  <input required type="date" value={newInvoiceData.checkInDate} onChange={e => setNewInvoiceData({...newInvoiceData, checkInDate: e.target.value})} style={{ width: '100%', padding: '10px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '0.95rem' }} />
+                  <label className="tax-modal-label">
+                    <span>Booking ID</span>
+                    <span style={{ fontSize: '0.72rem', color: '#94a3b8', fontWeight: 500 }}>Opt</span>
+                  </label>
+                  <input type="text" className="tax-modal-input" value={newInvoiceData.bookingId} onChange={e => setNewInvoiceData({...newInvoiceData, bookingId: e.target.value})} />
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: '#475569', marginBottom: 8 }}>Check-Out</label>
-                  <input required type="date" value={newInvoiceData.checkOutDate} onChange={e => setNewInvoiceData({...newInvoiceData, checkOutDate: e.target.value})} style={{ width: '100%', padding: '10px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '0.95rem' }} />
+                  <label className="tax-modal-label">Place of Supply</label>
+                  <input type="text" className="tax-modal-input" value={newInvoiceData.placeOfSupply} onChange={e => setNewInvoiceData({...newInvoiceData, placeOfSupply: e.target.value})} />
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: '#475569', marginBottom: 8 }}>Nights</label>
-                  <input required type="number" min="1" value={newInvoiceData.noOfNights} onChange={e => setNewInvoiceData({...newInvoiceData, noOfNights: e.target.value})} style={{ width: '100%', padding: '10px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '0.95rem' }} />
+                  <label className="tax-modal-label">Hotel Name</label>
+                  <input type="text" className="tax-modal-input" value={newInvoiceData.hotelName} onChange={e => setNewInvoiceData({...newInvoiceData, hotelName: e.target.value})} placeholder="e.g. Hotel RK Grand" />
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: '#475569', marginBottom: 8 }}>Rooms</label>
-                  <input required type="number" min="1" value={newInvoiceData.noOfRooms} onChange={e => setNewInvoiceData({...newInvoiceData, noOfRooms: e.target.value})} style={{ width: '100%', padding: '10px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '0.95rem' }} />
-                </div>
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: '#475569', marginBottom: 8 }}>Guests/Rm</label>
-                  <input required type="number" min="1" value={newInvoiceData.noOfGuests} onChange={e => setNewInvoiceData({...newInvoiceData, noOfGuests: e.target.value})} style={{ width: '100%', padding: '10px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '0.95rem' }} />
+                  <label className="tax-modal-label">Hotel City</label>
+                  <input type="text" className="tax-modal-input" value={newInvoiceData.hotelCity} onChange={e => setNewInvoiceData({...newInvoiceData, hotelCity: e.target.value})} placeholder="e.g. Hyderabad" />
                 </div>
               </div>
 
+              {/* Row 5: Stay Details & Occupancy */}
               <div>
-                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: '#475569', marginBottom: 8 }}>Total Amount (₹) Inclusive of GST</label>
-                <input required type="number" value={newInvoiceData.totalAmount} onChange={e => setNewInvoiceData({...newInvoiceData, totalAmount: e.target.value})} style={{ width: '100%', padding: '10px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '0.95rem' }} />
-                <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: 8, lineHeight: '1.6', background: '#f8fafc', padding: '10px 12px', borderRadius: 8, border: '1px solid #e2e8f0' }}>
+                <div className="tax-stay-container">
+                  {/* Dates Group: Check-In & Check-Out */}
+                  <div className="tax-stay-dates">
+                    <div>
+                      <label className="tax-modal-label">
+                        <span>Check-In</span>
+                        <span style={{ fontSize: '0.72rem', color: '#2563eb' }}>📅</span>
+                      </label>
+                      <input required type="date" className="tax-modal-input" value={newInvoiceData.checkInDate} onChange={e => handleCheckInChange(e.target.value)} />
+                    </div>
+                    <div>
+                      <label className="tax-modal-label">
+                        <span>Check-Out</span>
+                        <span style={{ fontSize: '0.72rem', color: '#2563eb' }}>📅</span>
+                      </label>
+                      <input required type="date" className="tax-modal-input" value={newInvoiceData.checkOutDate} onChange={e => handleCheckOutChange(e.target.value)} />
+                    </div>
+                  </div>
+
+                  {/* Counts Group: Nights, Rooms, Guests/Rm */}
+                  <div className="tax-stay-counts">
+                    <div>
+                      <label className="tax-modal-label">
+                        <span>Nights</span>
+                        <span style={{ fontSize: '0.68rem', padding: '1px 5px', borderRadius: 4, background: '#dbeafe', color: '#1d4ed8', fontWeight: 800 }}>Auto</span>
+                      </label>
+                      <input required type="number" min="1" className="tax-modal-input" style={{ fontWeight: 700, color: '#1d4ed8', background: '#f8fafc' }} value={newInvoiceData.noOfNights} onChange={e => setNewInvoiceData({...newInvoiceData, noOfNights: e.target.value})} placeholder="1" />
+                    </div>
+                    <div>
+                      <label className="tax-modal-label">Rooms</label>
+                      <input required type="number" min="1" className="tax-modal-input" value={newInvoiceData.noOfRooms} onChange={e => setNewInvoiceData({...newInvoiceData, noOfRooms: e.target.value})} />
+                    </div>
+                    <div>
+                      <label className="tax-modal-label">Guests/Rm</label>
+                      <input required type="number" min="1" className="tax-modal-input" value={newInvoiceData.noOfGuests} onChange={e => setNewInvoiceData({...newInvoiceData, noOfGuests: e.target.value})} />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Row 6: Total Amount & Live Tax Breakdown */}
+              <div>
+                <label className="tax-modal-label" style={{ fontSize: '0.88rem', color: '#0f172a' }}>
+                  <span>Total Bill Amount (₹)</span>
+                  <span style={{ fontSize: '0.75rem', color: '#059669', fontWeight: 600 }}>Inclusive of GST</span>
+                </label>
+                <div style={{ display: 'flex', alignItems: 'stretch', borderRadius: 8, overflow: 'hidden', border: '1px solid #cbd5e1', background: 'white' }}>
+                  <span style={{ background: '#f8fafc', color: '#475569', fontWeight: 800, padding: '0 16px', display: 'flex', alignItems: 'center', fontSize: '1.1rem', borderRight: '1px solid #cbd5e1' }}>₹</span>
+                  <input 
+                    required 
+                    type="number" 
+                    step="any" 
+                    min="0"
+                    placeholder="0.00" 
+                    className="tax-modal-input" 
+                    style={{ flex: 1, padding: '10px 14px', fontSize: '1.05rem', fontWeight: 700, color: '#0f172a', border: 'none', borderRadius: 0, outline: 'none' }} 
+                    value={newInvoiceData.totalAmount} 
+                    onChange={e => setNewInvoiceData({...newInvoiceData, totalAmount: e.target.value})} 
+                  />
+                </div>
+
+                {/* Calculation Breakdown Card */}
+                <div style={{ fontSize: '0.82rem', color: '#475569', marginTop: 10, background: '#f8fafc', padding: '12px 14px', borderRadius: 10, border: '1px solid #e2e8f0', boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.02)' }}>
                   {(() => {
                     const amt = Number(newInvoiceData.totalAmount) || 0;
                     const n = Number(newInvoiceData.noOfNights) || 1;
@@ -1187,37 +1329,50 @@ export default function AdminDashboard() {
                     const gstAmt = amt - base;
                     const basePerRoomNight = base / (n * r);
                     return (
-                      <>
-                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                        <div className="tax-breakdown-row">
                           <span>Per Room/Night (inclusive):</span>
-                          <strong>₹{perRoomNight.toFixed(2)}</strong>
+                          <strong style={{ color: '#0f172a' }}>₹{perRoomNight.toFixed(2)}</strong>
                         </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                          <span>GST Slab:</span>
-                          <strong style={{ color: gst > 0 ? '#ea580c' : '#16a34a' }}>{gst}%</strong>
+                        <div className="tax-breakdown-row">
+                          <span>Applicable GST Slab:</span>
+                          <span style={{ padding: '2px 8px', borderRadius: 999, fontSize: '0.75rem', fontWeight: 800, background: gst === 18 ? '#fee2e2' : gst === 5 ? '#ffedd5' : '#dcfce7', color: gst === 18 ? '#b91c1c' : gst === 5 ? '#c2410c' : '#15803d' }}>
+                            {gst}% GST
+                          </span>
                         </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                          <span>Base (excl. GST):</span>
+                        <div className="tax-breakdown-row">
+                          <span>Base Amount (excl. GST):</span>
                           <strong>₹{base.toFixed(2)}</strong>
                         </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <div className="tax-breakdown-row">
                           <span>GST Amount:</span>
-                          <strong>₹{gstAmt.toFixed(2)}</strong>
+                          <strong style={{ color: gst > 0 ? '#ea580c' : '#475569' }}>₹{gstAmt.toFixed(2)}</strong>
                         </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <div className="tax-breakdown-row">
                           <span>Tariff/Room/Night (excl. GST):</span>
-                          <strong>₹{basePerRoomNight.toFixed(2)}</strong>
+                          <strong style={{ color: '#2563eb' }}>₹{basePerRoomNight.toFixed(2)}</strong>
                         </div>
-                      </>
+                      </div>
                     );
                   })()}
                 </div>
               </div>
 
-              <div style={{ display: 'flex', gap: 12, marginTop: 16 }}>
-                <button type="button" onClick={() => setShowCreateInvoice(false)} style={{ flex: 1, padding: '12px', background: '#f1f5f9', color: '#475569', border: 'none', borderRadius: 8, fontWeight: 700, cursor: 'pointer' }}>Cancel</button>
-                <button type="submit" disabled={approveLoading === 'invoice'} style={{ flex: 1, padding: '12px', background: '#2563eb', color: 'white', border: 'none', borderRadius: 8, fontWeight: 700, cursor: 'pointer', opacity: approveLoading === 'invoice' ? 0.7 : 1 }}>
-                  {approveLoading === 'invoice' ? 'Saving...' : 'Save Invoice'}
+              {/* Action Buttons */}
+              <div style={{ display: 'flex', gap: 12, marginTop: 10 }}>
+                <button 
+                  type="button" 
+                  onClick={() => setShowCreateInvoice(false)} 
+                  style={{ flex: 1, padding: '12px 16px', background: '#f1f5f9', color: '#475569', border: '1px solid #cbd5e1', borderRadius: 8, fontWeight: 700, cursor: 'pointer', transition: 'all 0.15s ease' }}
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit" 
+                  disabled={approveLoading === 'invoice'} 
+                  style={{ flex: 1.5, padding: '12px 16px', background: '#2563eb', color: 'white', border: 'none', borderRadius: 8, fontWeight: 700, cursor: 'pointer', opacity: approveLoading === 'invoice' ? 0.7 : 1, boxShadow: '0 4px 12px rgba(37,99,235,0.25)', transition: 'all 0.15s ease' }}
+                >
+                  {approveLoading === 'invoice' ? 'Saving Invoice...' : 'Save & Generate Invoice'}
                 </button>
               </div>
             </form>

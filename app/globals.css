@@ -880,8 +880,10 @@ tbody tr:hover { background: var(--bg-secondary); }
     zoom: 0.65;
   }
   .admin-modal-box {
-    zoom: 0.85;
-    padding: 20px !important;
+    zoom: 1 !important;
+    padding: 20px 16px !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
   }
   .invoice-container {
     box-sizing: border-box !important;
@@ -1122,6 +1124,161 @@ tbody tr:hover { background: var(--bg-secondary); }
   }
   .agreement-mobile-cards {
     display: none !important;
+  }
+}
+
+/* ===== ADMIN TAX INVOICE MODAL STYLING ===== */
+.admin-tax-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 999;
+  background: rgba(15, 23, 42, 0.75);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  overflow-y: auto;
+  box-sizing: border-box;
+}
+
+.admin-tax-modal-box {
+  background: #ffffff;
+  border-radius: 20px;
+  width: 100%;
+  max-width: 680px;
+  padding: 28px 32px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  max-height: 90vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  box-sizing: border-box;
+  margin: auto;
+  position: relative;
+  zoom: 1 !important;
+}
+
+.tax-modal-input {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid #cbd5e1;
+  font-size: 0.95rem;
+  box-sizing: border-box;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  background: #ffffff;
+  color: #0f172a;
+}
+.tax-modal-input:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+
+.tax-modal-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #475569;
+  margin-bottom: 6px;
+}
+
+/* Grids for invoice form */
+.tax-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.tax-grid-split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.tax-grid-4 {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+.tax-stay-container {
+  display: grid;
+  grid-template-columns: 1.35fr 1.35fr 0.8fr 0.8fr 0.9fr;
+  gap: 12px;
+}
+.tax-stay-dates {
+  display: contents;
+}
+.tax-stay-counts {
+  display: contents;
+}
+
+.tax-breakdown-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  padding: 4px 0;
+  border-bottom: 1px dashed #e2e8f0;
+}
+.tax-breakdown-row:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+.tax-breakdown-row:first-child {
+  padding-top: 0;
+}
+
+@media (max-width: 640px) {
+  .admin-tax-modal-overlay {
+    padding: 12px 10px !important;
+    align-items: flex-start !important;
+  }
+  .admin-tax-modal-box {
+    padding: 20px 16px !important;
+    border-radius: 16px !important;
+    max-height: 94vh !important;
+    margin: 8px auto !important;
+    zoom: 1 !important;
+  }
+  .tax-grid-split {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+  .tax-grid-4 {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 12px 10px !important;
+  }
+  .tax-stay-container {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 12px !important;
+  }
+  .tax-stay-dates {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 10px !important;
+    width: 100% !important;
+  }
+  .tax-stay-counts {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr 1fr !important;
+    gap: 10px !important;
+    width: 100% !important;
+  }
+  .tax-modal-input {
+    font-size: 16px !important; /* Prevents auto zoom in mobile Safari */
+    padding: 10px 10px !important;
+  }
+  .tax-stay-dates .tax-modal-input,
+  .tax-stay-counts .tax-modal-input {
+    font-size: 0.88rem !important;
+    padding: 9px 8px !important;
   }
 }
 
