@@ -11,6 +11,7 @@ import LocationSearch from '@/components/LocationSearch';
 import AppPromoCard from '@/components/AppPromoCard';
 import HomeReferralSection from '@/components/HomeReferralSection';
 import HomeStatsSection from '@/components/HomeStatsSection';
+import SmartPromoBanner from '@/components/SmartPromoBanner';
 import Image from 'next/image';
 import WishlistButton from '@/components/WishlistButton';
 import { adjustRoomsAndAdults, MAX_ADULTS_PER_ROOM } from '@/lib/occupancyPricing';
@@ -424,10 +425,13 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
               extendedContent={showStickySearch ? renderSearchBar() : null}
             />
 
-            {/* HERO SECTION WITH INLINE PROPERTY TYPES */}
-            <div style={{ background: 'var(--bg-secondary)', padding: '24px 0 0 0', marginTop: '-8px' }}>
+            {/* HERO SECTION WITH PHONEPE-STYLE SMART PROMO BANNER & PROPERTY TYPES */}
+            <div style={{ background: 'var(--bg-secondary)', padding: '16px 0 0 0', marginTop: '-8px' }}>
               <div className="container hero-section-container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '0 16px' }}>
-                {renderPropertySelector(false)}
+                <SmartPromoBanner hotels={hotels} />
+                <div style={{ marginTop: '8px', width: '100%', display: 'flex', justifyContent: 'center' }}>
+                  {renderPropertySelector(false)}
+                </div>
               </div>
             </div>
           </>
