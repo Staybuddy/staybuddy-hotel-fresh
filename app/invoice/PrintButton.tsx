@@ -44,11 +44,30 @@ export default function PrintButton({
         onclone: (clonedDoc) => {
           const el = clonedDoc.getElementById(targetId);
           if (el) {
-            el.style.width = '840px';
-            el.style.maxWidth = '840px';
-            el.style.minWidth = '840px';
-            el.style.padding = '36px 42px';
+            el.style.width = '800px';
+            el.style.maxWidth = '800px';
+            el.style.minWidth = '800px';
+            el.style.minHeight = '1130px';
+            el.style.height = '1130px';
+            el.style.padding = '34px 40px';
             el.style.boxSizing = 'border-box';
+            el.style.display = 'flex';
+            el.style.flexDirection = 'column';
+            el.style.justifyContent = 'space-between';
+            el.style.backgroundColor = '#ffffff';
+            el.style.borderRadius = '0';
+            el.style.boxShadow = 'none';
+
+            // Ensure desktop table is visible and mobile card is hidden in PDF
+            const desktopTable = el.querySelector('.invoice-table-desktop') as HTMLElement;
+            if (desktopTable) {
+              desktopTable.style.display = 'block';
+              desktopTable.style.overflow = 'visible';
+            }
+            const mobileCard = el.querySelector('.invoice-card-mobile') as HTMLElement;
+            if (mobileCard) {
+              mobileCard.style.display = 'none';
+            }
 
             const header = el.querySelector('.invoice-header-row') as HTMLElement;
             if (header) {
@@ -72,7 +91,7 @@ export default function PrintButton({
               twoCol.style.gridTemplateColumns = '1fr 1fr';
             }
 
-            const tables = el.querySelectorAll('.invoice-table-scroll table');
+            const tables = el.querySelectorAll('.invoice-table-desktop table, .invoice-table-scroll table');
             tables.forEach((t) => {
               (t as HTMLElement).style.width = '100%';
               (t as HTMLElement).style.minWidth = '100%';
@@ -114,9 +133,10 @@ export default function PrintButton({
 
       const pdfWidth = 210;
       const pdfHeight = 297;
-      const margin = 8; // 8mm outer margin for clean A4 framing
-      const maxContentWidth = pdfWidth - (margin * 2); // 194mm
-      const maxContentHeight = pdfHeight - (margin * 2); // 281mm
+      const marginX = 8; // 8mm margin
+      const marginY = 8; // 8mm margin
+      const maxContentWidth = pdfWidth - (marginX * 2); // 194mm
+      const maxContentHeight = pdfHeight - (marginY * 2); // 281mm
 
       // Compute scaled dimensions that fit within the printable A4 boundaries
       const imgRatio = canvas.width / canvas.height;
@@ -129,8 +149,8 @@ export default function PrintButton({
       }
 
       // Center horizontally and vertically within the A4 page
-      const xOffset = margin + (maxContentWidth - finalWidth) / 2;
-      const yOffset = margin + (maxContentHeight - finalHeight) / 2;
+      const xOffset = marginX + (maxContentWidth - finalWidth) / 2;
+      const yOffset = marginY + (maxContentHeight - finalHeight) / 2;
 
       pdf.addImage(imgData, 'JPEG', xOffset, yOffset, finalWidth, finalHeight, undefined, 'FAST');
       

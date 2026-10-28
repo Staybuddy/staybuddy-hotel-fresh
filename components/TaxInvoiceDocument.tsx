@@ -211,8 +211,8 @@ export default function TaxInvoiceDocument({ data }: { data: TaxInvoiceData }) {
             
           </div>
 
-          {/* Itemized Services Table */}
-          <div className="invoice-table-scroll">
+          {/* Itemized Services: Desktop Table View */}
+          <div className="invoice-table-desktop invoice-table-scroll">
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
               <thead>
                 <tr style={{ backgroundColor: '#f1f5f9', color: '#334155', textTransform: 'uppercase', fontSize: '11px', letterSpacing: '0.4px' }}>
@@ -253,6 +253,44 @@ export default function TaxInvoiceDocument({ data }: { data: TaxInvoiceData }) {
                 </tr>
               </tbody>
             </table>
+          </div>
+
+          {/* Itemized Services: Mobile Card View (Zero horizontal scroll!) */}
+          <div className="invoice-card-mobile" style={{ border: '1px solid #e2e8f0', borderRadius: '8px', padding: '14px', backgroundColor: '#ffffff', marginBottom: '16px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '10px' }}>
+              <div>
+                <div style={{ fontWeight: 800, fontSize: '14px', color: '#0f172a' }}>Accommodation Charges</div>
+                <div style={{ color: '#64748b', fontSize: '12px', marginTop: '2px' }}>
+                  {data.roomType || 'Standard Room'} - Room Only (Base Rate)
+                </div>
+                {data.hotelName && (
+                  <div style={{ marginTop: '4px', fontSize: '12.5px' }}>
+                    <span style={{ color: '#64748b', fontWeight: 600 }}>Hotel: </span>
+                    <strong style={{ color: '#ea580c' }}>
+                      {data.hotelName}{data.hotelCity ? `, ${data.hotelCity}` : ''}
+                    </strong>
+                  </div>
+                )}
+              </div>
+              <span style={{ background: '#f1f5f9', color: '#475569', fontSize: '11px', fontWeight: 700, padding: '3px 8px', borderRadius: 4 }}>
+                Sl. 1
+              </span>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', paddingTop: '10px', borderTop: '1px dashed #e2e8f0', fontSize: '12px' }}>
+              <div>
+                <span style={{ color: '#64748b', fontSize: '11px', display: 'block' }}>Quantity</span>
+                <strong style={{ color: '#334155' }}>{data.noOfRooms} Room(s) &times; {data.noOfNights} Night(s)</strong>
+              </div>
+              <div style={{ textAlign: 'right' }}>
+                <span style={{ color: '#64748b', fontSize: '11px', display: 'block' }}>Tariff / Night</span>
+                <strong style={{ color: '#ea580c' }}>₹{formatCurrency(data.tariffPerNight)}</strong>
+              </div>
+              <div style={{ gridColumn: 'span 2', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#f8fafc', padding: '9px 12px', borderRadius: 6, marginTop: 4, border: '1px solid #e2e8f0' }}>
+                <span style={{ color: '#475569', fontWeight: 700, fontSize: '12px' }}>Taxable Value:</span>
+                <strong style={{ color: '#0f172a', fontSize: '15px', fontWeight: 800 }}>₹{formatCurrency(data.basePrice)}</strong>
+              </div>
+            </div>
           </div>
 
           {/* Tax Breakup, Terms & Grand Total Grid */}
@@ -520,6 +558,13 @@ export default function TaxInvoiceDocument({ data }: { data: TaxInvoiceData }) {
           box-sizing: border-box;
         }
 
+        .invoice-table-desktop {
+          display: block;
+        }
+        .invoice-card-mobile {
+          display: none;
+        }
+
         .invoice-table-scroll {
           margin-bottom: 22px;
           border: 1px solid #cbd5e1;
@@ -602,13 +647,12 @@ export default function TaxInvoiceDocument({ data }: { data: TaxInvoiceData }) {
             gap: 14px !important;
           }
 
-          .invoice-table-scroll {
-            overflow-x: auto !important;
-            -webkit-overflow-scrolling: touch !important;
+          .invoice-table-desktop {
+            display: none !important;
           }
 
-          .invoice-table-scroll table {
-            min-width: 580px !important;
+          .invoice-card-mobile {
+            display: block !important;
           }
 
           .invoice-totals-grid {
@@ -701,6 +745,14 @@ export default function TaxInvoiceDocument({ data }: { data: TaxInvoiceData }) {
 
           .invoice-two-col {
             grid-template-columns: 1fr 1fr !important;
+          }
+
+          .invoice-table-desktop {
+            display: block !important;
+          }
+
+          .invoice-card-mobile {
+            display: none !important;
           }
 
           .invoice-table-scroll {
