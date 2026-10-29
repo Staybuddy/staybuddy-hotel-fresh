@@ -114,28 +114,42 @@ export const CURATED_CITY_PHOTOS: Record<string, CityPhotoInfo> = {
 // Common city aliases for seamless matching
 const CITY_ALIASES: Record<string, string> = {
   bombay: 'mumbai',
+  bom: 'mumbai',
   calcutta: 'kolkata',
+  ccu: 'kolkata',
   madras: 'chennai',
+  maa: 'chennai',
   bengaluru: 'bangalore',
+  blr: 'bangalore',
   mysuru: 'mysore',
   puducherry: 'pondicherry',
   banaras: 'varanasi',
   kashi: 'varanasi',
+  hyd: 'hyderabad',
   secunderabad: 'hyderabad',
   cyberabad: 'hyderabad',
   gurgaon: 'delhi',
   noida: 'delhi',
+  del: 'delhi',
 };
 
 // Default high-quality travel scenic fallback
 export const DEFAULT_CITY_PHOTO = 'https://images.unsplash.com/photo-1477959858617-67f30bc75b82?auto=format&fit=crop&w=600&q=80';
 
 /**
- * Normalizes city name to lowercase key
+ * Normalizes city name to lowercase key, stripping pin/zip codes and extra punctuation
  */
 export function normalizeCityName(cityName: string): string {
   if (!cityName) return '';
-  return cityName.trim().toLowerCase();
+  // Strip pin codes, commas, dashes, and extra spaces (e.g. "Chennai 600087" -> "chennai")
+  let clean = cityName
+    .toLowerCase()
+    .replace(/\b\d{4,6}\b/g, '') // remove postal codes
+    .replace(/[,\-_/]/g, ' ')   // replace separators with space
+    .trim()
+    .split(/\s+/)[0];           // take primary city token if multiple words like "Chennai 600087"
+    
+  return clean || cityName.trim().toLowerCase();
 }
 
 /**

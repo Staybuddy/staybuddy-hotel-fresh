@@ -12,6 +12,7 @@ import AppPromoCard from '@/components/AppPromoCard';
 import HomeReferralSection from '@/components/HomeReferralSection';
 import HomeStatsSection from '@/components/HomeStatsSection';
 import CityDestinationCard from '@/components/CityDestinationCard';
+import { normalizeCityName } from '@/lib/cityPhotos';
 import Image from 'next/image';
 import WishlistButton from '@/components/WishlistButton';
 import { adjustRoomsAndAdults, MAX_ADULTS_PER_ROOM } from '@/lib/occupancyPricing';
@@ -45,18 +46,17 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
   // Smart Dynamic Destinations: Merges base destinations with any new cities added by partners
   const allDestinations = useMemo(() => {
     const map = new Map<string, { city: string; country: string; hotels: number }>();
-    DESTINATIONS.forEach(d => map.set(d.city.toLowerCase(), { ...d }));
+    DESTINATIONS.forEach(d => map.set(normalizeCityName(d.city), { ...d }));
 
     (hotels || []).forEach((h: any) => {
       if (h.city && typeof h.city === 'string') {
-        const raw = h.city.trim();
-        const lower = raw.toLowerCase();
-        if (map.has(lower)) {
-          const item = map.get(lower)!;
-          item.hotels = Math.max(item.hotels, 1);
-        } else if (raw.length > 1) {
-          const formatted = raw.charAt(0).toUpperCase() + raw.slice(1);
-          map.set(lower, {
+        const norm = normalizeCityName(h.city);
+        if (map.has(norm)) {
+          const item = map.get(norm)!;
+          item.hotels = (item.hotels || 0) + 1;
+        } else if (norm && norm.length > 1) {
+          const formatted = norm.charAt(0).toUpperCase() + norm.slice(1);
+          map.set(norm, {
             city: formatted,
             country: h.country || 'India',
             hotels: 1,
