@@ -9,6 +9,7 @@ import { compressImage } from '@/lib/imageUtils';
 import TradeShowExtractor from '@/components/admin/TradeShowExtractor';
 
 const NAV = [
+  { id: 'trade_shows', label: 'Trade Shows Extractor', icon: '🎯' },
   { id: 'overview', label: 'Dashboard', icon: '📊' },
   { id: 'bookings', label: 'Live Bookings', icon: '🛎️' },
   { id: 'partner_approvals', label: 'Partner Approvals', icon: '🧑‍💼' },
@@ -18,13 +19,12 @@ const NAV = [
   { id: 'users', label: 'User Analytics', icon: '👥' },
   { id: 'agreements', label: 'Partner Agreements', icon: '📜' },
   { id: 'tax_invoices', label: 'Tax Invoices', icon: '🧾' },
-  { id: 'trade_shows', label: 'Trade Shows Extractor', icon: '🎯' },
 ];
 
 export default function AdminDashboard() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState('trade_shows');
   const [hotels, setHotels] = useState<any[]>([]);
   const [bookings, setBookings] = useState<any[]>([]);
   const [users, setUsers] = useState<any[]>([]);
@@ -109,6 +109,16 @@ export default function AdminDashboard() {
       e.target.value = '';
     }
   }
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const tabParam = params.get('tab');
+      if (tabParam) {
+        setActiveTab(tabParam);
+      }
+    }
+  }, []);
 
   useEffect(() => {
     let mounted = true;
@@ -428,7 +438,31 @@ export default function AdminDashboard() {
         <nav style={{ padding: '20px 12px', flex: 1, overflowY: 'auto' }}>
           <div style={{ fontSize: '0.7rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 12, paddingLeft: 12 }}>Management</div>
           {NAV.map(item => (
-            <button key={item.id} onClick={() => { setActiveTab(item.id); setIsMobileMenuOpen(false); }} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 12, padding: '12px', borderRadius: 8, background: activeTab === item.id ? '#eff6ff' : 'transparent', color: activeTab === item.id ? '#2563eb' : '#475569', fontWeight: activeTab === item.id ? 700 : 500, border: 'none', cursor: 'pointer', transition: 'all 0.2s', marginBottom: 4 }}>
+            <button
+              key={item.id}
+              onClick={() => {
+                setActiveTab(item.id);
+                setIsMobileMenuOpen(false);
+                if (typeof window !== 'undefined') {
+                  window.history.replaceState(null, '', `?tab=${item.id}`);
+                }
+              }}
+              style={{
+                width: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 12,
+                padding: '12px',
+                borderRadius: 8,
+                background: activeTab === item.id ? '#eff6ff' : 'transparent',
+                color: activeTab === item.id ? '#2563eb' : '#475569',
+                fontWeight: activeTab === item.id ? 700 : 500,
+                border: 'none',
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+                marginBottom: 4,
+              }}
+            >
               <span style={{ 
                 fontSize: '1.2rem', 
                 opacity: activeTab === item.id ? 1 : 0.7,
