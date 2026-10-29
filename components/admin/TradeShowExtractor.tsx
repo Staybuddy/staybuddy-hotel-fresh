@@ -792,11 +792,6 @@ export default function TradeShowExtractor() {
                             {h.mobile}
                           </a>
                         </div>
-                        {h.altPhone && (
-                          <div style={{ fontSize: '0.74rem', color: '#64748b', marginTop: '2px', fontFamily: 'monospace' }}>
-                            Alt: {h.altPhone}
-                          </div>
-                        )}
                         <div style={{ marginTop: '4px' }}>
                           <a
                             href={googleSearchUrl}
