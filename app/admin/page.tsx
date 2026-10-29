@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { compressImage } from '@/lib/imageUtils';
+import TradeShowExtractor from '@/components/admin/TradeShowExtractor';
 
 const NAV = [
   { id: 'overview', label: 'Dashboard', icon: '📊' },
@@ -17,6 +18,7 @@ const NAV = [
   { id: 'users', label: 'User Analytics', icon: '👥' },
   { id: 'agreements', label: 'Partner Agreements', icon: '📜' },
   { id: 'tax_invoices', label: 'Tax Invoices', icon: '🧾' },
+  { id: 'trade_shows', label: 'Trade Shows Extractor', icon: '🎯' },
 ];
 
 export default function AdminDashboard() {
@@ -1155,6 +1157,13 @@ export default function AdminDashboard() {
                   </tbody>
                 </table>
               </div>
+            </div>
+          )}
+
+          {/* ===== TRADE SHOW HOTEL EXTRACTOR ===== */}
+          {activeTab === 'trade_shows' && (
+            <div className="fade-in">
+              <TradeShowExtractor />
             </div>
           )}
 
