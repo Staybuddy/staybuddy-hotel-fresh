@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { getCityPhotoSync, getCityLandmark, DEFAULT_CITY_PHOTO } from '@/lib/cityPhotos';
+import { getCityPhotoSync, getCityLandmark, DEFAULT_CITY_PHOTO, resolveParentCity } from '@/lib/cityPhotos';
 
 interface CityDestinationCardProps {
   city: string;
@@ -16,19 +16,20 @@ export default function CityDestinationCard({
   hotels,
   isLast = false,
 }: CityDestinationCardProps) {
-  const [photoUrl, setPhotoUrl] = useState<string>(() => getCityPhotoSync(city));
+  // Ensure we are working with the canonical parent city
+  const canonicalCity = resolveParentCity(city);
+  const [photoUrl, setPhotoUrl] = useState<string>(() => getCityPhotoSync(canonicalCity));
   const [isHovered, setIsHovered] = useState(false);
   const [imgLoaded, setImgLoaded] = useState(false);
 
-  // Smart dynamic resolver: If photo is default fallback, asynchronously fetch real photo
+  // Dynamic resolver: If photo is default fallback, query smart /api/city-photo
   useEffect(() => {
     let isMounted = true;
-    const initial = getCityPhotoSync(city);
+    const initial = getCityPhotoSync(canonicalCity);
     setPhotoUrl(initial);
 
-    // If city is not in the hardcoded curated list, query our smart /api/city-photo endpoint
     if (initial === DEFAULT_CITY_PHOTO) {
-      fetch(`/api/city-photo?city=${encodeURIComponent(city)}`)
+      fetch(`/api/city-photo?city=${encodeURIComponent(canonicalCity)}`)
         .then(res => res.json())
         .then(data => {
           if (isMounted && data?.success && data?.photo) {
@@ -36,26 +37,26 @@ export default function CityDestinationCard({
           }
         })
         .catch(err => {
-          console.warn(`Could not resolve photo for ${city}:`, err);
+          console.warn(`Dynamic photo lookup error for ${canonicalCity}:`, err);
         });
     }
 
     return () => {
       isMounted = false;
     };
-  }, [city]);
+  }, [canonicalCity]);
 
-  const landmark = getCityLandmark(city);
+  const landmark = getCityLandmark(canonicalCity);
 
   return (
     <Link
-      href={`/hotels?city=${encodeURIComponent(city)}`}
+      href={`/hotels?city=${encodeURIComponent(canonicalCity)}`}
       style={{
         textDecoration: 'none',
         flexShrink: 0,
         scrollSnapAlign: 'start',
         display: 'block',
-        width: 182,
+        width: 180,
         marginRight: isLast ? '16px' : '0',
       }}
     >
@@ -63,122 +64,174 @@ export default function CityDestinationCard({
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
         style={{
-          background: 'var(--surface, #ffffff)',
-          borderRadius: '16px',
-          border: isHovered ? '2px solid var(--brand-500, #ff6b35)' : '2px solid var(--border, #e2e8f0)',
+          position: 'relative',
+          width: '100%',
+          height: '235px',
+          borderRadius: '20px',
           overflow: 'hidden',
-          transition: 'all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1)',
+          backgroundColor: '#0f172a',
           cursor: 'pointer',
-          transform: isHovered ? 'translateY(-4px)' : 'translateY(0)',
-          boxShadow: isHovered ? '0 12px 24px -4px rgba(0,0,0,0.12)' : '0 2px 6px rgba(0,0,0,0.04)',
-          display: 'flex',
-          flexDirection: 'column',
+          border: isHovered
+            ? '2px solid var(--brand-500, #ff6b35)'
+            : '2px solid rgba(255, 255, 255, 0.12)',
+          transition: 'transform 0.4s cubic-bezier(0.25, 1, 0.5, 1), box-shadow 0.4s ease, border-color 0.3s ease',
+          transform: isHovered ? 'translateY(-6px)' : 'translateY(0)',
+          boxShadow: isHovered
+            ? '0 18px 36px -6px rgba(0, 0, 0, 0.35)'
+            : '0 4px 14px rgba(0, 0, 0, 0.12)',
         }}
       >
-        {/* Real City Image Container */}
-        <div
-          style={{
-            position: 'relative',
-            width: '100%',
-            height: '118px',
-            overflow: 'hidden',
-            backgroundColor: '#e2e8f0',
-          }}
-        >
-          {/* Skeleton placeholder while image loads */}
-          {!imgLoaded && (
-            <div
-              style={{
-                position: 'absolute',
-                inset: 0,
-                background: 'linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%)',
-                backgroundSize: '200% 100%',
-                animation: 'shimmer 1.5s infinite',
-              }}
-            />
-          )}
-
-          {/* Actual Real Image */}
-          <img
-            src={photoUrl}
-            alt={`${city} city travel destination`}
-            loading="lazy"
-            onLoad={() => setImgLoaded(true)}
-            onError={() => {
-              // Safety fallback if external image fails
-              if (photoUrl !== DEFAULT_CITY_PHOTO) {
-                setPhotoUrl(DEFAULT_CITY_PHOTO);
-              }
-            }}
-            style={{
-              width: '100%',
-              height: '100%',
-              objectFit: 'cover',
-              display: 'block',
-              transition: 'transform 0.45s ease, opacity 0.3s ease',
-              transform: isHovered ? 'scale(1.08)' : 'scale(1)',
-              opacity: imgLoaded ? 1 : 0.4,
-            }}
-          />
-
-          {/* Hotel Count Pill on Image */}
+        {/* Shimmer Placeholder while loading */}
+        {!imgLoaded && (
           <div
             style={{
               position: 'absolute',
-              top: '8px',
-              right: '8px',
-              background: 'rgba(15, 23, 42, 0.72)',
-              backdropFilter: 'blur(4px)',
-              WebkitBackdropFilter: 'blur(4px)',
-              color: '#ffffff',
-              fontSize: '0.7rem',
-              fontWeight: 700,
-              padding: '3px 8px',
-              borderRadius: '9999px',
-              letterSpacing: '0.02em',
-              boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+              inset: 0,
+              background: 'linear-gradient(90deg, #1e293b 25%, #334155 50%, #1e293b 75%)',
+              backgroundSize: '200% 100%',
+              animation: 'shimmer 1.5s infinite',
+              zIndex: 1,
             }}
-          >
-            {hotels} hotels
-          </div>
+          />
+        )}
+
+        {/* 100% Full-bleed City Background Photo */}
+        <img
+          src={photoUrl}
+          alt={`${canonicalCity} city travel destination`}
+          loading="lazy"
+          onLoad={() => setImgLoaded(true)}
+          onError={() => {
+            if (photoUrl !== DEFAULT_CITY_PHOTO) {
+              setPhotoUrl(DEFAULT_CITY_PHOTO);
+            }
+          }}
+          style={{
+            position: 'absolute',
+            inset: 0,
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
+            display: 'block',
+            transition: 'transform 0.6s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.3s ease',
+            transform: isHovered ? 'scale(1.10)' : 'scale(1)',
+            opacity: imgLoaded ? 1 : 0.3,
+            zIndex: 1,
+          }}
+        />
+
+        {/* Cinematic Multi-stop Gradient Overlay */}
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            background:
+              'linear-gradient(180deg, rgba(15, 23, 42, 0.45) 0%, rgba(15, 23, 42, 0.05) 30%, rgba(15, 23, 42, 0.65) 68%, rgba(15, 23, 42, 0.96) 100%)',
+            zIndex: 2,
+            pointerEvents: 'none',
+          }}
+        />
+
+        {/* Top-Right Badge: Verified Stays */}
+        <div
+          style={{
+            position: 'absolute',
+            top: '12px',
+            right: '12px',
+            zIndex: 3,
+            background: 'rgba(15, 23, 42, 0.65)',
+            backdropFilter: 'blur(8px)',
+            WebkitBackdropFilter: 'blur(8px)',
+            border: '1px solid rgba(255, 255, 255, 0.25)',
+            color: '#ffffff',
+            fontSize: '0.7rem',
+            fontWeight: 700,
+            padding: '3px 10px',
+            borderRadius: '9999px',
+            letterSpacing: '0.02em',
+            boxShadow: '0 2px 6px rgba(0,0,0,0.3)',
+          }}
+        >
+          {hotels} {hotels === 1 ? 'hotel' : 'hotels'}
         </div>
 
-        {/* Card Details */}
-        <div style={{ padding: '10px 12px 12px 12px', textAlign: 'left' }}>
+        {/* Bottom Details Content */}
+        <div
+          style={{
+            position: 'absolute',
+            bottom: 0,
+            left: 0,
+            right: 0,
+            padding: '14px 14px 14px 14px',
+            zIndex: 3,
+            textAlign: 'left',
+          }}
+        >
           <div
             style={{
-              fontWeight: 700,
-              fontSize: '1.02rem',
-              color: 'var(--text-primary, #0f172a)',
+              fontSize: '0.66rem',
+              fontWeight: 800,
+              textTransform: 'uppercase',
+              letterSpacing: '0.08em',
+              color: '#fdba74',
+              marginBottom: '3px',
+              textShadow: '0 1px 2px rgba(0,0,0,0.6)',
+            }}
+          >
+            Popular Hub
+          </div>
+
+          <div
+            style={{
+              fontWeight: 800,
+              fontSize: '1.22rem',
+              color: '#ffffff',
+              lineHeight: 1.2,
               whiteSpace: 'nowrap',
               overflow: 'hidden',
               textOverflow: 'ellipsis',
-              lineHeight: 1.25,
+              textShadow: '0 2px 6px rgba(0,0,0,0.7)',
             }}
           >
-            {city}
+            {canonicalCity}
           </div>
+
           <div
             style={{
               fontSize: '0.74rem',
-              color: 'var(--text-muted, #64748b)',
-              marginTop: '3px',
-              whiteSpace: 'nowrap',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
+              color: 'rgba(255, 255, 255, 0.88)',
+              marginTop: '4px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
+              textShadow: '0 1px 3px rgba(0,0,0,0.6)',
             }}
           >
-            <span>{landmark}</span>
             <span
               style={{
-                color: isHovered ? 'var(--brand-600, #ea580c)' : 'var(--text-muted, #94a3b8)',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                paddingRight: '6px',
+              }}
+            >
+              {landmark}
+            </span>
+            <span
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: '20px',
+                height: '20px',
+                borderRadius: '50%',
+                background: isHovered ? 'var(--brand-500, #ff6b35)' : 'rgba(255, 255, 255, 0.2)',
+                color: '#ffffff',
                 fontWeight: 700,
-                fontSize: '0.85rem',
-                transition: 'transform 0.2s ease, color 0.2s ease',
-                transform: isHovered ? 'translateX(2px)' : 'translateX(0)',
+                fontSize: '0.72rem',
+                flexShrink: 0,
+                transition: 'all 0.3s ease',
+                transform: isHovered ? 'translateX(2px) scale(1.1)' : 'translateX(0)',
               }}
             >
               →

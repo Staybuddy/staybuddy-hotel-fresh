@@ -12,7 +12,7 @@ import AppPromoCard from '@/components/AppPromoCard';
 import HomeReferralSection from '@/components/HomeReferralSection';
 import HomeStatsSection from '@/components/HomeStatsSection';
 import CityDestinationCard from '@/components/CityDestinationCard';
-import { normalizeCityName } from '@/lib/cityPhotos';
+import { resolveParentCity } from '@/lib/cityPhotos';
 import Image from 'next/image';
 import WishlistButton from '@/components/WishlistButton';
 import { adjustRoomsAndAdults, MAX_ADULTS_PER_ROOM } from '@/lib/occupancyPricing';
@@ -43,24 +43,33 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
   const [searchError, setSearchError] = useState('');
   const [userWishlistIds, setUserWishlistIds] = useState<string[]>([]);
   
-  // Smart Dynamic Destinations: Merges base destinations with any new cities added by partners
+  // Smart Dynamic Destinations: Consolidates localities (e.g. Shamshabad -> Hyderabad) without duplicate cards
   const allDestinations = useMemo(() => {
     const map = new Map<string, { city: string; country: string; hotels: number }>();
-    DESTINATIONS.forEach(d => map.set(normalizeCityName(d.city), { ...d }));
+    
+    // Seed with curated major hubs
+    DESTINATIONS.forEach(d => {
+      const canonical = resolveParentCity(d.city);
+      map.set(canonical.toLowerCase(), { ...d, city: canonical });
+    });
 
+    // Smartly consolidate database hotels under their parent metropolitan cities
     (hotels || []).forEach((h: any) => {
-      if (h.city && typeof h.city === 'string') {
-        const norm = normalizeCityName(h.city);
-        if (map.has(norm)) {
-          const item = map.get(norm)!;
-          item.hotels = (item.hotels || 0) + 1;
-        } else if (norm && norm.length > 1) {
-          const formatted = norm.charAt(0).toUpperCase() + norm.slice(1);
-          map.set(norm, {
-            city: formatted,
-            country: h.country || 'India',
-            hotels: 1,
-          });
+      const raw = h.city || h.area || h.location || '';
+      if (raw && typeof raw === 'string') {
+        const canonical = resolveParentCity(raw);
+        if (canonical) {
+          const key = canonical.toLowerCase();
+          if (map.has(key)) {
+            const item = map.get(key)!;
+            item.hotels = (item.hotels || 0) + 1;
+          } else {
+            map.set(key, {
+              city: canonical,
+              country: h.country || 'India',
+              hotels: 1,
+            });
+          }
         }
       }
     });
@@ -498,8 +507,8 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
             <p style={{ color: 'var(--text-secondary)', marginTop: 8 }}>Top-rated destinations loved by millions of travelers</p>
           </div>
           <div style={{
-            display: 'flex', gap: 14, overflowX: 'auto',
-            padding: '10px 4px 18px', scrollSnapType: 'x mandatory',
+            display: 'flex', gap: 16, overflowX: 'auto',
+            padding: '12px 4px 24px', scrollSnapType: 'x mandatory',
             scrollbarWidth: 'thin', scrollbarColor: 'var(--brand-200) transparent',
             margin: '-10px -4px 0'
           }}>
