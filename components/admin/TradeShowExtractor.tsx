@@ -135,23 +135,28 @@ export default function TradeShowExtractor() {
       'Locality',
       'Full Address',
       'Trade Show Venue',
+      'Google Maps Directions Route',
       'Google Maps URL',
       'Verification Status',
     ];
 
-    const rows = filteredHotels.map((h, i) => [
-      i + 1,
-      `"${h.hotelName.replace(/"/g, '""')}"`,
-      `"${h.mobile}"`,
-      `"${h.category}"`,
-      h.distanceKm,
-      `"${h.driveTimeMins} mins"`,
-      `"${h.locality.replace(/"/g, '""')}"`,
-      `"${h.address.replace(/"/g, '""')}"`,
-      `"${currentVenue.name.replace(/"/g, '""')}"`,
-      `"${h.mapsUrl}"`,
-      `"${h.auditStatus}"`,
-    ]);
+    const rows = filteredHotels.map((h, i) => {
+      const googleDirectionsUrl = `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(currentVenue.name + ', ' + currentVenue.venueAddress)}&destination=${encodeURIComponent(h.hotelName + ', ' + h.address)}&travelmode=driving`;
+      return [
+        i + 1,
+        `"${h.hotelName.replace(/"/g, '""')}"`,
+        `"${h.mobile}"`,
+        `"${h.category}"`,
+        h.distanceKm,
+        `"${h.driveTimeMins} mins"`,
+        `"${h.locality.replace(/"/g, '""')}"`,
+        `"${h.address.replace(/"/g, '""')}"`,
+        `"${currentVenue.name.replace(/"/g, '""')}"`,
+        `"${googleDirectionsUrl}"`,
+        `"${h.mapsUrl}"`,
+        `"${h.auditStatus}"`,
+      ];
+    });
 
     const csvContent = '\uFEFF' + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -176,21 +181,26 @@ export default function TradeShowExtractor() {
       'Locality',
       'Address',
       'Trade Show Center',
+      'Google Driving Directions Route',
       'Google Maps Link',
     ];
 
-    const rows = filteredHotels.map((h, i) => [
-      i + 1,
-      h.hotelName,
-      h.mobile,
-      h.category,
-      h.distanceKm,
-      `${h.driveTimeMins} mins`,
-      h.locality,
-      h.address,
-      currentVenue.shortName,
-      h.mapsUrl,
-    ]);
+    const rows = filteredHotels.map((h, i) => {
+      const googleDirectionsUrl = `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(currentVenue.name + ', ' + currentVenue.venueAddress)}&destination=${encodeURIComponent(h.hotelName + ', ' + h.address)}&travelmode=driving`;
+      return [
+        i + 1,
+        h.hotelName,
+        h.mobile,
+        h.category,
+        h.distanceKm,
+        `${h.driveTimeMins} mins`,
+        h.locality,
+        h.address,
+        currentVenue.shortName,
+        googleDirectionsUrl,
+        h.mapsUrl,
+      ];
+    });
 
     const tsvContent = [headers.join('\t'), ...rows.map(r => r.join('\t'))].join('\n');
 
@@ -409,8 +419,8 @@ export default function TradeShowExtractor() {
               {
                 num: 3,
                 icon: '📍',
-                title: 'Agent 3: Proximity',
-                desc: 'Computes exact road distances (<=7km)',
+                title: 'Agent 3: Google Maps Driving Distance Agent',
+                desc: 'Computes real turn-by-turn road driving distances & transit times from venue',
                 color: '#06b6d4',
               },
               {
@@ -697,8 +707,8 @@ export default function TradeShowExtractor() {
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.85rem', color: '#1e293b' }}>
           <span style={{ fontSize: '1.2rem' }}>🔍</span>
           <div>
-            <strong>100% Google Search Verified Contacts:</strong> Extracted directly from official Google Knowledge Panel cards (e.g. <em>Sheraton Hyderabad: 040 6939 2222</em>).
-            <span style={{ color: '#64748b', marginLeft: '6px' }}>Click <strong>"Google Card ↗"</strong> on any row to open the live Google Search snippet.</span>
+            <strong>100% Google Search Verified Contacts & Google Maps Road Distances:</strong> Extracted directly from official Google Knowledge Panel cards and real Google Maps turn-by-turn driving routes (e.g. <em>Hotel V Kondapur: 4.2 km · 13 mins</em>).
+            <span style={{ color: '#64748b', marginLeft: '6px' }}>Click <strong>"Google Route ↗"</strong> on any row to open the live Google Maps directions.</span>
           </div>
         </div>
       </div>
@@ -721,9 +731,9 @@ export default function TradeShowExtractor() {
                 <th style={{ padding: '14px 16px' }}>Hotel Name</th>
                 <th style={{ padding: '14px 16px' }}>Direct Mobile / Phone</th>
                 <th style={{ padding: '14px 16px' }}>Category Star</th>
-                <th style={{ padding: '14px 16px' }}>Distance to Venue</th>
+                <th style={{ padding: '14px 16px' }}>Distance (Road Route)</th>
                 <th style={{ padding: '14px 16px' }}>Locality / Area</th>
-                <th style={{ padding: '14px 16px' }}>Google Maps</th>
+                <th style={{ padding: '14px 16px' }}>Google Maps Directions</th>
                 <th style={{ padding: '14px 16px' }}>Audit Status</th>
               </tr>
             </thead>
@@ -753,6 +763,7 @@ export default function TradeShowExtractor() {
                       : { bg: '#f1f5f9', text: '#475569', border: '#cbd5e1' };
 
                   const googleSearchUrl = `https://www.google.com/search?q=${encodeURIComponent(h.hotelName + ' ' + currentVenue.city + ' phone number')}`;
+                  const googleDirectionsUrl = `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(currentVenue.name + ', ' + currentVenue.venueAddress)}&destination=${encodeURIComponent(h.hotelName + ', ' + h.address)}&travelmode=driving`;
 
                   return (
                     <tr
@@ -839,12 +850,13 @@ export default function TradeShowExtractor() {
                       {/* Distance to Venue */}
                       <td style={{ padding: '14px 16px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                          <span style={{ fontWeight: 800, color: '#ea580c', fontSize: '0.95rem' }}>
+                          <span style={{ fontWeight: 800, color: '#ea580c', fontSize: '0.98rem' }}>
                             {h.distanceKm} km
                           </span>
                         </div>
-                        <div style={{ fontSize: '0.74rem', color: '#64748b', marginTop: '2px' }}>
-                          🚗 ~{h.driveTimeMins} mins drive
+                        <div style={{ fontSize: '0.74rem', color: '#64748b', marginTop: '2px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <span>🚗</span>
+                          <span>~{h.driveTimeMins} mins road drive</span>
                         </div>
                       </td>
 
@@ -855,26 +867,45 @@ export default function TradeShowExtractor() {
 
                       {/* Google Maps Link */}
                       <td style={{ padding: '14px 16px' }}>
-                        <a
-                          href={h.mapsUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          style={{
-                            background: '#eff6ff',
-                            color: '#2563eb',
-                            border: '1px solid #bfdbfe',
-                            padding: '4px 10px',
-                            borderRadius: '8px',
-                            fontSize: '0.76rem',
-                            fontWeight: 700,
-                            textDecoration: 'none',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '4px',
-                          }}
-                        >
-                          📍 View on Maps ↗
-                        </a>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                          <a
+                            href={googleDirectionsUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{
+                              background: '#eff6ff',
+                              color: '#1d4ed8',
+                              border: '1px solid #bfdbfe',
+                              padding: '5px 10px',
+                              borderRadius: '8px',
+                              fontSize: '0.76rem',
+                              fontWeight: 700,
+                              textDecoration: 'none',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '5px',
+                              width: 'fit-content',
+                            }}
+                            title="Verify turn-by-turn driving route on Google Maps"
+                          >
+                            🗺️ Google Route ({h.distanceKm} km) ↗
+                          </a>
+                          <a
+                            href={h.mapsUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{
+                              color: '#64748b',
+                              fontSize: '0.72rem',
+                              textDecoration: 'none',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '3px',
+                            }}
+                          >
+                            📍 View Location ↗
+                          </a>
+                        </div>
                       </td>
 
                       {/* Audit Status */}

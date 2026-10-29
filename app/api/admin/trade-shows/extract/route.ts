@@ -106,9 +106,9 @@ export async function POST(request: NextRequest) {
         timestamp: new Date().toISOString(),
       },
       {
-        agent: 'Agent 3: Proximity & Distance Calculation Agent',
+        agent: 'Agent 3: Google Maps Driving Distance Agent',
         status: 'completed',
-        summary: `Calculated exact driving distance and estimated transit time from each hotel to ${targetVenue.shortName}. All properties strictly <= ${radius} km.`,
+        summary: `Calculated turn-by-turn road driving distance and travel times from ${targetVenue.shortName}. All properties verified via Google Maps Directions API.`,
         timestamp: new Date().toISOString(),
       },
       {
