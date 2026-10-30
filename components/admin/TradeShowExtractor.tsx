@@ -69,30 +69,45 @@ export default function TradeShowExtractor() {
     if (!customVenueName.trim() || !customCity.trim()) return;
 
     try {
+      setIsExtracting(true);
+      setShowAddModal(false);
+
+      const enteredName = customVenueName.trim();
+      const enteredCity = customCity.trim();
+      const enteredAddress = customAddress.trim();
+
+      setCustomVenueName('');
+      setCustomCity('');
+      setCustomAddress('');
+
       const res = await fetch('/api/admin/trade-shows/extract', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           action: 'add_venue',
           venue: {
-            name: customVenueName.trim(),
-            shortName: customVenueName.trim(),
-            city: customCity.trim(),
-            venueAddress: customAddress.trim() || `${customVenueName.trim()}, ${customCity.trim()}`,
+            name: enteredName,
+            shortName: enteredName,
+            city: enteredCity,
+            venueAddress: enteredAddress || `${enteredName}, ${enteredCity}`,
           },
+          radius: maxRadiusKm,
         }),
       });
       const data = await res.json();
       if (data.success && data.venue) {
         setVenues(data.allVenues);
         setSelectedVenueId(data.venue.id);
-        setShowAddModal(false);
-        setCustomVenueName('');
-        setCustomCity('');
-        setCustomAddress('');
+        if (data.hotels && data.hotels.length > 0) {
+          setHotels(data.hotels);
+        }
+        runExtractionPipeline();
+      } else {
+        setIsExtracting(false);
       }
     } catch (err) {
       console.error('Failed to add custom trade show venue', err);
+      setIsExtracting(false);
     }
   };
 
@@ -102,7 +117,7 @@ export default function TradeShowExtractor() {
       const matchSearch =
         searchQuery === '' ||
         h.hotelName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        h.mobile.includes(searchQuery) ||
+        (h.mobile && h.mobile.includes(searchQuery)) ||
         h.locality.toLowerCase().includes(searchQuery.toLowerCase());
 
       const matchStar = selectedStar === 'all' || h.category === selectedStar;
@@ -535,9 +550,13 @@ export default function TradeShowExtractor() {
         </div>
 
         <div style={{ background: '#ffffff', padding: '16px', borderRadius: '14px', border: '1px solid #e2e8f0', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
-          <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Mobile Coverage</div>
-          <div style={{ fontSize: '1.6rem', fontWeight: 800, color: '#16a34a', marginTop: '4px' }}>100%</div>
-          <div style={{ fontSize: '0.74rem', color: '#16a34a', fontWeight: 600, marginTop: '2px' }}>Direct Reception Lines</div>
+          <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Phone Extraction</div>
+          <div style={{ fontSize: '1.6rem', fontWeight: 800, color: '#16a34a', marginTop: '4px' }}>
+            {hotels.length > 0 ? Math.round((hotels.filter(h => h.mobile && h.mobile.trim() !== '').length / hotels.length) * 100) : 0}%
+          </div>
+          <div style={{ fontSize: '0.74rem', color: '#64748b', fontWeight: 600, marginTop: '2px' }}>
+            {hotels.filter(h => h.mobile && h.mobile.trim() !== '').length} Direct Lines / {hotels.filter(h => !h.mobile || h.mobile.trim() === '').length} Blank (Unlisted)
+          </div>
         </div>
       </div>
 
@@ -788,22 +807,45 @@ export default function TradeShowExtractor() {
 
                       {/* Mobile / Phone Number */}
                       <td style={{ padding: '14px 16px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <span style={{ fontSize: '0.95rem' }}>📱</span>
-                          <a
-                            href={`tel:${h.mobile.replace(/\s+/g, '')}`}
-                            style={{
-                              color: '#0f172a',
-                              fontWeight: 700,
-                              textDecoration: 'none',
-                              fontFamily: 'monospace',
-                              fontSize: '0.92rem',
-                            }}
-                          >
-                            {h.mobile}
-                          </a>
-                        </div>
-                        <div style={{ marginTop: '4px' }}>
+                        {h.mobile && h.mobile.trim() !== '' ? (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                            <span style={{ fontSize: '0.95rem' }}>📱</span>
+                            <a
+                              href={`tel:${h.mobile.replace(/\s+/g, '')}`}
+                              style={{
+                                color: '#0f172a',
+                                fontWeight: 700,
+                                textDecoration: 'none',
+                                fontFamily: 'monospace',
+                                fontSize: '0.92rem',
+                              }}
+                            >
+                              {h.mobile}
+                            </a>
+                            {h.altPhone && (
+                              <span style={{ fontSize: '0.72rem', color: '#64748b' }}>
+                                / {h.altPhone}
+                              </span>
+                            )}
+                          </div>
+                        ) : (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <span
+                              style={{
+                                color: '#94a3b8',
+                                fontStyle: 'italic',
+                                fontSize: '0.78rem',
+                                background: '#f8fafc',
+                                padding: '2px 8px',
+                                borderRadius: '6px',
+                                border: '1px dashed #cbd5e1',
+                              }}
+                            >
+                              — Blank (No public phone on Google) —
+                            </span>
+                          </div>
+                        )}
+                        <div style={{ marginTop: '5px' }}>
                           <a
                             href={googleSearchUrl}
                             target="_blank"
