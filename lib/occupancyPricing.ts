@@ -61,6 +61,55 @@ export function getRoomMaxOccupancy(room: any): number {
 }
 
 /**
+ * Applies the hotel's configured admin margin percentage (e.g. 15%)
+ * on top of the partner's B2B prices for single, double, and triple occupancy respectively.
+ */
+export function applyMarginToRoom(room: any, marginPercentage: number = 0) {
+  if (!room) return room;
+  const margin = Number(marginPercentage) || 0;
+
+  // Partner B2B base rates (preserve if already set)
+  const rawSingle = Number(room.b2bPriceSingle !== undefined ? room.b2bPriceSingle : room.priceSingle) || 0;
+  const rawDouble = Number(room.b2bPriceDouble !== undefined ? room.b2bPriceDouble : (room.priceDouble || room.priceSingle)) || 0;
+  const rawTriple = Number(room.b2bPriceTriple !== undefined ? room.b2bPriceTriple : room.priceTriple) || 0;
+  const rawFallback = Number(room.b2bPrice !== undefined ? room.b2bPrice : (room.price || room.clientPrice)) || 0;
+
+  if (margin <= 0) {
+    return {
+      ...room,
+      b2bPriceSingle: rawSingle,
+      b2bPriceDouble: rawDouble,
+      b2bPriceTriple: rawTriple,
+      b2bPrice: rawFallback,
+      priceSingle: rawSingle,
+      priceDouble: rawDouble,
+      priceTriple: rawTriple,
+      price: rawDouble || rawSingle || rawFallback,
+      clientPrice: rawDouble || rawSingle || rawFallback,
+    };
+  }
+
+  const mult = 1 + margin / 100;
+  const newSingle = rawSingle > 0 ? Math.round(rawSingle * mult) : 0;
+  const newDouble = rawDouble > 0 ? Math.round(rawDouble * mult) : 0;
+  const newTriple = rawTriple > 0 ? Math.round(rawTriple * mult) : 0;
+  const newFallback = rawFallback > 0 ? Math.round(rawFallback * mult) : (newDouble || newSingle);
+
+  return {
+    ...room,
+    b2bPriceSingle: rawSingle,
+    b2bPriceDouble: rawDouble,
+    b2bPriceTriple: rawTriple,
+    b2bPrice: rawFallback,
+    priceSingle: newSingle,
+    priceDouble: newDouble,
+    priceTriple: newTriple,
+    price: newDouble || newSingle || newFallback,
+    clientPrice: newDouble || newSingle || newFallback,
+  };
+}
+
+/**
  * Returns the unit price for a given room for a specific occupancy (1, 2, or 3 adults).
  * If 3-occupancy is requested but partner has NOT provided priceTriple, returns 0.
  */

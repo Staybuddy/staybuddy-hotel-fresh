@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/firebaseAdmin';
-import { calculateBookingPricing, calculateMultiRoomPricing } from '@/lib/occupancyPricing';
+import { calculateBookingPricing, calculateMultiRoomPricing, applyMarginToRoom } from '@/lib/occupancyPricing';
 
 export async function GET(request: NextRequest) {
   try {
@@ -141,7 +141,9 @@ export async function POST(request: NextRequest) {
     const hasMultiRooms = Array.isArray(body.selectedRooms) && body.selectedRooms.length > 0;
     const requestedAdults = Number(body.adults || body.guests || 1);
 
+    const margin = Number(hotelData?.marginPercentage) || 0;
     let pricing: any;
+    let partnerPricing: any;
     let selectedRoomsPayload: Array<{ roomId: string; roomType: string; quantity: number }> = [];
 
     if (hasMultiRooms) {
@@ -153,6 +155,7 @@ export async function POST(request: NextRequest) {
 
       // Validate capacity for each selected room type
       const loadedRoomItems: Array<{ room: any; quantity: number }> = [];
+      const rawRoomItems: Array<{ room: any; quantity: number }> = [];
 
       for (const sr of selectedRoomsPayload) {
         const roomDocSnap = await db.collection('rooms').doc(sr.roomId).get();
@@ -160,7 +163,9 @@ export async function POST(request: NextRequest) {
           return NextResponse.json({ error: `Room ${sr.roomType} not found` }, { status: 404 });
         }
         const rData: any = { _id: roomDocSnap.id, ...(roomDocSnap.data() || {}) };
-        loadedRoomItems.push({ room: rData, quantity: sr.quantity });
+        const customerRoomData = applyMarginToRoom(rData, margin);
+        loadedRoomItems.push({ room: customerRoomData, quantity: sr.quantity });
+        rawRoomItems.push({ room: rData, quantity: sr.quantity });
 
         // Existing bookings for this specific room
         const existingBookingsSnap = await db.collection('bookings')
@@ -202,6 +207,7 @@ export async function POST(request: NextRequest) {
       }
 
       pricing = calculateMultiRoomPricing(loadedRoomItems, requestedAdults, nights);
+      partnerPricing = calculateMultiRoomPricing(rawRoomItems, requestedAdults, nights);
     } else {
       // Single room booking (fallback)
       selectedRoomsPayload = [{ roomId, roomType: room.type, quantity: requestedRooms }];
@@ -236,7 +242,10 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      pricing = calculateBookingPricing(room, requestedAdults, requestedRooms, nights);
+      const rawRoomData = { ...room };
+      const customerRoomData = applyMarginToRoom(rawRoomData, margin);
+      pricing = calculateBookingPricing(customerRoomData, requestedAdults, requestedRooms, nights);
+      partnerPricing = calculateBookingPricing(rawRoomData, requestedAdults, requestedRooms, nights);
     }
 
     if (!pricing || !pricing.canBook) {
@@ -247,8 +256,9 @@ export async function POST(request: NextRequest) {
 
     const clientPrice = Math.round(pricing.basePricePerNight / requestedRooms);
     const totalPrice = pricing.totalAmount;
-    const totalPartnerPrice = pricing.priceAfterDiscount;
-    const basePartnerPrice = clientPrice;
+    const basePartnerPrice = partnerPricing ? Math.round(partnerPricing.basePricePerNight / requestedRooms) : clientPrice;
+    const totalPartnerPrice = partnerPricing ? partnerPricing.priceAfterDiscount : pricing.priceAfterDiscount;
+    const staybuddyProfit = pricing.priceAfterDiscount - (partnerPricing ? partnerPricing.priceAfterDiscount : pricing.priceAfterDiscount);
 
     const bookingRef = db.collection('bookings').doc();
     const counterRef = db.collection('metadata').doc('counters');
@@ -284,6 +294,8 @@ export async function POST(request: NextRequest) {
       checkIn: checkInDate.toISOString(), checkOut: checkOutDate.toISOString(),
       guests, nights, pricePerNight: clientPrice, totalPrice,
       partnerPricePerNight: basePartnerPrice, totalPartnerPrice,
+      marginPercentage: margin,
+      marginAmount: staybuddyProfit,
       guestName, guestEmail, guestPhone, specialRequests,
       status, paymentStatus,
       gstRegistrationNo, gstCompanyName, gstCompanyAddress,

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 export const dynamic = 'force-dynamic';
 import { db } from '@/lib/firebaseAdmin';
+import { applyMarginToRoom } from '@/lib/occupancyPricing';
 
 export async function GET(request: NextRequest) {
   try {
@@ -50,18 +51,22 @@ export async function GET(request: NextRequest) {
     const hotelsWithPrices = await Promise.all(
       paginatedHotels.map(async (hotel: any) => {
         const roomsSnap = await db.collection('rooms').where('hotelId', '==', hotel._id).get();
-        const rooms = roomsSnap.docs.map((doc: any) => doc.data());
+        let rooms = roomsSnap.docs.map((doc: any) => doc.data());
+        const margin = Number(hotel.marginPercentage) || 0;
+        rooms = rooms.map((r: any) => applyMarginToRoom(r, margin));
         
         // Calculate true minimum least rate among all room options
         const validPrices: number[] = [];
         rooms.forEach((r: any) => {
-          [r.priceSingle, r.priceDouble, r.priceTriple, r.b2bPrice, r.pricePerNight].forEach(p => {
+          [r.priceSingle, r.priceDouble, r.priceTriple, r.price, r.clientPrice].forEach(p => {
             const num = Number(p);
             if (!isNaN(num) && num > 0) validPrices.push(num);
           });
         });
         if (hotel.basePrice && Number(hotel.basePrice) > 0) {
-          validPrices.push(Number(hotel.basePrice));
+          const baseNum = Number(hotel.basePrice);
+          const baseWithMargin = margin > 0 ? Math.round(baseNum * (1 + margin / 100)) : baseNum;
+          validPrices.push(baseWithMargin);
         }
         const startingPrice = validPrices.length > 0 ? Math.min(...validPrices) : 0;
 

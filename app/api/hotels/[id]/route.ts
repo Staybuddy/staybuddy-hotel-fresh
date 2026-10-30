@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 export const dynamic = 'force-dynamic';
 import { db } from '@/lib/firebaseAdmin';
+import { applyMarginToRoom } from '@/lib/occupancyPricing';
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -137,6 +138,12 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       reviews.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
     } catch (rErr) {
       console.warn('Error fetching hotel reviews:', rErr);
+    }
+
+    const margin = Number(hotel.marginPercentage) || 0;
+    rooms = rooms.map(room => applyMarginToRoom(room, margin));
+    if (hotel.rooms && Array.isArray(hotel.rooms)) {
+      hotel.rooms = hotel.rooms.map((r: any) => applyMarginToRoom(r, margin));
     }
 
     return NextResponse.json({ hotel, rooms, reviews });

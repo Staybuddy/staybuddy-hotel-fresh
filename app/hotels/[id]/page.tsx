@@ -2574,7 +2574,7 @@ export default function HotelDetailPage() {
                         marginBottom: 20,
                       }}
                     >
-                      + Verified Live B2B Guaranteed Rate (18% Margin Applied)
+                      + Verified Live B2B Guaranteed Rate{hotel?.marginPercentage ? ` (${hotel.marginPercentage}% Margin Applied)` : ''}
                     </p>
 
                     <div

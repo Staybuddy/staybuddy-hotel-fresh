@@ -1729,19 +1729,29 @@ export default function AdminDashboard() {
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 10, marginTop: 10 }}>
                           <div style={{ background: '#fff7ed', padding: '10px 12px', borderRadius: 8, border: '1px solid #fed7aa', borderLeft: '4px solid #f97316' }}>
                             <div style={{ fontSize: '0.7rem', textTransform: 'uppercase', color: '#9a3412', fontWeight: 800 }}>👤 Single (1 Adult)</div>
-                            <div style={{ fontSize: '1.15rem', fontWeight: 800, color: '#c2410c', marginTop: 2 }}>₹{room.priceSingle || 0}</div>
+                            <div style={{ fontSize: '1.15rem', fontWeight: 800, color: '#c2410c', marginTop: 2 }}>
+                              ₹{editingHotel.marginPercentage ? Math.round((room.priceSingle || 0) * (1 + (editingHotel.marginPercentage || 0) / 100)) : (room.priceSingle || 0)}
+                            </div>
+                            <div style={{ fontSize: '0.72rem', color: '#9a3412', marginTop: 2 }}>B2B: ₹{room.priceSingle || 0}</div>
                           </div>
                           <div style={{ background: '#f0fdf4', padding: '10px 12px', borderRadius: 8, border: '1px solid #bbf7d0', borderLeft: '4px solid #22c55e' }}>
                             <div style={{ fontSize: '0.7rem', textTransform: 'uppercase', color: '#166534', fontWeight: 800 }}>👥 Double (2 Adults)</div>
-                            <div style={{ fontSize: '1.15rem', fontWeight: 800, color: '#15803d', marginTop: 2 }}>₹{room.priceDouble || room.priceSingle || 0}</div>
+                            <div style={{ fontSize: '1.15rem', fontWeight: 800, color: '#15803d', marginTop: 2 }}>
+                              ₹{editingHotel.marginPercentage ? Math.round((room.priceDouble || room.priceSingle || 0) * (1 + (editingHotel.marginPercentage || 0) / 100)) : (room.priceDouble || room.priceSingle || 0)}
+                            </div>
+                            <div style={{ fontSize: '0.72rem', color: '#166534', marginTop: 2 }}>B2B: ₹{room.priceDouble || room.priceSingle || 0}</div>
                           </div>
                           <div style={{ background: '#eff6ff', padding: '10px 12px', borderRadius: 8, border: '1px solid #bfdbfe', borderLeft: '4px solid #3b82f6' }}>
                             <div style={{ fontSize: '0.7rem', textTransform: 'uppercase', color: '#1e40af', fontWeight: 800 }}>👨‍👩‍👦 Triple (3 Adults)</div>
-                            <div style={{ fontSize: '1.15rem', fontWeight: 800, color: '#1d4ed8', marginTop: 2 }}>₹{room.priceTriple || 0}</div>
+                            <div style={{ fontSize: '1.15rem', fontWeight: 800, color: '#1d4ed8', marginTop: 2 }}>
+                              ₹{editingHotel.marginPercentage && room.priceTriple ? Math.round(Number(room.priceTriple) * (1 + (editingHotel.marginPercentage || 0) / 100)) : (room.priceTriple || 0)}
+                            </div>
+                            <div style={{ fontSize: '0.72rem', color: '#1e40af', marginTop: 2 }}>B2B: ₹{room.priceTriple || 0}</div>
                           </div>
                           <div style={{ background: '#faf5ff', padding: '10px 12px', borderRadius: 8, border: '1px solid #e9d5ff', borderLeft: '4px solid #a855f7' }}>
                             <div style={{ fontSize: '0.7rem', textTransform: 'uppercase', color: '#6b21a8', fontWeight: 800 }}>💼 B2B Partner Rate</div>
                             <div style={{ fontSize: '1.15rem', fontWeight: 800, color: '#7e22ce', marginTop: 2 }}>₹{room.b2bPrice || 0}</div>
+                            <div style={{ fontSize: '0.72rem', color: '#6b21a8', marginTop: 2 }}>Margin: {editingHotel.marginPercentage || 0}%</div>
                           </div>
                         </div>
 
