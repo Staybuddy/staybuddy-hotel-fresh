@@ -3794,21 +3794,10 @@ export default function HotelDetailPage() {
                               display: "flex",
                               alignItems: "center",
                               gap: 8,
+                              fontWeight: 700,
                             }}
                           >
                             Base Price
-                            <span
-                              style={{
-                                fontSize: "0.7rem",
-                                background: "#fef08a",
-                                color: "#854d0e",
-                                padding: "2px 8px",
-                                borderRadius: "var(--radius-full)",
-                                fontWeight: 600,
-                              }}
-                            >
-                              Limited Time Sale
-                            </span>
                           </div>
                           <div
                             style={{
@@ -3834,48 +3823,27 @@ export default function HotelDetailPage() {
                           </div>
                         </div>
                         <div style={{ fontSize: "1.1rem", fontWeight: 700 }}>
-                          ₹{currentPricing.originalPriceBeforeDiscount.toLocaleString()}
-                        </div>
-                      </div>
-
-                      <div
-                        style={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          alignItems: "center",
-                          color: "var(--success)",
-                          fontWeight: 700,
-                          fontSize: "0.95rem",
-                        }}
-                      >
-                        <div>Discount by Property (15%)</div>
-                        <div>
-                          - ₹{currentPricing.discountAmount.toLocaleString()}
-                        </div>
-                      </div>
-
-                      <hr
-                        style={{
-                          border: "none",
-                          borderTop: "1px dashed var(--border)",
-                          margin: "4px 0",
-                        }}
-                      />
-
-                      <div
-                        style={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          alignItems: "center",
-                          fontWeight: 800,
-                          fontSize: "1.1rem",
-                        }}
-                      >
-                        <div>Price after Discount</div>
-                        <div>
                           ₹{currentPricing.priceAfterDiscount.toLocaleString()}
                         </div>
                       </div>
+
+                      {currentPricing.discountAmount > 0 && (
+                        <div
+                          style={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "center",
+                            color: "var(--success)",
+                            fontWeight: 700,
+                            fontSize: "0.95rem",
+                          }}
+                        >
+                          <div>Discount</div>
+                          <div>
+                            - ₹{currentPricing.discountAmount.toLocaleString()}
+                          </div>
+                        </div>
+                      )}
 
                       <div
                         style={{
@@ -3922,22 +3890,24 @@ export default function HotelDetailPage() {
                       </div>
                     </div>
 
-                    <div
-                      style={{
-                        background: "#ecfdf5",
-                        color: "var(--success)",
-                        padding: "12px",
-                        borderRadius: "var(--radius-md)",
-                        textAlign: "center",
-                        fontWeight: 700,
-                        fontSize: "0.95rem",
-                        marginTop: 16,
-                        border: "1px solid #a7f3d0",
-                      }}
-                    >
-                      🎉 You save ₹{currentPricing.savingsAmount.toLocaleString()}{" "}
-                      on this booking!
-                    </div>
+                    {currentPricing.savingsAmount > 0 && (
+                      <div
+                        style={{
+                          background: "#ecfdf5",
+                          color: "var(--success)",
+                          padding: "12px",
+                          borderRadius: "var(--radius-md)",
+                          textAlign: "center",
+                          fontWeight: 700,
+                          fontSize: "0.95rem",
+                          marginTop: 16,
+                          border: "1px solid #a7f3d0",
+                        }}
+                      >
+                        🎉 You save ₹{currentPricing.savingsAmount.toLocaleString()}{" "}
+                        on this booking!
+                      </div>
+                    )}
 
                     {bookingError && (
                       <div

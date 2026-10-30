@@ -280,11 +280,11 @@ export function calculateBookingPricing(
     : undefined;
 
   const priceAfterDiscount = basePricePerNight * safeNights;
-  const originalPriceBeforeDiscount = Math.round(priceAfterDiscount / 0.85);
-  const discountAmount = originalPriceBeforeDiscount - priceAfterDiscount;
+  const originalPriceBeforeDiscount = priceAfterDiscount;
+  const discountAmount = 0;
   const gstAmount = Math.round(priceAfterDiscount * 0.05);
   const totalAmount = priceAfterDiscount + gstAmount;
-  const savingsAmount = discountAmount;
+  const savingsAmount = 0;
 
   const summaryParts: string[] = [];
   if (tripleCount > 0) {
@@ -430,11 +430,11 @@ export function calculateMultiRoomPricing(
       : undefined;
 
   const priceAfterDiscount = basePricePerNight * safeNights;
-  const originalPriceBeforeDiscount = Math.round(priceAfterDiscount / 0.85);
-  const discountAmount = originalPriceBeforeDiscount - priceAfterDiscount;
+  const originalPriceBeforeDiscount = priceAfterDiscount;
+  const discountAmount = 0;
   const gstAmount = Math.round(priceAfterDiscount * 0.05);
   const totalAmount = priceAfterDiscount + gstAmount;
-  const savingsAmount = discountAmount;
+  const savingsAmount = 0;
 
   // Build roomSummaryText
   const roomSummaryParts: string[] = [];
