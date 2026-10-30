@@ -937,10 +937,14 @@ function HotelCard({ hotel, isWishlisted }: { hotel: any, isWishlisted?: boolean
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
             {hotel.city}, {hotel.country}
           </div>
-          {hotel.avgRating > 0 && (
+          {hotel.avgRating > 0 ? (
             <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 8 }}>
-              <div style={{ background: 'var(--brand-500)', color: 'white', fontWeight: 700, fontSize: '0.8rem', padding: '2px 8px', borderRadius: 'var(--radius-sm)' }}>{hotel.avgRating.toFixed(1)}</div>
-              <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>({hotel.totalReviews} reviews)</span>
+              <div style={{ background: 'var(--brand-500)', color: 'white', fontWeight: 700, fontSize: '0.8rem', padding: '2px 8px', borderRadius: 'var(--radius-sm)' }}>★ {hotel.avgRating.toFixed(1)}</div>
+              <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>({hotel.totalReviews} {hotel.totalReviews === 1 ? 'review' : 'reviews'})</span>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 8 }}>
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', background: '#f8fafc', padding: '2px 6px', borderRadius: '4px', border: '1px solid #f1f5f9' }}>⭐ New on StayBuddy</span>
             </div>
           )}
           {typeof hotel.roomsLeft === 'number' && (

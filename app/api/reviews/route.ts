@@ -76,34 +76,53 @@ export async function POST(request: NextRequest) {
     }
 
     // Recalculate average rating for hotel
-    const allReviewsSnap = await db.collection('reviews').where('hotelId', '==', hotelId).get();
-    const allReviews = allReviewsSnap.docs.map(doc => doc.data());
+    let hotelDocRef = db.collection('hotels').doc(hotelId);
+    let hDoc = await hotelDocRef.get();
+    let targetHotelId = hotelId;
+    if (!hDoc.exists) {
+      const hSnap = await db.collection('hotels').where('_id', '==', hotelId).limit(1).get();
+      if (!hSnap.empty) {
+        hotelDocRef = hSnap.docs[0].ref;
+        hDoc = hSnap.docs[0];
+        targetHotelId = hDoc.id;
+      }
+    }
+
+    // Query all reviews for this hotel
+    const allReviewsSnap = await db.collection('reviews').where('hotelId', '==', targetHotelId).get();
+    let allReviews = allReviewsSnap.docs.map(doc => doc.data());
+    if (targetHotelId !== hotelId) {
+      const otherSnap = await db.collection('reviews').where('hotelId', '==', hotelId).get();
+      const seen = new Set(allReviewsSnap.docs.map(d => d.id));
+      otherSnap.docs.forEach(d => {
+        if (!seen.has(d.id)) {
+          allReviews.push(d.data());
+        }
+      });
+    }
+
     const validRatings = allReviews.filter(r => typeof r.rating === 'number' && !isNaN(r.rating));
     const avgRating = validRatings.length > 0
       ? validRatings.reduce((sum, r) => sum + r.rating, 0) / validRatings.length
       : Number(rating);
+    const finalRating = parseFloat(avgRating.toFixed(1));
+    const finalTotalReviews = validRatings.length;
     
     try {
-      const hDoc = await db.collection('hotels').doc(hotelId).get();
-      if (hDoc.exists) {
-        await hDoc.ref.update({ 
-          avgRating: parseFloat(avgRating.toFixed(1)),
-          totalReviews: allReviews.length 
+      if (hDoc && hDoc.exists) {
+        await hotelDocRef.update({ 
+          avgRating: finalRating,
+          totalReviews: finalTotalReviews 
         });
-      } else {
-        const hSnap = await db.collection('hotels').where('_id', '==', hotelId).limit(1).get();
-        if (!hSnap.empty) {
-          await hSnap.docs[0].ref.update({
-            avgRating: parseFloat(avgRating.toFixed(1)),
-            totalReviews: allReviews.length
-          });
-        }
       }
     } catch (hErr) {
       console.warn('Could not update hotel avg rating:', hErr);
     }
 
     return NextResponse.json({ 
+      success: true,
+      avgRating: finalRating,
+      totalReviews: finalTotalReviews,
       review: {
         ...newReview,
         customerId: {

@@ -162,6 +162,9 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     }
 
     const { _id, id, ...updateData } = body;
+    delete updateData.providedRating;
+    delete updateData.avgRating;
+    delete updateData.totalReviews;
     updateData.updatedAt = new Date().toISOString();
 
     // If rooms are sent in the update, sync them with the rooms collection

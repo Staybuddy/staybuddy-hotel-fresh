@@ -73,7 +73,7 @@ export default function PartnerDashboard() {
   const [hotelForm, setHotelForm] = useState({
     name: '', description: '', location: '', city: '', area: '', country: 'India', address: '', lat: '', lng: '', propertyType: 'Hotel',
     category: 'standard', starRating: '3', checkInTime: '14:00', checkOutTime: '11:00',
-    totalPropertyRooms: '', staybuddyAllocation: '', totalFloors: '', providedRating: '4.5',
+    totalPropertyRooms: '', staybuddyAllocation: '', totalFloors: '',
     contactName: '', contactDesignation: '', contactPhone: '', contactEmail: '',
     amenities: [] as string[], roomAmenities: [] as string[], extraAmenities: '', policies: '', images: [] as string[],
     rooms: [
@@ -200,7 +200,7 @@ export default function PartnerDashboard() {
       }
 
       setAddSuccess('🎉 Property submitted for approval! Our team will review it within 24 hours.');
-      setHotelForm({ name: '', description: '', location: '', city: '', area: '', country: 'India', address: '', lat: '', lng: '', propertyType: 'Hotel', category: 'standard', starRating: '3', checkInTime: '14:00', checkOutTime: '11:00', totalPropertyRooms: '', staybuddyAllocation: '', totalFloors: '', providedRating: '4.5', contactName: '', contactDesignation: '', contactPhone: '', contactEmail: '', amenities: [], roomAmenities: [], extraAmenities: '', policies: '', images: [], rooms: [] });
+      setHotelForm({ name: '', description: '', location: '', city: '', area: '', country: 'India', address: '', lat: '', lng: '', propertyType: 'Hotel', category: 'standard', starRating: '3', checkInTime: '14:00', checkOutTime: '11:00', totalPropertyRooms: '', staybuddyAllocation: '', totalFloors: '', contactName: '', contactDesignation: '', contactPhone: '', contactEmail: '', amenities: [], roomAmenities: [], extraAmenities: '', policies: '', images: [], rooms: [] });
       setFormStep(1);
       fetchData();
       setTimeout(() => setActiveTab('hotels'), 2500);
@@ -880,27 +880,25 @@ export default function PartnerDashboard() {
                         <label className="form-label" style={{ textTransform: 'uppercase', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Hotel / Property Name <span className="required">*</span></label>
                         <input className="form-input" type="text" placeholder={`e.g. Taj Falaknuma Palace`} value={hotelForm.name} onChange={e => setHotelForm(p => ({ ...p, name: e.target.value }))} required />
                       </div>
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-4)' }}>
-                        <div className="form-group">
-                          <label className="form-label" style={{ textTransform: 'uppercase', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Star Category</label>
-                          <select className="form-input form-select" value={hotelForm.starRating} onChange={e => {
-                            const star = parseInt(e.target.value);
-                            let category = 'budget';
-                            if (star === 3) category = 'standard';
-                            if (star === 4) category = 'premium';
-                            if (star === 5) category = 'luxury';
-                            setHotelForm(p => ({ ...p, starRating: e.target.value, category }));
-                          }}>
-                            <option value="1">⭐ 1-Star Budget</option>
-                            <option value="2">⭐⭐ 2-Star Economy</option>
-                            <option value="3">⭐⭐⭐ 3-Star Standard</option>
-                            <option value="4">⭐⭐⭐⭐ 4-Star Premium</option>
-                            <option value="5">⭐⭐⭐⭐⭐ 5-Star Luxury</option>
-                          </select>
-                        </div>
-                        <div className="form-group">
-                          <label className="form-label" style={{ textTransform: 'uppercase', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Rating (1.0 - 5.0)</label>
-                          <input className="form-input" type="number" step="0.1" min="1" max="5" placeholder="4.5" value={hotelForm.providedRating} onChange={e => setHotelForm(p => ({ ...p, providedRating: e.target.value }))} />
+                      <div className="form-group">
+                        <label className="form-label" style={{ textTransform: 'uppercase', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Star Category</label>
+                        <select className="form-input form-select" value={hotelForm.starRating} onChange={e => {
+                          const star = parseInt(e.target.value);
+                          let category = 'budget';
+                          if (star === 3) category = 'standard';
+                          if (star === 4) category = 'premium';
+                          if (star === 5) category = 'luxury';
+                          setHotelForm(p => ({ ...p, starRating: e.target.value, category }));
+                        }}>
+                          <option value="1">⭐ 1-Star Budget</option>
+                          <option value="2">⭐⭐ 2-Star Economy</option>
+                          <option value="3">⭐⭐⭐ 3-Star Standard</option>
+                          <option value="4">⭐⭐⭐⭐ 4-Star Premium</option>
+                          <option value="5">⭐⭐⭐⭐⭐ 5-Star Luxury</option>
+                        </select>
+                        <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)', marginTop: 6, display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <span>ℹ️</span>
+                          <span>Guest numerical rating (1.0 – 5.0) is automatically calculated and updated from verified guest reviews after checkout.</span>
                         </div>
                       </div>
                       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 'var(--space-4)' }}>

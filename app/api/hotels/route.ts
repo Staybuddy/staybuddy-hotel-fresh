@@ -130,7 +130,7 @@ import { authOptions } from '../auth/[...nextauth]/route';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { partnerId, name, description, location, city, area, country, address, images, amenities, extraAmenities, propertyType, category, starRating, checkInTime, checkOutTime, policies, lat, lng, rooms, totalPropertyRooms, staybuddyAllocation, totalFloors, contactName, contactDesignation, contactPhone, contactEmail, providedRating } = body;
+    const { partnerId, name, description, location, city, area, country, address, images, amenities, extraAmenities, propertyType, category, starRating, checkInTime, checkOutTime, policies, lat, lng, rooms, totalPropertyRooms, staybuddyAllocation, totalFloors, contactName, contactDesignation, contactPhone, contactEmail } = body;
 
     let finalPartnerId = partnerId;
     if (!finalPartnerId) {
@@ -248,7 +248,8 @@ export async function POST(request: NextRequest) {
       contactDesignation, 
       contactPhone, 
       contactEmail, 
-      avgRating: providedRating ? parseFloat(providedRating) : 0,
+      avgRating: 0,
+      totalReviews: 0,
       createdAt: new Date().toISOString()
     };
 

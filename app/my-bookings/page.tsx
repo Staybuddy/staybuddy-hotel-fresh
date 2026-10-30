@@ -117,7 +117,7 @@ export default function MyBookingsPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           bookingId: reviewBooking._id,
-          hotelId: reviewBooking.hotelId._id,
+          hotelId: reviewBooking.hotelId?._id || reviewBooking.hotelId,
           customerId: (session?.user as any)?.id,
           guestName: (session?.user as any)?.name || 'Guest',
           rating: reviewData.rating,

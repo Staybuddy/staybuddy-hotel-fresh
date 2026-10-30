@@ -417,10 +417,14 @@ function HotelSearch() {
                       <div className="card-body">
                         <h3 style={{ fontSize: '1rem', marginBottom: 4 }}>{hotel.name}</h3>
                         <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', marginBottom: 8 }}>📍 {hotel.area ? `${hotel.area}, ` : ''}{hotel.city}</p>
-                        {hotel.avgRating > 0 && (
+                        {hotel.avgRating > 0 ? (
                           <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10 }}>
-                            <span style={{ background: 'var(--brand-500)', color: 'white', fontWeight: 700, fontSize: '0.8rem', padding: '2px 8px', borderRadius: 'var(--radius-sm)' }}>{hotel.avgRating.toFixed(1)}</span>
-                            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{hotel.totalReviews} reviews</span>
+                            <span style={{ background: 'var(--brand-500)', color: 'white', fontWeight: 700, fontSize: '0.8rem', padding: '2px 8px', borderRadius: 'var(--radius-sm)' }}>★ {hotel.avgRating.toFixed(1)}</span>
+                            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{hotel.totalReviews} {hotel.totalReviews === 1 ? 'review' : 'reviews'}</span>
+                          </div>
+                        ) : (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10 }}>
+                            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', background: '#f8fafc', padding: '2px 6px', borderRadius: '4px', border: '1px solid #f1f5f9' }}>⭐ New on StayBuddy</span>
                           </div>
                         )}
                         <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginBottom: 12 }}>

@@ -95,6 +95,7 @@ export default function HotelDetailPage() {
   const [submittingReview, setSubmittingReview] = useState(false);
   const [reviewError, setReviewError] = useState("");
   const [reviewSuccess, setReviewSuccess] = useState("");
+  const [showReviewModal, setShowReviewModal] = useState(false);
   const [confirmedBookingId, setConfirmedBookingId] = useState<string>("");
 
   useEffect(() => {
@@ -532,9 +533,13 @@ export default function HotelDetailPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to submit review");
 
-      setReviewSuccess("Thank you! Your review has been published.");
+      setReviewSuccess("Thank you! Your review has been published and the hotel rating has been updated.");
       setReviewData({ rating: 5, title: "", comment: "" });
       fetchHotelData();
+      setTimeout(() => {
+        setShowReviewModal(false);
+        setReviewSuccess("");
+      }, 2000);
     } catch (err: any) {
       setReviewError(err.message);
     } finally {
@@ -698,13 +703,23 @@ export default function HotelDetailPage() {
             gap: 10,
           }}
         >
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
             <h1 style={{ fontSize: "1.8rem", fontWeight: 900, color: "#0f172a", margin: 0 }}>
               {hotel.name}
             </h1>
             <div style={{ color: "#f59e0b", fontSize: "1rem" }}>
               {"⭐".repeat(hotel.starRating || 4)}
             </div>
+            {hotel.avgRating > 0 ? (
+              <div style={{ display: "flex", alignItems: "center", gap: 6, background: "var(--brand-50)", color: "var(--brand-700)", padding: "4px 10px", borderRadius: "12px", border: "1px solid var(--brand-200)", fontSize: "0.85rem", fontWeight: 700 }}>
+                <span>★ {hotel.avgRating.toFixed(1)}</span>
+                <span style={{ fontSize: "0.75rem", color: "var(--text-muted)", fontWeight: 500 }}>({hotel.totalReviews || reviews.length} {((hotel.totalReviews || reviews.length) === 1 ? 'review' : 'reviews')})</span>
+              </div>
+            ) : (
+              <span style={{ fontSize: "0.75rem", color: "var(--text-muted)", background: "#f8fafc", padding: "4px 8px", borderRadius: "12px", border: "1px solid #e2e8f0", fontWeight: 600 }}>
+                ⭐ New Property
+              </span>
+            )}
           </div>
           <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
             <button
@@ -1800,38 +1815,97 @@ export default function HotelDetailPage() {
             </div>
 
             {/* Reviews */}
-            {reviews.length > 0 && (
-              <div className="card">
-                <div
-                  className="card-header"
+            <div className="card" id="reviews-section" style={{ marginTop: 24 }}>
+              <div
+                className="card-header"
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  flexWrap: "wrap",
+                  gap: 12,
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                  <h3 style={{ fontSize: "1.1rem", margin: 0, fontWeight: 800 }}>Guest Reviews</h3>
+                  {hotel.avgRating > 0 ? (
+                    <span
+                      style={{
+                        background: "var(--brand-500)",
+                        color: "white",
+                        fontWeight: 700,
+                        padding: "3px 10px",
+                        borderRadius: "var(--radius-sm)",
+                        fontSize: "0.85rem",
+                      }}
+                    >
+                      ★ {hotel.avgRating.toFixed(1)} / 5 ({reviews.length} {reviews.length === 1 ? 'review' : 'reviews'})
+                    </span>
+                  ) : (
+                    <span
+                      style={{
+                        fontSize: "0.8rem",
+                        color: "var(--text-muted)",
+                        background: "#f1f5f9",
+                        padding: "3px 8px",
+                        borderRadius: "6px",
+                        fontWeight: 600,
+                      }}
+                    >
+                      ⭐ New Property (0 reviews)
+                    </span>
+                  )}
+                </div>
+
+                <button
+                  type="button"
+                  className="btn btn-sm btn-outline"
+                  onClick={() => {
+                    if (!session) {
+                      router.push('/login?callbackUrl=' + encodeURIComponent(window.location.pathname));
+                      return;
+                    }
+                    setShowReviewModal(true);
+                  }}
                   style={{
-                    display: "flex",
-                    justifyContent: "space-between",
+                    display: "inline-flex",
                     alignItems: "center",
+                    gap: 6,
+                    fontWeight: 700,
+                    padding: "6px 14px",
+                    borderRadius: "20px",
                   }}
                 >
-                  <h3 style={{ fontSize: "1rem" }}>Guest Reviews</h3>
-                  <span
+                  ⭐ Write a Review
+                </button>
+              </div>
+
+              <div
+                className="card-body"
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "var(--space-5)",
+                }}
+              >
+                {reviews.length === 0 ? (
+                  <div
                     style={{
-                      background: "var(--brand-500)",
-                      color: "white",
-                      fontWeight: 700,
-                      padding: "2px 10px",
-                      borderRadius: "var(--radius-sm)",
+                      textAlign: "center",
+                      padding: "32px 16px",
+                      color: "var(--text-secondary)",
                     }}
                   >
-                    {hotel.avgRating?.toFixed(1)}
-                  </span>
-                </div>
-                <div
-                  className="card-body"
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "var(--space-5)",
-                  }}
-                >
-                  {reviews.map((review) => (
+                    <div style={{ fontSize: "2rem", marginBottom: 8 }}>📝</div>
+                    <div style={{ fontWeight: 700, fontSize: "1rem", color: "#0f172a" }}>
+                      No reviews yet for {hotel.name}
+                    </div>
+                    <div style={{ fontSize: "0.85rem", color: "var(--text-muted)", marginTop: 6, maxWidth: 450, margin: "6px auto 0 auto" }}>
+                      StayBuddy calculates property ratings strictly from verified guest reviews. Guests can share their genuine feedback after check-in or checkout!
+                    </div>
+                  </div>
+                ) : (
+                  reviews.map((review) => (
                     <div
                       key={review._id}
                       style={{
@@ -1952,9 +2026,142 @@ export default function HotelDetailPage() {
                         </div>
                       )}
                     </div>
-                  ))}
-                </div>
+                  ))
+                )}
               </div>
+            </div>
+
+            {/* Write Review Modal */}
+            {showReviewModal && (
+              <>
+                <div
+                  style={{
+                    position: "fixed",
+                    inset: 0,
+                    background: "rgba(0,0,0,0.5)",
+                    zIndex: 9999,
+                  }}
+                  onClick={() => setShowReviewModal(false)}
+                />
+                <div
+                  style={{
+                    position: "fixed",
+                    top: "50%",
+                    left: "50%",
+                    transform: "translate(-50%, -50%)",
+                    background: "white",
+                    padding: "28px",
+                    borderRadius: "16px",
+                    zIndex: 10000,
+                    width: "90%",
+                    maxWidth: 500,
+                    boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
+                  }}
+                >
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+                    <h2 style={{ fontSize: "1.25rem", margin: 0, fontWeight: 800 }}>Review {hotel.name}</h2>
+                    <button
+                      type="button"
+                      onClick={() => setShowReviewModal(false)}
+                      style={{
+                        background: "none",
+                        border: "none",
+                        fontSize: "1.3rem",
+                        cursor: "pointer",
+                        color: "#64748b",
+                      }}
+                    >
+                      ✕
+                    </button>
+                  </div>
+
+                  {reviewSuccess && (
+                    <div className="alert alert-success" style={{ marginBottom: 16 }}>
+                      {reviewSuccess}
+                    </div>
+                  )}
+                  {reviewError && (
+                    <div className="alert alert-danger" style={{ marginBottom: 16 }}>
+                      {reviewError}
+                    </div>
+                  )}
+
+                  <form onSubmit={submitReview} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                    <div>
+                      <label className="form-label" style={{ fontWeight: 700, fontSize: "0.85rem", marginBottom: 6, display: "block" }}>
+                        Rating (1 to 5 Stars)
+                      </label>
+                      <div style={{ display: "flex", gap: 8 }}>
+                        {[1, 2, 3, 4, 5].map((num) => (
+                          <button
+                            type="button"
+                            key={num}
+                            onClick={() => setReviewData((p) => ({ ...p, rating: num }))}
+                            style={{
+                              background: "none",
+                              border: "none",
+                              fontSize: "2rem",
+                              cursor: "pointer",
+                              opacity: reviewData.rating >= num ? 1 : 0.25,
+                              transition: "opacity 0.15s ease",
+                            }}
+                          >
+                            ⭐
+                          </button>
+                        ))}
+                        <span style={{ alignSelf: "center", marginLeft: 8, fontWeight: 700, color: "var(--brand-600)" }}>
+                          {reviewData.rating}.0 / 5.0
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="form-group">
+                      <label className="form-label" style={{ fontWeight: 700, fontSize: "0.85rem", marginBottom: 6, display: "block" }}>
+                        Title
+                      </label>
+                      <input
+                        type="text"
+                        className="form-input"
+                        required
+                        placeholder="e.g. Wonderful stay, courteous staff!"
+                        value={reviewData.title}
+                        onChange={(e) => setReviewData((p) => ({ ...p, title: e.target.value }))}
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label className="form-label" style={{ fontWeight: 700, fontSize: "0.85rem", marginBottom: 6, display: "block" }}>
+                        Your Review
+                      </label>
+                      <textarea
+                        className="form-input"
+                        rows={4}
+                        required
+                        placeholder="Share details about your room, cleanliness, amenities, and hospitality..."
+                        value={reviewData.comment}
+                        onChange={(e) => setReviewData((p) => ({ ...p, comment: e.target.value }))}
+                      />
+                    </div>
+
+                    <div style={{ display: "flex", gap: 12, justifyContent: "flex-end", marginTop: 8 }}>
+                      <button
+                        type="button"
+                        className="btn btn-outline"
+                        onClick={() => setShowReviewModal(false)}
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="submit"
+                        className="btn btn-primary"
+                        disabled={submittingReview}
+                      >
+                        {submittingReview ? "Submitting..." : "Submit Review"}
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </>
             )}
           </div>
 
