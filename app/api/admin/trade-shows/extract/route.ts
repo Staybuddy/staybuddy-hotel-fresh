@@ -6,6 +6,13 @@ export const dynamic = 'force-dynamic';
 // In-memory registry for user-added custom trade shows and extracted hotels
 let customTradeShows: TradeShowVenue[] = [];
 const customHotelsRegistry: Record<string, ExtractedHotel[]> = {};
+const deletedVenueIds = new Set<string>();
+
+function getActiveVenues(): TradeShowVenue[] {
+  const all = [...INITIAL_TRADE_SHOWS, ...customTradeShows];
+  const active = all.filter(v => !deletedVenueIds.has(v.id));
+  return active.length > 0 ? active : INITIAL_TRADE_SHOWS;
+}
 
 function normalizeText(str: string): string {
   return (str || '')
@@ -493,14 +500,14 @@ function getOrExtractHotelsForVenue(targetVenue: TradeShowVenue, radius = 7.0): 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const venueId = searchParams.get('venueId') || 'hitex-hyderabad';
     const radiusParam = searchParams.get('radius');
     const radius = radiusParam ? parseFloat(radiusParam) : 7.0;
 
-    const allVenues = [...INITIAL_TRADE_SHOWS, ...customTradeShows];
+    const allVenues = getActiveVenues();
+    const venueId = searchParams.get('venueId') || allVenues[0]?.id || 'hitex-hyderabad';
     let targetVenue = allVenues.find(v => v.id === venueId);
     if (!targetVenue) {
-      targetVenue = allVenues[0];
+      targetVenue = allVenues[0] || INITIAL_TRADE_SHOWS[0];
     }
 
     const merged = getOrExtractHotelsForVenue(targetVenue, radius);
@@ -522,11 +529,29 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { action, venue, radius = 6.8 } = body;
+    const { action, venue, venueId, radius = 6.8 } = body;
+
+    // Action: Delete a venue (custom or preset)
+    if (action === 'delete_venue') {
+      const targetId = venueId || body.id;
+      if (targetId) {
+        deletedVenueIds.add(targetId);
+        customTradeShows = customTradeShows.filter(v => v.id !== targetId);
+        delete customHotelsRegistry[targetId];
+      }
+      const allVenues = getActiveVenues();
+      return NextResponse.json({
+        success: true,
+        message: 'Trade show venue removed successfully!',
+        allVenues,
+        nextVenueId: allVenues[0]?.id || null,
+      });
+    }
 
     // Action 1: Add a new custom trade show venue
     if (action === 'add_venue') {
       const newId = `custom-${Date.now()}`;
+      deletedVenueIds.delete(newId);
       const newVenue: TradeShowVenue = {
         id: newId,
         name: venue.name,
@@ -542,20 +567,21 @@ export async function POST(request: NextRequest) {
 
       // Extract hotels for this new venue immediately (all <= 6.3 km across all 4 categories)
       const hotels = getOrExtractHotelsForVenue(newVenue, radius);
+      const allVenues = getActiveVenues();
 
       return NextResponse.json({
         success: true,
         message: 'New trade show venue added and hotels extracted successfully!',
         venue: newVenue,
-        allVenues: [...INITIAL_TRADE_SHOWS, ...customTradeShows],
+        allVenues,
         hotels,
       });
     }
 
     // Action 2: Run Multi-Agent Extraction Simulation & Pipeline
-    const venueId = body.venueId || 'hitex-hyderabad';
-    const allVenues = [...INITIAL_TRADE_SHOWS, ...customTradeShows];
-    const targetVenue = allVenues.find(v => v.id === venueId) || allVenues[0];
+    const allVenues = getActiveVenues();
+    const targetVenueId = venueId || body.venueId || allVenues[0]?.id || 'hitex-hyderabad';
+    const targetVenue = allVenues.find(v => v.id === targetVenueId) || allVenues[0] || INITIAL_TRADE_SHOWS[0];
 
     const filteredHotels = getOrExtractHotelsForVenue(targetVenue, radius);
 

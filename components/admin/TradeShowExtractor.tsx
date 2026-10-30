@@ -111,6 +111,36 @@ export default function TradeShowExtractor() {
     }
   };
 
+  // Delete / Remove Trade Show Venue
+  const handleDeleteVenue = async (venueId: string, venueName: string) => {
+    const confirmed = window.confirm(`Remove "${venueName}" from your trade show venues?`);
+    if (!confirmed) return;
+
+    try {
+      const res = await fetch('/api/admin/trade-shows/extract', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'delete_venue',
+          venueId,
+        }),
+      });
+      const data = await res.json();
+      if (data.success && data.allVenues) {
+        setVenues(data.allVenues);
+        if (selectedVenueId === venueId) {
+          const nextVenue = data.allVenues[0];
+          if (nextVenue) {
+            setSelectedVenueId(nextVenue.id);
+            fetchVenueHotels(nextVenue.id, maxRadiusKm);
+          }
+        }
+      }
+    } catch (err) {
+      console.error('Failed to delete trade show venue:', err);
+    }
+  };
+
   // Filtered Hotels based on search, star category & radius
   const filteredHotels = useMemo(() => {
     return hotels.filter(h => {
@@ -320,35 +350,91 @@ export default function TradeShowExtractor() {
 
         {/* VENUE SELECTION PILLS */}
         <div style={{ marginTop: '24px', borderTop: '1px solid rgba(255, 255, 255, 0.12)', paddingTop: '20px' }}>
-          <div style={{ fontSize: '0.78rem', textTransform: 'uppercase', letterSpacing: '0.08em', color: '#cbd5e1', fontWeight: 700, marginBottom: '10px' }}>
-            SELECT TRADE SHOW VENUE:
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+            <div style={{ fontSize: '0.78rem', textTransform: 'uppercase', letterSpacing: '0.08em', color: '#cbd5e1', fontWeight: 700 }}>
+              SELECT TRADE SHOW VENUE:
+            </div>
+            <div style={{ fontSize: '0.72rem', color: '#94a3b8' }}>
+              💡 Click ✕ on any venue to remove it
+            </div>
           </div>
-          <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '6px' }}>
+          <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '8px' }}>
             {venues.map(v => {
               const isSelected = v.id === selectedVenueId;
               return (
-                <button
+                <div
                   key={v.id}
-                  onClick={() => setSelectedVenueId(v.id)}
                   style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
                     background: isSelected ? '#ff6b35' : 'rgba(255, 255, 255, 0.08)',
                     color: '#ffffff',
                     border: isSelected ? '2px solid #ff6b35' : '1px solid rgba(255, 255, 255, 0.15)',
-                    padding: '8px 14px',
                     borderRadius: '10px',
-                    fontWeight: isSelected ? 700 : 500,
-                    fontSize: '0.85rem',
-                    cursor: 'pointer',
+                    padding: '3px 6px 3px 12px',
                     whiteSpace: 'nowrap',
                     transition: 'all 0.2s ease',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
                   }}
                 >
-                  <span>📍</span>
-                  {v.shortName}
-                </button>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedVenueId(v.id)}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: '#ffffff',
+                      fontWeight: isSelected ? 700 : 500,
+                      fontSize: '0.85rem',
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      padding: '4px 0',
+                    }}
+                  >
+                    <span>📍</span>
+                    {v.shortName}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      e.preventDefault();
+                      handleDeleteVenue(v.id, v.shortName);
+                    }}
+                    title={`Remove ${v.shortName}`}
+                    aria-label={`Remove ${v.shortName}`}
+                    style={{
+                      background: isSelected ? 'rgba(0, 0, 0, 0.22)' : 'rgba(255, 255, 255, 0.14)',
+                      border: 'none',
+                      color: isSelected ? '#ffffff' : '#cbd5e1',
+                      width: '18px',
+                      height: '18px',
+                      borderRadius: '50%',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '0.62rem',
+                      cursor: 'pointer',
+                      marginLeft: '6px',
+                      transition: 'all 0.15s ease',
+                      flexShrink: 0,
+                    }}
+                    onMouseEnter={e => {
+                      e.currentTarget.style.background = '#ef4444';
+                      e.currentTarget.style.color = '#ffffff';
+                      e.currentTarget.style.transform = 'scale(1.2)';
+                    }}
+                    onMouseLeave={e => {
+                      e.currentTarget.style.background = isSelected ? 'rgba(0, 0, 0, 0.22)' : 'rgba(255, 255, 255, 0.14)';
+                      e.currentTarget.style.color = isSelected ? '#ffffff' : '#cbd5e1';
+                      e.currentTarget.style.transform = 'scale(1)';
+                    }}
+                  >
+                    ✕
+                  </button>
+                </div>
               );
             })}
           </div>
@@ -368,11 +454,34 @@ export default function TradeShowExtractor() {
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginBottom: '16px' }}>
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               <span style={{ fontSize: '1.2rem' }}>🏛️</span>
               <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 800, color: '#0f172a' }}>
                 {currentVenue.name}
               </h2>
+              <button
+                type="button"
+                onClick={() => handleDeleteVenue(currentVenue.id, currentVenue.shortName)}
+                title={`Remove ${currentVenue.shortName}`}
+                style={{
+                  background: '#fee2e2',
+                  color: '#b91c1c',
+                  border: '1px solid #fecaca',
+                  borderRadius: '6px',
+                  padding: '2px 8px',
+                  fontSize: '0.7rem',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  transition: 'background 0.2s',
+                }}
+                onMouseEnter={e => (e.currentTarget.style.background = '#fca5a5')}
+                onMouseLeave={e => (e.currentTarget.style.background = '#fee2e2')}
+              >
+                <span>🗑️</span> Remove
+              </button>
             </div>
             <div style={{ color: '#64748b', fontSize: '0.85rem', marginTop: '4px' }}>
               📍 {currentVenue.venueAddress} • <strong>City:</strong> {currentVenue.city}, {currentVenue.state} • <strong>Perimeter:</strong> Max {maxRadiusKm} km radius
