@@ -36,31 +36,52 @@ export default function LocationSearch({ city, onChange, placeholder = "Search d
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  const POPULAR_DESTINATIONS = [
+    'Mumbai', 'Goa', 'Delhi', 'Jaipur', 'Manali', 'Kerala', 'Hyderabad',
+    'Bangalore', 'Udaipur', 'Ooty', 'Agra', 'Varanasi', 'Amritsar', 'Chennai',
+    'Kolkata', 'Pune', 'Shimla'
+  ];
+
   useEffect(() => {
     if (!query || query.length < 2) {
       setResults({ hotels: [], cities: [] });
       return;
     }
 
+    const controller = new AbortController();
+
     const delayDebounceFn = setTimeout(async () => {
       setLoading(true);
       try {
-        const res = await fetch(`/api/hotels/autocomplete?q=${encodeURIComponent(query)}`);
+        const res = await fetch(`/api/hotels/autocomplete?q=${encodeURIComponent(query)}`, {
+          signal: controller.signal
+        });
         if (res.ok) {
           const data = await res.json();
           setResults(data);
           if (document.activeElement === inputRef.current) {
             setShowDropdown(true);
           }
+        } else {
+          // Graceful fallback to local cities
+          const matched = POPULAR_DESTINATIONS.filter(c => c.toLowerCase().includes(query.toLowerCase()));
+          setResults({ hotels: [], cities: matched.slice(0, 5) });
         }
-      } catch (err) {
-        console.error(err);
+      } catch (err: any) {
+        if (err.name !== 'AbortError') {
+          // Graceful offline fallback without triggering Next.js dev error overlay
+          const matched = POPULAR_DESTINATIONS.filter(c => c.toLowerCase().includes(query.toLowerCase()));
+          setResults({ hotels: [], cities: matched.slice(0, 5) });
+        }
       } finally {
         setLoading(false);
       }
     }, 300);
 
-    return () => clearTimeout(delayDebounceFn);
+    return () => {
+      clearTimeout(delayDebounceFn);
+      controller.abort();
+    };
   }, [query]);
 
   const handleCitySelect = (c: string) => {

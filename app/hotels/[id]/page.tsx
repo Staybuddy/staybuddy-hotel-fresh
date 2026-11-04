@@ -1020,39 +1020,6 @@ export default function HotelDetailPage() {
                 </div>
               </div>
             </div>
-            {/* Location / Map */}
-            {hotel.coordinates?.lat && hotel.coordinates?.lng && (
-              <div className="card" style={{ marginBottom: 16, overflow: "hidden" }}>
-                <div className="card-header" style={{ padding: "12px 16px" }}>
-                  <h3 style={{ fontSize: "1rem", margin: 0, fontWeight: 700 }}>Location & Map</h3>
-                </div>
-                <div
-                  className="card-body"
-                  style={{
-                    padding: 0,
-                    overflow: "hidden",
-                    height: 280,
-                    position: "relative",
-                  }}
-                >
-                  <iframe
-                    width="100%"
-                    height="100%"
-                    style={{
-                      border: 0,
-                      width: "100%",
-                      height: "100%",
-                      minHeight: 280,
-                      display: "block",
-                    }}
-                    loading="lazy"
-                    allowFullScreen
-                    referrerPolicy="no-referrer-when-downgrade"
-                    src={`https://maps.google.com/maps?q=${hotel.coordinates.lat},${hotel.coordinates.lng}&hl=es;z=14&output=embed`}
-                  ></iframe>
-                </div>
-              </div>
-            )}
 
             {/* Date & Guest Selection Bar */}
             <div
@@ -2168,68 +2135,100 @@ export default function HotelDetailPage() {
 
           {/* Right: Booking Panel */}
           <div style={{ position: "sticky", top: 80 }}>
-            {/* Location Card (Moved from left) */}
+            {/* Location Card */}
             <div
               className="card"
               style={{
                 marginBottom: 16,
-                padding: "16px 20px",
+                padding: "14px 18px",
                 border: "1px solid var(--border)",
                 borderRadius: "var(--radius-xl)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: 12,
+                background: "white",
               }}
             >
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 12,
-                  marginBottom: 4,
-                }}
-              >
-                <svg
-                  width="20"
-                  height="20"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="var(--brand-600)"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
+              <div style={{ display: "flex", alignItems: "flex-start", gap: 10, minWidth: 0, flex: 1 }}>
+                <div
+                  style={{
+                    width: 34,
+                    height: 34,
+                    borderRadius: "50%",
+                    background: "var(--brand-50, #fff7ed)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    flexShrink: 0,
+                    marginTop: 2,
+                  }}
                 >
-                  <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z" />
-                  <circle cx="12" cy="10" r="3" />
-                </svg>
-                <span
-                  style={{ fontSize: "1.25rem", color: "var(--text-primary)" }}
-                >
-                  {hotel.city}
-                </span>
+                  <svg
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="var(--brand-600, #ea580c)"
+                    strokeWidth="2.2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z" />
+                    <circle cx="12" cy="10" r="3" />
+                  </svg>
+                </div>
+                <div style={{ minWidth: 0, flex: 1 }}>
+                  <div style={{ fontWeight: 800, fontSize: "1.1rem", color: "var(--text-primary)", lineHeight: 1.25 }}>
+                    {hotel.city}
+                  </div>
+                  <div
+                    style={{
+                      fontSize: "0.85rem",
+                      color: "var(--text-secondary)",
+                      marginTop: 2,
+                      lineHeight: 1.35,
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      display: "-webkit-box",
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: "vertical",
+                    }}
+                    title={hotel.address}
+                  >
+                    {hotel.address}
+                  </div>
+                </div>
               </div>
-              <div
-                style={{
-                  fontSize: "1.05rem",
-                  color: "var(--text-secondary)",
-                  marginLeft: 32,
-                  marginBottom: 16,
-                }}
-              >
-                {hotel.address}
-              </div>
+
+              {/* Small Smart Direction Symbol Button */}
               <a
                 href={`https://maps.google.com/?q=${encodeURIComponent(`${hotel.name}, ${hotel.address}, ${hotel.city}`)}`}
                 target="_blank"
                 rel="noreferrer"
-                className="btn btn-primary"
+                title="Get Directions"
+                aria-label="Get Directions"
                 style={{
-                  width: "100%",
+                  width: 42,
+                  height: 42,
+                  borderRadius: "50%",
+                  background: "var(--brand-500, #ff6b35)",
+                  color: "white",
                   display: "flex",
-                  justifyContent: "center",
                   alignItems: "center",
-                  gap: 8,
-                  fontSize: "1rem",
-                  padding: "14px",
-                  borderRadius: "var(--radius-md)",
+                  justifyContent: "center",
+                  flexShrink: 0,
+                  boxShadow: "0 3px 10px rgba(255, 107, 53, 0.35)",
+                  transition: "all 0.2s ease",
                   textDecoration: "none",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = "scale(1.08)";
+                  e.currentTarget.style.boxShadow = "0 6px 16px rgba(255, 107, 53, 0.5)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = "scale(1)";
+                  e.currentTarget.style.boxShadow = "0 3px 10px rgba(255, 107, 53, 0.35)";
                 }}
               >
                 <svg
@@ -2238,14 +2237,13 @@ export default function HotelDetailPage() {
                   viewBox="0 0 24 24"
                   fill="none"
                   stroke="currentColor"
-                  strokeWidth="2"
+                  strokeWidth="2.2"
                   strokeLinecap="round"
                   strokeLinejoin="round"
                 >
                   <line x1="22" y1="2" x2="11" y2="13" />
                   <polygon points="22 2 15 22 11 13 2 9 22 2" />
                 </svg>
-                Get Directions
               </a>
             </div>
 
