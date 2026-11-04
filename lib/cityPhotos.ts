@@ -7,100 +7,100 @@ export interface CityPhotoInfo {
   state?: string;
 }
 
-// Verified high-resolution photos of major destinations (tested HTTP 200)
+// Verified high-resolution photos of major destinations (real landmark photography)
 export const CURATED_CITY_PHOTOS: Record<string, CityPhotoInfo> = {
   mumbai: {
-    url: 'https://images.unsplash.com/photo-1570168007204-dfb528c6958f?auto=format&fit=crop&w=600&q=80',
+    url: '/images/destinations/mumbai.jpg',
     landmark: 'Gateway of India',
     state: 'Maharashtra',
   },
   goa: {
-    url: 'https://images.unsplash.com/photo-1512343879784-a960bf40e7f2?auto=format&fit=crop&w=600&q=80',
+    url: '/images/destinations/goa.jpg',
     landmark: 'Palolem Beach & Palms',
     state: 'Goa',
   },
   delhi: {
-    url: 'https://images.unsplash.com/photo-1587474260584-136574528ed5?auto=format&fit=crop&w=600&q=80',
+    url: '/images/destinations/delhi.jpg',
     landmark: 'India Gate',
     state: 'National Capital Region',
   },
   'new delhi': {
-    url: 'https://images.unsplash.com/photo-1587474260584-136574528ed5?auto=format&fit=crop&w=600&q=80',
+    url: '/images/destinations/delhi.jpg',
     landmark: 'India Gate',
     state: 'National Capital Region',
   },
   jaipur: {
-    url: 'https://images.unsplash.com/photo-1599661046289-e31897846e41?auto=format&fit=crop&w=600&q=80',
+    url: '/images/destinations/jaipur.jpg',
     landmark: 'Hawa Mahal (Pink City)',
     state: 'Rajasthan',
   },
   manali: {
-    url: 'https://images.unsplash.com/photo-1626621341517-bbf3d9990a23?auto=format&fit=crop&w=600&q=80',
+    url: '/images/destinations/manali.jpg',
     landmark: 'Solang Valley & Himalayas',
     state: 'Himachal Pradesh',
   },
   kerala: {
-    url: 'https://images.unsplash.com/photo-1602216056096-3b40cc0c9944?auto=format&fit=crop&w=600&q=80',
+    url: '/images/destinations/kerala.jpg',
     landmark: 'Alleppey Backwaters & Houseboat',
     state: 'Kerala',
   },
   hyderabad: {
-    url: 'https://images.unsplash.com/photo-1616190419596-e2839e7380d7?auto=format&fit=crop&w=600&q=80',
+    url: '/images/destinations/hyderabad.jpg',
     landmark: 'Charminar & City of Pearls',
     state: 'Telangana',
   },
   shamshabad: {
-    url: 'https://images.unsplash.com/photo-1616190419596-e2839e7380d7?auto=format&fit=crop&w=600&q=80',
-    landmark: 'Rajiv Gandhi Int. Airport Area',
+    url: '/images/destinations/hyderabad.jpg',
+    landmark: 'Charminar & City of Pearls',
     state: 'Telangana',
   },
   bangalore: {
-    url: 'https://images.unsplash.com/photo-1596176530529-78163a4f7af2?auto=format&fit=crop&w=600&q=80',
+    url: '/images/destinations/bangalore.jpg',
     landmark: 'Vidhana Soudha & Garden City',
     state: 'Karnataka',
   },
   bengaluru: {
-    url: 'https://images.unsplash.com/photo-1596176530529-78163a4f7af2?auto=format&fit=crop&w=600&q=80',
+    url: '/images/destinations/bangalore.jpg',
     landmark: 'Vidhana Soudha & Garden City',
     state: 'Karnataka',
   },
   chennai: {
-    url: 'https://images.unsplash.com/photo-1582510003544-4d00b7f74220?auto=format&fit=crop&w=600&q=80',
+    url: '/images/destinations/chennai.jpg',
     landmark: 'Marina Beach & Heritage',
     state: 'Tamil Nadu',
   },
   kolkata: {
-    url: 'https://images.unsplash.com/photo-1558431382-27e303142255?auto=format&fit=crop&w=600&q=80',
+    url: '/images/destinations/kolkata.jpg',
     landmark: 'Victoria Memorial & Howrah',
     state: 'West Bengal',
   },
   udaipur: {
-    url: 'https://images.unsplash.com/photo-1615836245337-f5b9b2303f10?auto=format&fit=crop&w=600&q=80',
+    url: '/images/destinations/udaipur.jpg',
     landmark: 'Lake Pichola Palace',
     state: 'Rajasthan',
   },
   agra: {
-    url: 'https://images.unsplash.com/photo-1564507592333-c60657eea523?auto=format&fit=crop&w=600&q=80',
+    url: '/images/destinations/agra.jpg',
     landmark: 'Taj Mahal',
     state: 'Uttar Pradesh',
   },
   varanasi: {
-    url: 'https://images.unsplash.com/photo-1561361513-2d000a50f0dc?auto=format&fit=crop&w=600&q=80',
+    url: '/images/destinations/varanasi.jpg',
     landmark: 'Ganga Ghats & Evening Aarti',
     state: 'Uttar Pradesh',
   },
   shimla: {
-    url: 'https://images.unsplash.com/photo-1588668214407-6ea9a6d8c272?auto=format&fit=crop&w=600&q=80',
+    url: '/images/destinations/shimla.jpg',
     landmark: 'Mall Road & Snow Pines',
     state: 'Himachal Pradesh',
   },
   ooty: {
-    url: 'https://images.unsplash.com/photo-1589182373726-e4f658ab50f0?auto=format&fit=crop&w=600&q=80',
+    url: '/images/destinations/ooty.jpg',
     landmark: 'Nilgiri Hills & Tea Plantations',
     state: 'Tamil Nadu',
   },
   amritsar: {
-    url: 'https://images.unsplash.com/photo-1514222134-b57cbb8ce073?auto=format&fit=crop&w=600&q=80',
+    url: '/images/destinations/amritsar.jpg',
     landmark: 'Golden Temple (Harmandir Sahib)',
     state: 'Punjab',
   },
