@@ -48,19 +48,16 @@ function HotelSearch() {
   const [showGuestPicker, setShowGuestPicker] = useState(false);
 
   useEffect(() => {
-    const checkInParam = searchParams.get("checkIn");
-    if (checkInParam && !filters.checkIn) {
-      setFilters(p => ({
-        ...p,
-        city: searchParams.get('city') || p.city,
-        checkIn: checkInParam,
-        checkOut: searchParams.get('checkOut') || p.checkOut,
-        rooms: searchParams.has('rooms') ? parseInt(searchParams.get('rooms') as string, 10) : p.rooms,
-        adults: searchParams.has('adults') ? parseInt(searchParams.get('adults') as string, 10) : p.adults,
-        children: searchParams.has('children') ? parseInt(searchParams.get('children') as string, 10) : p.children,
-      }));
-    }
-  }, [searchParams, filters.checkIn]);
+    setFilters(p => ({
+      ...p,
+      city: searchParams.has('city') ? (searchParams.get('city') || '') : p.city,
+      checkIn: searchParams.has('checkIn') ? (searchParams.get('checkIn') || '') : p.checkIn,
+      checkOut: searchParams.has('checkOut') ? (searchParams.get('checkOut') || '') : p.checkOut,
+      rooms: searchParams.has('rooms') ? parseInt(searchParams.get('rooms') as string, 10) : p.rooms,
+      adults: searchParams.has('adults') ? parseInt(searchParams.get('adults') as string, 10) : p.adults,
+      children: searchParams.has('children') ? parseInt(searchParams.get('children') as string, 10) : p.children,
+    }));
+  }, [searchParams]);
 
   useEffect(() => { fetchHotels(); }, [filters, page]);
 
@@ -72,6 +69,10 @@ function HotelSearch() {
       if (filters.category) params.set('category', filters.category);
       if (filters.propertyType) params.set('propertyType', filters.propertyType);
       if (filters.minRating) params.set('minRating', filters.minRating);
+      if (filters.adults) params.set('adults', filters.adults.toString());
+      if (filters.rooms) params.set('rooms', filters.rooms.toString());
+      if (filters.checkIn) params.set('checkIn', filters.checkIn);
+      if (filters.checkOut) params.set('checkOut', filters.checkOut);
 
       const res = await fetch(`/api/hotels?${params}`);
       const data = await res.json();
@@ -446,6 +447,12 @@ function HotelSearch() {
                                   ₹{Number(hotel.startingPrice).toLocaleString('en-IN')}
                                 </span>
                                 <span className="price-suffix" style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}> /night</span>
+                                {filters.adults === 1 && (
+                                  <div style={{ fontSize: '0.7rem', color: '#16a34a', fontWeight: 600 }}>1 Adult rate</div>
+                                )}
+                                {filters.adults === 3 && (
+                                  <div style={{ fontSize: '0.7rem', color: '#2563eb', fontWeight: 600 }}>3 Adults rate</div>
+                                )}
                               </>
                             ) : (
                               <span className="price" style={{ fontSize: '1rem', color: 'var(--text-muted)' }}>

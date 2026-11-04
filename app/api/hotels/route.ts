@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 export const dynamic = 'force-dynamic';
 import { db } from '@/lib/firebaseAdmin';
-import { applyMarginToRoom } from '@/lib/occupancyPricing';
+import { applyMarginToRoom, getRoomPriceForOccupancy } from '@/lib/occupancyPricing';
 
 export async function GET(request: NextRequest) {
   try {
@@ -15,6 +15,9 @@ export async function GET(request: NextRequest) {
     const limitParam = parseInt(searchParams.get('limit') || '12');
     const searchCheckIn = searchParams.get('checkIn');
     const searchCheckOut = searchParams.get('checkOut');
+    const searchAdults = parseInt(searchParams.get('adults') || '2', 10);
+    const searchRooms = parseInt(searchParams.get('rooms') || '1', 10);
+    const occPerRoom = Math.max(1, Math.min(3, Math.ceil(searchAdults / Math.max(1, searchRooms))));
 
     let hotelsRef: any = db.collection('hotels');
     
@@ -55,18 +58,26 @@ export async function GET(request: NextRequest) {
         const margin = Number(hotel.marginPercentage) || 0;
         rooms = rooms.map((r: any) => applyMarginToRoom(r, margin));
         
-        // Calculate true minimum least rate among all room options
+        // Calculate starting rate matching the requested occupancy (1 = single, 2 = double, 3 = triple) with margin
         const validPrices: number[] = [];
+        const fallbackPrices: number[] = [];
         rooms.forEach((r: any) => {
-          [r.priceSingle, r.priceDouble, r.priceTriple, r.price, r.clientPrice].forEach(p => {
-            const num = Number(p);
-            if (!isNaN(num) && num > 0) validPrices.push(num);
-          });
+          const occPrice = getRoomPriceForOccupancy(r, occPerRoom);
+          if (occPrice > 0) {
+            validPrices.push(occPrice);
+          }
+          const fallback = Number(r.priceDouble) || Number(r.priceSingle) || Number(r.price) || Number(r.clientPrice) || 0;
+          if (fallback > 0) fallbackPrices.push(fallback);
         });
+        if (validPrices.length === 0 && fallbackPrices.length > 0) {
+          validPrices.push(...fallbackPrices);
+        }
         if (hotel.basePrice && Number(hotel.basePrice) > 0) {
           const baseNum = Number(hotel.basePrice);
           const baseWithMargin = margin > 0 ? Math.round(baseNum * (1 + margin / 100)) : baseNum;
-          validPrices.push(baseWithMargin);
+          if (validPrices.length === 0) {
+            validPrices.push(baseWithMargin);
+          }
         }
         const startingPrice = validPrices.length > 0 ? Math.min(...validPrices) : 0;
 

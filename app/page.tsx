@@ -1,6 +1,7 @@
 /* eslint-disable */
 import HomeClient from '@/components/HomeClient';
 import { db } from '@/lib/firebaseAdmin';
+import { applyMarginToRoom, getRoomPriceForOccupancy } from '@/lib/occupancyPricing';
 
 export const revalidate = 60; // Cache and revalidate every 60 seconds
 
@@ -15,16 +16,26 @@ async function getFeaturedHotels() {
       hotels.map(async (hotel: any) => {
         const roomsSnap = await db.collection('rooms').where('hotelId', '==', hotel._id).where('isActive', '==', true).get();
         const rooms = roomsSnap.docs.map(doc => doc.data());
-        // Calculate true minimum least rate among all room options
+        const margin = Number(hotel.marginPercentage) || 0;
+        const roomsWithMargin = rooms.map((r: any) => applyMarginToRoom(r, margin));
+
+        // Calculate true B2C starting rate with admin margin applied (default 2 adults / double occupancy)
         const validPrices: number[] = [];
-        rooms.forEach((r: any) => {
-          [r.priceSingle, r.priceDouble, r.priceTriple, r.b2bPrice, r.pricePerNight].forEach(p => {
-            const num = Number(p);
-            if (!isNaN(num) && num > 0) validPrices.push(num);
-          });
+        roomsWithMargin.forEach((r: any) => {
+          const occPrice = getRoomPriceForOccupancy(r, 2);
+          if (occPrice > 0) {
+            validPrices.push(occPrice);
+          } else {
+            const pSingle = Number(r.priceSingle) || 0;
+            const pFallback = Number(r.price) || Number(r.clientPrice) || 0;
+            const price = pSingle > 0 ? pSingle : pFallback;
+            if (price > 0) validPrices.push(price);
+          }
         });
         if (hotel.basePrice && Number(hotel.basePrice) > 0) {
-          validPrices.push(Number(hotel.basePrice));
+          const baseNum = Number(hotel.basePrice);
+          const baseWithMargin = margin > 0 ? Math.round(baseNum * (1 + margin / 100)) : baseNum;
+          validPrices.push(baseWithMargin);
         }
         const startingPrice = validPrices.length > 0 ? Math.min(...validPrices) : null;
 

@@ -84,8 +84,9 @@ export default function HotelDetailPage() {
   const [roomDetailsModal, setRoomDetailsModal] = useState<any>(null);
   const [modalImageIndex, setModalImageIndex] = useState(0);
 
+  const initialAdults = parseInt(searchParams.get("adults") || "2", 10);
   const [occupancy, setOccupancy] = useState<"single" | "double" | "triple">(
-    "double",
+    initialAdults === 1 ? "single" : initialAdults === 3 ? "triple" : "double",
   );
   const [reviewData, setReviewData] = useState({
     rating: 5,
@@ -102,20 +103,35 @@ export default function HotelDetailPage() {
     if (id) fetchHotelData();
   }, [id, bookingData.checkIn, bookingData.checkOut]);
 
+  // Synchronize occupancy pill with bookingData.adults when 1 room is selected
+  useEffect(() => {
+    if (bookingData.rooms === 1) {
+      const nextOcc: "single" | "double" | "triple" =
+        bookingData.adults === 1 ? "single" : bookingData.adults === 3 ? "triple" : "double";
+      if (occupancy !== nextOcc) {
+        setOccupancy(nextOcc);
+      }
+    }
+  }, [bookingData.adults, bookingData.rooms, occupancy]);
+
   useEffect(() => {
     const checkInParam = searchParams.get("checkIn");
     const checkOutParam = searchParams.get("checkOut");
-    if (checkInParam && !bookingData.checkIn) {
+    if (checkInParam || searchParams.has("adults") || searchParams.has("rooms")) {
+      const a = searchParams.has("adults") ? parseInt(searchParams.get("adults") as string, 10) : bookingData.adults;
       setBookingData(p => ({
         ...p,
-        checkIn: checkInParam,
+        checkIn: checkInParam || p.checkIn,
         checkOut: checkOutParam || p.checkOut,
-        adults: searchParams.has("adults") ? parseInt(searchParams.get("adults") as string, 10) : p.adults,
+        adults: a,
         rooms: searchParams.has("rooms") ? parseInt(searchParams.get("rooms") as string, 10) : p.rooms,
         children: searchParams.has("children") ? parseInt(searchParams.get("children") as string, 10) : p.children,
       }));
+      if (searchParams.has("adults")) {
+        setOccupancy(a === 1 ? "single" : a === 3 ? "triple" : "double");
+      }
     }
-  }, [searchParams, bookingData.checkIn]);
+  }, [searchParams]);
 
   useEffect(() => {
     if (session?.user) {
@@ -1616,7 +1632,11 @@ export default function HotelDetailPage() {
                                   ? allocatedCount > 1
                                     ? `₹${(unitPrice * allocatedCount).toLocaleString()} for ${allocatedCount} rooms`
                                     : "per room / night"
-                                  : "per night"}
+                                  : bookingData.adults === 1
+                                    ? "per night (1 Adult)"
+                                    : bookingData.adults === 3
+                                      ? "per night (3 Adults)"
+                                      : "per night (2 Adults)"}
                               </div>
                             </div>
 
