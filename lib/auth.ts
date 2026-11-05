@@ -30,11 +30,10 @@ async function handleReferral(newUserRef: any, newUser: any) {
   }
 }
 
-// Automatically fix NEXTAUTH_URL on Vercel to prevent localhost redirects
-if (process.env.VERCEL) {
-  const vercelUrl = process.env.VERCEL_PROJECT_PRODUCTION_URL || process.env.VERCEL_URL;
-  if (vercelUrl) {
-    process.env.NEXTAUTH_URL = `https://${vercelUrl}`;
+// Respect explicitly configured NEXTAUTH_URL (e.g. https://staybuddy.in), only fallback if missing or localhost
+if (!process.env.NEXTAUTH_URL || process.env.NEXTAUTH_URL.includes('localhost')) {
+  if (process.env.VERCEL) {
+    process.env.NEXTAUTH_URL = 'https://staybuddy.in';
   }
 }
 
