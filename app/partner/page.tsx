@@ -73,6 +73,7 @@ export default function PartnerDashboard() {
 
   const [showBlockDatePicker, setShowBlockDatePicker] = useState(false);
   const [blockActiveDateSelection, setBlockActiveDateSelection] = useState<'checkIn' | 'checkOut'>('checkIn');
+  const [showInventoryCustomDatePicker, setShowInventoryCustomDatePicker] = useState(false);
 
   function formatBlockDisplayDate(dateStr: string) {
     if (!dateStr) return 'Select date';
@@ -2433,16 +2434,76 @@ export default function PartnerDashboard() {
                     </div>
                   </div>
 
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 10 }}>
                     <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Custom Date:</label>
-                    <input 
-                      type="date" 
-                      className="form-input" 
-                      style={{ height: 36, fontSize: '0.82rem', padding: '4px 10px', width: 140 }} 
-                      value={inventoryDate} 
-                      min={tStr}
-                      onChange={e => e.target.value && handleInventoryDateChange(e.target.value)} 
-                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowInventoryCustomDatePicker(prev => !prev)}
+                      className="btn btn-secondary"
+                      style={{
+                        height: 36,
+                        fontSize: '0.82rem',
+                        padding: '4px 12px',
+                        borderRadius: '8px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 6,
+                        background: showInventoryCustomDatePicker ? '#fff7ed' : 'white',
+                        border: showInventoryCustomDatePicker ? '1.5px solid #ea580c' : '1px solid #cbd5e1',
+                        color: showInventoryCustomDatePicker ? '#ea580c' : '#1e293b',
+                        fontWeight: 700,
+                        cursor: 'pointer'
+                      }}
+                    >
+                      <span>📅</span>
+                      <span>{inventoryDate ? formatBlockDisplayDate(inventoryDate) : 'Pick Date'}</span>
+                    </button>
+
+                    {showInventoryCustomDatePicker && (
+                      <div
+                        style={{
+                          position: 'absolute',
+                          top: 42,
+                          right: 0,
+                          zIndex: 100,
+                          background: 'white',
+                          borderRadius: 16,
+                          padding: 16,
+                          border: '2px solid #fdba74',
+                          boxShadow: '0 12px 28px -6px rgba(234, 88, 12, 0.22)',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          animation: 'fadeIn 0.2s ease',
+                        }}
+                      >
+                        <div style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10, paddingBottom: 8, borderBottom: '1px solid #f1f5f9' }}>
+                          <span style={{ fontSize: '0.82rem', fontWeight: 800, color: '#ea580c', display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <span>📅</span> Select Extranet Inventory Date
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => setShowInventoryCustomDatePicker(false)}
+                            style={{ background: '#f1f5f9', border: 'none', borderRadius: 6, padding: '3px 10px', fontSize: '0.78rem', fontWeight: 700, color: '#475569', cursor: 'pointer' }}
+                          >
+                            Done ✓
+                          </button>
+                        </div>
+                        <DateRangePicker
+                          checkIn={inventoryDate}
+                          checkOut={inventoryDate}
+                          onChange={(inDate) => {
+                            if (inDate) {
+                              handleInventoryDateChange(inDate);
+                              setShowInventoryCustomDatePicker(false);
+                            }
+                          }}
+                          onClose={() => setShowInventoryCustomDatePicker(false)}
+                          activeSelection="checkIn"
+                          setActiveSelection={() => {}}
+                        />
+                      </div>
+                    )}
                   </div>
                 </div>
 

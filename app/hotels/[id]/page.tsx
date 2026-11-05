@@ -2418,481 +2418,683 @@ export default function HotelDetailPage() {
           <div style={{ position: "sticky", top: 80 }}>
             {bookingStep === 0 &&
               (() => {
-                if (totalSelectedRoomsCount === 0 && !selectedRoom) {
-                  return (
-                    <div
-                      className="card"
-                      style={{
-                        padding: "32px 24px",
-                        textAlign: "center",
-                        display: "flex",
-                        flexDirection: "column",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        gap: 16,
-                      }}
-                    >
-                      <div style={{ fontSize: "3rem" }}>🛏️</div>
-                      <h3
-                        style={{
-                          fontSize: "1.25rem",
-                          fontWeight: 800,
-                          margin: 0,
-                        }}
-                      >
-                        {bookingData.rooms > 1 ? `Select ${bookingData.rooms} Rooms` : "Select a Room"}
-                      </h3>
-                      <p
-                        style={{
-                          fontSize: "0.9rem",
-                          color: "var(--text-secondary)",
-                          margin: 0,
-                        }}
-                      >
-                        {bookingData.rooms > 1
-                          ? `Please choose ${bookingData.rooms} rooms from the available options (you can mix categories like Standard and Deluxe or choose both the same).`
-                          : "Please choose a room category from the available options to view pricing and continue with your booking."}
-                      </p>
-                      <button
-                        className="btn btn-primary"
-                        onClick={() => {
-                          const el = document.getElementById("rooms-section");
-                          if (el) el.scrollIntoView({ behavior: "smooth" });
-                        }}
-                      >
-                        Browse Rooms ↓
-                      </button>
-                    </div>
-                  );
-                }
+                const isRoomSelected = totalSelectedRoomsCount > 0 || !!selectedRoom;
+                const displayRoom = selectedRoomsList[0]?.room || selectedRoom || (rooms && rooms.length > 0 ? rooms[0] : null);
 
-                const displayRoom = selectedRoomsList[0]?.room || selectedRoom;
+                // Pricing calculation (Live synced)
+                const fallbackPrice = displayRoom ? (
+                  occupancy === "single"
+                    ? (displayRoom.priceSingle || displayRoom.priceDouble || displayRoom.price || hotel?.price || 1999)
+                    : occupancy === "triple"
+                    ? (displayRoom.priceTriple || displayRoom.priceDouble || displayRoom.price || hotel?.price || 1999)
+                    : (displayRoom.priceDouble || displayRoom.priceSingle || displayRoom.price || hotel?.price || 1999)
+                ) : (hotel?.price || 1999);
+
+                const finalBasePrice = isRoomSelected ? currentPricing.basePricePerNight : fallbackPrice;
+                const finalGst = isRoomSelected ? currentPricing.gstAmount : Math.round(fallbackPrice * 0.12);
+                const strikePrice = Math.round(finalBasePrice * 1.45);
+                const roomTitle = isRoomSelected
+                  ? (bookingData.rooms > 1 ? `${bookingData.rooms} Rooms Selected` : displayRoom?.type || "Selected Room")
+                  : (displayRoom?.type || "Studio / Deluxe Room");
+                const fitsAdults = isRoomSelected
+                  ? bookingData.adults
+                  : (displayRoom?.maxGuests || displayRoom?.maxOccupancy || 2);
 
                 return (
-                  <div className="card" style={{ padding: "var(--space-5)" }}>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                    {/* PRIMARY HERO BOOKING CARD (MakeMyTrip Style) */}
                     <div
+                      className="card desktop-hero-booking-card"
                       style={{
-                        color: "var(--success)",
-                        fontWeight: 600,
-                        fontSize: "0.85rem",
-                        marginBottom: 16,
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 6,
-                        background: "#dcfce7",
-                        padding: "6px 10px",
-                        borderRadius: "var(--radius-sm)",
+                        padding: "22px 20px",
+                        borderRadius: "16px",
+                        border: isRoomSelected ? "2px solid #ff6b35" : "1px solid #e2e8f0",
+                        background: "#ffffff",
+                        boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.04)",
+                        transition: "all 0.3s ease",
                       }}
                     >
-                      <span
-                        style={{
-                          width: 8,
-                          height: 8,
-                          borderRadius: "50%",
-                          background: "var(--success)",
-                          display: "inline-block",
-                        }}
-                      />
-                      {displayRoom.availableRooms !== undefined ? displayRoom.availableRooms : displayRoom.staybuddyAllocation || 1} Rooms Available • Live Instant API Confirmation
-                    </div>
-
-                    <div
-                      style={{
-                        fontSize: "0.85rem",
-                        color: "var(--text-secondary)",
-                        fontWeight: 600,
-                        marginBottom: 8,
-                        textTransform: "uppercase",
-                        letterSpacing: "0.05em",
-                      }}
-                    >
-                      <svg
-                        width="14"
-                        height="14"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        style={{ marginRight: 6, verticalAlign: "middle" }}
-                      >
-                        <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
-                        <circle cx="9" cy="7" r="4" />
-                        <path d="M23 21v-2a4 4 0 00-3-3.87" />
-                        <path d="M16 3.13a4 4 0 010 7.75" />
-                      </svg>
-                      {bookingData.rooms > 1 ? "Multi-Room Occupancy Breakdown:" : "Select Room Occupancy:"}
-                    </div>
-
-                    {bookingData.rooms > 1 ? (
+                      {/* Room Title & Selection Badge */}
                       <div
                         style={{
-                          background: "#eff6ff",
-                          border: "1px solid #bfdbfe",
-                          borderRadius: "var(--radius-md)",
-                          padding: "12px 14px",
-                          marginBottom: 20,
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "flex-start",
+                          marginBottom: 8,
+                          gap: 8,
                         }}
                       >
+                        <div>
+                          <h3
+                            style={{
+                              fontSize: "1.3rem",
+                              fontWeight: 800,
+                              margin: 0,
+                              color: "#0f172a",
+                              lineHeight: 1.25,
+                            }}
+                          >
+                            {roomTitle}
+                          </h3>
+                          <div
+                            style={{
+                              fontSize: "0.85rem",
+                              color: "#64748b",
+                              fontWeight: 600,
+                              marginTop: 4,
+                            }}
+                          >
+                            Fits {fitsAdults} Adults
+                          </div>
+                        </div>
+                        {isRoomSelected ? (
+                          <span
+                            style={{
+                              background: "#ecfdf5",
+                              color: "#059669",
+                              border: "1px solid #a7f3d0",
+                              fontSize: "0.72rem",
+                              fontWeight: 800,
+                              padding: "3px 8px",
+                              borderRadius: "6px",
+                              whiteSpace: "nowrap",
+                            }}
+                          >
+                            ✓ Selected
+                          </span>
+                        ) : (
+                          <span
+                            style={{
+                              background: "#eff6ff",
+                              color: "#2563eb",
+                              border: "1px solid #bfdbfe",
+                              fontSize: "0.72rem",
+                              fontWeight: 800,
+                              padding: "3px 8px",
+                              borderRadius: "6px",
+                              whiteSpace: "nowrap",
+                            }}
+                          >
+                            ⭐ Featured
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Live API Confirmation & Guarantee Badge */}
+                      <div
+                        style={{
+                          color: "#15803d",
+                          fontWeight: 700,
+                          fontSize: "0.8rem",
+                          marginBottom: 14,
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 6,
+                          background: "#f0fdf4",
+                          padding: "6px 10px",
+                          borderRadius: "8px",
+                          border: "1px solid #bbf7d0",
+                        }}
+                      >
+                        <span
+                          style={{
+                            width: 7,
+                            height: 7,
+                            borderRadius: "50%",
+                            background: "#22c55e",
+                            display: "inline-block",
+                            boxShadow: "0 0 0 3px rgba(34, 197, 94, 0.2)",
+                          }}
+                        />
+                        {displayRoom?.availableRooms !== undefined
+                          ? displayRoom.availableRooms
+                          : displayRoom?.staybuddyAllocation || 1}{" "}
+                        Rooms Available • Live Instant Confirmation
+                      </div>
+
+                      {/* Key Perks Bullets (MMT Style) */}
+                      <div
+                        style={{
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: 6,
+                          marginBottom: 16,
+                          fontSize: "0.82rem",
+                          color: "#334155",
+                        }}
+                      >
+                        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                          <span style={{ fontSize: "0.95rem" }}>🕒</span>
+                          <span>Guaranteed Instant API Confirmation</span>
+                        </div>
+                        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                          <span style={{ color: "#059669", fontWeight: 900, fontSize: "1rem" }}>•</span>
+                          <span>Free Cancellation till 24 hrs before check in</span>
+                        </div>
+                      </div>
+
+                      {/* Multi-Room Breakdown (When multiple rooms selected) */}
+                      {isRoomSelected && bookingData.rooms > 1 && (
+                        <div
+                          style={{
+                            background: "#eff6ff",
+                            border: "1px solid #bfdbfe",
+                            borderRadius: "var(--radius-md)",
+                            padding: "12px 14px",
+                            marginBottom: 16,
+                          }}
+                        >
+                          <div
+                            style={{
+                              display: "flex",
+                              justifyContent: "space-between",
+                              alignItems: "center",
+                              marginBottom: 8,
+                            }}
+                          >
+                            <div style={{ fontSize: "0.85rem", fontWeight: 700, color: "#1d4ed8" }}>
+                              {bookingData.rooms} Rooms for {bookingData.adults} Adults
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => setShowGuestPicker(true)}
+                              style={{
+                                background: "white",
+                                border: "1px solid #93c5fd",
+                                color: "#2563eb",
+                                padding: "3px 10px",
+                                borderRadius: "var(--radius-sm)",
+                                fontSize: "0.75rem",
+                                fontWeight: 700,
+                                cursor: "pointer",
+                              }}
+                            >
+                              ✏️ Edit
+                            </button>
+                          </div>
+
+                          {selectedRoomsList.length > 0 && (
+                            <div
+                              style={{
+                                borderBottom: "1px dashed #bfdbfe",
+                                paddingBottom: 8,
+                                marginBottom: 8,
+                                display: "flex",
+                                flexDirection: "column",
+                                gap: 6,
+                              }}
+                            >
+                              {selectedRoomsList.map((item, idx) => {
+                                const roomTypeTotal =
+                                  currentPricing.roomBreakdowns
+                                    ?.filter((rb) => rb.roomId === item.room._id)
+                                    .reduce((sum, rb) => sum + rb.pricePerNight, 0) ||
+                                  item.pricePerNight * item.quantity;
+                                return (
+                                  <div
+                                    key={idx}
+                                    style={{
+                                      display: "flex",
+                                      justifyContent: "space-between",
+                                      fontSize: "0.82rem",
+                                      fontWeight: 600,
+                                      color: "#1e293b",
+                                    }}
+                                  >
+                                    <span>
+                                      {item.quantity} × {item.room.type}
+                                    </span>
+                                    <span style={{ color: "var(--brand-600)", fontWeight: 700 }}>
+                                      ₹{roomTypeTotal.toLocaleString()}/night
+                                    </span>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
+
+                          <div
+                            style={{
+                              fontSize: "0.8rem",
+                              color: "#1e40af",
+                              fontWeight: 600,
+                            }}
+                          >
+                            Allocation: {currentPricing.summaryText || `${bookingData.rooms} Rooms`}
+                          </div>
+
+                          {totalSelectedRoomsCount < bookingData.rooms && (
+                            <div
+                              style={{
+                                fontSize: "0.75rem",
+                                color: "#b45309",
+                                background: "#fef3c7",
+                                padding: "5px 8px",
+                                borderRadius: 4,
+                                fontWeight: 700,
+                                marginTop: 6,
+                              }}
+                            >
+                              ⚠️ Pick {bookingData.rooms - totalSelectedRoomsCount} more room(s) below.
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Single Room Occupancy Selector (Single / Double / Triple) */}
+                      {bookingData.rooms === 1 && displayRoom && (
+                        <div
+                          style={{
+                            display: "grid",
+                            gridTemplateColumns: "1fr 1fr 1fr",
+                            gap: 6,
+                            marginBottom: 16,
+                          }}
+                        >
+                          {["single", "double", "triple"].map((occ) => {
+                            const p =
+                              occ === "single"
+                                ? displayRoom.priceSingle
+                                : occ === "triple"
+                                ? displayRoom.priceTriple
+                                : displayRoom.priceDouble || displayRoom.priceSingle;
+                            if (!p) return null;
+                            const isAct = occupancy === occ;
+                            return (
+                              <div
+                                key={occ}
+                                onClick={() => {
+                                  setOccupancy(occ as any);
+                                  const adultCount = occ === "single" ? 1 : occ === "triple" ? 3 : 2;
+                                  setBookingData((prev) => ({ ...prev, adults: adultCount }));
+                                }}
+                                style={{
+                                  border: isAct ? "2px solid #ea580c" : "1px solid #e2e8f0",
+                                  borderRadius: "10px",
+                                  padding: "6px 2px",
+                                  textAlign: "center",
+                                  cursor: "pointer",
+                                  background: isAct ? "#fff7ed" : "white",
+                                  transition: "all 0.2s",
+                                }}
+                              >
+                                <div
+                                  style={{
+                                    fontSize: "0.72rem",
+                                    fontWeight: 700,
+                                    color: isAct ? "#c2410c" : "#475569",
+                                    textTransform: "capitalize",
+                                  }}
+                                >
+                                  {occ} {occ === "double" && "⭐"}
+                                </div>
+                                <div
+                                  style={{
+                                    fontSize: "0.82rem",
+                                    fontWeight: 800,
+                                    color: isAct ? "#ea580c" : "#0f172a",
+                                    marginTop: 2,
+                                  }}
+                                >
+                                  ₹{p.toLocaleString()}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+
+                      {/* Price Section with Strike-through & Taxes & Fees (MMT Style) */}
+                      <div style={{ marginBottom: 16 }}>
                         <div
                           style={{
                             display: "flex",
-                            justifyContent: "space-between",
-                            alignItems: "center",
-                            marginBottom: 8,
+                            alignItems: "baseline",
+                            gap: 6,
+                            marginBottom: 2,
                           }}
                         >
-                          <div style={{ fontSize: "0.85rem", fontWeight: 700, color: "#1d4ed8" }}>
-                            {bookingData.rooms} Rooms for {bookingData.adults} Adults
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => setShowGuestPicker(true)}
+                          <span
                             style={{
-                              background: "white",
-                              border: "1px solid #93c5fd",
-                              color: "#2563eb",
-                              padding: "3px 10px",
-                              borderRadius: "var(--radius-sm)",
-                              fontSize: "0.75rem",
-                              fontWeight: 700,
-                              cursor: "pointer",
+                              textDecoration: "line-through",
+                              color: "#94a3b8",
+                              fontSize: "0.88rem",
+                              fontWeight: 600,
                             }}
                           >
-                            ✏️ Edit Guests/Rooms
-                          </button>
+                            ₹{strikePrice.toLocaleString("en-IN")}
+                          </span>
+                          <span style={{ color: "#64748b", fontSize: "0.78rem", fontWeight: 600 }}>
+                            Per Night:
+                          </span>
                         </div>
-
-                        {selectedRoomsList.length > 0 && (
-                          <div
+                        <div style={{ display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap" }}>
+                          <span
                             style={{
-                              borderBottom: "1px dashed #bfdbfe",
-                              paddingBottom: 8,
-                              marginBottom: 8,
-                              display: "flex",
-                              flexDirection: "column",
-                              gap: 6,
+                              fontSize: "2.3rem",
+                              fontWeight: 900,
+                              color: "#0f172a",
+                              lineHeight: 1,
+                              letterSpacing: "-0.02em",
                             }}
                           >
-                            {selectedRoomsList.map((item, idx) => {
-                              const roomTypeTotal = currentPricing.roomBreakdowns
-                                ?.filter((rb) => rb.roomId === item.room._id)
-                                .reduce((sum, rb) => sum + rb.pricePerNight, 0) || (item.pricePerNight * item.quantity);
-                              return (
-                                <div
-                                  key={idx}
-                                  style={{
-                                    display: "flex",
-                                    justifyContent: "space-between",
-                                    fontSize: "0.85rem",
-                                    fontWeight: 600,
-                                    color: "#1e293b",
-                                  }}
-                                >
-                                  <span>
-                                    {item.quantity} × {item.room.type}
-                                  </span>
-                                  <span style={{ color: "var(--brand-600)", fontWeight: 700 }}>
-                                    ₹{roomTypeTotal.toLocaleString()}/night
-                                  </span>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        )}
-
+                            ₹{finalBasePrice.toLocaleString("en-IN")}
+                          </span>
+                          <span
+                            style={{
+                              fontSize: "0.88rem",
+                              color: "#64748b",
+                              fontWeight: 600,
+                            }}
+                          >
+                            + ₹{finalGst.toLocaleString("en-IN")} taxes & fees
+                          </span>
+                        </div>
                         <div
                           style={{
-                            fontSize: "0.82rem",
-                            color: "#1e40af",
-                            fontWeight: 600,
-                            marginBottom: 6,
+                            fontSize: "0.76rem",
+                            color: "#059669",
+                            fontWeight: 700,
+                            marginTop: 4,
                           }}
                         >
-                          Allocation: {currentPricing.summaryText || `${bookingData.rooms} Rooms`}
+                          ✓ Verified Live B2B Guaranteed Rate
+                          {hotel?.marginPercentage ? ` (${hotel.marginPercentage}% Margin Applied)` : ""}
                         </div>
+                      </div>
 
-                        {totalSelectedRoomsCount < bookingData.rooms ? (
+                      {/* Capacity Exceeded Validation Warning */}
+                      {isRoomSelected && !currentPricing.canBook && (
+                        <div
+                          style={{
+                            background: "#fef2f2",
+                            border: "1px solid #fecaca",
+                            color: "#991b1b",
+                            padding: "8px 12px",
+                            borderRadius: "10px",
+                            fontSize: "0.82rem",
+                            fontWeight: 700,
+                            marginBottom: 14,
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 8,
+                          }}
+                        >
+                          <span>⚠️</span>
+                          <span>{currentPricing.validationError || "Room capacity exceeded for requested guests."}</span>
+                        </div>
+                      )}
+
+                      {/* Main Action Button (MMT BOOK THIS NOW with StayBuddy Fluid Glass Animation) */}
+                      {bookingData.rooms > 1 && totalSelectedRoomsCount < bookingData.rooms ? (
+                        <button
+                          type="button"
+                          className="btn fluid-glass-btn"
+                          style={{
+                            width: "100%",
+                            fontSize: "0.98rem",
+                            padding: "14px",
+                            background: "#94a3b8",
+                            color: "white",
+                            border: "none",
+                            marginBottom: 12,
+                            textTransform: "uppercase",
+                            fontWeight: 800,
+                            cursor: "pointer",
+                            borderRadius: "12px",
+                          }}
+                          onClick={() => {
+                            const el = document.getElementById("rooms-section");
+                            if (el) el.scrollIntoView({ behavior: "smooth" });
+                          }}
+                        >
+                          Select {bookingData.rooms - totalSelectedRoomsCount} More Room{bookingData.rooms - totalSelectedRoomsCount > 1 ? "s" : ""}
+                        </button>
+                      ) : isRoomSelected && !currentPricing.canBook ? (
+                        <button
+                          className="btn"
+                          disabled={true}
+                          style={{
+                            width: "100%",
+                            fontSize: "0.92rem",
+                            padding: "14px",
+                            background: "#e2e8f0",
+                            color: "#64748b",
+                            border: "none",
+                            marginBottom: 12,
+                            fontWeight: 800,
+                            cursor: "not-allowed",
+                            borderRadius: "12px",
+                          }}
+                        >
+                          🚫 Cannot Book: Capacity Exceeded
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          className="btn fluid-glass-btn"
+                          style={{
+                            width: "100%",
+                            fontSize: "1.1rem",
+                            padding: "15px",
+                            background: "linear-gradient(135deg, #ff6b35 0%, #ea580c 50%, #f97316 100%)",
+                            color: "white",
+                            border: "none",
+                            marginBottom: 12,
+                            textTransform: "uppercase",
+                            fontWeight: 900,
+                            letterSpacing: "0.05em",
+                            cursor: "pointer",
+                            borderRadius: "12px",
+                            boxShadow: "0 8px 24px -4px rgba(234, 88, 12, 0.45)",
+                            position: "relative",
+                            overflow: "hidden",
+                          }}
+                          onClick={() => {
+                            openReview(displayRoom);
+                          }}
+                        >
+                          <span className="fluid-glass-shimmer" />
+                          <span style={{ position: "relative", zIndex: 2 }}>
+                            BOOK THIS NOW
+                          </span>
+                        </button>
+                      )}
+
+                      {/* More options available with [ VIEW ALL (X) ] (MMT Photo 1) */}
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          paddingTop: 12,
+                          borderTop: "1px solid #f1f5f9",
+                        }}
+                      >
+                        <span style={{ fontSize: "0.82rem", color: "#475569", fontWeight: 600 }}>
+                          More options available with
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const el = document.getElementById("rooms-section");
+                            if (el) el.scrollIntoView({ behavior: "smooth" });
+                          }}
+                          style={{
+                            background: "white",
+                            border: "1.5px solid #2563eb",
+                            color: "#2563eb",
+                            padding: "5px 12px",
+                            borderRadius: "8px",
+                            fontSize: "0.78rem",
+                            fontWeight: 800,
+                            cursor: "pointer",
+                            letterSpacing: "0.02em",
+                          }}
+                        >
+                          VIEW ALL ({rooms?.length || 0})
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* RATING SUMMARY CARD (MMT Photo 1) */}
+                    <div
+                      className="card rating-summary-card"
+                      style={{
+                        padding: "14px 18px",
+                        borderRadius: "14px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        border: "1px solid #e2e8f0",
+                        background: "#ffffff",
+                        boxShadow: "0 2px 8px rgba(0, 0, 0, 0.04)",
+                      }}
+                    >
+                      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                        <div
+                          style={{
+                            background: "#2563eb",
+                            color: "white",
+                            fontWeight: 800,
+                            fontSize: "1.1rem",
+                            padding: "6px 12px",
+                            borderRadius: "10px",
+                            lineHeight: 1.2,
+                          }}
+                        >
+                          {hotel.avgRating ? Number(hotel.avgRating).toFixed(1) : "4.5"}
+                        </div>
+                        <div>
+                          <div style={{ fontWeight: 800, fontSize: "0.92rem", color: "#0f172a" }}>
+                            {(hotel.avgRating || 4.5) >= 4.5 ? "Very Good" : (hotel.avgRating || 4.5) >= 4 ? "Good" : "Pleasant"}
+                          </div>
+                          <div style={{ fontSize: "0.78rem", color: "var(--text-secondary)" }}>
+                            ({hotel.totalReviews || reviews?.length || 184} ratings)
+                          </div>
+                        </div>
+                      </div>
+                      <a
+                        href="#reviews-section"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          document.getElementById("reviews-section")?.scrollIntoView({ behavior: "smooth" });
+                        }}
+                        style={{
+                          fontSize: "0.82rem",
+                          fontWeight: 700,
+                          color: "#2563eb",
+                          textDecoration: "none",
+                        }}
+                      >
+                        All Reviews →
+                      </a>
+                    </div>
+
+                    {/* LOCATION SUMMARY CARD (MMT Photo 1) */}
+                    <div
+                      className="card location-summary-card"
+                      style={{
+                        padding: "14px 18px",
+                        borderRadius: "14px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        border: "1px solid #e2e8f0",
+                        background: "#ffffff",
+                        boxShadow: "0 2px 8px rgba(0, 0, 0, 0.04)",
+                      }}
+                    >
+                      <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0, flex: 1, paddingRight: 8 }}>
+                        <div
+                          style={{
+                            width: 40,
+                            height: 40,
+                            borderRadius: "10px",
+                            background: "#eff6ff",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            fontSize: "1.25rem",
+                            flexShrink: 0,
+                          }}
+                        >
+                          📍
+                        </div>
+                        <div style={{ minWidth: 0 }}>
+                          <div
+                            style={{
+                              fontWeight: 800,
+                              fontSize: "0.92rem",
+                              color: "#0f172a",
+                              whiteSpace: "nowrap",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                            }}
+                          >
+                            {hotel.area ? `${hotel.area}, ` : ""}{hotel.city || "Prime Location"}
+                          </div>
                           <div
                             style={{
                               fontSize: "0.78rem",
-                              color: "#b45309",
-                              background: "#fef3c7",
-                              padding: "6px 8px",
-                              borderRadius: 4,
-                              fontWeight: 700,
-                              marginTop: 6,
+                              color: "var(--text-secondary)",
+                              whiteSpace: "nowrap",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
                             }}
                           >
-                            ⚠️ Select {bookingData.rooms - totalSelectedRoomsCount} more room(s) from the room list to complete booking.
+                            {hotel.landmark ? `${hotel.landmark}` : (hotel.address || "Centrally located with easy transit")}
                           </div>
-                        ) : (
-                          <div
-                            style={{
-                              fontSize: "0.75rem",
-                              color: "var(--text-muted)",
-                              borderTop: "1px dashed #bfdbfe",
-                              paddingTop: 6,
-                            }}
-                          >
-                            Rule: Max 3 adults per room. Price automatically accounts for all {bookingData.rooms} rooms and {bookingData.adults} guests.
-                          </div>
-                        )}
+                        </div>
                       </div>
-                    ) : (
-                      <div
-                        style={{
-                          display: "grid",
-                          gridTemplateColumns: "1fr 1fr 1fr",
-                          gap: 8,
-                          marginBottom: 20,
-                        }}
-                      >
-                        {["single", "double", "triple"].map((occ) => {
-                          const p =
-                            occ === "single"
-                              ? displayRoom.priceSingle
-                              : occ === "triple"
-                                ? displayRoom.priceTriple
-                                : displayRoom.priceDouble ||
-                                  displayRoom.priceSingle;
-                          if (!p) return null;
-                          return (
-                            <div
-                              key={occ}
-                              onClick={() => {
-                                setOccupancy(occ as any);
-                                const adultCount = occ === "single" ? 1 : occ === "triple" ? 3 : 2;
-                                setBookingData((prev) => ({ ...prev, adults: adultCount }));
-                              }}
-                              style={{
-                                border:
-                                  occupancy === occ
-                                    ? "2px solid #2563eb"
-                                    : "1px solid var(--border)",
-                                borderRadius: "var(--radius-md)",
-                                padding: "8px 4px",
-                                textAlign: "center",
-                                cursor: "pointer",
-                                background:
-                                  occupancy === occ ? "#eff6ff" : "white",
-                                transition: "all 0.2s",
-                              }}
-                            >
-                              <div
-                                style={{
-                                  fontSize: "0.75rem",
-                                  fontWeight: 600,
-                                  color:
-                                    occupancy === occ
-                                      ? "#1d4ed8"
-                                      : "var(--text-primary)",
-                                  textTransform: "capitalize",
-                                }}
-                              >
-                                {occ} Room {occ === "double" && "⭐"}
-                              </div>
-                              <div
-                                style={{
-                                  fontSize: "0.85rem",
-                                  fontWeight: 700,
-                                  marginTop: 4,
-                                }}
-                              >
-                                ₹{p.toLocaleString()}
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
-
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "flex-end",
-                        gap: 8,
-                        marginBottom: 12,
-                      }}
-                    >
-                      <div
-                        style={{
-                          fontSize: "2.5rem",
-                          fontWeight: 900,
-                          lineHeight: 1,
-                        }}
-                      >
-                        ₹{currentPricing.basePricePerNight.toLocaleString()}
-                      </div>
-                      <div
-                        style={{
-                          color: "var(--text-secondary)",
-                          fontSize: "0.9rem",
-                          paddingBottom: 4,
-                        }}
-                      >
-                        Per Night {bookingData.rooms > 1 ? `(${bookingData.rooms} Rooms, ${bookingData.adults} Adults)` : `(${occupancy.toUpperCase()} OCCUPANCY)`}
-                      </div>
-                    </div>
-
-                    <p
-                      style={{
-                        fontSize: "0.85rem",
-                        color: "var(--text-secondary)",
-                        marginBottom: 20,
-                      }}
-                    >
-                      + Verified Live B2B Guaranteed Rate{hotel?.marginPercentage ? ` (${hotel.marginPercentage}% Margin Applied)` : ''}
-                    </p>
-
-                    <div
-                      style={{
-                        background: "#dcfce7",
-                        color: "#166534",
-                        padding: "10px 14px",
-                        borderRadius: "var(--radius-sm)",
-                        fontSize: "0.9rem",
-                        fontWeight: 600,
-                        marginBottom: 20,
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 8,
-                      }}
-                    >
-                      <svg
-                        width="18"
-                        height="18"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                      >
-                        <path d="M22 11.08V12a10 10 0 11-5.93-9.14" />
-                        <polyline points="22 4 12 14.01 9 11.01" />
-                      </svg>
-                      Free Cancellation till 24 hrs before check in
-                    </div>
-
-                    {!currentPricing.canBook && (
-                      <div
-                        style={{
-                          background: "#fef2f2",
-                          border: "1px solid #fecaca",
-                          color: "#991b1b",
-                          padding: "10px 14px",
-                          borderRadius: "var(--radius-md)",
-                          fontSize: "0.85rem",
-                          fontWeight: 700,
-                          marginBottom: 16,
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 8,
-                        }}
-                      >
-                        <span>⚠️</span>
-                        <span>{currentPricing.validationError || "Room capacity exceeded for requested guests."}</span>
-                      </div>
-                    )}
-
-                    {bookingData.rooms > 1 && totalSelectedRoomsCount < bookingData.rooms ? (
                       <button
-                        className="btn"
-                        style={{
-                          width: "100%",
-                          fontSize: "1rem",
-                          padding: "14px",
-                          background: "#94a3b8",
-                          color: "white",
-                          border: "none",
-                          marginBottom: 20,
-                          textTransform: "uppercase",
-                          fontWeight: 800,
-                          cursor: "pointer",
-                          borderRadius: "var(--radius-md)",
-                        }}
+                        type="button"
                         onClick={() => {
-                          const el = document.getElementById("rooms-section");
+                          const el = document.getElementById("location-map") || document.getElementById("about-section") || document.getElementById("hotel-details-grid");
                           if (el) el.scrollIntoView({ behavior: "smooth" });
                         }}
-                      >
-                        Select {bookingData.rooms - totalSelectedRoomsCount} More Room{bookingData.rooms - totalSelectedRoomsCount > 1 ? "s" : ""}
-                      </button>
-                    ) : !currentPricing.canBook ? (
-                      <button
-                        className="btn"
-                        disabled={true}
                         style={{
-                          width: "100%",
-                          fontSize: "0.95rem",
-                          padding: "14px",
-                          background: "#e2e8f0",
-                          color: "#64748b",
+                          background: "none",
                           border: "none",
-                          marginBottom: 20,
-                          fontWeight: 800,
-                          cursor: "not-allowed",
-                          borderRadius: "var(--radius-md)",
-                        }}
-                      >
-                        🚫 Cannot Book: Capacity Exceeded
-                      </button>
-                    ) : (
-                      <button
-                        className="btn"
-                        style={{
-                          width: "100%",
-                          fontSize: "1.1rem",
-                          padding: "14px",
-                          background: "#f97316",
-                          color: "white",
-                          border: "none",
-                          marginBottom: 20,
-                          textTransform: "uppercase",
-                          fontWeight: 800,
+                          fontSize: "0.82rem",
+                          fontWeight: 700,
+                          color: "#2563eb",
                           cursor: "pointer",
-                          borderRadius: "var(--radius-md)",
-                          boxShadow: "0 4px 12px rgba(249, 115, 22, 0.3)",
-                        }}
-                        onClick={() => {
-                          openReview(displayRoom);
+                          padding: 0,
+                          whiteSpace: "nowrap",
+                          flexShrink: 0,
                         }}
                       >
-                        🚀 Book {bookingData.rooms > 1 ? `${bookingData.rooms} Rooms Now` : "This Now"}
+                        See on Map →
                       </button>
-                    )}
+                    </div>
 
+                    {/* TRAIN + STAY PROMOTIONAL OFFER STRIP (MMT Photo 1) */}
                     <div
                       style={{
-                        border: "1px dashed #f59e0b",
-                        borderRadius: "var(--radius-md)",
-                        padding: "16px",
+                        padding: "12px 16px",
+                        borderRadius: "12px",
+                        background: "linear-gradient(135deg, #f0fdf4, #dcfce7)",
+                        border: "1px solid #bbf7d0",
                         display: "flex",
-                        gap: 16,
                         alignItems: "center",
-                        background: "#fffbeb",
+                        gap: 10,
                       }}
                     >
-                      <div
-                        style={{
-                          background: "#f59e0b",
-                          color: "white",
-                          fontWeight: 700,
-                          fontSize: "0.85rem",
-                          padding: "6px 12px",
-                          borderRadius: "var(--radius-sm)",
-                          whiteSpace: "nowrap",
-                        }}
-                      >
-                        Live Confirmed Inventory
-                      </div>
-                      <div
-                        style={{
-                          fontSize: "0.85rem",
-                          color: "#92400e",
-                          fontWeight: 600,
-                        }}
-                      >
-                        Your room is reserved instantly through our direct B2B
-                        inventory channel.
+                      <span style={{ fontSize: "1.2rem" }}>🚆</span>
+                      <div style={{ fontSize: "0.8rem", color: "#166534", lineHeight: 1.4 }}>
+                        <span style={{ fontWeight: 800 }}>Train + Stay Offer:</span> Save flat 20% with coupon{" "}
+                        <span
+                          style={{
+                            fontWeight: 800,
+                            color: "#15803d",
+                            background: "rgba(255,255,255,0.7)",
+                            padding: "1px 6px",
+                            borderRadius: "4px",
+                          }}
+                        >
+                          STAYBUDDY20
+                        </span>
                       </div>
                     </div>
                   </div>
