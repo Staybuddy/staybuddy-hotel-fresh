@@ -726,7 +726,7 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
           </div>
 
           {loading ? (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 'var(--space-6)' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 'var(--space-6)', width: '100%' }}>
               {[1,2,3].map(i => (
                 <div key={i} className="card">
                   <div className="skeleton" style={{ height: 220, borderRadius: 0 }} />

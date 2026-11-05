@@ -394,14 +394,26 @@ function HotelSearch() {
           </div>
 
           {loading ? (
-            <div className="hotels-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 'var(--space-5)' }}>
-              {[1, 2, 3, 4, 5, 6].map(i => (
-                <div key={i} className="card">
-                  <div className="skeleton" style={{ height: 200 }} />
-                  <div className="card-body" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                    <div className="skeleton" style={{ height: 18, width: '70%' }} />
-                    <div className="skeleton" style={{ height: 14, width: '50%' }} />
-                    <div className="skeleton" style={{ height: 20, width: '40%' }} />
+            <div className="hotels-results-list" style={{ display: 'flex', flexDirection: 'column', gap: '16px', width: '100%' }}>
+              {[1, 2, 3].map(i => (
+                <div key={i} className="hotel-horizontal-card" style={{ pointerEvents: 'none' }}>
+                  <div className="hotel-horizontal-img">
+                    <div className="skeleton" style={{ width: '100%', height: '100%' }} />
+                  </div>
+                  <div className="hotel-horizontal-details">
+                    <div>
+                      <div className="skeleton" style={{ height: 24, width: '60%', marginBottom: 12 }} />
+                      <div className="skeleton" style={{ height: 16, width: '40%', marginBottom: 16 }} />
+                      <div style={{ display: 'flex', gap: 8 }}>
+                        <div className="skeleton" style={{ height: 26, width: 80, borderRadius: 6 }} />
+                        <div className="skeleton" style={{ height: 26, width: 80, borderRadius: 6 }} />
+                        <div className="skeleton" style={{ height: 26, width: 80, borderRadius: 6 }} />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="hotel-horizontal-pricing">
+                    <div className="skeleton" style={{ height: 32, width: 100, marginBottom: 12 }} />
+                    <div className="skeleton" style={{ height: 42, width: '100%', borderRadius: 10 }} />
                   </div>
                 </div>
               ))}

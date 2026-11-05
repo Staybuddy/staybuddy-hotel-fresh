@@ -1752,6 +1752,21 @@ tbody tr:hover { background: var(--bg-secondary); }
   .featured-spotlight-body {
     padding: 22px 18px !important;
   }
+
+  .partner-hotel-spotlight-card {
+    flex-direction: column !important;
+  }
+  .partner-hotel-spotlight-card > div:first-child {
+    width: 100% !important;
+    min-width: 100% !important;
+    height: 220px !important;
+    min-height: 220px !important;
+  }
+  .partner-hotel-spotlight-card > div:last-child {
+    width: 100% !important;
+    min-width: 100% !important;
+    border-top: 1px solid #e2e8f0;
+  }
 }
 
 

@@ -780,7 +780,7 @@ export default function AdminDashboard() {
                   <p style={{ color: '#64748b' }}>No pending partner requests at the moment.</p>
                 </div>
               ) : (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 24 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 24, width: '100%' }}>
                   {pendingHotels.map(hotel => (
                     <div key={hotel._id} style={{ background: 'white', borderRadius: 16, overflow: 'hidden', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' }}>
                       <div style={{ height: 140, background: '#f1f5f9', backgroundImage: `url(${hotel.images?.[0] || 'https://via.placeholder.com/400x200'})`, backgroundSize: 'cover', backgroundPosition: 'center' }} />
@@ -807,7 +807,7 @@ export default function AdminDashboard() {
               <h1 style={{ fontSize: '2rem', color: '#0f172a', marginBottom: 8 }}>Partner Approvals</h1>
               <p style={{ color: '#64748b', marginBottom: 32 }}>Review and approve new partners who signed up via Google.</p>
               
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 24 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 24, width: '100%' }}>
                 {partners.filter((p: any) => p.partnerStatus === 'pending').length === 0 ? (
                   <div style={{ padding: '60px', gridColumn: '1 / -1', textAlign: 'center', background: 'white', borderRadius: 16, border: '1px dashed #cbd5e1' }}>
                     <div style={{ fontSize: '2rem', marginBottom: 16 }}>✅</div>
@@ -978,7 +978,7 @@ export default function AdminDashboard() {
               <h1 style={{ fontSize: '2rem', color: '#0f172a', marginBottom: 8 }}>Performance & Tax Invoices</h1>
               <p style={{ color: '#64748b', marginBottom: 32 }}>Track property-level GMV, generated StayBuddy profits, and download tax invoices.</p>
               
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(400px, 1fr))', gap: 24 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: 24, width: '100%' }}>
                 {approvedHotels.map(h => {
                   const propertyBookings = bookings.filter(b => (b.hotelId?._id === h._id || b.hotelId === h._id) && b.paymentStatus === 'paid');
                   let propertyGmv = 0;
@@ -1132,7 +1132,7 @@ export default function AdminDashboard() {
               <h1 style={{ fontSize: '2rem', color: '#0f172a', marginBottom: 8 }}>User Analytics</h1>
               <p style={{ color: '#64748b', marginBottom: 32 }}>Manage registered customers and partners.</p>
 
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 24 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 24, width: '100%' }}>
                 {users.map(u => {
                   const userBookings = bookings.filter(b => b.guestEmail === u.email || b.guestPhone === u.phone);
                   return (
