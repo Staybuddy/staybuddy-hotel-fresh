@@ -36,7 +36,7 @@ const AMENITY_ICONS: Record<string, string> = {
 
 export default function HomeClient({ initialHotels, recentReviews = [] }: { initialHotels: any[], recentReviews?: any[] }) {
   const router = useRouter();
-  const [searchData, setSearchData] = useState({ propertyType: '', location: '', checkIn: '', checkOut: '', rooms: 1, adults: 2, children: 0 });
+  const [searchData, setSearchData] = useState({ propertyType: 'Hotel', location: '', checkIn: '', checkOut: '', rooms: 1, adults: 2, children: 0 });
   const [hotels, setHotels] = useState<any[]>(initialHotels);
   const [loading, setLoading] = useState(false);
   const [searchError, setSearchError] = useState('');
@@ -385,7 +385,7 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
       {(() => {
         const renderPropertySelector = (isCompact = false) => (
           <div 
-            className="hide-scrollbar"
+            className="hide-scrollbar property-selector-container"
             style={{ 
               display: 'flex', 
               gap: 0, 
@@ -396,7 +396,11 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
               maxWidth: '100%',
               background: 'white',
               WebkitOverflowScrolling: 'touch',
-              border: isCompact ? '1px solid var(--border)' : 'none'
+              border: isCompact ? '1px solid var(--border)' : 'none',
+              userSelect: 'none',
+              WebkitUserSelect: 'none',
+              MozUserSelect: 'none',
+              msUserSelect: 'none',
             }}>
             {[
               { id: 'Hotel', label: 'Hotels', icon: '🏨' },
@@ -406,23 +410,14 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
               { id: 'HolidayPackage', label: 'Packages', icon: '🎒' }
             ].map((card, index, array) => {
               const isLast = index === array.length - 1;
-              const isActive = searchData.propertyType === card.id;
+              const isActive = (searchData.propertyType || 'Hotel') === card.id;
               return (
                 <div
                   key={card.id}
                   onClick={() => {
-                    const isOpening = searchData.propertyType !== card.id;
-                    setSearchData(p => ({ ...p, propertyType: isOpening ? card.id : '' }));
-                    
-                    if (isOpening) {
-                      if (window.scrollY > 200) {
-                        setShowStickySearch(true);
-                      }
-                      if (!searchData.location) {
-                        setTimeout(() => document.getElementById('location-search-trigger')?.click(), 300);
-                      }
-                    } else {
-                      setShowStickySearch(false);
+                    setSearchData(p => ({ ...p, propertyType: card.id }));
+                    if (window.scrollY > 200) {
+                      setShowStickySearch(true);
                     }
                   }}
                   style={{
@@ -433,14 +428,18 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
                     cursor: 'pointer',
                     minWidth: 0,
                     flex: '1 0 auto',
-                    transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
+                    transition: 'all 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
                     textAlign: 'center',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     flexDirection: isCompact ? 'row' : 'column',
                     gap: isCompact ? 6 : 8,
-                    overflow: 'hidden'
+                    overflow: 'hidden',
+                    userSelect: 'none',
+                    WebkitUserSelect: 'none',
+                    MozUserSelect: 'none',
+                    msUserSelect: 'none',
                   }}
                   onMouseEnter={e => {
                     if (!isActive) {
@@ -459,7 +458,9 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
                     fontSize: isCompact ? '1.2rem' : '1.6rem',
                     transition: 'transform 0.35s cubic-bezier(0.16, 1, 0.3, 1)',
                     transform: isActive ? 'translateY(-2px) scale(1.15)' : 'translateY(0) scale(1)',
-                    filter: isActive ? 'drop-shadow(0 4px 6px rgba(255, 107, 53, 0.25))' : 'none'
+                    filter: isActive ? 'drop-shadow(0 4px 6px rgba(255, 107, 53, 0.25))' : 'none',
+                    userSelect: 'none',
+                    WebkitUserSelect: 'none'
                   }}>
                     {card.icon}
                   </div>
@@ -469,7 +470,9 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
                     fontSize: isCompact ? '0.8rem' : '0.85rem',
                     letterSpacing: '0.02em',
                     whiteSpace: 'nowrap',
-                    transition: 'color 0.2s ease'
+                    transition: 'color 0.2s ease',
+                    userSelect: 'none',
+                    WebkitUserSelect: 'none'
                   }}>
                     {card.label}
                   </div>
@@ -505,7 +508,7 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
             />
 
             {/* HERO SECTION WITH INLINE PROPERTY TYPES */}
-            <div style={{ background: 'var(--bg-secondary)', padding: '16px 0 0 0', marginTop: '-8px' }}>
+            <div style={{ background: 'var(--bg-secondary)', padding: '20px 0 0 0', marginTop: '-8px' }}>
               <div className="container hero-section-container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '0 16px' }}>
                 {renderPropertySelector(false)}
               </div>
@@ -516,19 +519,14 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
 
       {/* SEARCH BAR SECTION */}
       <div style={{
-        maxHeight: searchData.propertyType ? '1000px' : '0px',
-        opacity: searchData.propertyType ? 1 : 0,
-        overflow: searchData.propertyType ? 'visible' : 'hidden',
-        transition: 'max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease-in-out',
         background: 'var(--bg-secondary)',
-        marginTop: '-8px',
+        padding: '12px 0 24px 0',
         position: 'relative',
         zIndex: 100
       }}>
-        <section style={{ padding: searchData.propertyType ? '16px 0 20px' : '0' }}>
+        <section style={{ padding: '0' }}>
           <div className="container hero-section-container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '0 16px' }}>
-            
-            {searchData.propertyType && renderSearchBar()}
+            {renderSearchBar()}
             {searchError && (
               <div style={{ marginTop: 12, color: 'white', background: '#ef4444', padding: '6px 16px', borderRadius: 'var(--radius-full)', fontSize: '0.9rem', fontWeight: 600, animation: 'fadeIn 0.3s ease' }}>
                 {searchError}

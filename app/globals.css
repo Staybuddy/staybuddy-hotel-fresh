@@ -41,7 +41,13 @@ button,
 .badge,
 .tab-btn,
 .nav-item,
-.amenity-chip {
+.amenity-chip,
+.property-selector-container,
+.hero-search-wrapper,
+.hero-search-item,
+.hotel-horizontal-card,
+.featured-spotlight-card,
+.partner-hotel-spotlight-card {
   -webkit-touch-callout: none !important;
   -webkit-user-select: none !important;
   user-select: none !important;
