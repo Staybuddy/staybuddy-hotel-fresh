@@ -58,19 +58,119 @@ export default function PartnerGraphicCard() {
     <>
       <section className="container" style={{ marginBottom: '32px' }}>
         <style>{`
-          /* Floating Animated Money Keyframes */
-          @keyframes moneyFloat1 {
-            0%, 100% { transform: translateY(0) rotate(0deg); }
-            50% { transform: translateY(-12px) rotate(8deg); }
+          /* CONTINUOUS END-TO-END FLOATING GOLD COIN ANIMATIONS */
+          @keyframes coinFlyEndToEnd1 {
+            0% {
+              left: 104%;
+              top: 15%;
+              transform: translateY(0) rotate(0deg) scale(0.9);
+              opacity: 0;
+            }
+            6% {
+              opacity: 0.9;
+            }
+            35% {
+              top: 42%;
+              transform: translateY(-16px) rotate(120deg) scale(1.15);
+            }
+            65% {
+              top: 20%;
+              transform: translateY(-8px) rotate(240deg) scale(1.2);
+            }
+            92% {
+              opacity: 0.9;
+            }
+            100% {
+              left: -14%;
+              top: 35%;
+              transform: translateY(12px) rotate(360deg) scale(0.9);
+              opacity: 0;
+            }
           }
-          @keyframes moneyFloat2 {
-            0%, 100% { transform: translateY(0) rotate(0deg); }
-            50% { transform: translateY(-16px) rotate(-10deg); }
+
+          @keyframes coinFlyEndToEnd2 {
+            0% {
+              left: 104%;
+              top: 55%;
+              transform: translateY(0) rotate(0deg) scale(0.8);
+              opacity: 0;
+            }
+            7% {
+              opacity: 0.85;
+            }
+            35% {
+              top: 25%;
+              transform: translateY(-18px) rotate(-140deg) scale(1.1);
+            }
+            70% {
+              top: 60%;
+              transform: translateY(8px) rotate(-260deg) scale(1.15);
+            }
+            92% {
+              opacity: 0.85;
+            }
+            100% {
+              left: -14%;
+              top: 40%;
+              transform: translateY(-6px) rotate(-360deg) scale(0.8);
+              opacity: 0;
+            }
           }
-          @keyframes moneyFloat3 {
-            0%, 100% { transform: translateY(0) scale(1); }
-            50% { transform: translateY(-10px) scale(1.15); }
+
+          @keyframes coinFlyEndToEnd3 {
+            0% {
+              left: 104%;
+              top: 72%;
+              transform: translateY(0) rotate(0deg) scale(1);
+              opacity: 0;
+            }
+            6% {
+              opacity: 0.95;
+            }
+            40% {
+              top: 42%;
+              transform: translateY(-16px) rotate(160deg) scale(1.25);
+            }
+            75% {
+              top: 65%;
+              transform: translateY(-4px) rotate(280deg) scale(1.1);
+            }
+            90% {
+              opacity: 0.95;
+            }
+            100% {
+              left: -14%;
+              top: 48%;
+              transform: translateY(10px) rotate(400deg) scale(1);
+              opacity: 0;
+            }
           }
+
+          @keyframes coinFlyEndToEnd4 {
+            0% {
+              left: 104%;
+              top: 28%;
+              transform: translateY(0) rotate(0deg) scale(0.75);
+              opacity: 0;
+            }
+            6% {
+              opacity: 0.8;
+            }
+            48% {
+              top: 62%;
+              transform: translateY(-14px) rotate(190deg) scale(1.12);
+            }
+            92% {
+              opacity: 0.8;
+            }
+            100% {
+              left: -14%;
+              top: 18%;
+              transform: translateY(6px) rotate(360deg) scale(0.75);
+              opacity: 0;
+            }
+          }
+
           @keyframes coinGlint {
             0%, 100% { opacity: 0.8; transform: scale(1); }
             50% { opacity: 1; transform: scale(1.2) rotate(15deg); }
@@ -137,72 +237,121 @@ export default function PartnerGraphicCard() {
             e.currentTarget.style.transform = 'translateY(0)';
           }}
         >
-          {/* FLOATING ANIMATED MONEY, COINS & SPARKLING REVENUE (Flat Discount Style) */}
-          <div
-            style={{
-              position: 'absolute',
-              right: '28%',
-              top: '-15%',
-              fontSize: '3.6rem',
-              opacity: 0.22,
-              pointerEvents: 'none',
-              animation: 'moneyFloat1 4.2s ease-in-out infinite',
-              filter: 'drop-shadow(0 4px 12px rgba(245, 158, 11, 0.4))',
-            }}
-          >
-            💰
-          </div>
-          <div
-            style={{
-              position: 'absolute',
-              right: '14%',
-              bottom: '-12%',
-              fontSize: '3.2rem',
-              opacity: 0.25,
-              pointerEvents: 'none',
-              animation: 'moneyFloat2 3.6s ease-in-out infinite',
-            }}
-          >
-            🪙
-          </div>
-          <div
-            style={{
-              position: 'absolute',
-              left: '46%',
-              top: '-18%',
-              fontSize: '2.8rem',
-              opacity: 0.18,
-              pointerEvents: 'none',
-              animation: 'moneyFloat3 5s ease-in-out infinite',
-            }}
-          >
-            💸
-          </div>
-          <div
-            style={{
-              position: 'absolute',
-              left: '32%',
-              bottom: '-10%',
-              fontSize: '2.4rem',
-              opacity: 0.16,
-              pointerEvents: 'none',
-              animation: 'moneyFloat1 4.8s ease-in-out infinite reverse',
-            }}
-          >
-            ✨
-          </div>
-          <div
-            style={{
-              position: 'absolute',
-              right: '4%',
-              top: '12%',
-              fontSize: '2rem',
-              opacity: 0.3,
-              pointerEvents: 'none',
-              animation: 'coinGlint 2.8s ease-in-out infinite',
-            }}
-          >
-            🪙
+          {/* CONTINUOUS END-TO-END FLOATING GOLD COINS (Floating Across the Card Width) */}
+          <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none', zIndex: 1 }}>
+            {/* Coin 1 - Big Gold Coin */}
+            <div
+              style={{
+                position: 'absolute',
+                fontSize: '3rem',
+                filter: 'drop-shadow(0 4px 10px rgba(245, 158, 11, 0.7)) drop-shadow(0 0 16px rgba(251, 191, 36, 0.5))',
+                animation: 'coinFlyEndToEnd1 9s linear infinite',
+                animationDelay: '0s',
+                pointerEvents: 'none',
+              }}
+            >
+              🪙
+            </div>
+
+            {/* Coin 2 - Medium Gold Coin */}
+            <div
+              style={{
+                position: 'absolute',
+                fontSize: '2.4rem',
+                filter: 'drop-shadow(0 4px 10px rgba(245, 158, 11, 0.65))',
+                animation: 'coinFlyEndToEnd2 11s linear infinite',
+                animationDelay: '2.2s',
+                pointerEvents: 'none',
+              }}
+            >
+              🪙
+            </div>
+
+            {/* Coin 3 - Giant Gold Coin */}
+            <div
+              style={{
+                position: 'absolute',
+                fontSize: '3.4rem',
+                filter: 'drop-shadow(0 4px 12px rgba(245, 158, 11, 0.75))',
+                animation: 'coinFlyEndToEnd3 10s linear infinite',
+                animationDelay: '4.5s',
+                pointerEvents: 'none',
+              }}
+            >
+              🪙
+            </div>
+
+            {/* Coin 4 - Glinting Gold Coin */}
+            <div
+              style={{
+                position: 'absolute',
+                fontSize: '2.2rem',
+                filter: 'drop-shadow(0 4px 8px rgba(245, 158, 11, 0.6))',
+                animation: 'coinFlyEndToEnd4 8.5s linear infinite',
+                animationDelay: '6.8s',
+                pointerEvents: 'none',
+              }}
+            >
+              🪙
+            </div>
+
+            {/* Coin 5 - Flying Gold Coin */}
+            <div
+              style={{
+                position: 'absolute',
+                fontSize: '2.8rem',
+                filter: 'drop-shadow(0 4px 10px rgba(245, 158, 11, 0.7))',
+                animation: 'coinFlyEndToEnd1 12s linear infinite',
+                animationDelay: '3.5s',
+                pointerEvents: 'none',
+              }}
+            >
+              🪙
+            </div>
+
+            {/* Coin 6 - Shimmering Coin */}
+            <div
+              style={{
+                position: 'absolute',
+                fontSize: '2.5rem',
+                filter: 'drop-shadow(0 4px 10px rgba(245, 158, 11, 0.65))',
+                animation: 'coinFlyEndToEnd2 9.5s linear infinite',
+                animationDelay: '7.2s',
+                pointerEvents: 'none',
+              }}
+            >
+              🪙
+            </div>
+
+            {/* Coin 7 - Money Bag */}
+            <div
+              style={{
+                position: 'absolute',
+                fontSize: '2.6rem',
+                opacity: 0.8,
+                filter: 'drop-shadow(0 4px 12px rgba(245, 158, 11, 0.5))',
+                animation: 'coinFlyEndToEnd3 11.5s linear infinite',
+                animationDelay: '1.2s',
+                pointerEvents: 'none',
+              }}
+            >
+              💰
+            </div>
+
+            {/* Coin 8 - Flying Banknote */}
+            <div
+              style={{
+                position: 'absolute',
+                fontSize: '2.3rem',
+                opacity: 0.85,
+                filter: 'drop-shadow(0 4px 10px rgba(52, 211, 153, 0.5))',
+                animation: 'coinFlyEndToEnd4 10.5s linear infinite',
+                animationDelay: '5.4s',
+                pointerEvents: 'none',
+              }}
+            >
+              💸
+            </div>
           </div>
 
           {/* LEFT CONTENT: BADGE, HEADLINE & PROMISE */}
