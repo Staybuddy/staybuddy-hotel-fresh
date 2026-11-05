@@ -52,12 +52,16 @@ export default function CityDestinationCard({
     <Link
       href={`/hotels?city=${encodeURIComponent(canonicalCity)}`}
       className="city-dest-card-link"
+      draggable={false}
+      onDragStart={(e) => e.preventDefault()}
       style={{
         textDecoration: 'none',
         flexShrink: 0,
         scrollSnapAlign: 'start',
         display: 'block',
         marginRight: isLast ? '16px' : '0',
+        userSelect: 'none',
+        WebkitUserSelect: 'none',
       }}
     >
       <div
@@ -74,6 +78,8 @@ export default function CityDestinationCard({
           boxShadow: isHovered
             ? '0 18px 36px -6px rgba(0, 0, 0, 0.35)'
             : '0 4px 14px rgba(0, 0, 0, 0.12)',
+          userSelect: 'none',
+          WebkitUserSelect: 'none',
         }}
       >
         {/* 100% Full-bleed Ultra-Fast City Background Photo */}
@@ -83,6 +89,8 @@ export default function CityDestinationCard({
           className="city-dest-card-img"
           loading="eager"
           decoding="async"
+          draggable={false}
+          onDragStart={(e) => e.preventDefault()}
           onError={() => {
             if (photoUrl !== DEFAULT_CITY_PHOTO) {
               setPhotoUrl(DEFAULT_CITY_PHOTO);

@@ -4,9 +4,56 @@
    GLOBAL RESPONSIVE RESET & FIX FOR MOBILE OVERFLOW
    ======================================================== */
 
-/* 1. Ensure padding and border are included in width calculations */
+/* 1. Ensure padding and border are included in width calculations & remove harsh mobile tap highlights */
 *, *::before, *::after {
   box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent !important;
+}
+
+/* Warm StayBuddy brand selection highlight */
+::selection {
+  background: rgba(255, 107, 53, 0.22) !important;
+  color: inherit !important;
+}
+::-moz-selection {
+  background: rgba(255, 107, 53, 0.22) !important;
+  color: inherit !important;
+}
+
+/* Prevent unwanted browser drag ghost image preview in Safari, Chrome & Mac */
+img, a, button {
+  -webkit-user-drag: none !important;
+  user-drag: none !important;
+}
+
+/* Prevent accidental text selection and blue copy/paste handles on interactive cards and buttons */
+.card,
+.room-card,
+.room-card-grid,
+.room-card-info,
+.room-card-action,
+.city-dest-card,
+.city-dest-card-link,
+.btn,
+button,
+.mobile-down-bar,
+.hotel-gallery-grid,
+.badge,
+.tab-btn,
+.nav-item,
+.amenity-chip {
+  -webkit-touch-callout: none !important;
+  -webkit-user-select: none !important;
+  user-select: none !important;
+}
+
+/* Ensure form inputs, textareas, and editable fields remain freely selectable and editable */
+input,
+textarea,
+[contenteditable="true"] {
+  -webkit-user-select: text !important;
+  user-select: text !important;
+  -webkit-touch-callout: default !important;
 }
 
 /* 2. Lock page bounds to prevent horizontal screen overflow */
