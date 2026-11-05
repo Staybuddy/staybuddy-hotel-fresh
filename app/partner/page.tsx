@@ -4,6 +4,7 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Logo from '@/components/Logo';
+import DateRangePicker from '@/components/DateRangePicker';
 import { compressImage } from '@/lib/imageUtils';
 
 const NAV_ITEMS = [
@@ -69,6 +70,21 @@ export default function PartnerDashboard() {
     reason: 'Walk-in / Offline Booking',
     customReason: '',
   });
+
+  const [showBlockDatePicker, setShowBlockDatePicker] = useState(false);
+  const [blockActiveDateSelection, setBlockActiveDateSelection] = useState<'checkIn' | 'checkOut'>('checkIn');
+
+  function formatBlockDisplayDate(dateStr: string) {
+    if (!dateStr) return 'Select date';
+    const parts = dateStr.split('-');
+    if (parts.length === 3) {
+      const [y, m, d] = parts;
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const monthIdx = parseInt(m, 10) - 1;
+      return `${d} ${months[monthIdx] || ''} ${y}`;
+    }
+    return dateStr;
+  }
 
   function getCurrentLocation() {
     if (!navigator.geolocation) {
@@ -407,6 +423,8 @@ export default function PartnerDashboard() {
   async function openBlockModal(hotel: any) {
     setBlockModalHotel(hotel);
     const today = getTodayStr();
+    setShowBlockDatePicker(false);
+    setBlockActiveDateSelection('checkIn');
     setBlockForm({
       blockScope: 'property',
       roomId: 'all',
@@ -3520,35 +3538,116 @@ export default function PartnerDashboard() {
                       </span>
                     </div>
 
-                    {/* Date Inputs Side-by-Side */}
+                    {/* StayBuddy Branded Interactive Date Selector Buttons */}
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 10 }}>
                       <div>
-                        <div style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 600, marginBottom: 2 }}>START DATE</div>
-                        <input
-                          type="date"
-                          value={blockForm.startDate}
-                          min={getTodayStr()}
-                          onChange={(e) => setBlockForm(p => ({
-                            ...p,
-                            startDate: e.target.value,
-                            endDate: e.target.value > p.endDate ? e.target.value : p.endDate
-                          }))}
-                          className="form-input"
-                          style={{ height: 40, fontSize: '0.85rem', padding: '0 8px', width: '100%' }}
-                        />
+                        <div style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 700, marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.04em' }}>START DATE</div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setBlockActiveDateSelection('checkIn');
+                            setShowBlockDatePicker(true);
+                          }}
+                          style={{
+                            width: '100%',
+                            textAlign: 'left',
+                            padding: '10px 12px',
+                            borderRadius: 10,
+                            border: (showBlockDatePicker && blockActiveDateSelection === 'checkIn') ? '2px solid #ea580c' : '1px solid #cbd5e1',
+                            background: (showBlockDatePicker && blockActiveDateSelection === 'checkIn') ? '#fff7ed' : 'white',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            transition: 'all 0.2s',
+                          }}
+                        >
+                          <div>
+                            <div style={{ fontWeight: 800, color: '#0f172a', fontSize: '0.92rem' }}>
+                              {formatBlockDisplayDate(blockForm.startDate)}
+                            </div>
+                          </div>
+                          <span style={{ fontSize: '1.1rem' }}>📅</span>
+                        </button>
                       </div>
+
                       <div>
-                        <div style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 600, marginBottom: 2 }}>END DATE</div>
-                        <input
-                          type="date"
-                          value={blockForm.endDate}
-                          min={blockForm.startDate || getTodayStr()}
-                          onChange={(e) => setBlockForm(p => ({ ...p, endDate: e.target.value }))}
-                          className="form-input"
-                          style={{ height: 40, fontSize: '0.85rem', padding: '0 8px', width: '100%' }}
-                        />
+                        <div style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 700, marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.04em' }}>END DATE</div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setBlockActiveDateSelection('checkOut');
+                            setShowBlockDatePicker(true);
+                          }}
+                          style={{
+                            width: '100%',
+                            textAlign: 'left',
+                            padding: '10px 12px',
+                            borderRadius: 10,
+                            border: (showBlockDatePicker && blockActiveDateSelection === 'checkOut') ? '2px solid #ea580c' : '1px solid #cbd5e1',
+                            background: (showBlockDatePicker && blockActiveDateSelection === 'checkOut') ? '#fff7ed' : 'white',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            transition: 'all 0.2s',
+                          }}
+                        >
+                          <div>
+                            <div style={{ fontWeight: 800, color: '#0f172a', fontSize: '0.92rem' }}>
+                              {formatBlockDisplayDate(blockForm.endDate)}
+                            </div>
+                          </div>
+                          <span style={{ fontSize: '1.1rem' }}>📅</span>
+                        </button>
                       </div>
                     </div>
+
+                    {/* StayBuddy Branded DateRangePicker Popover / Inline Box */}
+                    {showBlockDatePicker && (
+                      <div 
+                        style={{ 
+                          marginBottom: 14, 
+                          padding: '14px 16px', 
+                          background: 'white', 
+                          borderRadius: 16, 
+                          border: '2px solid #fdba74', 
+                          boxShadow: '0 12px 28px -6px rgba(234, 88, 12, 0.18)', 
+                          display: 'flex', 
+                          flexDirection: 'column', 
+                          alignItems: 'center',
+                          animation: 'fadeIn 0.2s ease'
+                        }}
+                      >
+                        <div style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10, paddingBottom: 8, borderBottom: '1px solid #f1f5f9' }}>
+                          <span style={{ fontSize: '0.82rem', fontWeight: 800, color: '#ea580c', display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <span>📅</span>
+                            {blockActiveDateSelection === 'checkIn' ? 'Select Start Date' : 'Select End Date'}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => setShowBlockDatePicker(false)}
+                            style={{ background: '#f1f5f9', border: 'none', borderRadius: 6, padding: '3px 10px', fontSize: '0.78rem', fontWeight: 700, color: '#475569', cursor: 'pointer' }}
+                          >
+                            Done ✓
+                          </button>
+                        </div>
+                        <DateRangePicker
+                          checkIn={blockForm.startDate}
+                          checkOut={blockForm.endDate}
+                          onChange={(inDate, outDate) => {
+                            setBlockForm(p => ({
+                              ...p,
+                              startDate: inDate,
+                              endDate: outDate || inDate,
+                            }));
+                          }}
+                          onClose={() => setShowBlockDatePicker(false)}
+                          activeSelection={blockActiveDateSelection}
+                          setActiveSelection={setBlockActiveDateSelection}
+                        />
+                      </div>
+                    )}
 
                     {/* Quick Date Range Preset Pills */}
                     <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 12 }}>
