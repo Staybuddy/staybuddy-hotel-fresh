@@ -20,6 +20,7 @@ export default function PartnerDashboard() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState('hotels');
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [hotels, setHotels] = useState<any[]>([]);
   const [bookings, setBookings] = useState<any[]>([]);
   const [stats, setStats] = useState({ totalHotels: 0, totalBookings: 0, totalRevenue: 0, pendingHotels: 0 });
@@ -92,15 +93,15 @@ export default function PartnerDashboard() {
 
   async function fetchData(showLoadingIndicator = true) {
     if (showLoadingIndicator) setLoading(true);
-    const partnerId = (session?.user as any)?.id;
+    const partnerId = (session?.user as any)?.id || (session?.user as any)?.email;
     const role = (session?.user as any)?.role;
     try {
       const hotelUrl = role === 'admin' 
         ? `/api/hotels?status=all&limit=50` 
-        : `/api/hotels?partnerId=${partnerId}&status=all&limit=50`;
+        : `/api/hotels?partnerId=${encodeURIComponent(partnerId || '')}&status=all&limit=50`;
       const bookingUrl = role === 'admin'
         ? `/api/bookings?limit=50`
-        : `/api/bookings?partnerId=${partnerId}&limit=50`;
+        : `/api/bookings?partnerId=${encodeURIComponent(partnerId || '')}&limit=50`;
 
       const [hotelRes, bookingRes] = await Promise.all([
         fetch(hotelUrl),
@@ -471,35 +472,68 @@ export default function PartnerDashboard() {
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg-secondary)' }}>
+      {/* Sidebar Overlay for Mobile */}
+      <div 
+        className="admin-overlay" 
+        style={{ display: isMobileMenuOpen ? 'block' : 'none' }}
+        onClick={() => setIsMobileMenuOpen(false)}
+      />
+
       {/* Sidebar */}
-      <aside className="sidebar" style={{ position: 'sticky', top: 0, height: '100vh', flexShrink: 0 }}>
-        <div style={{ padding: 'var(--space-6)' }}>
-          <div style={{ marginBottom: 24 }}>
+      <aside className={`sidebar admin-sidebar ${isMobileMenuOpen ? 'open' : ''}`} style={{ position: 'sticky', top: 0, height: '100vh', flexShrink: 0, background: 'var(--surface)', borderRight: '1px solid var(--border)', display: 'flex', flexDirection: 'column' }}>
+        <div style={{ padding: 'var(--space-6)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div>
             <Logo size="md" />
           </div>
+          <button 
+            type="button"
+            onClick={() => setIsMobileMenuOpen(false)}
+            style={{ display: isMobileMenuOpen ? 'block' : 'none', background: 'none', border: 'none', fontSize: '1.4rem', cursor: 'pointer', padding: '4px 8px', color: 'var(--text-muted)' }}
+            aria-label="Close menu"
+          >
+            ✕
+          </button>
         </div>
         <nav className="sidebar-nav">
           <div className="sidebar-section-label">Management</div>
           {NAV_ITEMS.map(item => (
             <button key={item.id} className={`sidebar-link ${activeTab === item.id ? 'active' : ''}`} style={{ width: '100%', background: 'none', border: 'none' }}
-              onClick={() => setActiveTab(item.id)}>
+              onClick={() => {
+                setActiveTab(item.id);
+                setIsMobileMenuOpen(false);
+              }}>
               <span>{item.icon}</span> {item.label}
             </button>
           ))}
           <div className="sidebar-section-label" style={{ marginTop: 'var(--space-4)' }}>Account</div>
-          <Link href="/profile" className="sidebar-link">👤 Profile</Link>
-          <Link href={hotels[0]?._id ? `/partner-agreement?hotelId=${hotels[0]._id}` : '/partner-agreement'} className="sidebar-link" target="_blank">📜 Partner Agreement</Link>
-          <Link href="/" className="sidebar-link">🌐 View Site</Link>
+          <Link href="/profile" className="sidebar-link" onClick={() => setIsMobileMenuOpen(false)}>👤 Profile</Link>
+          <Link href={hotels[0]?._id ? `/partner-agreement?hotelId=${hotels[0]._id}` : '/partner-agreement'} className="sidebar-link" target="_blank" onClick={() => setIsMobileMenuOpen(false)}>📜 Partner Agreement</Link>
+          <Link href="/" className="sidebar-link" onClick={() => setIsMobileMenuOpen(false)}>🌐 View Site</Link>
         </nav>
         <div style={{ padding: 'var(--space-4)', borderTop: '1px solid var(--border)' }}>
           <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: 4 }}>Signed in as</div>
           <div style={{ fontWeight: 600, fontSize: '0.875rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{session?.user?.name}</div>
-          <span className="badge badge-primary" style={{ marginTop: 4 }}>Partner</span>
+          <span className="badge badge-primary" style={{ marginTop: 4 }}>{((session?.user as any)?.role === 'admin') ? 'Admin' : 'Partner'}</span>
         </div>
       </aside>
 
       {/* Main Content */}
-      <main style={{ flex: 1, overflow: 'auto' }}>
+      <main className="admin-main" style={{ flex: 1, overflow: 'auto' }}>
+        {/* Mobile Header Bar */}
+        <div className="partner-mobile-bar" style={{ padding: '12px 16px', background: 'white', borderBottom: '1px solid var(--border)', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 100 }}>
+          <button 
+            type="button" 
+            className="admin-menu-btn" 
+            style={{ margin: 0, padding: '6px 14px', display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: '0.9rem', fontWeight: 600 }}
+            onClick={() => setIsMobileMenuOpen(true)}
+          >
+            ☰ Menu
+          </button>
+          <div style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--brand-600)' }}>
+            {NAV_ITEMS.find(n => n.id === activeTab)?.label || 'Extranet'}
+          </div>
+          <Logo size="sm" />
+        </div>
         <div style={{ padding: 'var(--space-8)' }}>
 
 

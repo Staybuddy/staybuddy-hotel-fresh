@@ -4,36 +4,37 @@ import { db } from '@/lib/firebaseAdmin';
 export async function GET(request: NextRequest) {
   try {
     const hotelsSnapshot = await db.collection('hotels').orderBy('createdAt', 'desc').get().catch(() => db.collection('hotels').get());
-    let hotels = hotelsSnapshot.docs.map(doc => doc.data());
+    let hotels: any[] = hotelsSnapshot.docs.map(doc => ({ _id: doc.id, ...(doc.data() as any) }));
 
     // Fetch users (partners) to attach name/email
     const usersSnapshot = await db.collection('users').get();
     const usersMap: Record<string, any> = {};
     usersSnapshot.forEach(doc => {
-      usersMap[doc.id] = doc.data(); // doc.id is either the Firebase UID or MongoDB _id
-      // Also map by _id in case they are stored differently
-      if (doc.data()._id) usersMap[doc.data()._id] = doc.data();
+      usersMap[doc.id] = { _id: doc.id, ...doc.data() };
+      if (doc.data()._id) usersMap[doc.data()._id] = { _id: doc.id, ...doc.data() };
     });
 
     // Attach partner info to hotels
-    hotels = hotels.map(hotel => {
-      const partner = usersMap[hotel.partnerId];
+    hotels = hotels.map((hotel: any) => {
+      const partnerKey = typeof hotel.partnerId === 'object' ? (hotel.partnerId?._id || hotel.partnerId?.id) : hotel.partnerId;
+      const partner = partnerKey ? usersMap[partnerKey] : null;
       return {
         ...hotel,
-        partnerId: partner ? { _id: partner._id || hotel.partnerId, name: partner.name, email: partner.email, phone: partner.phone } : hotel.partnerId
+        partnerId: partner 
+          ? { _id: partner._id || partnerKey, name: partner.name, email: partner.email, phone: partner.phone } 
+          : (typeof hotel.partnerId === 'object' ? hotel.partnerId : { _id: hotel.partnerId })
       };
     });
 
-    // We no longer strictly need to fetch separate Rooms if they are embedded. 
-    // But if we still have a 'rooms' collection, we can fetch it:
+    // Fetch rooms from rooms collection
     const roomsSnapshot = await db.collection('rooms').get();
-    const allRooms = roomsSnapshot.docs.map(doc => doc.data());
+    const allRooms: any[] = roomsSnapshot.docs.map(doc => ({ _id: doc.id, ...(doc.data() as any) }));
 
-    const hotelsWithRooms = hotels.map(hotel => {
-      const hRooms = allRooms.filter(r => String(r.hotelId) === String(hotel._id) || (hotel.id && String(r.hotelId) === String(hotel.id)));
+    const hotelsWithRooms = hotels.map((hotel: any) => {
+      const hRooms = allRooms.filter((r: any) => String(r.hotelId) === String(hotel._id) || (hotel.id && String(r.hotelId) === String(hotel.id)));
       const embeddedRooms = hotel.rooms || [];
-      const totalRooms = hRooms.reduce((sum, r) => sum + (Number(r.totalRooms) || 0), 0) || embeddedRooms.reduce((sum: number, r: any) => sum + (Number(r.totalRooms) || parseInt(r.quantity) || 0), 0);
-      const staybuddyAllocation = hRooms.reduce((sum, r) => sum + (Number(r.staybuddyAllocation) || 0), 0) || embeddedRooms.reduce((sum: number, r: any) => sum + (Number(r.staybuddyAllocation) || 0), 0);
+      const totalRooms = hRooms.reduce((sum: number, r: any) => sum + (Number(r.totalRooms) || 0), 0) || embeddedRooms.reduce((sum: number, r: any) => sum + (Number(r.totalRooms) || parseInt(r.quantity) || 0), 0);
+      const staybuddyAllocation = hRooms.reduce((sum: number, r: any) => sum + (Number(r.staybuddyAllocation) || 0), 0) || embeddedRooms.reduce((sum: number, r: any) => sum + (Number(r.staybuddyAllocation) || 0), 0);
       const finalRooms = (hRooms && hRooms.length > 0) ? hRooms : (embeddedRooms || []);
       return { ...hotel, rooms: finalRooms, totalRooms, staybuddyAllocation };
     });

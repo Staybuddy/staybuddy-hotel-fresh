@@ -1,5 +1,4 @@
 'use client';
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
@@ -52,6 +51,7 @@ export default function AdminDashboard() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [adminRecheckingId, setAdminRecheckingId] = useState<string | null>(null);
   const [bookingTab, setBookingTab] = useState<'live' | 'pending'>('live');
+  const [hotelTabFilter, setHotelTabFilter] = useState<'all' | 'approved' | 'pending'>('all');
 
   async function adminRecheckBookingPayment(bookingId: string) {
     setAdminRecheckingId(bookingId);
@@ -530,7 +530,7 @@ export default function AdminDashboard() {
               </div>
 
               {pendingHotels.length > 0 && (
-                <div onClick={() => setActiveTab('hotels')} style={{ background: '#fff7ed', border: '1px solid #fdba74', padding: '16px 24px', borderRadius: 12, color: '#c2410c', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer', marginBottom: 40, boxShadow: '0 4px 12px rgba(249, 115, 22, 0.1)' }}>
+                <div onClick={() => setActiveTab('requests')} style={{ background: '#fff7ed', border: '1px solid #fdba74', padding: '16px 24px', borderRadius: 12, color: '#c2410c', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer', marginBottom: 40, boxShadow: '0 4px 12px rgba(249, 115, 22, 0.1)' }}>
                   <span style={{ fontSize: '1.5rem' }}>⚠️</span> Action Required: {pendingHotels.length} properties are waiting for approval. Review now →
                 </div>
               )}
@@ -840,36 +840,89 @@ export default function AdminDashboard() {
           {/* ===== HOTELS & MARGINS ===== */}
           {activeTab === 'hotels' && (
             <div className="fade-in">
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24, flexWrap: 'wrap', gap: 16 }}>
                 <div>
                   <h1 style={{ fontSize: '2rem', color: '#0f172a', marginBottom: 8 }}>Properties & Margins</h1>
                   <p style={{ color: '#64748b' }}>Manage extranet listings, set commission margins, and approve new properties.</p>
                 </div>
-                <Link href="/partner" className="btn btn-primary" style={{ padding: '10px 20px', borderRadius: 8, fontWeight: 600, boxShadow: '0 4px 12px rgba(37,99,235,0.2)' }}>
-                  + Add Extranet Property
-                </Link>
+                <div style={{ display: 'flex', gap: 10 }}>
+                  <Link href="/partner" className="btn btn-primary" style={{ padding: '10px 20px', borderRadius: 8, fontWeight: 600, boxShadow: '0 4px 12px rgba(37,99,235,0.2)' }}>
+                    + Add Extranet Property
+                  </Link>
+                </div>
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-                <h3 style={{ fontSize: '1.1rem', color: '#0f172a', display: 'flex', alignItems: 'center', gap: 8 }}><span>✅</span> Active Properties ({approvedHotels.length})</h3>
+              {pendingHotels.length > 0 && (
+                <div style={{ background: '#fff7ed', border: '1px solid #fdba74', padding: '16px 20px', borderRadius: 12, marginBottom: 24, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <span style={{ fontSize: '1.4rem' }}>⏳</span>
+                    <div>
+                      <strong style={{ color: '#c2410c' }}>{pendingHotels.length} Property Request(s) Awaiting Review</strong>
+                      <div style={{ fontSize: '0.85rem', color: '#9a3412' }}>Submitted via Extranet. Approve to activate and make them bookable.</div>
+                    </div>
+                  </div>
+                  <button onClick={() => setActiveTab('requests')} className="btn btn-primary" style={{ padding: '8px 16px', fontSize: '0.85rem', whiteSpace: 'nowrap' }}>
+                    Review Requests ({pendingHotels.length}) →
+                  </button>
+                </div>
+              )}
+
+              {/* Status Filter Tabs */}
+              <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
+                {[
+                  { id: 'all', label: `All Properties (${hotels.length})` },
+                  { id: 'approved', label: `Active (${approvedHotels.length})` },
+                  { id: 'pending', label: `Pending Requests (${pendingHotels.length})` }
+                ].map(tab => (
+                  <button
+                    key={tab.id}
+                    onClick={() => setHotelTabFilter(tab.id as any)}
+                    style={{
+                      padding: '8px 16px',
+                      borderRadius: 8,
+                      border: hotelTabFilter === tab.id ? '1px solid #2563eb' : '1px solid #cbd5e1',
+                      background: hotelTabFilter === tab.id ? '#2563eb' : 'white',
+                      color: hotelTabFilter === tab.id ? 'white' : '#475569',
+                      fontWeight: 600,
+                      fontSize: '0.875rem',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
               </div>
+
               <div style={{ background: 'white', borderRadius: 16, boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)', overflowX: 'auto' }}>
                 <table className="admin-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
                   <thead>
                     <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0', textAlign: 'left' }}>
                       <th style={{ padding: '16px 24px', fontSize: '0.8rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Property</th>
+                      <th style={{ padding: '16px 24px', fontSize: '0.8rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Status</th>
                       <th style={{ padding: '16px 24px', fontSize: '0.8rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Type</th>
                       <th style={{ padding: '16px 24px', fontSize: '0.8rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Margin (%)</th>
                       <th style={{ padding: '16px 24px', fontSize: '0.8rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {approvedHotels.map(h => (
+                    {(hotelTabFilter === 'all' ? hotels : hotelTabFilter === 'pending' ? pendingHotels : approvedHotels).map(h => (
                       <tr key={h._id} style={{ borderBottom: '1px solid #e2e8f0' }}>
                         <td style={{ padding: '16px 24px', cursor: 'pointer' }} onClick={() => setExtranetModal(h)}>
                           <div style={{ fontWeight: 700, color: '#0f172a' }}>{h.name}</div>
                           <div style={{ fontSize: '0.8rem', color: '#64748b' }}>{h.city}</div>
                           <div style={{ fontSize: '0.75rem', color: '#8b5cf6', fontWeight: 600, marginTop: 4 }}>Hotel ID: {h.hotelId || h._id?.slice(-8)}</div>
+                        </td>
+                        <td style={{ padding: '16px 24px' }}>
+                          <span style={{ 
+                            padding: '4px 10px', 
+                            borderRadius: 12, 
+                            fontSize: '0.78rem', 
+                            fontWeight: 700,
+                            background: h.status === 'approved' ? '#dcfce7' : h.status === 'rejected' ? '#fee2e2' : '#fef3c7',
+                            color: h.status === 'approved' ? '#166534' : h.status === 'rejected' ? '#991b1b' : '#92400e'
+                          }}>
+                            {h.status === 'approved' ? '✅ Active' : h.status === 'rejected' ? '❌ Rejected' : '⏳ Pending'}
+                          </span>
                         </td>
                         <td style={{ padding: '16px 24px' }}>
                           <span style={{ padding: '4px 8px', background: h.isExtranet ? '#ede9fe' : '#e0f2fe', color: h.isExtranet ? '#7c3aed' : '#0284c7', borderRadius: 4, fontSize: '0.8rem', fontWeight: 600 }}>
@@ -888,6 +941,15 @@ export default function AdminDashboard() {
                           /> %
                         </td>
                         <td style={{ padding: '16px 24px', whiteSpace: 'nowrap' }}>
+                          {h.status === 'pending' && (
+                            <button 
+                              onClick={() => updateHotelStatus(h._id, { status: 'approved' })}
+                              disabled={approveLoading === h._id}
+                              style={{ marginRight: 8, padding: '6px 12px', background: '#16a34a', color: 'white', border: 'none', borderRadius: 6, fontSize: '0.85rem', fontWeight: 700, cursor: 'pointer' }}
+                            >
+                              {approveLoading === h._id ? 'Approving...' : '✓ Approve'}
+                            </button>
+                          )}
                           <button 
                             onClick={() => updateHotelStatus(h._id, { isExtranet: !h.isExtranet })}
                             style={{ padding: '6px 12px', background: 'transparent', border: '1px solid #cbd5e1', borderRadius: 6, fontSize: '0.85rem', fontWeight: 600, color: '#475569', cursor: 'pointer' }}

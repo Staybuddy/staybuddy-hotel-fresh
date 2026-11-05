@@ -1,6 +1,6 @@
 import { db } from '@/lib/firebaseAdmin';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+import { authOptions } from '@/lib/auth';
 import AgreementPrintBtn from './AgreementPrintBtn';
 import Logo from '@/components/Logo';
 

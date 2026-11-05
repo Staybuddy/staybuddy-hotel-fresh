@@ -133,7 +133,6 @@ export default function TradeShowExtractor() {
   // Run on initial mount
   useEffect(() => {
     runExtractionPipeline(selectedVenueId);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Add Custom Trade Show Venue
@@ -390,7 +389,7 @@ export default function TradeShowExtractor() {
             </button>
 
             <button
-              onClick={runExtractionPipeline}
+              onClick={() => runExtractionPipeline()}
               disabled={isExtracting}
               style={{
                 background: isExtracting

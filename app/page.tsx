@@ -1,4 +1,3 @@
-/* eslint-disable */
 import HomeClient from '@/components/HomeClient';
 import { db } from '@/lib/firebaseAdmin';
 import { applyMarginToRoom, getRoomPriceForOccupancy } from '@/lib/occupancyPricing';

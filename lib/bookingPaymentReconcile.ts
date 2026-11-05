@@ -64,7 +64,7 @@ export async function reconcileBookingPayment(bookingId: string, options: Paymen
   const updatedBookingData = updatedSnap.data() as any;
 
   // Prepare populated booking for confirmation emails
-  let populatedBooking = { _id: updatedSnap.id, ...updatedBookingData };
+  const populatedBooking = { _id: updatedSnap.id, ...updatedBookingData };
 
   // Fetch hotel details
   let hotel: any = null;

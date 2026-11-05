@@ -4542,7 +4542,6 @@ export default function HotelDetailPage() {
             position: "fixed",
             inset: 0,
             width: "100vw",
-            height: "100vh",
             height: "100dvh",
             zIndex: 99999,
             background: "#080c16",

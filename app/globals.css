@@ -790,7 +790,7 @@ tbody tr:hover { background: var(--bg-secondary); }
     width: 100% !important;
   }
   #review-section {
-    -webkit-overflow-scrolling: touch !important;
+    overflow-y: auto !important;
   }
   .price-breakup-card {
     padding: 16px;
@@ -850,14 +850,25 @@ tbody tr:hover { background: var(--bg-secondary); }
   background: rgba(0,0,0,0.5);
   z-index: 999;
 }
+.partner-mobile-bar {
+  display: none;
+}
 @media (max-width: 768px) {
   .admin-sidebar {
     position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    height: 100vh !important;
+    width: 280px !important;
+    max-width: 85vw !important;
     transform: translateX(-100%);
     z-index: 1000;
   }
   .admin-sidebar.open {
     transform: translateX(0);
+  }
+  .partner-mobile-bar {
+    display: flex !important;
   }
   .admin-main {
     padding: 16px !important;
@@ -1081,7 +1092,6 @@ tbody tr:hover { background: var(--bg-secondary); }
   display: block;
   width: 100%;
   overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
 }
 
 .agreement-mobile-cards {
@@ -1133,8 +1143,8 @@ tbody tr:hover { background: var(--bg-secondary); }
   inset: 0;
   z-index: 999;
   background: rgba(15, 23, 42, 0.75);
-  backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
   display: flex;
   align-items: center;
   justify-content: center;

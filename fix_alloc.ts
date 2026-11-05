@@ -8,9 +8,9 @@ async function fix() {
     const data = doc.data();
     
     let needsUpdate = false;
-    let updates: any = {};
+    const updates: any = {};
 
-    let alloc = data.staybuddyAllocation;
+    const alloc = data.staybuddyAllocation;
     let total = data.totalRooms || 1;
 
     if (typeof total === 'string') {

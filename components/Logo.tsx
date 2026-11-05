@@ -460,7 +460,7 @@ export default function Logo({
           >
             Stay<span style={{ color: '#f97316' }}>Buddy</span>
           </span>
-          {(showTagline || variant === 'full') && (
+          {showTagline && (
             <span
               style={{
                 fontSize: currentDim.tag,

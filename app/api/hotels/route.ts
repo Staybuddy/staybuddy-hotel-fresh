@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 export const dynamic = 'force-dynamic';
 import { db } from '@/lib/firebaseAdmin';
 import { applyMarginToRoom, getRoomPriceForOccupancy } from '@/lib/occupancyPricing';
-import { getCached, setCached } from '@/lib/cache';
+import { getCached, setCached, invalidateCache } from '@/lib/cache';
 
 export async function GET(request: NextRequest) {
   try {
@@ -37,14 +37,29 @@ export async function GET(request: NextRequest) {
     if (status && status !== 'all') {
       hotelsRef = hotelsRef.where('status', '==', status);
     }
-    if (partnerId) {
-      hotelsRef = hotelsRef.where('partnerId', '==', partnerId);
-    }
     if (category) hotelsRef = hotelsRef.where('category', '==', category);
     if (propertyType) hotelsRef = hotelsRef.where('propertyType', '==', propertyType);
     
     const snapshot = await hotelsRef.get();
     let hotels = snapshot.docs.map((doc: any) => ({ _id: doc.id, ...doc.data() }));
+
+    // Memory filter for partnerId (handles both string and object {_id, name, email} formats)
+    if (partnerId) {
+      hotels = hotels.filter((h: any) => {
+        if (!h.partnerId) return false;
+        if (typeof h.partnerId === 'string') {
+          return h.partnerId === partnerId;
+        }
+        if (typeof h.partnerId === 'object') {
+          return (
+            h.partnerId._id === partnerId ||
+            h.partnerId.id === partnerId ||
+            (h.partnerId.email && h.partnerId.email.toLowerCase() === partnerId.toLowerCase())
+          );
+        }
+        return false;
+      });
+    }
 
     // Apply memory filters for things Firestore can't do natively like regex
     if (city) {
@@ -191,7 +206,7 @@ export async function GET(request: NextRequest) {
 }
 
 import { getServerSession } from 'next-auth/next';
-import { authOptions } from '../auth/[...nextauth]/route';
+import { authOptions } from '@/lib/auth';
 
 export async function POST(request: NextRequest) {
   try {
