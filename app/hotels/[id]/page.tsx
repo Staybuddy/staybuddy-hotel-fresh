@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect, useRef, useMemo } from "react";
+import { createPortal } from "react-dom";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
@@ -78,6 +79,10 @@ export default function HotelDetailPage() {
   const [bookingError, setBookingError] = useState("");
   const [attemptedCheckout, setAttemptedCheckout] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
   const [activeDateSelection, setActiveDateSelection] = useState<
     "checkIn" | "checkOut"
   >("checkIn");
@@ -1248,10 +1253,27 @@ export default function HotelDetailPage() {
                   </div>
                 </div>
 
-                {showDatePicker && (
-                  <>
+                {/* Portaled Date Picker Modal */}
+                {mounted && showDatePicker && createPortal(
+                  <div
+                    style={{
+                      position: "fixed",
+                      inset: 0,
+                      zIndex: 10000,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      padding: "16px",
+                    }}
+                  >
                     <div
-                      style={{ position: "fixed", inset: 0, zIndex: 90 }}
+                      style={{
+                        position: "absolute",
+                        inset: 0,
+                        background: "rgba(15, 23, 42, 0.6)",
+                        backdropFilter: "blur(4px)",
+                        WebkitBackdropFilter: "blur(4px)",
+                      }}
                       onClick={(e) => {
                         e.stopPropagation();
                         setShowDatePicker(false);
@@ -1259,21 +1281,69 @@ export default function HotelDetailPage() {
                     />
                     <div
                       className="responsive-popup"
-                      style={{
-                        position: "absolute",
-                        top: "100%",
-                        left: 0,
-                        marginTop: 12,
-                        zIndex: 100,
-                        background: "white",
-                        borderRadius: "var(--radius-xl)",
-                        boxShadow: "0 20px 40px rgba(0,0,0,0.2)",
-                        padding: "16px",
-                        border: "1px solid var(--border)",
-                        width: "max-content",
-                      }}
                       onClick={(e) => e.stopPropagation()}
+                      style={{
+                        position: "relative",
+                        background: "#ffffff",
+                        borderRadius: "24px",
+                        boxShadow: "0 25px 60px -12px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(0, 0, 0, 0.08)",
+                        maxWidth: "100%",
+                        maxHeight: "92vh",
+                        overflowY: "auto",
+                        padding: "22px 24px",
+                        border: "1px solid #e2e8f0",
+                        animation: "slideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards",
+                      }}
                     >
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          marginBottom: 16,
+                          paddingBottom: 12,
+                          borderBottom: "1px solid #f1f5f9",
+                        }}
+                      >
+                        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                          <span style={{ fontSize: "1.35rem" }}>📅</span>
+                          <div>
+                            <div style={{ fontWeight: 800, fontSize: "1.05rem", color: "#0f172a" }}>Select Dates</div>
+                            <div style={{ fontSize: "0.78rem", color: "#64748b" }}>Check-in & Check-out</div>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setShowDatePicker(false)}
+                          aria-label="Close date picker"
+                          style={{
+                            background: "#f1f5f9",
+                            border: "none",
+                            borderRadius: "50%",
+                            width: 34,
+                            height: 34,
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            cursor: "pointer",
+                            fontSize: "1rem",
+                            color: "#64748b",
+                            fontWeight: 700,
+                            transition: "all 0.15s ease",
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.background = "#e2e8f0";
+                            e.currentTarget.style.color = "#0f172a";
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.background = "#f1f5f9";
+                            e.currentTarget.style.color = "#64748b";
+                          }}
+                        >
+                          ✕
+                        </button>
+                      </div>
+
                       <DateRangePicker
                         checkIn={bookingData.checkIn}
                         checkOut={bookingData.checkOut}
@@ -1289,7 +1359,8 @@ export default function HotelDetailPage() {
                         setActiveSelection={setActiveDateSelection}
                       />
                     </div>
-                  </>
+                  </div>,
+                  document.body
                 )}
               </div>
 
@@ -1302,6 +1373,15 @@ export default function HotelDetailPage() {
                   cursor: "pointer",
                   border: "1px solid var(--border)",
                   position: "relative",
+                  transition: "all 0.2s ease",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = "var(--brand-300, #fdba74)";
+                  e.currentTarget.style.boxShadow = "0 4px 12px rgba(0,0,0,0.06)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = "var(--border)";
+                  e.currentTarget.style.boxShadow = "none";
                 }}
               >
                 <div
@@ -1325,72 +1405,108 @@ export default function HotelDetailPage() {
                   {bookingData.rooms} Room, {bookingData.adults} Adults
                 </div>
 
-                {showGuestPicker && (
-                  <>
+                {/* Portaled Guest Picker Modal */}
+                {mounted && showGuestPicker && createPortal(
+                  <div
+                    style={{
+                      position: "fixed",
+                      inset: 0,
+                      zIndex: 10000,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      padding: "16px",
+                    }}
+                  >
                     <div
-                      style={{ position: "fixed", inset: 0, zIndex: 90 }}
-                      onClick={() => setShowGuestPicker(false)}
+                      style={{
+                        position: "absolute",
+                        inset: 0,
+                        background: "rgba(15, 23, 42, 0.6)",
+                        backdropFilter: "blur(4px)",
+                        WebkitBackdropFilter: "blur(4px)",
+                      }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShowGuestPicker(false);
+                      }}
                     />
                     <div
                       className="responsive-popup"
+                      onClick={(e) => e.stopPropagation()}
                       style={{
-                        position: "absolute",
-                        top: "100%",
-                        right: 0,
-                        marginTop: 12,
-                        zIndex: 100,
-                        background: "white",
-                        borderRadius: "var(--radius-lg)",
-                        boxShadow: "var(--shadow-xl)",
-                        border: "1px solid var(--border)",
-                        padding: "var(--space-5)",
-                        width: 320,
+                        position: "relative",
+                        background: "#ffffff",
+                        borderRadius: "24px",
+                        boxShadow: "0 25px 60px -12px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(0, 0, 0, 0.08)",
+                        width: 360,
+                        maxWidth: "100%",
+                        maxHeight: "92vh",
+                        overflowY: "auto",
+                        padding: "24px",
+                        border: "1px solid #e2e8f0",
+                        animation: "slideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards",
                       }}
                     >
                       <div
                         style={{
                           display: "flex",
-                          flexDirection: "column",
-                          gap: "var(--space-4)",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          marginBottom: 18,
+                          paddingBottom: 12,
+                          borderBottom: "1px solid #f1f5f9",
                         }}
                       >
-                        <div
+                        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                          <span style={{ fontSize: "1.35rem" }}>👥</span>
+                          <div>
+                            <div style={{ fontWeight: 800, fontSize: "1.05rem", color: "#0f172a" }}>Rooms & Guests</div>
+                            <div style={{ fontSize: "0.78rem", color: "#64748b" }}>Configure your stay</div>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setShowGuestPicker(false)}
+                          aria-label="Close guests picker"
                           style={{
+                            background: "#f1f5f9",
+                            border: "none",
+                            borderRadius: "50%",
+                            width: 34,
+                            height: 34,
                             display: "flex",
-                            justifyContent: "space-between",
                             alignItems: "center",
+                            justifyContent: "center",
+                            cursor: "pointer",
+                            fontSize: "1rem",
+                            color: "#64748b",
+                            fontWeight: 700,
+                            transition: "all 0.15s ease",
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.background = "#e2e8f0";
+                            e.currentTarget.style.color = "#0f172a";
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.background = "#f1f5f9";
+                            e.currentTarget.style.color = "#64748b";
                           }}
                         >
+                          ✕
+                        </button>
+                      </div>
+
+                      <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-4)" }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                           <div>
-                            <div
-                              style={{
-                                fontWeight: 600,
-                                color: "var(--text-primary)",
-                              }}
-                            >
-                              Rooms
-                            </div>
-                            <div style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
-                              Max 3 adults / room
-                            </div>
+                            <div style={{ fontWeight: 700, color: "var(--text-primary)", fontSize: "0.95rem" }}>Rooms</div>
+                            <div style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>Max 3 adults / room</div>
                           </div>
-                          <div
-                            style={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 12,
-                              border: "1px solid var(--border)",
-                              borderRadius: "var(--radius-md)",
-                              padding: "4px 8px",
-                            }}
-                          >
+                          <div style={{ display: "flex", alignItems: "center", gap: 12, border: "1px solid var(--border)", borderRadius: "var(--radius-md)", padding: "4px 8px" }}>
                             <button
                               className="btn-ghost"
-                              style={{
-                                padding: "4px 8px",
-                                fontSize: "1.2rem",
-                                lineHeight: 1,
-                              }}
+                              style={{ padding: "4px 8px", fontSize: "1.2rem", lineHeight: 1 }}
                               onClick={() =>
                                 setBookingData((p) => {
                                   const adj = adjustRoomsAndAdults(p.rooms, p.adults, 'rooms', p.rooms - 1);
@@ -1400,22 +1516,10 @@ export default function HotelDetailPage() {
                             >
                               −
                             </button>
-                            <span
-                              style={{
-                                fontWeight: 700,
-                                width: 20,
-                                textAlign: "center",
-                              }}
-                            >
-                              {bookingData.rooms}
-                            </span>
+                            <span style={{ fontWeight: 700, width: 20, textAlign: "center" }}>{bookingData.rooms}</span>
                             <button
                               className="btn-ghost"
-                              style={{
-                                padding: "4px 8px",
-                                fontSize: "1.2rem",
-                                lineHeight: 1,
-                              }}
+                              style={{ padding: "4px 8px", fontSize: "1.2rem", lineHeight: 1 }}
                               onClick={() =>
                                 setBookingData((p) => {
                                   const adj = adjustRoomsAndAdults(p.rooms, p.adults, 'rooms', Math.min(10, p.rooms + 1));
@@ -1427,43 +1531,18 @@ export default function HotelDetailPage() {
                             </button>
                           </div>
                         </div>
-                        <div
-                          style={{
-                            display: "flex",
-                            justifyContent: "space-between",
-                            alignItems: "center",
-                          }}
-                        >
+
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                           <div>
-                            <div
-                              style={{
-                                fontWeight: 600,
-                                color: "var(--text-primary)",
-                              }}
-                            >
-                              Adults
-                            </div>
+                            <div style={{ fontWeight: 700, color: "var(--text-primary)", fontSize: "0.95rem" }}>Adults</div>
                             <div style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
                               Max {bookingData.rooms * MAX_ADULTS_PER_ROOM} for {bookingData.rooms} room{bookingData.rooms > 1 ? "s" : ""}
                             </div>
                           </div>
-                          <div
-                            style={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 12,
-                              border: "1px solid var(--border)",
-                              borderRadius: "var(--radius-md)",
-                              padding: "4px 8px",
-                            }}
-                          >
+                          <div style={{ display: "flex", alignItems: "center", gap: 12, border: "1px solid var(--border)", borderRadius: "var(--radius-md)", padding: "4px 8px" }}>
                             <button
                               className="btn-ghost"
-                              style={{
-                                padding: "4px 8px",
-                                fontSize: "1.2rem",
-                                lineHeight: 1,
-                              }}
+                              style={{ padding: "4px 8px", fontSize: "1.2rem", lineHeight: 1 }}
                               onClick={() =>
                                 setBookingData((p) => {
                                   const adj = adjustRoomsAndAdults(p.rooms, p.adults, 'adults', Math.max(1, p.adults - 1));
@@ -1473,22 +1552,10 @@ export default function HotelDetailPage() {
                             >
                               −
                             </button>
-                            <span
-                              style={{
-                                fontWeight: 700,
-                                width: 20,
-                                textAlign: "center",
-                              }}
-                            >
-                              {bookingData.adults}
-                            </span>
+                            <span style={{ fontWeight: 700, width: 20, textAlign: "center" }}>{bookingData.adults}</span>
                             <button
                               className="btn-ghost"
-                              style={{
-                                padding: "4px 8px",
-                                fontSize: "1.2rem",
-                                lineHeight: 1,
-                              }}
+                              style={{ padding: "4px 8px", fontSize: "1.2rem", lineHeight: 1 }}
                               onClick={() =>
                                 setBookingData((p) => {
                                   const adj = adjustRoomsAndAdults(p.rooms, p.adults, 'adults', Math.min(30, p.adults + 1));
@@ -1501,20 +1568,73 @@ export default function HotelDetailPage() {
                           </div>
                         </div>
 
-                        <div style={{
-                          padding: '8px 10px',
-                          borderRadius: '8px',
-                          background: '#eff6ff',
-                          border: '1px solid #bfdbfe',
-                          color: '#1e40af',
-                          fontSize: '0.75rem',
-                          lineHeight: 1.3
-                        }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                          <div>
+                            <div style={{ fontWeight: 700, color: "var(--text-primary)", fontSize: "0.95rem" }}>Children</div>
+                            <div style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>0 - 17 Years Old</div>
+                          </div>
+                          <div style={{ display: "flex", alignItems: "center", gap: 12, border: "1px solid var(--border)", borderRadius: "var(--radius-md)", padding: "4px 8px" }}>
+                            <button
+                              className="btn-ghost"
+                              style={{ padding: "4px 8px", fontSize: "1.2rem", lineHeight: 1 }}
+                              onClick={() =>
+                                setBookingData((p) => ({
+                                  ...p,
+                                  children: Math.max(0, p.children - 1),
+                                }))
+                              }
+                            >
+                              −
+                            </button>
+                            <span style={{ fontWeight: 700, width: 20, textAlign: "center" }}>{bookingData.children}</span>
+                            <button
+                              className="btn-ghost"
+                              style={{ padding: "4px 8px", fontSize: "1.2rem", lineHeight: 1 }}
+                              onClick={() =>
+                                setBookingData((p) => ({
+                                  ...p,
+                                  children: Math.min(10, p.children + 1),
+                                }))
+                              }
+                            >
+                              +
+                            </button>
+                          </div>
+                        </div>
+
+                        <div
+                          style={{
+                            padding: "10px 12px",
+                            borderRadius: "10px",
+                            background: "#eff6ff",
+                            border: "1px solid #bfdbfe",
+                            color: "#1e40af",
+                            fontSize: "0.76rem",
+                            lineHeight: 1.35,
+                          }}
+                        >
                           💡 <strong>Max 3 adults per room.</strong> Adding 4 or more adults automatically calculates rooms and occupancy pricing.
                         </div>
+
+                        <button
+                          type="button"
+                          className="btn btn-primary"
+                          onClick={() => setShowGuestPicker(false)}
+                          style={{
+                            marginTop: 6,
+                            width: "100%",
+                            borderRadius: "12px",
+                            padding: "12px",
+                            fontWeight: 800,
+                            fontSize: "0.95rem",
+                          }}
+                        >
+                          Apply Changes
+                        </button>
                       </div>
                     </div>
-                  </>
+                  </div>,
+                  document.body
                 )}
               </div>
             </div>
