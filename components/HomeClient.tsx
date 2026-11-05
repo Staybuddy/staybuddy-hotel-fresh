@@ -408,7 +408,7 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
               const isLast = index === array.length - 1;
               const isActive = searchData.propertyType === card.id;
               return (
-                  <div
+                <div
                   key={card.id}
                   onClick={() => {
                     const isOpening = searchData.propertyType !== card.id;
@@ -426,29 +426,70 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
                     }
                   }}
                   style={{
-                    background: isActive ? 'var(--brand-50)' : 'white',
+                    position: 'relative',
+                    background: isActive ? 'var(--brand-50, #fff7ed)' : 'white',
                     borderRight: isLast ? 'none' : '1px solid var(--border)',
                     padding: isCompact ? '6px 16px' : '12px 24px',
                     cursor: 'pointer',
                     minWidth: 0,
                     flex: '1 0 auto',
-                    transition: 'all 0.3s ease',
+                    transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
                     textAlign: 'center',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     flexDirection: isCompact ? 'row' : 'column',
-                    gap: isCompact ? 6 : 8
+                    gap: isCompact ? 6 : 8,
+                    overflow: 'hidden'
                   }}
                   onMouseEnter={e => {
-                    if (!isActive) e.currentTarget.style.background = 'var(--brand-50)';
+                    if (!isActive) {
+                      e.currentTarget.style.background = 'var(--brand-50, #fff7ed)';
+                      e.currentTarget.style.transform = 'translateY(-2px)';
+                    }
                   }}
                   onMouseLeave={e => {
-                    if (!isActive) e.currentTarget.style.background = 'white';
+                    if (!isActive) {
+                      e.currentTarget.style.background = 'white';
+                      e.currentTarget.style.transform = 'translateY(0)';
+                    }
                   }}
                 >
-                  <div style={{ fontSize: isCompact ? '1.2rem' : '1.6rem', transition: 'transform 0.3s ease', transform: isActive ? 'scale(1.1)' : 'scale(1)' }}>{card.icon}</div>
-                  <div style={{ color: isActive ? 'var(--brand-700)' : 'var(--text-primary)', fontWeight: 800, fontSize: isCompact ? '0.8rem' : '0.85rem', letterSpacing: '0.02em', whiteSpace: 'nowrap' }}>{card.label}</div>
+                  <div style={{
+                    fontSize: isCompact ? '1.2rem' : '1.6rem',
+                    transition: 'transform 0.35s cubic-bezier(0.16, 1, 0.3, 1)',
+                    transform: isActive ? 'translateY(-2px) scale(1.15)' : 'translateY(0) scale(1)',
+                    filter: isActive ? 'drop-shadow(0 4px 6px rgba(255, 107, 53, 0.25))' : 'none'
+                  }}>
+                    {card.icon}
+                  </div>
+                  <div style={{
+                    color: isActive ? 'var(--brand-700, #c2410c)' : 'var(--text-primary)',
+                    fontWeight: 800,
+                    fontSize: isCompact ? '0.8rem' : '0.85rem',
+                    letterSpacing: '0.02em',
+                    whiteSpace: 'nowrap',
+                    transition: 'color 0.2s ease'
+                  }}>
+                    {card.label}
+                  </div>
+
+                  {/* Active Indicator Underline Glow */}
+                  {isActive && (
+                    <div
+                      style={{
+                        position: 'absolute',
+                        bottom: 0,
+                        left: '12%',
+                        right: '12%',
+                        height: 3,
+                        background: 'linear-gradient(90deg, #ff6b35, #ea580c)',
+                        borderRadius: '3px 3px 0 0',
+                        boxShadow: '0 -2px 8px rgba(255, 107, 53, 0.45)',
+                        animation: 'fadeIn 0.25s ease'
+                      }}
+                    />
+                  )}
                 </div>
               );
             })}
@@ -525,9 +566,9 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
       </section>
 
       {/* ===== PROMOTIONAL BANNER ===== */}
-      <section className="container" style={{ margin: '16px auto' }}>
+      <section className="container" style={{ margin: '20px auto' }}>
         <div style={{
-          background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+          background: 'linear-gradient(135deg, #f59e0b 0%, #ea580c 50%, #d97706 100%)',
           borderRadius: 'var(--radius-xl)',
           padding: 'var(--space-6) var(--space-8)',
           display: 'flex',
@@ -535,31 +576,40 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
           alignItems: 'center',
           flexWrap: 'wrap',
           gap: 'var(--space-4)',
-          boxShadow: 'var(--shadow-md)',
+          boxShadow: '0 16px 36px -8px rgba(234, 88, 12, 0.35)',
           position: 'relative',
-          overflow: 'hidden'
+          overflow: 'hidden',
+          transition: 'transform 0.3s ease, box-shadow 0.3s ease'
         }}>
-          {/* Decorative pattern */}
-          <div style={{ position: 'absolute', right: '-5%', top: '-20%', fontSize: '10rem', opacity: 0.1, pointerEvents: 'none' }}>🎉</div>
+          {/* Floating celebratory decorative graphics */}
+          <div style={{ position: 'absolute', right: '-3%', top: '-20%', fontSize: '9rem', opacity: 0.14, pointerEvents: 'none', animation: 'floatGentle 4s ease-in-out infinite' }}>🎉</div>
+          <div style={{ position: 'absolute', left: '42%', bottom: '-15%', fontSize: '5rem', opacity: 0.08, pointerEvents: 'none', animation: 'floatGentle 3.5s ease-in-out infinite' }}>✨</div>
           
           <div style={{ position: 'relative', zIndex: 1, flex: '1 1 400px' }}>
-            <div style={{ display: 'inline-block', background: 'rgba(255,255,255,0.2)', color: 'white', padding: '4px 12px', borderRadius: 'var(--radius-full)', fontSize: '0.8rem', fontWeight: 700, marginBottom: 12, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-              Limited Time Offer
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'rgba(255,255,255,0.22)', backdropFilter: 'blur(4px)', color: 'white', padding: '4px 12px', borderRadius: 'var(--radius-full)', fontSize: '0.78rem', fontWeight: 800, marginBottom: 12, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              <span>⚡</span> Limited Time Offer
             </div>
-            <h2 style={{ color: 'white', marginBottom: 8, fontSize: '1.8rem' }}>Get 20% Off Your First Booking!</h2>
-            <p style={{ color: 'rgba(255,255,255,0.9)', fontSize: '1.05rem', margin: 0 }}>
-              Use code <strong>STAYBUDDY20</strong> at checkout. Offer valid for a limited time across all premium hotels.
+            <h2 style={{ color: 'white', marginBottom: 8, fontSize: '1.8rem', fontWeight: 900, textShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>Get 20% Off Your First Booking!</h2>
+            <p style={{ color: 'rgba(255,255,255,0.95)', fontSize: '1.02rem', margin: 0, lineHeight: 1.5 }}>
+              Use coupon <span style={{ background: 'rgba(255,255,255,0.25)', border: '1px dashed rgba(255,255,255,0.7)', padding: '2px 8px', borderRadius: 6, fontWeight: 900, letterSpacing: '0.04em' }}>STAYBUDDY20</span> at checkout across all premium hotels.
             </p>
           </div>
           
           <div style={{ position: 'relative', zIndex: 1 }}>
             <Link href="/hotels" style={{
-              background: 'white', color: '#d97706', fontWeight: 700, padding: '12px 24px', 
-              borderRadius: 'var(--radius-lg)', textDecoration: 'none', display: 'inline-block',
-              boxShadow: 'var(--shadow-sm)', transition: 'transform var(--transition-fast)'
+              background: 'white', color: '#ea580c', fontWeight: 800, padding: '14px 28px', 
+              borderRadius: 'var(--radius-lg)', textDecoration: 'none', display: 'inline-flex',
+              alignItems: 'center', gap: 6,
+              boxShadow: '0 8px 20px -4px rgba(0,0,0,0.2)', transition: 'all 0.25s cubic-bezier(0.16, 1, 0.3, 1)'
             }}
-            onMouseEnter={e => (e.currentTarget.style.transform = 'scale(1.05)')}
-            onMouseLeave={e => (e.currentTarget.style.transform = 'scale(1)')}>
+            onMouseEnter={e => {
+              e.currentTarget.style.transform = 'translateY(-2px) scale(1.04)';
+              e.currentTarget.style.boxShadow = '0 12px 24px -4px rgba(0,0,0,0.25)';
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.transform = 'translateY(0) scale(1)';
+              e.currentTarget.style.boxShadow = '0 8px 20px -4px rgba(0,0,0,0.2)';
+            }}>
               Claim Discount →
             </Link>
           </div>

@@ -131,14 +131,16 @@ export default function CityDestinationCard({
             background: 'rgba(15, 23, 42, 0.75)',
             backdropFilter: 'blur(8px)',
             WebkitBackdropFilter: 'blur(8px)',
-            border: '1px solid rgba(255, 255, 255, 0.35)',
+            border: isHovered ? '1px solid rgba(255, 107, 53, 0.7)' : '1px solid rgba(255, 255, 255, 0.35)',
             color: '#ffffff',
             fontSize: '0.7rem',
             fontWeight: 700,
             padding: '3px 9px',
             borderRadius: '9999px',
             letterSpacing: '0.02em',
-            boxShadow: '0 2px 6px rgba(0,0,0,0.3)',
+            boxShadow: isHovered ? '0 4px 12px rgba(255, 107, 53, 0.35)' : '0 2px 6px rgba(0,0,0,0.3)',
+            transition: 'all 0.35s cubic-bezier(0.16, 1, 0.3, 1)',
+            transform: isHovered ? 'scale(1.06)' : 'scale(1)',
           }}
         >
           {hotels} {hotels === 1 ? 'hotel' : 'hotels'}
@@ -166,6 +168,8 @@ export default function CityDestinationCard({
               overflow: 'hidden',
               textOverflow: 'ellipsis',
               textShadow: '0 2px 8px rgba(0,0,0,0.95)',
+              transition: 'transform 0.3s ease',
+              transform: isHovered ? 'translateX(2px)' : 'translateX(0)',
             }}
           >
             {canonicalCity}
@@ -198,16 +202,17 @@ export default function CityDestinationCard({
                 display: 'inline-flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                width: '20px',
+                width: isHovered ? '24px' : '20px',
                 height: '20px',
-                borderRadius: '50%',
+                borderRadius: '9999px',
                 background: isHovered ? 'var(--brand-500, #ff6b35)' : 'rgba(255, 255, 255, 0.3)',
                 color: '#ffffff',
                 fontWeight: 700,
                 fontSize: '0.72rem',
                 flexShrink: 0,
-                transition: 'all 0.3s ease',
-                transform: isHovered ? 'translateX(2px) scale(1.1)' : 'translateX(0)',
+                transition: 'all 0.35s cubic-bezier(0.16, 1, 0.3, 1)',
+                transform: isHovered ? 'translateX(2px)' : 'translateX(0)',
+                boxShadow: isHovered ? '0 2px 8px rgba(255, 107, 53, 0.5)' : 'none',
               }}
             >
               →
