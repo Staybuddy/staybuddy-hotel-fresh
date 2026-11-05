@@ -415,72 +415,138 @@ function HotelSearch() {
             </div>
           ) : (
             <>
-              <div className="hotels-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 'var(--space-5)' }}>
+              <div className="hotels-results-list" style={{ display: 'flex', flexDirection: 'column', gap: '16px', width: '100%' }}>
                 {hotels.map((hotel, index) => (
-                  <Link key={hotel._id} href={`/hotels/${hotel._id}${getQueryString()}`} style={{ textDecoration: 'none' }}>
-                    <div className="card card-hover hotel-card" style={{ height: '100%' }}>
-                      <div className="hotel-card-img-wrapper" style={{ position: 'relative', width: '100%', height: '220px' }}>
+                  <Link key={hotel._id} href={`/hotels/${hotel._id}${getQueryString()}`} style={{ textDecoration: 'none', color: 'inherit', width: '100%' }}>
+                    <div className="hotel-horizontal-card">
+                      {/* Image / Gallery */}
+                      <div className="hotel-horizontal-img">
                         {hotel.images?.[0] ? (
-                          <Image src={hotel.images[0]} alt={hotel.name} fill priority={index < 2} className="hotel-card-img" style={{ objectFit: 'cover' }} sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw" />
+                          <Image src={hotel.images[0]} alt={hotel.name} fill priority={index < 2} style={{ objectFit: 'cover' }} sizes="(max-width: 900px) 100vw, 320px" />
                         ) : (
-                          <div className="hotel-card-img" style={{ background: 'linear-gradient(135deg, var(--brand-100), var(--brand-200))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '3rem' }}>🏨</div>
+                          <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg, var(--brand-100), var(--brand-200))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '3rem' }}>🏨</div>
                         )}
-                        <div style={{ position: 'absolute', top: 10, left: 10, display: 'flex', gap: 6 }}>
-                          <span className="badge badge-gray" style={{ backdropFilter: 'blur(4px)', background: 'rgba(0,0,0,0.5)', color: 'white' }}>{hotel.propertyType || 'Hotel'}</span>
-                          <span className="badge badge-primary" style={{ backdropFilter: 'blur(4px)', background: 'rgba(59, 130, 246, 0.8)', color: 'white' }}>{hotel.category}</span>
+                        <div style={{ position: 'absolute', top: 12, left: 12, display: 'flex', gap: 6, zIndex: 2 }}>
+                          <span className="badge badge-gray" style={{ backdropFilter: 'blur(4px)', background: 'rgba(0,0,0,0.65)', color: 'white', fontWeight: 700 }}>
+                            {hotel.propertyType || 'Hotel'}
+                          </span>
+                          <span className="badge badge-primary" style={{ backdropFilter: 'blur(4px)', background: 'rgba(59, 130, 246, 0.85)', color: 'white', fontWeight: 700 }}>
+                            {hotel.category || 'Standard'}
+                          </span>
                         </div>
                         {hotel.avgRating >= 4.5 && (
-                          <div style={{ position: 'absolute', top: 10, right: 10 }}>
-                            <span className="badge" style={{ background: 'var(--brand-500)', color: 'white' }}>⭐ Top Rated</span>
+                          <div style={{ position: 'absolute', bottom: 12, left: 12, zIndex: 2 }}>
+                            <span className="badge" style={{ background: 'linear-gradient(135deg, #ff6b35, #ea580c)', color: 'white', fontWeight: 800 }}>
+                              ⭐ Top Rated
+                            </span>
                           </div>
                         )}
                       </div>
-                      <div className="card-body">
-                        <h3 style={{ fontSize: '1rem', marginBottom: 4 }}>{hotel.name}</h3>
-                        <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', marginBottom: 8 }}>📍 {hotel.area ? `${hotel.area}, ` : ''}{hotel.city}</p>
-                        {hotel.avgRating > 0 ? (
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10 }}>
-                            <span style={{ background: 'var(--brand-500)', color: 'white', fontWeight: 700, fontSize: '0.8rem', padding: '2px 8px', borderRadius: 'var(--radius-sm)' }}>★ {hotel.avgRating.toFixed(1)}</span>
-                            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{hotel.totalReviews} {hotel.totalReviews === 1 ? 'review' : 'reviews'}</span>
+
+                      {/* Hotel Details */}
+                      <div className="hotel-horizontal-details">
+                        <div>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 4 }}>
+                            <h3 style={{ fontSize: '1.22rem', fontWeight: 800, color: '#0f172a', margin: 0, lineHeight: 1.3 }}>{hotel.name}</h3>
                           </div>
-                        ) : (
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10 }}>
-                            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', background: '#f8fafc', padding: '2px 6px', borderRadius: '4px', border: '1px solid #f1f5f9' }}>⭐ New on StayBuddy</span>
+                          
+                          <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', margin: '4px 0 10px', display: 'flex', alignItems: 'center', gap: 4 }}>
+                            <span>📍</span>
+                            <span>{hotel.area ? `${hotel.area}, ` : ''}{hotel.city}</span>
+                            <span style={{ color: '#cbd5e1' }}>•</span>
+                            <span style={{ color: '#2563eb', fontWeight: 600 }}>Prime Location</span>
+                          </p>
+
+                          {hotel.avgRating > 0 ? (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                              <span style={{ background: '#16a34a', color: 'white', fontWeight: 800, fontSize: '0.82rem', padding: '2px 8px', borderRadius: '6px' }}>
+                                ★ {hotel.avgRating.toFixed(1)}
+                              </span>
+                              <span style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 500 }}>
+                                {hotel.totalReviews} {hotel.totalReviews === 1 ? 'verified review' : 'verified reviews'}
+                              </span>
+                            </div>
+                          ) : (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 12 }}>
+                              <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', background: '#f8fafc', padding: '2px 8px', borderRadius: '6px', border: '1px solid #f1f5f9', fontWeight: 600 }}>
+                                ⭐ New on StayBuddy
+                              </span>
+                            </div>
+                          )}
+
+                          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 12 }}>
+                            {(hotel.amenities || ['Free WiFi', 'AC', '24-hour Front Desk']).slice(0, 4).map((a: string) => (
+                              <span key={a} style={{ fontSize: '0.74rem', background: '#f1f5f9', color: '#475569', padding: '4px 10px', borderRadius: '6px', fontWeight: 600 }}>
+                                {a}
+                              </span>
+                            ))}
                           </div>
-                        )}
-                        <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginBottom: 12 }}>
-                          {hotel.amenities?.slice(0, 3).map((a: string) => (
-                            <span key={a} style={{ fontSize: '0.7rem', background: 'var(--bg-secondary)', padding: '2px 8px', borderRadius: 'var(--radius-full)', color: 'var(--text-secondary)' }}>{a}</span>
-                          ))}
                         </div>
-                        {typeof hotel.roomsLeft === 'number' && (
-                          <div style={{ fontSize: '0.8rem', color: '#ea580c', fontWeight: 600, marginBottom: 8, display: 'flex', alignItems: 'center', gap: 4 }}>
-                            <span style={{ display: 'inline-block', width: 6, height: 6, borderRadius: '50%', background: '#ea580c' }}></span>
-                            {hotel.roomsLeft} {hotel.roomsLeft === 1 ? 'room' : 'rooms'} left
+
+                        <div>
+                          {typeof hotel.roomsLeft === 'number' && (
+                            <div style={{ fontSize: '0.82rem', color: '#ea580c', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6 }}>
+                              <span style={{ display: 'inline-block', width: 7, height: 7, borderRadius: '50%', background: '#ea580c' }} />
+                              🔥 Only {hotel.roomsLeft} {hotel.roomsLeft === 1 ? 'room' : 'rooms'} left at this price
+                            </div>
+                          )}
+                          <div style={{ fontSize: '0.75rem', color: '#16a34a', fontWeight: 600, marginTop: 4 }}>
+                            ✓ Free Cancellation before 24 hours
                           </div>
-                        )}
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <div>
-                            {hotel.startingPrice && Number(hotel.startingPrice) > 0 ? (
-                              <>
-                                <span className="price" style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--brand-700)' }}>
+                        </div>
+                      </div>
+
+                      {/* Right: Pricing & CTA */}
+                      <div className="hotel-horizontal-pricing">
+                        <div>
+                          <div style={{ fontSize: '0.72rem', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em', fontWeight: 700 }}>
+                            Best Rate Guaranteed
+                          </div>
+                          {hotel.startingPrice && Number(hotel.startingPrice) > 0 ? (
+                            <>
+                              <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, justifyContent: 'flex-end', marginTop: 4 }}>
+                                <span style={{ fontSize: '1.65rem', fontWeight: 900, color: 'var(--brand-700, #c2410c)', lineHeight: 1 }}>
                                   ₹{Number(hotel.startingPrice).toLocaleString('en-IN')}
                                 </span>
-                                <span className="price-suffix" style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}> /night</span>
-                                {filters.adults === 1 && (
-                                  <div style={{ fontSize: '0.7rem', color: '#16a34a', fontWeight: 600 }}>1 Adult rate</div>
-                                )}
-                                {filters.adults === 3 && (
-                                  <div style={{ fontSize: '0.7rem', color: '#2563eb', fontWeight: 600 }}>3 Adults rate</div>
-                                )}
-                              </>
-                            ) : (
-                              <span className="price" style={{ fontSize: '1rem', color: 'var(--text-muted)' }}>
-                                Check rates
-                              </span>
-                            )}
-                          </div>
-                          <span style={{ fontSize: '0.8rem', color: 'var(--brand-600)', fontWeight: 600 }}>View →</span>
+                                <span style={{ fontSize: '0.82rem', color: '#64748b' }}>/night</span>
+                              </div>
+                              <div style={{ fontSize: '0.72rem', color: '#94a3b8', marginTop: 2 }}>
+                                + ₹{Math.round(Number(hotel.startingPrice) * 0.12).toLocaleString('en-IN')} taxes & fees
+                              </div>
+                              {filters.adults === 1 && (
+                                <div style={{ fontSize: '0.7rem', color: '#16a34a', fontWeight: 600 }}>1 Adult rate</div>
+                              )}
+                              {filters.adults === 3 && (
+                                <div style={{ fontSize: '0.7rem', color: '#2563eb', fontWeight: 600 }}>3 Adults rate</div>
+                              )}
+                            </>
+                          ) : (
+                            <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#64748b', marginTop: 6 }}>
+                              Check rates
+                            </div>
+                          )}
+                        </div>
+
+                        <div style={{ width: '100%', marginTop: 16 }}>
+                          <button
+                            type="button"
+                            className="btn btn-primary"
+                            style={{
+                              width: '100%',
+                              padding: '12px 18px',
+                              borderRadius: '10px',
+                              fontWeight: 800,
+                              fontSize: '0.92rem',
+                              boxShadow: '0 4px 14px rgba(255, 107, 53, 0.3)',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              gap: 6
+                            }}
+                          >
+                            <span>View Hotel</span>
+                            <span>→</span>
+                          </button>
                         </div>
                       </div>
                     </div>
