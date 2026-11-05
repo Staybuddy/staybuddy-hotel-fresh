@@ -51,29 +51,24 @@ export default function CityDestinationCard({
   return (
     <Link
       href={`/hotels?city=${encodeURIComponent(canonicalCity)}`}
+      className="city-dest-card-link"
       style={{
         textDecoration: 'none',
         flexShrink: 0,
         scrollSnapAlign: 'start',
         display: 'block',
-        width: 180,
         marginRight: isLast ? '16px' : '0',
       }}
     >
       <div
+        className="city-dest-card"
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
         style={{
-          position: 'relative',
-          width: '100%',
-          height: '235px',
-          borderRadius: '20px',
-          overflow: 'hidden',
-          backgroundColor: '#0f172a',
           cursor: 'pointer',
           border: isHovered
             ? '2px solid var(--brand-500, #ff6b35)'
-            : '2px solid rgba(255, 255, 255, 0.12)',
+            : '2px solid rgba(255, 255, 255, 0.15)',
           transition: 'transform 0.4s cubic-bezier(0.25, 1, 0.5, 1), box-shadow 0.4s ease, border-color 0.3s ease',
           transform: isHovered ? 'translateY(-6px)' : 'translateY(0)',
           boxShadow: isHovered
@@ -112,21 +107,22 @@ export default function CityDestinationCard({
             width: '100%',
             height: '100%',
             objectFit: 'cover',
+            objectPosition: 'center',
             display: 'block',
             transition: 'transform 0.6s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.3s ease',
-            transform: isHovered ? 'scale(1.10)' : 'scale(1)',
+            transform: isHovered ? 'scale(1.08)' : 'scale(1)',
             opacity: imgLoaded ? 1 : 0.3,
             zIndex: 1,
           }}
         />
 
-        {/* Cinematic Multi-stop Gradient Overlay */}
+        {/* Subtle, crystal-clear bottom gradient vignette so 80%+ of the photo is completely clear */}
         <div
           style={{
             position: 'absolute',
             inset: 0,
             background:
-              'linear-gradient(180deg, rgba(15, 23, 42, 0.45) 0%, rgba(15, 23, 42, 0.05) 30%, rgba(15, 23, 42, 0.65) 68%, rgba(15, 23, 42, 0.96) 100%)',
+              'linear-gradient(180deg, rgba(0, 0, 0, 0.2) 0%, transparent 35%, rgba(0, 0, 0, 0.3) 60%, rgba(0, 0, 0, 0.85) 100%)',
             zIndex: 2,
             pointerEvents: 'none',
           }}
@@ -136,17 +132,17 @@ export default function CityDestinationCard({
         <div
           style={{
             position: 'absolute',
-            top: '12px',
-            right: '12px',
+            top: '10px',
+            right: '10px',
             zIndex: 3,
-            background: 'rgba(15, 23, 42, 0.65)',
+            background: 'rgba(15, 23, 42, 0.7)',
             backdropFilter: 'blur(8px)',
             WebkitBackdropFilter: 'blur(8px)',
-            border: '1px solid rgba(255, 255, 255, 0.25)',
+            border: '1px solid rgba(255, 255, 255, 0.3)',
             color: '#ffffff',
-            fontSize: '0.7rem',
+            fontSize: '0.68rem',
             fontWeight: 700,
-            padding: '3px 10px',
+            padding: '2px 8px',
             borderRadius: '9999px',
             letterSpacing: '0.02em',
             boxShadow: '0 2px 6px rgba(0,0,0,0.3)',
@@ -162,20 +158,20 @@ export default function CityDestinationCard({
             bottom: 0,
             left: 0,
             right: 0,
-            padding: '14px 14px 14px 14px',
+            padding: '10px 12px',
             zIndex: 3,
             textAlign: 'left',
           }}
         >
           <div
             style={{
-              fontSize: '0.66rem',
+              fontSize: '0.62rem',
               fontWeight: 800,
               textTransform: 'uppercase',
               letterSpacing: '0.08em',
               color: '#fdba74',
-              marginBottom: '3px',
-              textShadow: '0 1px 2px rgba(0,0,0,0.6)',
+              marginBottom: '2px',
+              textShadow: '0 1px 3px rgba(0,0,0,0.9)',
             }}
           >
             Popular Hub
@@ -184,13 +180,13 @@ export default function CityDestinationCard({
           <div
             style={{
               fontWeight: 800,
-              fontSize: '1.22rem',
+              fontSize: '1.15rem',
               color: '#ffffff',
-              lineHeight: 1.2,
+              lineHeight: 1.15,
               whiteSpace: 'nowrap',
               overflow: 'hidden',
               textOverflow: 'ellipsis',
-              textShadow: '0 2px 6px rgba(0,0,0,0.7)',
+              textShadow: '0 2px 6px rgba(0,0,0,0.9)',
             }}
           >
             {canonicalCity}
@@ -198,13 +194,13 @@ export default function CityDestinationCard({
 
           <div
             style={{
-              fontSize: '0.74rem',
-              color: 'rgba(255, 255, 255, 0.88)',
-              marginTop: '4px',
+              fontSize: '0.72rem',
+              color: 'rgba(255, 255, 255, 0.95)',
+              marginTop: '2px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              textShadow: '0 1px 3px rgba(0,0,0,0.6)',
+              textShadow: '0 1px 3px rgba(0,0,0,0.9)',
             }}
           >
             <span
@@ -222,13 +218,13 @@ export default function CityDestinationCard({
                 display: 'inline-flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                width: '20px',
-                height: '20px',
+                width: '18px',
+                height: '18px',
                 borderRadius: '50%',
-                background: isHovered ? 'var(--brand-500, #ff6b35)' : 'rgba(255, 255, 255, 0.2)',
+                background: isHovered ? 'var(--brand-500, #ff6b35)' : 'rgba(255, 255, 255, 0.25)',
                 color: '#ffffff',
                 fontWeight: 700,
-                fontSize: '0.72rem',
+                fontSize: '0.7rem',
                 flexShrink: 0,
                 transition: 'all 0.3s ease',
                 transform: isHovered ? 'translateX(2px) scale(1.1)' : 'translateX(0)',
