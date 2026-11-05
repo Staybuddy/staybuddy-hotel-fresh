@@ -98,6 +98,16 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
+  useEffect(() => {
+    const onScroll = () => {
+      if (window.scrollY < 80) {
+        setShowStickySearch(false);
+      }
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
   const formatDate = (dateString: string) => {
     if (!dateString) return 'Select Date';
     const date = new Date(dateString);
@@ -390,15 +400,15 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
               display: 'flex', 
               flexDirection: 'row',
               flexWrap: 'nowrap',
-              gap: 0, 
+              gap: isCompact ? 8 : 0, 
               overflowX: 'auto', 
-              borderRadius: isCompact ? 'var(--radius-full)' : 'var(--radius-xl)', 
-              boxShadow: isCompact ? '0 2px 10px rgba(0,0,0,0.05)' : '0 4px 20px rgba(0,0,0,0.08)',
+              borderRadius: isCompact ? '0' : 'var(--radius-xl)', 
+              boxShadow: isCompact ? 'none' : '0 4px 20px rgba(0,0,0,0.08)',
               width: 'fit-content',
               maxWidth: '100%',
-              background: 'white',
+              background: isCompact ? 'transparent' : 'white',
               WebkitOverflowScrolling: 'touch',
-              border: isCompact ? '1px solid var(--border)' : 'none',
+              border: 'none',
               userSelect: 'none',
               WebkitUserSelect: 'none',
               MozUserSelect: 'none',
@@ -420,7 +430,7 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
                     const isOpening = searchData.propertyType !== card.id;
                     setSearchData(p => ({ ...p, propertyType: isOpening ? card.id : '' }));
                     if (isOpening) {
-                      if (window.scrollY > 200) {
+                      if (window.scrollY > 80) {
                         setShowStickySearch(true);
                       }
                     } else {
@@ -429,20 +439,21 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
                   }}
                   style={{
                     position: 'relative',
-                    background: isActive ? 'var(--brand-50, #fff7ed)' : 'white',
-                    borderRight: isLast ? 'none' : '1px solid var(--border)',
-                    padding: isCompact ? '6px 16px' : '12px 24px',
+                    background: isActive ? (isCompact ? 'transparent' : 'var(--brand-50, #fff7ed)') : (isCompact ? 'transparent' : 'white'),
+                    borderRight: isCompact ? 'none' : (isLast ? 'none' : '1px solid var(--border)'),
+                    borderRadius: isCompact ? '8px' : 0,
+                    padding: isCompact ? '4px 16px 8px 16px' : '12px 24px',
                     cursor: 'pointer',
                     minWidth: 0,
                     flex: '0 0 auto',
-                    transition: 'all 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
+                    transition: 'all 0.2s ease',
                     textAlign: 'center',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    flexDirection: isCompact ? 'row' : 'column',
-                    gap: isCompact ? 6 : 8,
-                    overflow: 'hidden',
+                    flexDirection: 'column',
+                    gap: isCompact ? 2 : 8,
+                    overflow: 'visible',
                     userSelect: 'none',
                     WebkitUserSelect: 'none',
                     MozUserSelect: 'none',
@@ -450,31 +461,32 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
                   }}
                   onMouseEnter={e => {
                     if (!isActive) {
-                      e.currentTarget.style.background = 'var(--brand-50, #fff7ed)';
-                      e.currentTarget.style.transform = 'translateY(-2px)';
+                      e.currentTarget.style.background = isCompact ? 'rgba(0,0,0,0.03)' : 'var(--brand-50, #fff7ed)';
+                      e.currentTarget.style.transform = isCompact ? 'none' : 'translateY(-2px)';
                     }
                   }}
                   onMouseLeave={e => {
                     if (!isActive) {
-                      e.currentTarget.style.background = 'white';
+                      e.currentTarget.style.background = 'transparent';
                       e.currentTarget.style.transform = 'translateY(0)';
                     }
                   }}
                 >
                   <div style={{
-                    fontSize: isCompact ? '1.2rem' : '1.6rem',
-                    transition: 'transform 0.35s cubic-bezier(0.16, 1, 0.3, 1)',
-                    transform: isActive ? 'translateY(-2px) scale(1.15)' : 'translateY(0) scale(1)',
-                    filter: isActive ? 'drop-shadow(0 4px 6px rgba(255, 107, 53, 0.25))' : 'none',
+                    fontSize: isCompact ? '1.3rem' : '1.6rem',
+                    lineHeight: 1,
+                    transition: 'transform 0.25s ease',
+                    transform: isActive ? (isCompact ? 'scale(1.1)' : 'translateY(-2px) scale(1.15)') : 'scale(1)',
+                    filter: isActive ? 'drop-shadow(0 2px 4px rgba(255, 107, 53, 0.3))' : 'none',
                     userSelect: 'none',
                     WebkitUserSelect: 'none'
                   }}>
                     {card.icon}
                   </div>
                   <div style={{
-                    color: isActive ? 'var(--brand-700, #c2410c)' : 'var(--text-primary)',
+                    color: isActive ? 'var(--brand-700, #c2410c)' : (isCompact ? '#475569' : 'var(--text-primary)'),
                     fontWeight: 800,
-                    fontSize: isCompact ? '0.8rem' : '0.85rem',
+                    fontSize: isCompact ? '0.74rem' : '0.85rem',
                     letterSpacing: '0.02em',
                     whiteSpace: 'nowrap',
                     transition: 'color 0.2s ease',
@@ -490,13 +502,13 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
                       style={{
                         position: 'absolute',
                         bottom: 0,
-                        left: '12%',
-                        right: '12%',
+                        left: isCompact ? 8 : '12%',
+                        right: isCompact ? 8 : '12%',
                         height: 3,
                         background: 'linear-gradient(90deg, #ff6b35, #ea580c)',
                         borderRadius: '3px 3px 0 0',
-                        boxShadow: '0 -2px 8px rgba(255, 107, 53, 0.45)',
-                        animation: 'fadeIn 0.25s ease'
+                        boxShadow: '0 -1px 6px rgba(255, 107, 53, 0.45)',
+                        animation: 'fadeIn 0.2s ease'
                       }}
                     />
                   )}
@@ -508,22 +520,14 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
 
         return (
           <>
-            <Navbar />
+            {/* Property Selector for Hero and Navbar (MakeMyTrip style) */}
+            <Navbar 
+              middleContent={renderPropertySelector(true)}
+              extendedContent={showStickySearch ? renderSearchBar() : null}
+            />
 
-            {/* STICKY PROPERTY SELECTOR HEADER */}
-            <div 
-              className="sticky-property-header"
-              style={{
-                position: 'sticky',
-                top: 68,
-                zIndex: 890,
-                background: 'var(--bg-secondary)',
-                padding: '16px 0 12px 0',
-                borderBottom: '1px solid var(--border)',
-                boxShadow: '0 4px 16px rgba(0, 0, 0, 0.05)',
-                transition: 'box-shadow 0.25s ease'
-              }}
-            >
+            {/* HERO SECTION WITH INLINE PROPERTY TYPES */}
+            <div style={{ background: 'var(--bg-secondary)', padding: '24px 0 0 0', marginTop: '-8px' }}>
               <div className="container hero-section-container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '0 16px' }}>
                 {renderPropertySelector(false)}
               </div>

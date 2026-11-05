@@ -13,8 +13,8 @@ export default function Navbar({ middleContent, extendedContent }: { middleConte
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 200);
-    window.addEventListener('scroll', handleScroll);
+    const handleScroll = () => setScrolled(window.scrollY > 80);
+    window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
@@ -37,19 +37,28 @@ export default function Navbar({ middleContent, extendedContent }: { middleConte
       }}>
         <div className="container" style={{ display: 'flex', flexDirection: 'row', flexWrap: 'nowrap', alignItems: 'center', justifyContent: 'space-between', height: 68 }}>
           {/* Logo */}
-          <div style={{ flex: 1, display: 'flex' }}>
+          <div style={{ flex: '0 0 auto', display: 'flex', alignItems: 'center' }}>
             <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 8, textDecoration: 'none' }}>
               <Logo size="md" />
             </Link>
           </div>
 
           {/* MIDDLE SECTION - Appears when scrolled (Hidden on Mobile) */}
-          <div className="hide-mobile" style={{ flex: 2, display: 'flex', justifyContent: 'center', opacity: scrolled ? 1 : 0, transition: 'opacity 0.3s ease', pointerEvents: scrolled ? 'auto' : 'none' }}>
+          <div className="hide-mobile" style={{
+            flex: '1 1 auto',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            opacity: scrolled ? 1 : 0,
+            transform: scrolled ? 'translateY(0) scale(1)' : 'translateY(-6px) scale(0.96)',
+            transition: 'opacity 0.25s ease, transform 0.25s ease',
+            pointerEvents: scrolled ? 'auto' : 'none'
+          }}>
             {middleContent}
           </div>
 
           {/* Right Nav */}
-          <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8 }}>
+          <div style={{ flex: '0 0 auto', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8 }}>
             {!session && (
               <>
                 <Link href="/partner/login" className="btn btn-ghost hide-mobile" style={{ fontWeight: 500 }}>List Your Hotel</Link>
