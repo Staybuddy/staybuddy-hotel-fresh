@@ -699,41 +699,6 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
         </Link>
       </section>
 
-      {/* ===== RECENT REVIEWS ===== */}
-      {recentReviews && recentReviews.length > 0 && (
-        <section style={{ padding: '24px 0', background: 'var(--bg-secondary)' }}>
-          <div className="container">
-            <div style={{ marginBottom: 24, textAlign: 'center' }}>
-              <h2>What Our <span style={{ color: 'var(--brand-600)' }}>Guests</span> Say</h2>
-              <p style={{ color: 'var(--text-secondary)', marginTop: 4 }}>Real reviews from verified bookings</p>
-            </div>
-            
-            <div className="hide-scrollbar" style={{ display: 'flex', overflowX: 'auto', gap: 'var(--space-5)', paddingBottom: 'var(--space-4)', scrollSnapType: 'x mandatory' }}>
-              {recentReviews.map(review => (
-                <div key={review._id} className="card" style={{ minWidth: 300, maxWidth: 350, flex: '0 0 auto', scrollSnapAlign: 'start', padding: 'var(--space-5)', display: 'flex', flexDirection: 'column', gap: 12 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                    <div style={{ fontWeight: 700, fontSize: '1.1rem' }}>{review.title}</div>
-                    <div style={{ background: 'var(--brand-500)', color: 'white', padding: '2px 8px', borderRadius: 'var(--radius-full)', fontWeight: 800, fontSize: '0.8rem' }}>
-                      {review.rating.toFixed(1)} ⭐
-                    </div>
-                  </div>
-                  
-                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', flex: 1, margin: 0, fontStyle: 'italic' }}>
-                    &quot;{review.comment}&quot;
-                  </p>
-                  
-                  <div style={{ borderTop: '1px solid var(--border)', paddingTop: 12, marginTop: 4 }}>
-                    <div style={{ fontWeight: 600, fontSize: '0.85rem' }}>{review.customerName}</div>
-                    <div style={{ color: 'var(--text-muted)', fontSize: '0.75rem', marginTop: 2 }}>Stayed at <span style={{ color: 'var(--brand-600)' }}>{review.hotelName}</span></div>
-                    <div suppressHydrationWarning style={{ color: 'var(--text-muted)', fontSize: '0.7rem', marginTop: 4 }}>{new Date(review.createdAt).toLocaleDateString()}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
-
       {/* ===== FEATURED HOTELS ===== */}
       <section style={{ padding: '24px 0' }}>
         <div className="container">
@@ -939,7 +904,40 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
         </div>
       </section>
 
-
+      {/* ===== RECENT REVIEWS (What Our Guests Say - At the last of the page) ===== */}
+      {recentReviews && recentReviews.length > 0 && (
+        <section style={{ padding: '40px 0', background: 'var(--bg-secondary)' }}>
+          <div className="container">
+            <div style={{ marginBottom: 24, textAlign: 'center' }}>
+              <h2>What Our <span style={{ color: 'var(--brand-600)' }}>Guests</span> Say</h2>
+              <p style={{ color: 'var(--text-secondary)', marginTop: 4 }}>Real reviews from verified bookings</p>
+            </div>
+            
+            <div className="hide-scrollbar" style={{ display: 'flex', overflowX: 'auto', gap: 'var(--space-5)', paddingBottom: 'var(--space-4)', scrollSnapType: 'x mandatory' }}>
+              {recentReviews.map(review => (
+                <div key={review._id} className="card" style={{ minWidth: 300, maxWidth: 350, flex: '0 0 auto', scrollSnapAlign: 'start', padding: 'var(--space-5)', display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    <div style={{ fontWeight: 700, fontSize: '1.1rem' }}>{review.title}</div>
+                    <div style={{ background: 'var(--brand-500)', color: 'white', padding: '2px 8px', borderRadius: 'var(--radius-full)', fontWeight: 800, fontSize: '0.8rem' }}>
+                      {review.rating.toFixed(1)} ⭐
+                    </div>
+                  </div>
+                  
+                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', flex: 1, margin: 0, fontStyle: 'italic' }}>
+                    &quot;{review.comment}&quot;
+                  </p>
+                  
+                  <div style={{ borderTop: '1px solid var(--border)', paddingTop: 12, marginTop: 4 }}>
+                    <div style={{ fontWeight: 600, fontSize: '0.85rem' }}>{review.customerName}</div>
+                    <div style={{ color: 'var(--text-muted)', fontSize: '0.75rem', marginTop: 2 }}>Stayed at <span style={{ color: 'var(--brand-600)' }}>{review.hotelName}</span></div>
+                    <div suppressHydrationWarning style={{ color: 'var(--text-muted)', fontSize: '0.7rem', marginTop: 4 }}>{new Date(review.createdAt).toLocaleDateString()}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* ===== FOOTER ===== */}
       <footer style={{ background: '#0f172a', color: '#94a3b8', padding: '60px 0 32px' }}>
