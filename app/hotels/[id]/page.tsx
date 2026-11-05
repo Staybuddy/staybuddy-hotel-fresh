@@ -1519,63 +1519,69 @@ export default function HotelDetailPage() {
               </div>
             </div>
 
-            {/* Hotel Location & Smart Direction Card */}
+            {/* Hotel Location & Smart Direction Card (MakeMyTrip Style matching Photo 1) */}
             <div
               className="card"
               style={{
-                marginBottom: 16,
+                marginBottom: 10,
                 padding: "14px 18px",
-                border: "1px solid var(--border)",
-                borderRadius: "var(--radius-xl)",
+                border: "1px solid #e2e8f0",
+                borderRadius: "16px",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "space-between",
-                gap: 12,
-                background: "white",
+                gap: 14,
+                background: "#ffffff",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+                transition: "all 0.2s ease"
               }}
             >
               <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0, flex: 1 }}>
+                {/* Red Pin inside light blue rounded square (Photo 1) */}
                 <div
                   style={{
-                    width: 38,
-                    height: 38,
-                    borderRadius: "50%",
-                    background: "var(--brand-50, #fff7ed)",
+                    width: 44,
+                    height: 44,
+                    borderRadius: "12px",
+                    background: "#eff6ff",
+                    border: "1px solid #dbeafe",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
                     flexShrink: 0,
+                    boxShadow: "0 1px 3px rgba(37,99,235,0.08)"
                   }}
                 >
-                  <svg
-                    width="18"
-                    height="18"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="var(--brand-600, #ea580c)"
-                    strokeWidth="2.2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z" />
-                    <circle cx="12" cy="10" r="3" />
-                  </svg>
+                  <span style={{ fontSize: "1.35rem", filter: "drop-shadow(0 2px 4px rgba(239,68,68,0.25))" }}>
+                    📍
+                  </span>
                 </div>
+
+                {/* Location text */}
                 <div style={{ minWidth: 0, flex: 1 }}>
-                  <div style={{ fontWeight: 800, fontSize: "1.05rem", color: "var(--text-primary)", lineHeight: 1.25 }}>
-                    {hotel.city}
+                  <div
+                    style={{
+                      fontWeight: 800,
+                      fontSize: "0.98rem",
+                      color: "#0f172a",
+                      lineHeight: 1.3,
+                      whiteSpace: "nowrap",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis"
+                    }}
+                    title={`${hotel.area ? `${hotel.area}, ` : ''}${hotel.city}`}
+                  >
+                    {hotel.area ? `${hotel.area}, ${hotel.city}` : hotel.city}
                   </div>
                   <div
                     style={{
-                      fontSize: "0.85rem",
-                      color: "var(--text-secondary)",
+                      fontSize: "0.78rem",
+                      color: "#64748b",
                       marginTop: 2,
                       lineHeight: 1.35,
+                      whiteSpace: "nowrap",
                       overflow: "hidden",
-                      textOverflow: "ellipsis",
-                      display: "-webkit-box",
-                      WebkitLineClamp: 2,
-                      WebkitBoxOrient: "vertical",
+                      textOverflow: "ellipsis"
                     }}
                     title={hotel.address}
                   >
@@ -1584,50 +1590,78 @@ export default function HotelDetailPage() {
                 </div>
               </div>
 
-              {/* Small Smart Direction Symbol Button */}
+              {/* See on Map Link (Photo 1) */}
               <a
                 href={`https://maps.google.com/?q=${encodeURIComponent(`${hotel.name}, ${hotel.address}, ${hotel.city}`)}`}
                 target="_blank"
                 rel="noreferrer"
-                title="Get Directions"
-                aria-label="Get Directions"
+                title="See on Map"
                 style={{
-                  width: 44,
-                  height: 44,
-                  borderRadius: "50%",
-                  background: "var(--brand-500, #ff6b35)",
-                  color: "white",
+                  color: "#2563eb",
+                  fontWeight: 700,
+                  fontSize: "0.88rem",
+                  textDecoration: "none",
                   display: "flex",
                   alignItems: "center",
-                  justifyContent: "center",
+                  gap: 4,
+                  whiteSpace: "nowrap",
                   flexShrink: 0,
-                  boxShadow: "0 3px 10px rgba(255, 107, 53, 0.35)",
-                  transition: "all 0.2s ease",
-                  textDecoration: "none",
+                  padding: "6px 10px",
+                  borderRadius: "8px",
+                  transition: "all 0.2s ease"
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = "scale(1.08)";
-                  e.currentTarget.style.boxShadow = "0 6px 16px rgba(255, 107, 53, 0.5)";
+                  e.currentTarget.style.color = "#1d4ed8";
+                  e.currentTarget.style.background = "#eff6ff";
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = "scale(1)";
-                  e.currentTarget.style.boxShadow = "0 3px 10px rgba(255, 107, 53, 0.35)";
+                  e.currentTarget.style.color = "#2563eb";
+                  e.currentTarget.style.background = "transparent";
                 }}
               >
-                <svg
-                  width="18"
-                  height="18"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <line x1="22" y1="2" x2="11" y2="13" />
-                  <polygon points="22 2 15 22 11 13 2 9 22 2" />
-                </svg>
+                <span>See on Map</span>
+                <span style={{ fontSize: "1rem", lineHeight: 1 }}>→</span>
               </a>
+            </div>
+
+            {/* Train + Stay Offer Banner (Photo 1) */}
+            <div
+              style={{
+                marginBottom: 16,
+                padding: "10px 16px",
+                borderRadius: "14px",
+                background: "#f0fdf4",
+                border: "1px solid #bbf7d0",
+                display: "flex",
+                alignItems: "center",
+                gap: 12,
+                boxShadow: "0 1px 3px rgba(22, 163, 74, 0.05)"
+              }}
+            >
+              <span style={{ fontSize: "1.3rem", lineHeight: 1, flexShrink: 0 }}>🚆</span>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", flex: 1, minWidth: 0 }}>
+                <span style={{ fontSize: "0.82rem", color: "#166534", fontWeight: 700 }}>
+                  Train + Stay Offer:
+                </span>
+                <span style={{ fontSize: "0.82rem", color: "#15803d" }}>
+                  Save flat 20% with coupon
+                </span>
+                <span
+                  style={{
+                    background: "#ffffff",
+                    border: "1px solid #86efac",
+                    color: "#166534",
+                    fontWeight: 800,
+                    fontSize: "0.75rem",
+                    padding: "2px 8px",
+                    borderRadius: "6px",
+                    letterSpacing: "0.04em",
+                    boxShadow: "0 1px 2px rgba(0,0,0,0.04)"
+                  }}
+                >
+                  STAYBUDDY20
+                </span>
+              </div>
             </div>
 
             {/* Rooms */}
