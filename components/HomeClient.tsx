@@ -36,7 +36,41 @@ const AMENITY_ICONS: Record<string, string> = {
 
 export default function HomeClient({ initialHotels, recentReviews = [] }: { initialHotels: any[], recentReviews?: any[] }) {
   const router = useRouter();
-  const [searchData, setSearchData] = useState({ propertyType: '', location: '', checkIn: '', checkOut: '', rooms: 1, adults: 2, children: 0 });
+  const todayStr = useMemo(() => new Date().toISOString().split('T')[0], []);
+  const tomorrowStr = useMemo(() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 1);
+    return d.toISOString().split('T')[0];
+  }, []);
+
+  const [searchData, setSearchData] = useState({
+    propertyType: 'Hotels',
+    location: '',
+    checkIn: '',
+    checkOut: '',
+    rooms: 1,
+    adults: 2,
+    children: 0
+  });
+  const [stayType, setStayType] = useState<'night' | 'hourly' | 'getaways'>('night');
+  const [recentlyViewed, setRecentlyViewed] = useState<any[]>([]);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem('staybuddy_recently_viewed');
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setRecentlyViewed(parsed);
+          return;
+        }
+      }
+    } catch (e) {}
+    if (initialHotels && initialHotels.length > 0) {
+      setRecentlyViewed(initialHotels.slice(0, 4));
+    }
+  }, [initialHotels]);
+
   const [hotels, setHotels] = useState<any[]>(initialHotels);
   const [loading, setLoading] = useState(false);
   const [searchError, setSearchError] = useState('');
@@ -104,7 +138,30 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
     return `${date.getDate()} ${date.toLocaleString('default', { month: 'short' })} '${String(date.getFullYear()).slice(2)}`;
   };
 
+  const formatUnifiedDate = (dateString: string) => {
+    if (!dateString) return { dayMonth: 'Add Date', weekday: 'Select' };
+    const d = new Date(dateString);
+    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const dd = String(d.getDate()).padStart(2, '0');
+    const month = months[d.getMonth()];
+    const yy = String(d.getFullYear()).slice(2);
+    const weekday = days[d.getDay()];
+    return {
+      dayMonth: `${dd} ${month} '${yy}`,
+      weekday: weekday,
+      full: `${dd} ${month} '${yy}, ${weekday}`
+    };
+  };
 
+  const nightsCount = useMemo(() => {
+    const inDate = searchData.checkIn || todayStr;
+    const outDate = searchData.checkOut || tomorrowStr;
+    const inD = new Date(inDate);
+    const outD = new Date(outDate);
+    const diff = Math.round((outD.getTime() - inD.getTime()) / (1000 * 60 * 60 * 24));
+    return diff > 0 ? diff : 1;
+  }, [searchData.checkIn, searchData.checkOut, todayStr, tomorrowStr]);
 
   function handleSearch(e: React.FormEvent) {
     e.preventDefault();
@@ -114,17 +171,15 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
       document.getElementById('location-search-trigger')?.click();
       return;
     }
-    if (!searchData.checkIn || !searchData.checkOut) {
-      setSearchError('Please select both check-in and check-out dates.');
-      return;
-    }
+    const checkInToUse = searchData.checkIn || todayStr;
+    const checkOutToUse = searchData.checkOut || tomorrowStr;
     
     setSearchError('');
     const params = new URLSearchParams({
       ...(searchData.propertyType && searchData.propertyType !== 'All' && { propertyType: searchData.propertyType }),
       ...(searchData.location && { city: searchData.location }),
-      ...(searchData.checkIn && { checkIn: searchData.checkIn }),
-      ...(searchData.checkOut && { checkOut: searchData.checkOut }),
+      checkIn: checkInToUse,
+      checkOut: checkOutToUse,
       rooms: searchData.rooms.toString(),
       adults: searchData.adults.toString(),
       children: searchData.children.toString(),
@@ -138,198 +193,427 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
       <>
         <style>{`
           @keyframes slideDownFade {
-            0% { opacity: 0; transform: translateY(-20px) scale(0.98); }
+            0% { opacity: 0; transform: translateY(-16px) scale(0.99); }
             100% { opacity: 1; transform: none; }
           }
+          .hero-search-wrapper {
+            animation: slideDownFade 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            background: #ffffff;
+            border-radius: 20px;
+            box-shadow: 0 12px 36px rgba(0,0,0,0.08);
+            border: 1px solid #f1f5f9;
+            padding: 16px;
+            width: 100%;
+            max-width: 100%;
+            box-sizing: border-box;
+            position: relative;
+            z-index: 50;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+          }
+          .staytype-tab-btn {
+            flex: 1;
+            padding: 8px 12px;
+            border-radius: 10px;
+            font-size: 0.82rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            transition: all 0.2s ease;
+          }
+          @media (min-width: 1025px) {
+            .hero-search-wrapper {
+              display: grid !important;
+              grid-template-columns: 2.2fr 2fr 1.6fr auto !important;
+              align-items: center !important;
+              padding: 16px 20px !important;
+              gap: 12px !important;
+            }
+            .hero-search-top-tabs {
+              grid-column: 1 / -1 !important;
+            }
+            .hero-search-btn {
+              height: 58px !important;
+              width: auto !important;
+              padding: 0 32px !important;
+              border-radius: 14px !important;
+              margin: 0 !important;
+            }
+          }
         `}</style>
-        <div className="fade-in hero-search-wrapper" style={{
-              animation: 'slideDownFade 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards',
-              transformOrigin: 'top center',
-              position: 'relative',
-              marginTop: '16px',
-              gap: 12,
-              alignItems: 'stretch',
-              background: 'white',
-              borderRadius: '16px',
-              boxShadow: '0 8px 32px rgba(0,0,0,0.08)',
-              padding: '12px',
-              width: '100%',
-              maxWidth: '100%',
-              boxSizing: 'border-box',
-              zIndex: 50
+
+        <div className="hero-search-wrapper">
+          {/* Top Switcher Tabs (MakeMyTrip Mobile Search Model Photo 2) */}
+          <div className="hero-search-top-tabs" style={{ display: 'flex', gap: 8, paddingBottom: 6 }}>
+            {[
+              { id: 'night', label: 'By Night', icon: '🏨' },
+              { id: 'hourly', label: 'Hourly Stays', icon: '⏱️' },
+              { id: 'getaways', label: 'Nearby Getaways', icon: '🌴' },
+            ].map(tab => {
+              const isSelected = stayType === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  type="button"
+                  className="staytype-tab-btn"
+                  onClick={() => setStayType(tab.id as any)}
+                  style={{
+                    border: isSelected ? '2px solid var(--brand-500)' : '1px solid #e2e8f0',
+                    background: isSelected ? '#fff7ed' : '#ffffff',
+                    color: isSelected ? 'var(--brand-700)' : '#475569',
+                    fontWeight: isSelected ? 800 : 600,
+                  }}
+                >
+                  <span style={{ fontSize: '1rem' }}>{tab.icon}</span>
+                  <span>{tab.label}</span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Location Block */}
+          <div className="hero-search-item" style={{ minWidth: 0 }}>
+            <LocationSearch 
+              city={searchData.location} 
+              onChange={c => setSearchData(p => ({ ...p, location: c }))} 
+            />
+          </div>
+
+          {/* Unified Dates Block (Photo 2 MakeMyTrip & StayBuddy Layout) */}
+          <div
+            className="hero-search-item"
+            onClick={() => { setShowDatePicker(true); setActiveDateSelection('checkIn'); }}
+            style={{
+              background: '#f8fafc',
+              borderRadius: '12px',
+              padding: '10px 14px',
+              minWidth: 0,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 8,
+              cursor: 'pointer',
+              border: '1px solid #e2e8f0',
+              transition: 'border 0.2s',
+              minHeight: '58px',
+              boxSizing: 'border-box'
+            }}
+            onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--brand-300)'}
+            onMouseLeave={e => e.currentTarget.style.borderColor = '#e2e8f0'}
+          >
+            {/* Check-In */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--brand-600)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                <line x1="16" y1="2" x2="16" y2="6" />
+                <line x1="8" y1="2" x2="8" y2="6" />
+                <line x1="3" y1="10" x2="21" y2="10" />
+              </svg>
+              <div>
+                <div suppressHydrationWarning style={{ fontSize: '0.94rem', fontWeight: 800, color: 'var(--text-primary)', whiteSpace: 'nowrap' }}>
+                  {formatUnifiedDate(searchData.checkIn || todayStr).dayMonth}
+                </div>
+                <div suppressHydrationWarning style={{ fontSize: '0.7rem', color: '#64748b' }}>
+                  {formatUnifiedDate(searchData.checkIn || todayStr).weekday}
+                </div>
+              </div>
+            </div>
+
+            {/* Night Pill Badge */}
+            <div style={{
+              background: '#ffffff',
+              border: '1px solid #cbd5e1',
+              borderRadius: '20px',
+              padding: '3px 8px',
+              fontSize: '0.68rem',
+              fontWeight: 800,
+              color: '#334155',
+              letterSpacing: '0.04em',
+              textTransform: 'uppercase',
+              whiteSpace: 'nowrap',
+              boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
+              flexShrink: 0
             }}>
-              
-              {/* Location Block */}
-              <div className="hero-search-item" style={{ minWidth: 0 }}>
-                <LocationSearch 
-                  city={searchData.location} 
-                  onChange={c => setSearchData(p => ({ ...p, location: c }))} 
-                />
+              {nightsCount} {nightsCount === 1 ? 'NIGHT' : 'NIGHTS'}
+            </div>
+
+            {/* Check-Out */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', minWidth: 0, textAlign: 'right' }}>
+              <div>
+                <div suppressHydrationWarning style={{ fontSize: '0.94rem', fontWeight: 800, color: 'var(--text-primary)', whiteSpace: 'nowrap' }}>
+                  {formatUnifiedDate(searchData.checkOut || tomorrowStr).dayMonth}
+                </div>
+                <div suppressHydrationWarning style={{ fontSize: '0.7rem', color: '#64748b' }}>
+                  {formatUnifiedDate(searchData.checkOut || tomorrowStr).weekday}
+                </div>
               </div>
-              
-              {/* Check-in Block */}
-              <div className="hero-search-item"
-                onClick={() => { setShowDatePicker(true); setActiveDateSelection('checkIn'); }}
-                style={{ background: '#f8fafc', borderRadius: '12px', padding: '12px 16px', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 4, cursor: 'pointer', border: '1px solid transparent', transition: 'border 0.2s' }}
-                onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--brand-200)'}
-                onMouseLeave={e => e.currentTarget.style.borderColor = 'transparent'}
-              >
-                <label style={{ fontSize: '0.7rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', cursor: 'pointer' }}>CHECK-IN</label>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--brand-600)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div suppressHydrationWarning style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.2 }}>{searchData.checkIn ? new Date(searchData.checkIn).getDate() + ' ' + new Date(searchData.checkIn).toLocaleString('default', { month: 'short' }) : 'Add Date'}</div>
-                    <div suppressHydrationWarning style={{ fontSize: '0.7rem', color: '#64748b', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{searchData.checkIn ? new Date(searchData.checkIn).toLocaleDateString('default', { weekday: 'short', year: 'numeric' }) : 'Select Check-in'}</div>
+            </div>
+          </div>
+
+          {/* Date Picker Overlay */}
+          {mounted && showDatePicker && createPortal(
+            <div style={{ position: 'fixed', inset: 0, zIndex: 10000, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '16px' }}>
+              <div style={{ position: 'absolute', inset: 0, background: 'rgba(15, 23, 42, 0.6)', backdropFilter: 'blur(4px)' }} onClick={() => setShowDatePicker(false)} />
+              <div className="responsive-popup" style={{ position: 'relative', background: 'white', borderRadius: '24px', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)', maxWidth: '100%', maxHeight: '90vh', overflowY: 'auto' }}>
+                 <DateRangePicker 
+                   checkIn={searchData.checkIn || todayStr} 
+                   checkOut={searchData.checkOut || tomorrowStr}
+                   onChange={(inDate, outDate) => setSearchData(p => ({ ...p, checkIn: inDate, checkOut: outDate }))}
+                   onClose={() => setShowDatePicker(false)}
+                   activeSelection={activeDateSelection}
+                   setActiveSelection={setActiveDateSelection}
+                 />
+              </div>
+            </div>,
+            document.body
+          )}
+
+          {/* Guests Block */}
+          <div
+            className="hero-search-item"
+            onClick={() => setShowGuestPicker(!showGuestPicker)}
+            style={{
+              background: '#f8fafc',
+              borderRadius: '12px',
+              padding: '10px 14px',
+              minWidth: 0,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 10,
+              cursor: 'pointer',
+              border: '1px solid #e2e8f0',
+              transition: 'border 0.2s',
+              minHeight: '58px',
+              boxSizing: 'border-box'
+            }}
+            onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--brand-300)'}
+            onMouseLeave={e => e.currentTarget.style.borderColor = '#e2e8f0'}
+          >
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--brand-600)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+              <circle cx="9" cy="7" r="4" />
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+              <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+            </svg>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: '0.94rem', fontWeight: 800, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {searchData.rooms} Room{searchData.rooms > 1 ? 's' : ''}, {searchData.adults} Adult{searchData.adults > 1 ? 's' : ''} &amp; {searchData.children} Child{searchData.children === 1 ? '' : 'ren'}
+              </div>
+              <div style={{ fontSize: '0.7rem', color: '#64748b' }}>Occupancy &amp; Pricing</div>
+            </div>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="6 9 12 15 18 9" />
+            </svg>
+          </div>
+
+          {/* Guest Selector Popup */}
+          {mounted && showGuestPicker && createPortal(
+            <div style={{ position: 'fixed', inset: 0, zIndex: 10000, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '16px' }}>
+              <div style={{ position: 'absolute', inset: 0, background: 'rgba(15, 23, 42, 0.6)', backdropFilter: 'blur(4px)' }} onClick={(e) => { e.stopPropagation(); setShowGuestPicker(false); }} />
+              <div className="responsive-popup" onClick={e => e.stopPropagation()} style={{ position: 'relative', background: 'white', borderRadius: '24px', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)', padding: 'var(--space-5)', width: 320, maxWidth: '100%', cursor: 'default' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div>
+                      <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>Rooms</div>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Max 3 adults / room</div>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', padding: '4px 8px' }}>
+                      <button className="btn-ghost" style={{ padding: '4px 8px', fontSize: '1.2rem', lineHeight: 1 }} onClick={() => setSearchData(p => {
+                        const adj = adjustRoomsAndAdults(p.rooms, p.adults, 'rooms', p.rooms - 1);
+                        return { ...p, rooms: adj.rooms, adults: adj.adults };
+                      })}>−</button>
+                      <span style={{ fontWeight: 700, width: 20, textAlign: 'center' }}>{searchData.rooms}</span>
+                      <button className="btn-ghost" style={{ padding: '4px 8px', fontSize: '1.2rem', lineHeight: 1 }} onClick={() => setSearchData(p => {
+                        const adj = adjustRoomsAndAdults(p.rooms, p.adults, 'rooms', Math.min(10, p.rooms + 1));
+                        return { ...p, rooms: adj.rooms, adults: adj.adults };
+                      })}>+</button>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div>
+                      <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>Adults</div>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Max {searchData.rooms * MAX_ADULTS_PER_ROOM} for {searchData.rooms} room{searchData.rooms > 1 ? 's' : ''}</div>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', padding: '4px 8px' }}>
+                      <button className="btn-ghost" style={{ padding: '4px 8px', fontSize: '1.2rem', lineHeight: 1 }} onClick={() => setSearchData(p => {
+                        const adj = adjustRoomsAndAdults(p.rooms, p.adults, 'adults', p.adults - 1);
+                        return { ...p, rooms: adj.rooms, adults: adj.adults };
+                      })}>−</button>
+                      <span style={{ fontWeight: 700, width: 20, textAlign: 'center' }}>{searchData.adults}</span>
+                      <button className="btn-ghost" style={{ padding: '4px 8px', fontSize: '1.2rem', lineHeight: 1 }} onClick={() => setSearchData(p => {
+                        const adj = adjustRoomsAndAdults(p.rooms, p.adults, 'adults', Math.min(30, p.adults + 1));
+                        return { ...p, rooms: adj.rooms, adults: adj.adults };
+                      })}>+</button>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div>
+                      <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>Children</div>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>0 - 17 Years Old</div>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', padding: '4px 8px' }}>
+                      <button className="btn-ghost" style={{ padding: '4px 8px', fontSize: '1.2rem', lineHeight: 1 }} onClick={() => setSearchData(p => ({ ...p, children: Math.max(0, p.children - 1) }))}>−</button>
+                      <span style={{ fontWeight: 700, width: 20, textAlign: 'center' }}>{searchData.children}</span>
+                      <button className="btn-ghost" style={{ padding: '4px 8px', fontSize: '1.2rem', lineHeight: 1 }} onClick={() => setSearchData(p => ({ ...p, children: Math.min(10, p.children + 1) }))}>+</button>
+                    </div>
+                  </div>
+
+                  <div style={{
+                    padding: '8px 10px',
+                    borderRadius: '8px',
+                    background: '#eff6ff',
+                    border: '1px solid #bfdbfe',
+                    color: '#1e40af',
+                    fontSize: '0.75rem',
+                    lineHeight: 1.3
+                  }}>
+                    💡 <strong>Max 3 adults per room.</strong> Adding 4 or more adults automatically calculates rooms and occupancy pricing.
                   </div>
                 </div>
               </div>
+            </div>,
+            document.body
+          )}
 
-              {/* Check-out Block */}
-              <div className="hero-search-item"
-                onClick={() => { setShowDatePicker(true); setActiveDateSelection('checkOut'); }}
-                style={{ background: '#f8fafc', borderRadius: '12px', padding: '12px 16px', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 4, cursor: 'pointer', border: '1px solid transparent', transition: 'border 0.2s' }}
-                onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--brand-200)'}
-                onMouseLeave={e => e.currentTarget.style.borderColor = 'transparent'}
-              >
-                <label style={{ fontSize: '0.7rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', cursor: 'pointer' }}>CHECK-OUT</label>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--brand-600)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div suppressHydrationWarning style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.2 }}>{searchData.checkOut ? new Date(searchData.checkOut).getDate() + ' ' + new Date(searchData.checkOut).toLocaleString('default', { month: 'short' }) : 'Add Date'}</div>
-                    <div suppressHydrationWarning style={{ fontSize: '0.7rem', color: '#64748b', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{searchData.checkOut ? new Date(searchData.checkOut).toLocaleDateString('default', { weekday: 'short', year: 'numeric' }) : 'Select Check-out'}</div>
-                  </div>
-                </div>
-              </div>
+          {/* Full-Width Search Button in StayBuddy Gradient */}
+          <button
+            type="button"
+            className="hero-search-btn"
+            onClick={handleSearch}
+            style={{ 
+              background: 'linear-gradient(135deg, #ff6b35, #ea580c, #f97316)', 
+              color: '#ffffff', 
+              border: 'none', 
+              borderRadius: '12px', 
+              padding: '16px 32px', 
+              fontSize: '1.05rem', 
+              fontWeight: 900, 
+              cursor: 'pointer',
+              letterSpacing: '0.04em',
+              textTransform: 'uppercase',
+              boxShadow: '0 8px 24px rgba(255, 107, 53, 0.4)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 8,
+              position: 'relative',
+              overflow: 'hidden',
+              width: '100%'
+            }}
+          >
+            <span>SEARCH HOTELS</span>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="9 18 15 12 9 6" />
+            </svg>
+          </button>
+        </div>
 
-              {mounted && showDatePicker && createPortal(
-                <div style={{ position: 'fixed', inset: 0, zIndex: 10000, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '16px' }}>
-                  <div style={{ position: 'absolute', inset: 0, background: 'rgba(15, 23, 42, 0.6)', backdropFilter: 'blur(4px)' }} onClick={() => setShowDatePicker(false)} />
-                  <div className="responsive-popup" style={{ position: 'relative', background: 'white', borderRadius: '24px', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)', maxWidth: '100%', maxHeight: '90vh', overflowY: 'auto' }}>
-                     <DateRangePicker 
-                       checkIn={searchData.checkIn} 
-                       checkOut={searchData.checkOut}
-                       onChange={(inDate, outDate) => setSearchData(p => ({ ...p, checkIn: inDate, checkOut: outDate }))}
-                       onClose={() => setShowDatePicker(false)}
-                       activeSelection={activeDateSelection}
-                       setActiveSelection={setActiveDateSelection}
-                     />
-                  </div>
-                </div>,
-                document.body
-              )}
+        {/* Limited Time Offer Card Banner (Photo 2) */}
+        <div style={{
+          marginTop: 14,
+          width: '100%',
+          background: 'linear-gradient(135deg, #ff8c42, #f59e0b)',
+          borderRadius: '18px',
+          padding: '16px 20px',
+          color: 'white',
+          boxShadow: '0 6px 20px rgba(245, 158, 11, 0.25)',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 6
+        }}>
+          <div style={{
+            display: 'inline-block',
+            alignSelf: 'flex-start',
+            background: 'rgba(255, 255, 255, 0.25)',
+            padding: '2px 10px',
+            borderRadius: '20px',
+            fontSize: '0.68rem',
+            fontWeight: 800,
+            letterSpacing: '0.06em',
+            textTransform: 'uppercase'
+          }}>
+            LIMITED TIME OFFER
+          </div>
+          <div style={{ fontSize: '1.25rem', fontWeight: 900, lineHeight: 1.2 }}>
+            Get 20% Off Your First Booking!
+          </div>
+          <div style={{ fontSize: '0.82rem', opacity: 0.95 }}>
+            Use code <strong style={{ textDecoration: 'underline' }}>STAYBUDDY20</strong> at checkout. Valid across all verified hotels.
+          </div>
+        </div>
 
-              {/* Guests Block */}
-              <div className="hero-search-item"
-                onClick={() => setShowGuestPicker(!showGuestPicker)}
-                style={{ background: '#f8fafc', borderRadius: '12px', padding: '12px 16px', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 4, cursor: 'pointer', border: '1px solid transparent', transition: 'border 0.2s', position: 'relative' }}
-                onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--brand-200)'}
-                onMouseLeave={e => e.currentTarget.style.borderColor = 'transparent'}
-              >
-                <label style={{ fontSize: '0.7rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', cursor: 'pointer' }}>ROOMS & GUESTS</label>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--brand-600)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.2 }}>{searchData.rooms} Room, {searchData.adults} Adult</div>
-                    <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: 2 }}>{searchData.children} Children</div>
-                  </div>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
-                </div>
-
-                {mounted && showGuestPicker && createPortal(
-                  <div style={{ position: 'fixed', inset: 0, zIndex: 10000, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '16px' }}>
-                    <div style={{ position: 'absolute', inset: 0, background: 'rgba(15, 23, 42, 0.6)', backdropFilter: 'blur(4px)' }} onClick={(e) => { e.stopPropagation(); setShowGuestPicker(false); }} />
-                    <div className="responsive-popup" onClick={e => e.stopPropagation()} style={{ position: 'relative', background: 'white', borderRadius: '24px', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)', padding: 'var(--space-5)', width: 320, maxWidth: '100%', cursor: 'default' }}>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <div>
-                            <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>Rooms</div>
-                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Max 3 adults / room</div>
-                          </div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 12, border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', padding: '4px 8px' }}>
-                            <button className="btn-ghost" style={{ padding: '4px 8px', fontSize: '1.2rem', lineHeight: 1 }} onClick={() => setSearchData(p => {
-                              const adj = adjustRoomsAndAdults(p.rooms, p.adults, 'rooms', p.rooms - 1);
-                              return { ...p, rooms: adj.rooms, adults: adj.adults };
-                            })}>−</button>
-                            <span style={{ fontWeight: 700, width: 20, textAlign: 'center' }}>{searchData.rooms}</span>
-                            <button className="btn-ghost" style={{ padding: '4px 8px', fontSize: '1.2rem', lineHeight: 1 }} onClick={() => setSearchData(p => {
-                              const adj = adjustRoomsAndAdults(p.rooms, p.adults, 'rooms', Math.min(10, p.rooms + 1));
-                              return { ...p, rooms: adj.rooms, adults: adj.adults };
-                            })}>+</button>
-                          </div>
-                        </div>
-
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <div>
-                            <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>Adults</div>
-                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Max {searchData.rooms * MAX_ADULTS_PER_ROOM} for {searchData.rooms} room{searchData.rooms > 1 ? 's' : ''}</div>
-                          </div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 12, border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', padding: '4px 8px' }}>
-                            <button className="btn-ghost" style={{ padding: '4px 8px', fontSize: '1.2rem', lineHeight: 1 }} onClick={() => setSearchData(p => {
-                              const adj = adjustRoomsAndAdults(p.rooms, p.adults, 'adults', p.adults - 1);
-                              return { ...p, rooms: adj.rooms, adults: adj.adults };
-                            })}>−</button>
-                            <span style={{ fontWeight: 700, width: 20, textAlign: 'center' }}>{searchData.adults}</span>
-                            <button className="btn-ghost" style={{ padding: '4px 8px', fontSize: '1.2rem', lineHeight: 1 }} onClick={() => setSearchData(p => {
-                              const adj = adjustRoomsAndAdults(p.rooms, p.adults, 'adults', Math.min(30, p.adults + 1));
-                              return { ...p, rooms: adj.rooms, adults: adj.adults };
-                            })}>+</button>
-                          </div>
-                        </div>
-
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <div>
-                            <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>Children</div>
-                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>0 - 17 Years Old</div>
-                          </div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 12, border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', padding: '4px 8px' }}>
-                            <button className="btn-ghost" style={{ padding: '4px 8px', fontSize: '1.2rem', lineHeight: 1 }} onClick={() => setSearchData(p => ({ ...p, children: Math.max(0, p.children - 1) }))}>−</button>
-                            <span style={{ fontWeight: 700, width: 20, textAlign: 'center' }}>{searchData.children}</span>
-                            <button className="btn-ghost" style={{ padding: '4px 8px', fontSize: '1.2rem', lineHeight: 1 }} onClick={() => setSearchData(p => ({ ...p, children: Math.min(10, p.children + 1) }))}>+</button>
-                          </div>
-                        </div>
-
-                        <div style={{
-                          padding: '8px 10px',
-                          borderRadius: '8px',
-                          background: '#eff6ff',
-                          border: '1px solid #bfdbfe',
-                          color: '#1e40af',
-                          fontSize: '0.75rem',
-                          lineHeight: 1.3
-                        }}>
-                          💡 <strong>Max 3 adults per room.</strong> Adding 4 or more adults automatically calculates rooms and occupancy pricing.
-                        </div>
+        {/* Recently Viewed Hotels Strip (MakeMyTrip Mobile Photo 2) */}
+        {recentlyViewed && recentlyViewed.length > 0 && (
+          <div style={{ marginTop: 24, width: '100%' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+              <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>Recently Viewed</h3>
+            </div>
+            <div style={{
+              display: 'flex',
+              gap: 14,
+              overflowX: 'auto',
+              paddingBottom: 8,
+              scrollSnapType: 'x mandatory',
+              WebkitOverflowScrolling: 'touch',
+              scrollbarWidth: 'none',
+              margin: '0 -4px'
+            }}>
+              {recentlyViewed.map((item) => (
+                <Link
+                  key={item._id}
+                  href={`/hotels/${item._id}`}
+                  style={{ textDecoration: 'none', color: 'inherit', flexShrink: 0, width: 220, scrollSnapAlign: 'start' }}
+                >
+                  <div style={{
+                    background: 'white',
+                    borderRadius: '16px',
+                    overflow: 'hidden',
+                    border: '1px solid #e2e8f0',
+                    boxShadow: '0 4px 14px rgba(0,0,0,0.05)',
+                    transition: 'transform 0.2s',
+                  }}>
+                    <div style={{ position: 'relative', height: 125, width: '100%', background: '#e2e8f0' }}>
+                      {item.images?.[0] ? (
+                        <img
+                          src={item.images[0]}
+                          alt={item.name}
+                          draggable={false}
+                          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                        />
+                      ) : (
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', fontSize: '2rem' }}>🏨</div>
+                      )}
+                    </div>
+                    <div style={{ padding: '10px 12px' }}>
+                      <div style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4 }}>
+                        <span style={{ color: '#f59e0b' }}>★</span> {item.avgRating ? Number(item.avgRating).toFixed(1) : '4.2'} ({item.totalReviews || 75})
+                      </div>
+                      <div style={{ fontSize: '0.88rem', fontWeight: 800, color: '#0f172a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginTop: 3 }}>
+                        {item.name}
+                      </div>
+                      <div style={{ fontSize: '0.72rem', color: '#64748b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {item.area ? `${item.area}, ` : ''}{item.city}
+                      </div>
+                      <div style={{ marginTop: 6, display: 'flex', alignItems: 'baseline', gap: 4 }}>
+                        <span style={{ fontSize: '1rem', fontWeight: 900, color: '#0f172a' }}>
+                          ₹{Number(item.startingPrice || 3500).toLocaleString('en-IN')}
+                        </span>
+                        <span style={{ fontSize: '0.68rem', color: '#64748b' }}>Per Night</span>
                       </div>
                     </div>
-                  </div>,
-                  document.body
-                )}
-              </div>
-
-              {/* Search Button */}
-              <button className="hero-search-btn"
-                onClick={handleSearch}
-                style={{ 
-                  background: 'linear-gradient(135deg, #ff6b35, #ea580c)', 
-                  color: 'white', 
-                  border: 'none', 
-                  borderRadius: '30px', 
-                  padding: '14px 32px', 
-                  fontSize: '1.1rem', 
-                  fontWeight: 800, 
-                  cursor: 'pointer',
-                  whiteSpace: 'nowrap',
-                  boxShadow: '0 4px 15px rgba(255,107,53,0.4)',
-                  flexShrink: 0,
-                  alignSelf: 'center',
-                  marginTop: 4,
-                }}
-              >
-                🔍 SEARCH
-              </button>
+                  </div>
+                </Link>
+              ))}
             </div>
+          </div>
+        )}
       </>
-  );
+    );
 
   return (
     <div>

@@ -160,6 +160,29 @@ export default function HotelDetailPage() {
       setHotel(data.hotel);
       setRooms(data.rooms || []);
       setReviews(data.reviews || []);
+
+      // Record to Recently Viewed in localStorage for MakeMyTrip-style home screen strip
+      if (data.hotel && typeof window !== 'undefined') {
+        try {
+          const raw = localStorage.getItem('staybuddy_recently_viewed');
+          let list = raw ? JSON.parse(raw) : [];
+          if (!Array.isArray(list)) list = [];
+          list = list.filter((item: any) => item._id !== data.hotel._id);
+          list.unshift({
+            _id: data.hotel._id,
+            name: data.hotel.name,
+            city: data.hotel.city,
+            area: data.hotel.area,
+            images: data.hotel.images || [],
+            startingPrice: data.hotel.startingPrice || (data.rooms?.[0]?.basePrice) || 3500,
+            avgRating: data.hotel.avgRating || 4.2,
+            totalReviews: data.hotel.totalReviews || 75,
+          });
+          localStorage.setItem('staybuddy_recently_viewed', JSON.stringify(list.slice(0, 10)));
+        } catch (err) {
+          // ignore
+        }
+      }
     } catch (e) {
       console.error(e);
     } finally {
@@ -335,10 +358,6 @@ export default function HotelDetailPage() {
   };
 
   async function handleBooking() {
-    if (!session) {
-      router.push("/login");
-      return;
-    }
     setAttemptedCheckout(true);
     setBookingError("");
     setBookingLoading(true);
@@ -363,6 +382,9 @@ export default function HotelDetailPage() {
       setBookingError(
         "Please fill in all required Guest Details (First Name, Last Name, Email, and Mobile Number).",
       );
+      // Smooth scroll to guest form
+      const el = document.querySelector(".guest-form-row") || document.getElementById("review-section");
+      if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
       setBookingLoading(false);
       return;
     }
@@ -398,11 +420,15 @@ export default function HotelDetailPage() {
           quantity: bookingData.rooms,
         }];
 
+    const customerId = session?.user
+      ? (session.user as any).id
+      : `guest_${bookingData.guestEmail ? bookingData.guestEmail.replace(/[^a-zA-Z0-9]/g, '_') : Date.now()}`;
+
     const res = await fetch("/api/bookings", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        customerId: (session.user as any).id,
+        customerId,
         hotelId: id,
         roomId: primaryRoom._id,
         rooms: bookingData.rooms,
@@ -772,13 +798,13 @@ export default function HotelDetailPage() {
 
   const bottomBarButtonLabel = useMemo(() => {
     if (bookingStep === 1) {
-      return bookingLoading ? "PROCESSING..." : "PROCEED TO PAY 🔒";
+      return bookingLoading ? "PROCESSING..." : "CONTINUE";
     }
     if (bookingData.rooms > 1 && totalSelectedRoomsCount < bookingData.rooms) {
       return `SELECT ROOM (${totalSelectedRoomsCount}/${bookingData.rooms})`;
     }
     if (totalSelectedRoomsCount > 0 || selectedRoom) {
-      return "CONTINUE TO BOOK →";
+      return "CONTINUE";
     }
     return "SELECT ROOM";
   }, [
@@ -5243,56 +5269,63 @@ export default function HotelDetailPage() {
         {/* Left Column: Price, Tax & Occupancy */}
         <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0, flex: 1, paddingRight: 10 }}>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
-            <span style={{ fontSize: '1.42rem', fontWeight: 900, color: '#ffffff', lineHeight: 1.1, letterSpacing: '-0.02em' }}>
+            <span style={{ fontSize: '1.45rem', fontWeight: 900, color: '#ffffff', lineHeight: 1.1, letterSpacing: '-0.02em' }}>
               ₹{bottomBarPrice.toLocaleString('en-IN')}
             </span>
           </div>
-          <div style={{ fontSize: '0.73rem', color: 'rgba(255, 255, 255, 0.72)', fontWeight: 500, marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-            + ₹{bottomBarTax.toLocaleString('en-IN')} taxes &amp; fees
-          </div>
-          <div style={{ fontSize: '0.67rem', color: 'rgba(255, 255, 255, 0.52)', marginTop: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-            {bookingStep === 1
-              ? `Total for ${nights} night${nights > 1 ? 's' : ''}`
-              : `Per night for ${bookingData.rooms} Room${bookingData.rooms > 1 ? 's' : ''} (${bookingData.adults} Adults)`}
-          </div>
+          {bookingStep === 1 ? (
+            <div style={{ fontSize: '0.74rem', color: 'rgba(255, 255, 255, 0.75)', fontWeight: 600, marginTop: 2 }}>
+              Incl of taxes &amp; fees
+            </div>
+          ) : (
+            <>
+              <div style={{ fontSize: '0.73rem', color: 'rgba(255, 255, 255, 0.72)', fontWeight: 500, marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                + ₹{bottomBarTax.toLocaleString('en-IN')} taxes &amp; fees
+              </div>
+              <div style={{ fontSize: '0.67rem', color: 'rgba(255, 255, 255, 0.52)', marginTop: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                Per night for {bookingData.rooms} Room{bookingData.rooms > 1 ? 's' : ''} ({bookingData.adults} Adults)
+              </div>
+            </>
+          )}
         </div>
 
-        {/* Right Column: Wishlist Button + Action CTA Button */}
+        {/* Right Column: Wishlist Button (Only on room selection) + Action CTA Button */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-          {/* Wishlist Square Button */}
-          <button
-            type="button"
-            onClick={handleToggleWishlist}
-            disabled={wishlistLoading}
-            aria-label="Wishlist"
-            style={{
-              width: 44,
-              height: 44,
-              borderRadius: 10,
-              background: 'rgba(255, 255, 255, 0.08)',
-              border: isWishlisted ? '1px solid #ef4444' : '1px solid rgba(255, 255, 255, 0.22)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
-              transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
-              backdropFilter: 'blur(8px)',
-              WebkitBackdropFilter: 'blur(8px)',
-            }}
-          >
-            <svg
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill={isWishlisted ? '#ef4444' : 'none'}
-              stroke={isWishlisted ? '#ef4444' : '#ffffff'}
-              strokeWidth="2.2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
+          {bookingStep === 0 && (
+            <button
+              type="button"
+              onClick={handleToggleWishlist}
+              disabled={wishlistLoading}
+              aria-label="Wishlist"
+              style={{
+                width: 44,
+                height: 44,
+                borderRadius: 10,
+                background: 'rgba(255, 255, 255, 0.08)',
+                border: isWishlisted ? '1px solid #ef4444' : '1px solid rgba(255, 255, 255, 0.22)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
+                backdropFilter: 'blur(8px)',
+                WebkitBackdropFilter: 'blur(8px)',
+              }}
             >
-              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-            </svg>
-          </button>
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill={isWishlisted ? '#ef4444' : 'none'}
+                stroke={isWishlisted ? '#ef4444' : '#ffffff'}
+                strokeWidth="2.2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+              </svg>
+            </button>
+          )}
 
           {/* Main Action CTA Button with Fluid Glass Shimmer & StayBuddy Theme */}
           <button
@@ -5302,10 +5335,10 @@ export default function HotelDetailPage() {
             disabled={bookingLoading}
             style={{
               height: 44,
-              padding: '0 18px',
+              padding: bookingStep === 1 ? '0 28px' : '0 20px',
               borderRadius: 10,
               fontWeight: 800,
-              fontSize: '0.88rem',
+              fontSize: '0.92rem',
               letterSpacing: '0.04em',
               textTransform: 'uppercase',
               color: '#ffffff',

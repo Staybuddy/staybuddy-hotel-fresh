@@ -170,27 +170,43 @@ export default function LocationSearch({ city, onChange, placeholder = "Search d
             title="Use current location"
             disabled={locating}
             style={{
-              background: 'var(--brand-100)',
-              border: 'none',
+              background: '#ffffff',
+              border: '1px solid #cbd5e1',
               cursor: locating ? 'wait' : 'pointer',
-              width: variant === 'compact' ? 26 : 32,
-              height: variant === 'compact' ? 26 : 32,
-              borderRadius: '50%',
+              padding: variant === 'compact' ? '3px 8px' : '5px 12px',
+              borderRadius: '20px',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center',
-              color: 'var(--brand-600)',
-              opacity: locating ? 0.5 : 1
+              gap: 5,
+              color: '#1e293b',
+              fontSize: variant === 'compact' ? '0.72rem' : '0.78rem',
+              fontWeight: 700,
+              boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
+              transition: 'all 0.2s ease',
+              flexShrink: 0,
+              opacity: locating ? 0.6 : 1
+            }}
+            onMouseEnter={e => {
+              e.currentTarget.style.borderColor = 'var(--brand-500)';
+              e.currentTarget.style.color = 'var(--brand-600)';
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.borderColor = '#cbd5e1';
+              e.currentTarget.style.color = '#1e293b';
             }}
           >
             {locating ? (
-               <div className="spinner" style={{ width: 14, height: 14, border: '2px solid var(--brand-600)', borderTopColor: 'transparent' }} />
+               <div className="spinner" style={{ width: 12, height: 12, border: '2px solid var(--brand-600)', borderTopColor: 'transparent' }} />
             ) : (
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                 <circle cx="12" cy="12" r="10" />
-                <circle cx="12" cy="12" r="3" />
+                <line x1="22" y1="12" x2="18" y2="12" />
+                <line x1="6" y1="12" x2="2" y2="12" />
+                <line x1="12" y1="6" x2="12" y2="2" />
+                <line x1="12" y1="22" x2="12" y2="18" />
               </svg>
             )}
+            <span>{locating ? 'Locating...' : 'Near Me'}</span>
           </button>
         </div>
       </div>
