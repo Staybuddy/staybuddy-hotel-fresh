@@ -450,7 +450,7 @@ tbody tr:hover { background: var(--bg-secondary); }
     box-sizing: border-box !important;
   }
   
-  img, video, canvas {
+  img:not(.city-dest-card-img), video, canvas {
     max-width: 100% !important;
     height: auto !important;
   }
@@ -850,7 +850,7 @@ tbody tr:hover { background: var(--bg-secondary); }
   background: rgba(0,0,0,0.5);
   z-index: 999;
 }
-/* City Destination Cards Responsive Sizing - Perfectly Synchronized Mobile & Desktop */
+/* City Destination Cards Responsive Sizing - 100% Synchronized Mobile & Desktop */
 .city-dest-card-link {
   width: 210px;
 }
@@ -860,7 +860,23 @@ tbody tr:hover { background: var(--bg-secondary); }
   height: 250px;
   border-radius: 20px;
   overflow: hidden;
-  background-color: #0f172a;
+  background-color: #e2e8f0;
+}
+.city-dest-card img,
+.city-dest-card img.city-dest-card-img {
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 100% !important;
+  max-height: 100% !important;
+  max-width: none !important;
+  object-fit: cover !important;
+  object-position: center !important;
+  display: block !important;
 }
 @media (max-width: 768px) {
   .city-dest-card-link {
@@ -869,6 +885,14 @@ tbody tr:hover { background: var(--bg-secondary); }
   .city-dest-card {
     height: 240px;
     border-radius: 18px;
+  }
+  .city-dest-card img,
+  .city-dest-card img.city-dest-card-img {
+    height: 240px !important;
+    min-height: 240px !important;
+    max-height: 240px !important;
+    width: 100% !important;
+    object-fit: cover !important;
   }
 }
 

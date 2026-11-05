@@ -80,6 +80,7 @@ export default function CityDestinationCard({
         <img
           src={photoUrl}
           alt={`${canonicalCity} city travel destination`}
+          className="city-dest-card-img"
           loading="eager"
           decoding="async"
           onError={() => {
@@ -89,9 +90,15 @@ export default function CityDestinationCard({
           }}
           style={{
             position: 'absolute',
-            inset: 0,
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
             width: '100%',
             height: '100%',
+            minHeight: '100%',
+            maxHeight: '100%',
+            maxWidth: 'none',
             objectFit: 'cover',
             objectPosition: 'center',
             display: 'block',
@@ -102,13 +109,13 @@ export default function CityDestinationCard({
           }}
         />
 
-        {/* Minimal Bottom Vignette - Over 70% of the entire photo has ZERO overlay */}
+        {/* Minimal Bottom Vignette - Over 75% of the entire photo has ZERO overlay */}
         <div
           style={{
             position: 'absolute',
             inset: 0,
             background:
-              'linear-gradient(to top, rgba(0, 0, 0, 0.85) 0%, rgba(0, 0, 0, 0.35) 22%, transparent 36%)',
+              'linear-gradient(to top, rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 0, 0.25) 20%, transparent 28%)',
             zIndex: 2,
             pointerEvents: 'none',
           }}
