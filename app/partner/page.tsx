@@ -774,15 +774,15 @@ export default function PartnerDashboard() {
           </div>
           <Logo size="sm" />
         </div>
-        <div style={{ padding: 'var(--space-8)' }}>
+        <div style={{ padding: '20px 28px 48px' }}>
 
 
 
           {/* ===== MY HOTELS ===== */}
           {activeTab === 'hotels' && (
             <div className="fade-in">
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-6)' }}>
-                <h1>My Hotels</h1>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+                <h1 style={{ margin: 0, fontSize: '1.85rem' }}>My Hotels</h1>
                 <button className="btn btn-primary" onClick={() => setActiveTab('add-hotel')}>+ Add New Hotel</button>
               </div>
 

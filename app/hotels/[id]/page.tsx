@@ -777,7 +777,8 @@ export default function HotelDetailPage() {
 
   const bottomBarButtonLabel = useMemo(() => {
     if (bookingStep === 1) {
-      return bookingLoading ? "PROCESSING..." : "PROCEED TO PAY 🔒";
+      const payAmount = currentPricing?.totalAmount || bottomBarPrice;
+      return bookingLoading ? "PROCESSING..." : `PROCEED TO PAY ₹${payAmount.toLocaleString('en-IN')}`;
     }
     if (bookingData.rooms > 1 && totalSelectedRoomsCount < bookingData.rooms) {
       return `SELECT ROOM (${totalSelectedRoomsCount}/${bookingData.rooms})`;
@@ -792,6 +793,8 @@ export default function HotelDetailPage() {
     bookingData.rooms,
     totalSelectedRoomsCount,
     selectedRoom,
+    currentPricing?.totalAmount,
+    bottomBarPrice,
   ]);
 
   if (loading)
@@ -5398,55 +5401,59 @@ export default function HotelDetailPage() {
         <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0, flex: 1, paddingRight: 10 }}>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
             <span style={{ fontSize: '1.42rem', fontWeight: 900, color: '#ffffff', lineHeight: 1.1, letterSpacing: '-0.02em' }}>
-              ₹{bottomBarPrice.toLocaleString('en-IN')}
+              ₹{(bookingStep === 1 ? (currentPricing.totalAmount || bottomBarPrice) : bottomBarPrice).toLocaleString('en-IN')}
             </span>
           </div>
-          <div style={{ fontSize: '0.73rem', color: 'rgba(255, 255, 255, 0.72)', fontWeight: 500, marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-            + ₹{bottomBarTax.toLocaleString('en-IN')} taxes &amp; fees
-          </div>
-          <div style={{ fontSize: '0.67rem', color: 'rgba(255, 255, 255, 0.52)', marginTop: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+          <div style={{ fontSize: '0.73rem', color: bookingStep === 1 ? '#86efac' : 'rgba(255, 255, 255, 0.72)', fontWeight: bookingStep === 1 ? 700 : 500, marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
             {bookingStep === 1
-              ? `Total for ${nights} night${nights > 1 ? 's' : ''}`
+              ? '✓ Total Amount to be paid (incl. taxes)'
+              : `+ ₹${bottomBarTax.toLocaleString('en-IN')} taxes & fees`}
+          </div>
+          <div style={{ fontSize: '0.67rem', color: 'rgba(255, 255, 255, 0.58)', marginTop: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            {bookingStep === 1
+              ? `${nights} Night${nights > 1 ? 's' : ''} • ${bookingData.rooms} Room${bookingData.rooms > 1 ? 's' : ''} (${bookingData.adults} Adults)`
               : `Per night for ${bookingData.rooms} Room${bookingData.rooms > 1 ? 's' : ''} (${bookingData.adults} Adults)`}
           </div>
         </div>
 
         {/* Right Column: Wishlist Button + Action CTA Button */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-          {/* Wishlist Square Button */}
-          <button
-            type="button"
-            onClick={handleToggleWishlist}
-            disabled={wishlistLoading}
-            aria-label="Wishlist"
-            style={{
-              width: 44,
-              height: 44,
-              borderRadius: 10,
-              background: 'rgba(255, 255, 255, 0.08)',
-              border: isWishlisted ? '1px solid #ef4444' : '1px solid rgba(255, 255, 255, 0.22)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
-              transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
-              backdropFilter: 'blur(8px)',
-              WebkitBackdropFilter: 'blur(8px)',
-            }}
-          >
-            <svg
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill={isWishlisted ? '#ef4444' : 'none'}
-              stroke={isWishlisted ? '#ef4444' : '#ffffff'}
-              strokeWidth="2.2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
+          {/* Wishlist Square Button (Only on details view, hidden on checkout for cleaner focus) */}
+          {bookingStep === 0 && (
+            <button
+              type="button"
+              onClick={handleToggleWishlist}
+              disabled={wishlistLoading}
+              aria-label="Wishlist"
+              style={{
+                width: 44,
+                height: 44,
+                borderRadius: 10,
+                background: 'rgba(255, 255, 255, 0.08)',
+                border: isWishlisted ? '1px solid #ef4444' : '1px solid rgba(255, 255, 255, 0.22)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
+                backdropFilter: 'blur(8px)',
+                WebkitBackdropFilter: 'blur(8px)',
+              }}
             >
-              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-            </svg>
-          </button>
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill={isWishlisted ? '#ef4444' : 'none'}
+                stroke={isWishlisted ? '#ef4444' : '#ffffff'}
+                strokeWidth="2.2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+              </svg>
+            </button>
+          )}
 
           {/* Main Action CTA Button with Fluid Glass Shimmer & StayBuddy Theme */}
           <button
@@ -5455,11 +5462,11 @@ export default function HotelDetailPage() {
             onClick={handleBottomBarAction}
             disabled={bookingLoading}
             style={{
-              height: 44,
-              padding: '0 18px',
+              height: 46,
+              padding: bookingStep === 1 ? '0 22px' : '0 18px',
               borderRadius: 10,
               fontWeight: 800,
-              fontSize: '0.88rem',
+              fontSize: bookingStep === 1 ? '0.92rem' : '0.88rem',
               letterSpacing: '0.04em',
               textTransform: 'uppercase',
               color: '#ffffff',
@@ -5471,8 +5478,12 @@ export default function HotelDetailPage() {
               gap: 6,
               position: 'relative',
               overflow: 'hidden',
-              background: 'linear-gradient(135deg, #ff6b35 0%, #ea580c 50%, #f97316 100%)',
-              boxShadow: '0 4px 18px rgba(234, 88, 12, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.35)',
+              background: bookingStep === 1
+                ? 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 50%, #1e40af 100%)'
+                : 'linear-gradient(135deg, #ff6b35 0%, #ea580c 50%, #f97316 100%)',
+              boxShadow: bookingStep === 1
+                ? '0 4px 18px rgba(37, 99, 235, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.35)'
+                : '0 4px 18px rgba(234, 88, 12, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.35)',
               whiteSpace: 'nowrap',
             }}
           >
