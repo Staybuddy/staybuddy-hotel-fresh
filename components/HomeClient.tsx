@@ -89,7 +89,6 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
   }, []);
   
   // Date Picker State
-  const [showStickySearch, setShowStickySearch] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [activeDateSelection, setActiveDateSelection] = useState<'checkIn' | 'checkOut'>('checkIn');
 
@@ -379,6 +378,16 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
           .hero-search-wrapper { padding: 8px !important; }
           .hotel-scroll-card { width: 220px !important; }
         }
+
+        /* Desktop Sticky Header for Search & Property Tabs */
+        @media (min-width: 1025px) {
+          .home-sticky-header {
+            position: sticky !important;
+            top: 68px !important;
+            z-index: 850 !important;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05) !important;
+          }
+        }
       `}</style>
       
       {/* Helper to render property selector */}
@@ -419,13 +428,6 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
                   onClick={() => {
                     const isOpening = searchData.propertyType !== card.id;
                     setSearchData(p => ({ ...p, propertyType: isOpening ? card.id : '' }));
-                    if (isOpening) {
-                      if (window.scrollY > 200) {
-                        setShowStickySearch(true);
-                      }
-                    } else {
-                      setShowStickySearch(false);
-                    }
                   }}
                   style={{
                     position: 'relative',
@@ -508,43 +510,45 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
 
         return (
           <>
-            {/* Property Selector for Hero and Navbar */}
-            <Navbar 
-              middleContent={renderPropertySelector(true)}
-              extendedContent={showStickySearch ? renderSearchBar() : null}
-            />
+            <Navbar />
 
-            {/* HERO SECTION WITH INLINE PROPERTY TYPES */}
-            <div style={{ background: 'var(--bg-secondary)', padding: '20px 0 0 0', marginTop: '-8px' }}>
-              <div className="container hero-section-container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '0 16px' }}>
-                {renderPropertySelector(false)}
+            {/* STICKY SEARCH & PROPERTY TYPE HEADER (DESKTOP) */}
+            <div 
+              className="home-sticky-header"
+              style={{
+                background: 'var(--bg-secondary)',
+                borderBottom: '1px solid var(--border)',
+                transition: 'box-shadow 0.25s ease',
+              }}
+            >
+              <div style={{ padding: '16px 0 10px 0' }}>
+                <div className="container hero-section-container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '0 16px' }}>
+                  {renderPropertySelector(false)}
+                </div>
+              </div>
+
+              {/* SEARCH BAR SECTION - ONLY OPENS ON USER CLICK */}
+              <div style={{
+                maxHeight: searchData.propertyType ? '1000px' : '0px',
+                opacity: searchData.propertyType ? 1 : 0,
+                overflow: searchData.propertyType ? 'visible' : 'hidden',
+                transition: 'max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s ease-in-out',
+              }}>
+                <section style={{ padding: searchData.propertyType ? '4px 0 20px 0' : '0' }}>
+                  <div className="container hero-section-container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '0 16px' }}>
+                    {searchData.propertyType && renderSearchBar()}
+                    {searchError && (
+                      <div style={{ marginTop: 12, color: 'white', background: '#ef4444', padding: '6px 16px', borderRadius: 'var(--radius-full)', fontSize: '0.9rem', fontWeight: 600, animation: 'fadeIn 0.3s ease' }}>
+                        {searchError}
+                      </div>
+                    )}
+                  </div>
+                </section>
               </div>
             </div>
           </>
         );
       })()}
-
-      {/* SEARCH BAR SECTION - ONLY OPENS ON USER CLICK */}
-      <div style={{
-        maxHeight: searchData.propertyType ? '1000px' : '0px',
-        opacity: searchData.propertyType ? 1 : 0,
-        overflow: searchData.propertyType ? 'visible' : 'hidden',
-        transition: 'max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s ease-in-out',
-        background: 'var(--bg-secondary)',
-        position: 'relative',
-        zIndex: 100
-      }}>
-        <section style={{ padding: searchData.propertyType ? '12px 0 24px 0' : '0' }}>
-          <div className="container hero-section-container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '0 16px' }}>
-            {searchData.propertyType && renderSearchBar()}
-            {searchError && (
-              <div style={{ marginTop: 12, color: 'white', background: '#ef4444', padding: '6px 16px', borderRadius: 'var(--radius-full)', fontSize: '0.9rem', fontWeight: 600, animation: 'fadeIn 0.3s ease' }}>
-                {searchError}
-              </div>
-            )}
-          </div>
-        </section>
-      </div>
 
       {/* ===== TRENDING DESTINATIONS ===== */}
       <section style={{ padding: '14px 0 10px', background: 'var(--bg-secondary)', userSelect: 'none', WebkitUserSelect: 'none' }}>
