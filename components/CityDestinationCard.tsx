@@ -76,26 +76,12 @@ export default function CityDestinationCard({
             : '0 4px 14px rgba(0, 0, 0, 0.12)',
         }}
       >
-        {/* Shimmer Placeholder while loading */}
-        {!imgLoaded && (
-          <div
-            style={{
-              position: 'absolute',
-              inset: 0,
-              background: 'linear-gradient(90deg, #1e293b 25%, #334155 50%, #1e293b 75%)',
-              backgroundSize: '200% 100%',
-              animation: 'shimmer 1.5s infinite',
-              zIndex: 1,
-            }}
-          />
-        )}
-
-        {/* 100% Full-bleed City Background Photo */}
+        {/* 100% Full-bleed Ultra-Fast City Background Photo */}
         <img
           src={photoUrl}
           alt={`${canonicalCity} city travel destination`}
-          loading="lazy"
-          onLoad={() => setImgLoaded(true)}
+          loading="eager"
+          decoding="async"
           onError={() => {
             if (photoUrl !== DEFAULT_CITY_PHOTO) {
               setPhotoUrl(DEFAULT_CITY_PHOTO);
@@ -109,20 +95,20 @@ export default function CityDestinationCard({
             objectFit: 'cover',
             objectPosition: 'center',
             display: 'block',
-            transition: 'transform 0.6s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.3s ease',
-            transform: isHovered ? 'scale(1.08)' : 'scale(1)',
-            opacity: imgLoaded ? 1 : 0.3,
+            transition: 'transform 0.5s cubic-bezier(0.25, 1, 0.5, 1)',
+            transform: isHovered ? 'scale(1.06)' : 'scale(1)',
+            opacity: 1,
             zIndex: 1,
           }}
         />
 
-        {/* Subtle, crystal-clear bottom gradient vignette so 80%+ of the photo is completely clear */}
+        {/* Minimal Bottom Vignette - Over 70% of the entire photo has ZERO overlay */}
         <div
           style={{
             position: 'absolute',
             inset: 0,
             background:
-              'linear-gradient(180deg, rgba(0, 0, 0, 0.2) 0%, transparent 35%, rgba(0, 0, 0, 0.3) 60%, rgba(0, 0, 0, 0.85) 100%)',
+              'linear-gradient(to top, rgba(0, 0, 0, 0.85) 0%, rgba(0, 0, 0, 0.35) 22%, transparent 36%)',
             zIndex: 2,
             pointerEvents: 'none',
           }}
@@ -135,14 +121,14 @@ export default function CityDestinationCard({
             top: '10px',
             right: '10px',
             zIndex: 3,
-            background: 'rgba(15, 23, 42, 0.7)',
+            background: 'rgba(15, 23, 42, 0.75)',
             backdropFilter: 'blur(8px)',
             WebkitBackdropFilter: 'blur(8px)',
-            border: '1px solid rgba(255, 255, 255, 0.3)',
+            border: '1px solid rgba(255, 255, 255, 0.35)',
             color: '#ffffff',
-            fontSize: '0.68rem',
+            fontSize: '0.7rem',
             fontWeight: 700,
-            padding: '2px 8px',
+            padding: '3px 9px',
             borderRadius: '9999px',
             letterSpacing: '0.02em',
             boxShadow: '0 2px 6px rgba(0,0,0,0.3)',
@@ -151,42 +137,28 @@ export default function CityDestinationCard({
           {hotels} {hotels === 1 ? 'hotel' : 'hotels'}
         </div>
 
-        {/* Bottom Details Content */}
+        {/* Bottom Details Content - Sleek & Compact Floating Text */}
         <div
           style={{
             position: 'absolute',
             bottom: 0,
             left: 0,
             right: 0,
-            padding: '10px 12px',
+            padding: '12px 14px',
             zIndex: 3,
             textAlign: 'left',
           }}
         >
           <div
             style={{
-              fontSize: '0.62rem',
               fontWeight: 800,
-              textTransform: 'uppercase',
-              letterSpacing: '0.08em',
-              color: '#fdba74',
-              marginBottom: '2px',
-              textShadow: '0 1px 3px rgba(0,0,0,0.9)',
-            }}
-          >
-            Popular Hub
-          </div>
-
-          <div
-            style={{
-              fontWeight: 800,
-              fontSize: '1.15rem',
+              fontSize: '1.25rem',
               color: '#ffffff',
               lineHeight: 1.15,
               whiteSpace: 'nowrap',
               overflow: 'hidden',
               textOverflow: 'ellipsis',
-              textShadow: '0 2px 6px rgba(0,0,0,0.9)',
+              textShadow: '0 2px 8px rgba(0,0,0,0.95)',
             }}
           >
             {canonicalCity}
@@ -194,13 +166,13 @@ export default function CityDestinationCard({
 
           <div
             style={{
-              fontSize: '0.72rem',
+              fontSize: '0.74rem',
               color: 'rgba(255, 255, 255, 0.95)',
-              marginTop: '2px',
+              marginTop: '3px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              textShadow: '0 1px 3px rgba(0,0,0,0.9)',
+              textShadow: '0 1px 4px rgba(0,0,0,0.95)',
             }}
           >
             <span
@@ -209,6 +181,7 @@ export default function CityDestinationCard({
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
                 paddingRight: '6px',
+                fontWeight: 500,
               }}
             >
               {landmark}
@@ -218,13 +191,13 @@ export default function CityDestinationCard({
                 display: 'inline-flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                width: '18px',
-                height: '18px',
+                width: '20px',
+                height: '20px',
                 borderRadius: '50%',
-                background: isHovered ? 'var(--brand-500, #ff6b35)' : 'rgba(255, 255, 255, 0.25)',
+                background: isHovered ? 'var(--brand-500, #ff6b35)' : 'rgba(255, 255, 255, 0.3)',
                 color: '#ffffff',
                 fontWeight: 700,
-                fontSize: '0.7rem',
+                fontSize: '0.72rem',
                 flexShrink: 0,
                 transition: 'all 0.3s ease',
                 transform: isHovered ? 'translateX(2px) scale(1.1)' : 'translateX(0)',
