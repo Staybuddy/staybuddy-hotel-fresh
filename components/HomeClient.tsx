@@ -7,7 +7,7 @@ import Navbar from '@/components/Navbar';
 import Logo from '@/components/Logo';
 import DateRangePicker from '@/components/DateRangePicker';
 import LocationSearch from '@/components/LocationSearch';
-import AppPromoCard from '@/components/AppPromoCard';
+import PartnerGraphicCard from '@/components/PartnerGraphicCard';
 import HomeReferralSection from '@/components/HomeReferralSection';
 import HomeStatsSection from '@/components/HomeStatsSection';
 import CityDestinationCard from '@/components/CityDestinationCard';
@@ -873,8 +873,8 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
         </div>
       </section>
 
-      {/* ===== APP PROMO CARD ===== */}
-      <AppPromoCard />
+      {/* ===== PARTNER GRAPHIC CARD ===== */}
+      <PartnerGraphicCard />
       <HomeReferralSection />
       <HomeStatsSection />
 

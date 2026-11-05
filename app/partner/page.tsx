@@ -6,6 +6,7 @@ import Link from 'next/link';
 import Logo from '@/components/Logo';
 import DateRangePicker from '@/components/DateRangePicker';
 import { compressImage } from '@/lib/imageUtils';
+import PartnerExtranetIntroModal from '@/components/PartnerExtranetIntroModal';
 
 const NAV_ITEMS = [
   { id: 'hotels', label: 'My Properties', icon: '🏨' },
@@ -45,6 +46,7 @@ export default function PartnerDashboard() {
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [bookingSearch, setBookingSearch] = useState('');
   const [extranetModal, setExtranetModal] = useState<any>(null);
+  const [extranetIntroTarget, setExtranetIntroTarget] = useState<any>(null);
   const [approveLoading, setApproveLoading] = useState<string | null>(null);
   const [deleteHotelModal, setDeleteHotelModal] = useState<any>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
@@ -951,7 +953,7 @@ export default function PartnerDashboard() {
                       type="button"
                       className="btn btn-outline"
                       style={{ width: '100%', padding: '11px 0', fontSize: '0.88rem', fontWeight: 700, justifyContent: 'center', border: '1px solid var(--brand-500)', color: 'var(--brand-600)', background: 'white', display: 'flex', alignItems: 'center', gap: 6 }}
-                      onClick={() => openExtranetModal(hotels[0])}
+                      onClick={() => setExtranetIntroTarget(hotels[0])}
                     >
                       <span>⚙️</span>
                       <span>Extranet CRM</span>
@@ -1055,7 +1057,7 @@ export default function PartnerDashboard() {
                             type="button" 
                             className="btn btn-outline" 
                             style={{ flex: 1, padding: '10px 0', fontSize: '0.85rem', border: '1px solid var(--brand-500)', color: 'var(--brand-600)', fontWeight: 600 }} 
-                            onClick={() => openExtranetModal(hotel)}
+                            onClick={() => setExtranetIntroTarget(hotel)}
                           >
                             ⚙️ Extranet CRM
                           </button>
@@ -2891,6 +2893,19 @@ export default function PartnerDashboard() {
         );
       })()}
       
+      {/* Impressive Bottom Slide-Up Graphic Intro Modal */}
+      <PartnerExtranetIntroModal
+        isOpen={!!extranetIntroTarget}
+        onClose={() => setExtranetIntroTarget(null)}
+        onOpenExtranet={() => {
+          const target = extranetIntroTarget;
+          setExtranetIntroTarget(null);
+          if (target) openExtranetModal(target);
+        }}
+        hotelName={extranetIntroTarget?.name}
+        hotelCity={extranetIntroTarget?.city}
+      />
+      
       {extranetModal && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex' }}>
           <div style={{ position: 'absolute', inset: 0, background: 'rgba(15, 23, 42, 0.7)', backdropFilter: 'blur(4px)' }} onClick={() => setExtranetModal(null)} />
@@ -2901,6 +2916,26 @@ export default function PartnerDashboard() {
                 <p style={{ color: '#64748b', fontSize: '0.9rem', marginTop: 4 }}>Complete CRM, onboarding and inventory control for this property</p>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <button
+                  type="button"
+                  onClick={() => setExtranetIntroTarget(extranetModal)}
+                  className="btn"
+                  style={{
+                    padding: '8px 14px',
+                    fontSize: '0.85rem',
+                    fontWeight: 700,
+                    background: '#f1f5f9',
+                    color: '#334155',
+                    border: '1px solid #cbd5e1',
+                    borderRadius: 8,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6
+                  }}
+                >
+                  <span>✨ Tour Graphic</span>
+                </button>
                 <button
                   type="button"
                   onClick={() => openBlockModal(extranetModal)}

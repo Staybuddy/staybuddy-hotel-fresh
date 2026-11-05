@@ -2878,6 +2878,22 @@ export default function HotelDetailPage() {
                         border: "1px solid #e2e8f0",
                         background: "#ffffff",
                         boxShadow: "0 2px 8px rgba(0, 0, 0, 0.04)",
+                        cursor: "pointer",
+                        transition: "all 0.2s ease",
+                      }}
+                      onClick={() => {
+                        const destinationQuery = encodeURIComponent(
+                          `${hotel.name}, ${hotel.landmark || hotel.address || ""}, ${hotel.city || ""}`.trim()
+                        );
+                        window.open(`https://www.google.com/maps/dir/?api=1&destination=${destinationQuery}`, "_blank");
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = "#eff6ff";
+                        e.currentTarget.style.borderColor = "#bfdbfe";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = "#ffffff";
+                        e.currentTarget.style.borderColor = "#e2e8f0";
                       }}
                     >
                       <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0, flex: 1, paddingRight: 8 }}>
@@ -2924,23 +2940,32 @@ export default function HotelDetailPage() {
                       </div>
                       <button
                         type="button"
-                        onClick={() => {
-                          const el = document.getElementById("location-map") || document.getElementById("about-section") || document.getElementById("hotel-details-grid");
-                          if (el) el.scrollIntoView({ behavior: "smooth" });
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const destinationQuery = encodeURIComponent(
+                            `${hotel.name}, ${hotel.landmark || hotel.address || ""}, ${hotel.city || ""}`.trim()
+                          );
+                          window.open(`https://www.google.com/maps/dir/?api=1&destination=${destinationQuery}`, "_blank");
                         }}
                         style={{
-                          background: "none",
-                          border: "none",
+                          background: "#eff6ff",
+                          border: "1px solid #bfdbfe",
+                          borderRadius: "8px",
                           fontSize: "0.82rem",
                           fontWeight: 700,
-                          color: "#2563eb",
+                          color: "#1d4ed8",
                           cursor: "pointer",
-                          padding: 0,
+                          padding: "6px 12px",
                           whiteSpace: "nowrap",
                           flexShrink: 0,
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: 4,
+                          boxShadow: "0 1px 3px rgba(37,99,235,0.1)",
                         }}
                       >
-                        See on Map →
+                        <span>📍 Get Directions</span>
+                        <span>→</span>
                       </button>
                     </div>
 
