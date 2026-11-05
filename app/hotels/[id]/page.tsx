@@ -143,15 +143,53 @@ export default function HotelDetailPage() {
   useEffect(() => {
     if (session?.user) {
       const nameParts = (session.user?.name || "").split(" ");
+      const userEmail = (session.user?.email || "").trim().toLowerCase();
+      let initialPhone = (session.user as any)?.phone || "";
+      if (!initialPhone && userEmail) {
+        try {
+          const cached = localStorage.getItem(`staybuddy_phone_${userEmail}`);
+          if (cached) initialPhone = cached;
+        } catch (e) {}
+      }
+
       setBookingData((p) => ({
         ...p,
-        guestFirstName: nameParts[0] || "",
-        guestLastName: nameParts.slice(1).join(" ") || "",
-        guestEmail: session.user?.email || "",
-        guestPhone: (session.user as any)?.phone || "",
+        guestFirstName: p.guestFirstName || nameParts[0] || "",
+        guestLastName: p.guestLastName || nameParts.slice(1).join(" ") || "",
+        guestEmail: p.guestEmail || userEmail,
+        guestPhone: p.guestPhone || initialPhone,
       }));
+
+      if (userEmail) {
+        fetch(`/api/user/profile?email=${encodeURIComponent(userEmail)}`)
+          .then((res) => res.json())
+          .then((data) => {
+            if (data?.phone) {
+              setBookingData((p) => ({ ...p, guestPhone: data.phone }));
+              try {
+                localStorage.setItem(`staybuddy_phone_${userEmail}`, data.phone);
+              } catch (e) {}
+            }
+          })
+          .catch(() => {});
+      }
     }
   }, [session]);
+
+  const handlePhoneUpdate = (newPhone: string) => {
+    setBookingData((p) => ({ ...p, guestPhone: newPhone }));
+    const userEmail = (bookingData.guestEmail || session?.user?.email || "").trim().toLowerCase();
+    if (userEmail && newPhone.trim().length >= 10) {
+      try {
+        localStorage.setItem(`staybuddy_phone_${userEmail}`, newPhone.trim());
+      } catch (e) {}
+      fetch("/api/user/profile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: userEmail, phone: newPhone.trim() }),
+      }).catch(() => {});
+    }
+  };
 
   async function fetchHotelData(cIn?: string, cOut?: string) {
     try {
@@ -370,6 +408,19 @@ export default function HotelDetailPage() {
       );
       setBookingLoading(false);
       return;
+    }
+
+    // Persist contact number for this user/email so it is never asked again
+    const userEmail = (bookingData.guestEmail || session?.user?.email || "").trim().toLowerCase();
+    if (userEmail && bookingData.guestPhone) {
+      try {
+        localStorage.setItem(`staybuddy_phone_${userEmail}`, bookingData.guestPhone.trim());
+      } catch (e) {}
+      fetch("/api/user/profile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: userEmail, phone: bookingData.guestPhone.trim() }),
+      }).catch(() => {});
     }
 
     const calculatedPricing = selectedRoomsList.length > 0
@@ -601,6 +652,15 @@ export default function HotelDetailPage() {
       const roomSection = document.getElementById("rooms-section");
       if (roomSection) roomSection.scrollIntoView({ behavior: "smooth" });
       return;
+    }
+    const userEmail = (bookingData.guestEmail || session?.user?.email || "").trim().toLowerCase();
+    if (userEmail && !bookingData.guestPhone) {
+      try {
+        const cached = localStorage.getItem(`staybuddy_phone_${userEmail}`);
+        if (cached) {
+          setBookingData((p) => ({ ...p, guestPhone: cached }));
+        }
+      } catch (e) {}
     }
     setBookingStep(1);
     setTimeout(() => window.scrollTo(0, 0), 10);
@@ -1639,151 +1699,6 @@ export default function HotelDetailPage() {
                   </div>,
                   document.body
                 )}
-              </div>
-            </div>
-
-            {/* Hotel Location & Smart Direction Card (MakeMyTrip Style matching Photo 1) */}
-            <div
-              className="card"
-              style={{
-                marginBottom: 10,
-                padding: "14px 18px",
-                border: "1px solid #e2e8f0",
-                borderRadius: "16px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                gap: 14,
-                background: "#ffffff",
-                boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
-                transition: "all 0.2s ease"
-              }}
-            >
-              <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0, flex: 1 }}>
-                {/* Red Pin inside light blue rounded square (Photo 1) */}
-                <div
-                  style={{
-                    width: 44,
-                    height: 44,
-                    borderRadius: "12px",
-                    background: "#eff6ff",
-                    border: "1px solid #dbeafe",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    flexShrink: 0,
-                    boxShadow: "0 1px 3px rgba(37,99,235,0.08)"
-                  }}
-                >
-                  <span style={{ fontSize: "1.35rem", filter: "drop-shadow(0 2px 4px rgba(239,68,68,0.25))" }}>
-                    📍
-                  </span>
-                </div>
-
-                {/* Location text */}
-                <div style={{ minWidth: 0, flex: 1 }}>
-                  <div
-                    style={{
-                      fontWeight: 800,
-                      fontSize: "0.98rem",
-                      color: "#0f172a",
-                      lineHeight: 1.3,
-                      whiteSpace: "nowrap",
-                      overflow: "hidden",
-                      textOverflow: "ellipsis"
-                    }}
-                    title={`${hotel.area ? `${hotel.area}, ` : ''}${hotel.city}`}
-                  >
-                    {hotel.area ? `${hotel.area}, ${hotel.city}` : hotel.city}
-                  </div>
-                  <div
-                    style={{
-                      fontSize: "0.78rem",
-                      color: "#64748b",
-                      marginTop: 2,
-                      lineHeight: 1.35,
-                      whiteSpace: "nowrap",
-                      overflow: "hidden",
-                      textOverflow: "ellipsis"
-                    }}
-                    title={hotel.address}
-                  >
-                    {hotel.address}
-                  </div>
-                </div>
-              </div>
-
-              {/* See on Map Link (Photo 1) */}
-              <a
-                href={`https://maps.google.com/?q=${encodeURIComponent(`${hotel.name}, ${hotel.address}, ${hotel.city}`)}`}
-                target="_blank"
-                rel="noreferrer"
-                title="See on Map"
-                style={{
-                  color: "#2563eb",
-                  fontWeight: 700,
-                  fontSize: "0.88rem",
-                  textDecoration: "none",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 4,
-                  whiteSpace: "nowrap",
-                  flexShrink: 0,
-                  padding: "6px 10px",
-                  borderRadius: "8px",
-                  transition: "all 0.2s ease"
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.color = "#1d4ed8";
-                  e.currentTarget.style.background = "#eff6ff";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.color = "#2563eb";
-                  e.currentTarget.style.background = "transparent";
-                }}
-              >
-                <span>See on Map</span>
-                <span style={{ fontSize: "1rem", lineHeight: 1 }}>→</span>
-              </a>
-            </div>
-
-            {/* Train + Stay Offer Banner (Photo 1) */}
-            <div
-              style={{
-                marginBottom: 16,
-                padding: "10px 16px",
-                borderRadius: "14px",
-                background: "#f0fdf4",
-                border: "1px solid #bbf7d0",
-                display: "flex",
-                alignItems: "center",
-                gap: 12,
-                boxShadow: "0 1px 3px rgba(22, 163, 74, 0.05)"
-              }}
-            >
-              <span style={{ fontSize: "1.3rem", lineHeight: 1, flexShrink: 0 }}>🚆</span>
-              <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", flex: 1, minWidth: 0 }}>
-                <span style={{ fontSize: "0.82rem", color: "#166534", fontWeight: 700 }}>
-                  Train + Stay Offer:
-                </span>
-                <span style={{ fontSize: "0.82rem", color: "#15803d" }}>
-                  Save flat 20% with coupon
-                </span>
-                <span
-                  style={{
-                    background: "#ffffff",
-                    border: "1px solid #86efac",
-                    color: "#166534",
-                    fontWeight: 800,
-                    fontSize: "0.75rem",
-                    padding: "2px 8px",
-                    borderRadius: "6px",
-                    letterSpacing: "0.04em",
-                    boxShadow: "0 1px 2px rgba(0,0,0,0.04)"
-                  }}
-                >
-                  STAYBUDDY20
-                </span>
               </div>
             </div>
 
@@ -4130,12 +4045,21 @@ export default function HotelDetailPage() {
                               backgroundColor: "transparent",
                             }}
                             value={bookingData.guestPhone}
-                            onChange={(e) =>
-                              setBookingData((p) => ({
-                                ...p,
-                                guestPhone: e.target.value,
-                              }))
-                            }
+                            onChange={(e) => handlePhoneUpdate(e.target.value)}
+                            onBlur={(e) => {
+                              const val = e.target.value.trim();
+                              const userEmail = (bookingData.guestEmail || session?.user?.email || "").trim().toLowerCase();
+                              if (userEmail && val) {
+                                try {
+                                  localStorage.setItem(`staybuddy_phone_${userEmail}`, val);
+                                } catch (err) {}
+                                fetch("/api/user/profile", {
+                                  method: "POST",
+                                  headers: { "Content-Type": "application/json" },
+                                  body: JSON.stringify({ email: userEmail, phone: val }),
+                                }).catch(() => {});
+                              }
+                            }}
                           />
                         </div>
                       </div>
@@ -4573,8 +4497,9 @@ export default function HotelDetailPage() {
                     </div>
                   </div>
 
-                  {/* PROCEED TO PAY BUTTON */}
+                  {/* PROCEED TO PAY BUTTON (Desktop Only - on Mobile, the bottom sticky bar handles payment) */}
                   <div
+                    className="hide-mobile"
                     style={{
                       display: "flex",
                       flexDirection: "column",
