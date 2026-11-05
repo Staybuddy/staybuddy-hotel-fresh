@@ -1,10 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/firebaseAdmin';
 
-export async function GET(request: NextRequest) {
+export const dynamic = 'force-dynamic';
+
+export async function GET(_request: NextRequest) {
   try {
-    const hotelsSnapshot = await db.collection('hotels').orderBy('createdAt', 'desc').get().catch(() => db.collection('hotels').get());
+    // Fetch all hotels unconditionally without omitting documents lacking createdAt
+    const hotelsSnapshot = await db.collection('hotels').get();
     let hotels: any[] = hotelsSnapshot.docs.map(doc => ({ _id: doc.id, ...(doc.data() as any) }));
+
+    // In-memory sort by createdAt descending (robust against missing or formatted createdAt)
+    hotels.sort((a, b) => {
+      const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      return timeB - timeA;
+    });
 
     // Fetch users (partners) to attach name/email
     const usersSnapshot = await db.collection('users').get();

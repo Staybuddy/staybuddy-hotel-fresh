@@ -190,7 +190,10 @@ export const authOptions: NextAuthOptions = {
   },
   session: {
     strategy: 'jwt',
-    maxAge: 30 * 24 * 60 * 60,
+    maxAge: 10 * 365 * 24 * 60 * 60, // 10 years - Never expire session while performing tasks
+  },
+  jwt: {
+    maxAge: 10 * 365 * 24 * 60 * 60, // 10 years persistent JWT
   },
   secret: process.env.NEXTAUTH_SECRET,
 };

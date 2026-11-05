@@ -63,6 +63,14 @@ export async function GET(request: NextRequest) {
       }
     });
 
+    // Fetch active partner inventory blocks for this hotel
+    const blocksSnap = await db.collection('inventory_blocks')
+      .where('hotelId', '==', hotelId)
+      .get()
+      .catch(() => ({ docs: [] }));
+
+    const activeBlocks = blocksSnap.docs.map((d: any) => d.data());
+
     // Calculate smart availability for each room
     rooms = rooms.map((room: any) => {
       const baseAlloc = Number(room.staybuddyAllocation !== undefined ? room.staybuddyAllocation : (room.totalRooms || 0));
@@ -72,12 +80,33 @@ export async function GET(request: NextRequest) {
 
       const activeBookingsOnDate = roomBookingsMap[room._id] || [];
       const bookedRooms = activeBookingsOnDate.reduce((sum, item) => sum + item.rooms, 0);
-      const availableRooms = Math.max(0, totalAllocation - bookedRooms);
+
+      // Check if room or entire property is blocked on targetDateStr
+      let isBlockedOnDate = false;
+      let blockedCount = 0;
+      let blockReason = '';
+
+      activeBlocks.forEach((blk: any) => {
+        const bStart = blk.startDate ? getDateStr(blk.startDate) : '';
+        const bEnd = blk.endDate ? getDateStr(blk.endDate) : '';
+        if (bStart <= targetDateStr && bEnd >= targetDateStr) {
+          if (blk.roomId === 'all') {
+            isBlockedOnDate = true;
+            blockedCount = totalAllocation;
+            blockReason = blk.reason || 'Entire property blocked';
+          } else if (blk.roomId === room._id) {
+            blockedCount += (blk.roomsCount === 'all' ? totalAllocation : Number(blk.roomsCount) || 1);
+            blockReason = blk.reason || 'Rooms blocked by partner';
+          }
+        }
+      });
+
+      const effectiveAvailable = isBlockedOnDate ? 0 : Math.max(0, totalAllocation - bookedRooms - blockedCount);
 
       // Today's calculated available rooms
       const todayTotal = baseAlloc + Number(room.extraInventoryToday || 0);
       const todayBooked = todayBookingsMap[room._id] || 0;
-      const todayAvailable = Math.max(0, todayTotal - todayBooked);
+      const todayAvailable = isBlockedOnDate ? 0 : Math.max(0, todayTotal - todayBooked - blockedCount);
 
       return {
         ...room,
@@ -86,7 +115,10 @@ export async function GET(request: NextRequest) {
         staybuddyAllocation: baseAlloc,
         extraInventoryToday: room.extraInventoryToday || 0,
         bookedRooms,
-        availableRooms,
+        blockedRooms: blockedCount,
+        isBlockedOnDate,
+        blockReason,
+        availableRooms: effectiveAvailable,
         todayAvailable,
         activeBookings: activeBookingsOnDate
       };

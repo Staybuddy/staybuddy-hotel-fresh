@@ -49,6 +49,27 @@ export default function PartnerDashboard() {
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [isLocating, setIsLocating] = useState(false);
 
+  // ===== SMART INVENTORY & PROPERTY BLOCKING CRM STATES =====
+  const [blockModalHotel, setBlockModalHotel] = useState<any>(null);
+  const [blockHotelRooms, setBlockHotelRooms] = useState<any[]>([]);
+  const [blockLoading, setBlockLoading] = useState(false);
+  const [existingBlocks, setExistingBlocks] = useState<any[]>([]);
+  const [loadingBlocks, setLoadingBlocks] = useState(false);
+  const [selectedAvailHotelId, setSelectedAvailHotelId] = useState<string>('');
+  const [allPartnerBlocks, setAllPartnerBlocks] = useState<any[]>([]);
+  const [loadingAllBlocks, setLoadingAllBlocks] = useState(false);
+  const [blockForm, setBlockForm] = useState({
+    blockScope: 'property', // 'property' | 'room'
+    roomId: 'all',
+    roomType: 'Entire Property',
+    roomsCount: 1,
+    startDate: '',
+    endDate: '',
+    isEntireDay: true,
+    reason: 'Walk-in / Offline Booking',
+    customReason: '',
+  });
+
   function getCurrentLocation() {
     if (!navigator.geolocation) {
       alert("Geolocation is not supported by your browser");
@@ -90,6 +111,12 @@ export default function PartnerDashboard() {
       fetchData();
     }
   }, [status, session]);
+
+  useEffect(() => {
+    if (activeTab === 'availability' && hotels.length > 0) {
+      fetchAllPartnerBlocks();
+    }
+  }, [activeTab, hotels]);
 
   async function fetchData(showLoadingIndicator = true) {
     if (showLoadingIndicator) setLoading(true);
@@ -331,6 +358,200 @@ export default function PartnerDashboard() {
       }
     } catch (e) {
       console.error('Error fetching extranet hotel data:', e);
+    }
+  }
+
+  // ===== SMART INVENTORY BLOCKING LOGIC =====
+  function getTodayStr() {
+    const d = new Date();
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  function getTomorrowStr() {
+    const d = new Date();
+    d.setDate(d.getDate() + 1);
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  function getWeekendRange() {
+    const now = new Date();
+    const currentDay = now.getDay();
+    const daysUntilSaturday = (6 - currentDay + 7) % 7 || 7;
+    const saturday = new Date(now);
+    saturday.setDate(now.getDate() + (daysUntilSaturday === 0 ? 0 : daysUntilSaturday));
+    const sunday = new Date(saturday);
+    sunday.setDate(saturday.getDate() + 1);
+    return {
+      start: saturday.toISOString().split('T')[0],
+      end: sunday.toISOString().split('T')[0],
+    };
+  }
+
+  function get7DaysRange() {
+    const now = new Date();
+    const start = now.toISOString().split('T')[0];
+    const endD = new Date(now);
+    endD.setDate(now.getDate() + 7);
+    return {
+      start,
+      end: endD.toISOString().split('T')[0],
+    };
+  }
+
+  async function openBlockModal(hotel: any) {
+    setBlockModalHotel(hotel);
+    const today = getTodayStr();
+    setBlockForm({
+      blockScope: 'property',
+      roomId: 'all',
+      roomType: 'Entire Property',
+      roomsCount: 1,
+      startDate: today,
+      endDate: today,
+      isEntireDay: true,
+      reason: 'Walk-in / Offline Booking',
+      customReason: '',
+    });
+
+    try {
+      const res = await fetch(`/api/rooms?hotelId=${hotel._id}`);
+      const data = await res.json();
+      setBlockHotelRooms(data.rooms || []);
+    } catch (e) {
+      console.error('Error fetching rooms for block modal:', e);
+      setBlockHotelRooms([]);
+    }
+
+    setLoadingBlocks(true);
+    try {
+      const res = await fetch(`/api/hotels/block?hotelId=${hotel._id}`);
+      const data = await res.json();
+      setExistingBlocks(data.blocks || []);
+    } catch (e) {
+      console.error('Error fetching blocks:', e);
+      setExistingBlocks([]);
+    } finally {
+      setLoadingBlocks(false);
+    }
+  }
+
+  async function handleCreateBlock(e: React.FormEvent) {
+    e.preventDefault();
+    if (!blockModalHotel) return;
+
+    if (!blockForm.startDate || !blockForm.endDate) {
+      alert('Please select both Start Date and End Date');
+      return;
+    }
+    if (blockForm.endDate < blockForm.startDate) {
+      alert('End Date cannot be earlier than Start Date');
+      return;
+    }
+
+    setBlockLoading(true);
+    try {
+      let resolvedRoomId = 'all';
+      let resolvedRoomType = 'Entire Property';
+      let resolvedRoomsCount: string | number = 'all';
+
+      if (blockForm.blockScope === 'room') {
+        resolvedRoomId = blockForm.roomId;
+        const targetRoom = blockHotelRooms.find((r: any) => r._id === blockForm.roomId);
+        resolvedRoomType = targetRoom?.type || 'Selected Room';
+        resolvedRoomsCount = Math.max(1, Number(blockForm.roomsCount) || 1);
+      }
+
+      const finalReason = blockForm.reason === 'Other'
+        ? (blockForm.customReason.trim() || 'Manual Extranet Block')
+        : blockForm.reason;
+
+      const payload = {
+        hotelId: blockModalHotel._id,
+        roomId: resolvedRoomId,
+        roomType: resolvedRoomType,
+        roomsCount: resolvedRoomsCount,
+        startDate: blockForm.startDate,
+        endDate: blockForm.endDate,
+        isEntireDay: blockForm.isEntireDay,
+        reason: finalReason,
+        blockType: blockForm.blockScope,
+      };
+
+      const res = await fetch('/api/hotels/block', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to create block');
+      }
+
+      const blocksRes = await fetch(`/api/hotels/block?hotelId=${blockModalHotel._id}`);
+      const blocksData = await blocksRes.json();
+      setExistingBlocks(blocksData.blocks || []);
+
+      fetchData(false);
+      fetchAllPartnerBlocks();
+      alert('Inventory block successfully activated!');
+    } catch (err: any) {
+      console.error('Block creation error:', err);
+      alert(err.message || 'Failed to create block');
+    } finally {
+      setBlockLoading(false);
+    }
+  }
+
+  async function handleDeleteBlock(blockId: string) {
+    if (!blockModalHotel) return;
+    if (!confirm('Are you sure you want to release this inventory block and make these dates bookable?')) return;
+
+    try {
+      const res = await fetch(`/api/hotels/block?blockId=${blockId}&hotelId=${blockModalHotel._id}`, {
+        method: 'DELETE',
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to delete block');
+      }
+
+      setExistingBlocks(prev => prev.filter(b => b._id !== blockId));
+      fetchData(false);
+      fetchAllPartnerBlocks();
+    } catch (err: any) {
+      console.error('Block delete error:', err);
+      alert(err.message || 'Failed to unblock inventory');
+    }
+  }
+
+  async function fetchAllPartnerBlocks() {
+    if (!hotels || hotels.length === 0) return;
+    setLoadingAllBlocks(true);
+    try {
+      const all: any[] = [];
+      await Promise.all(
+        hotels.map(async (h) => {
+          try {
+            const res = await fetch(`/api/hotels/block?hotelId=${h._id}`);
+            const data = await res.json();
+            if (data.blocks) {
+              data.blocks.forEach((b: any) => all.push({ ...b, hotelName: h.name, hotelCity: h.city }));
+            }
+          } catch (e) {}
+        })
+      );
+      setAllPartnerBlocks(all);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoadingAllBlocks(false);
     }
   }
 
@@ -624,9 +845,36 @@ export default function PartnerDashboard() {
                           <button className="btn btn-primary" style={{ flex: 1, justifyContent: 'center', padding: '10px 0', fontSize: '0.85rem' }} onClick={() => openInventory(hotel)}>Manage Inventory</button>
                         </div>
                         <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-                          <button className="btn btn-outline" style={{ flex: 1, padding: '10px 0', fontSize: '0.85rem', border: '1px solid var(--brand-500)', color: 'var(--brand-600)' }} onClick={() => openExtranetModal(hotel)}>Extranet Manager</button>
-                          <button className="btn" style={{ flex: '0 0 100px', padding: '10px 0', fontSize: '0.85rem', fontWeight: 600, background: hotel.isBlocked ? '#fee2e2' : 'white', color: '#ef4444', border: '1px solid #ef4444', borderRadius: 'var(--radius-md)', cursor: 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center' }} disabled={approveLoading === hotel._id} onClick={() => updateHotelStatus(hotel._id, { isBlocked: !hotel.isBlocked })}>
-                            {approveLoading === hotel._id ? <div className="spinner" style={{ width: 14, height: 14, borderWidth: 2, borderColor: 'rgba(239, 68, 68, 0.3)', borderTopColor: '#ef4444' }} /> : hotel.isBlocked ? 'Blocked 🔓' : 'Block 🚫'}
+                          <button 
+                            type="button" 
+                            className="btn btn-outline" 
+                            style={{ flex: 1, padding: '10px 0', fontSize: '0.85rem', border: '1px solid var(--brand-500)', color: 'var(--brand-600)', fontWeight: 600 }} 
+                            onClick={() => openExtranetModal(hotel)}
+                          >
+                            ⚙️ Extranet CRM
+                          </button>
+                          <button 
+                            type="button" 
+                            className="btn" 
+                            style={{ 
+                              flex: 1, 
+                              padding: '10px 0', 
+                              fontSize: '0.85rem', 
+                              fontWeight: 700, 
+                              background: hotel.isBlocked ? '#fef2f2' : '#fff7ed', 
+                              color: hotel.isBlocked ? '#dc2626' : '#ea580c', 
+                              border: hotel.isBlocked ? '1px solid #fca5a5' : '1px solid #fdba74', 
+                              borderRadius: 'var(--radius-md)', 
+                              cursor: 'pointer', 
+                              transition: 'all 0.2s', 
+                              display: 'flex', 
+                              alignItems: 'center', 
+                              justifyContent: 'center',
+                              gap: 6
+                            }} 
+                            onClick={() => openBlockModal(hotel)}
+                          >
+                            {hotel.isBlocked ? '🚫 Blocked (Manage)' : '🔒 Smart Block'}
                           </button>
                         </div>
                         <Link
@@ -685,41 +933,177 @@ export default function PartnerDashboard() {
             </div>
           )}
 
-          {/* ===== AVAILABILITY CALENDAR ===== */}
+          {/* ===== AVAILABILITY & SMART ROOM BLOCKING CRM ===== */}
           {activeTab === 'availability' && (
             <div className="fade-in">
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-6)' }}>
-                <h1>Manage Availability</h1>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-6)', flexWrap: 'wrap', gap: 12 }}>
+                <div>
+                  <h1 style={{ margin: 0 }}>Availability & Inventory Control</h1>
+                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', margin: '4px 0 0' }}>
+                    Control live stop-sells, offline walk-ins, maintenance, and entire-day blocks across your properties.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={fetchAllPartnerBlocks}
+                  className="btn btn-secondary"
+                  style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.85rem' }}
+                >
+                  🔄 Refresh Status
+                </button>
               </div>
-              <div className="card" style={{ padding: 'var(--space-6)' }}>
-                <p style={{ color: 'var(--text-secondary)', marginBottom: 'var(--space-6)' }}>
-                  Block out specific dates to prevent StayBuddy users from booking them. Useful for maintenance, private events, or offline bookings.
+
+              {/* Quick Property Selector & Smart Blocking Launcher */}
+              <div className="card" style={{ padding: 'var(--space-6)', marginBottom: 'var(--space-6)' }}>
+                <h3 style={{ fontSize: '1.05rem', margin: '0 0 12px 0', fontWeight: 800 }}>
+                  ⚡ Quick Action: Block Property / Rooms
+                </h3>
+                <p style={{ color: 'var(--text-secondary)', fontSize: '0.88rem', marginBottom: 16 }}>
+                  Select one of your connected properties to launch the Smart Room Blocking Card with date ranges and entire-day lockdown options.
                 </p>
-                <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr 1fr auto', gap: 'var(--space-4)', alignItems: 'end', marginBottom: 'var(--space-8)' }}>
-                  <div className="form-group">
-                    <label className="form-label" style={{ fontSize: '0.8rem', fontWeight: 600 }}>Select Property</label>
-                    <select className="form-input form-select" style={{ height: 44 }}>
-                      <option value="">-- Choose Hotel --</option>
-                      {hotels.map(h => <option key={h._id} value={h._id}>{h.name}</option>)}
-                    </select>
-                  </div>
-                  <div className="form-group">
-                    <label className="form-label" style={{ fontSize: '0.8rem', fontWeight: 600 }}>Start Date</label>
-                    <input type="date" className="form-input" style={{ height: 44 }} />
-                  </div>
-                  <div className="form-group">
-                    <label className="form-label" style={{ fontSize: '0.8rem', fontWeight: 600 }}>End Date</label>
-                    <input type="date" className="form-input" style={{ height: 44 }} />
-                  </div>
-                  <button className="btn btn-primary" style={{ height: 44, padding: '0 24px' }}>Block Dates</button>
+
+                <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
+                  <select
+                    className="form-input form-select"
+                    value={selectedAvailHotelId}
+                    onChange={(e) => setSelectedAvailHotelId(e.target.value)}
+                    style={{ minWidth: 260, flex: '1 1 260px', height: 46 }}
+                  >
+                    <option value="">-- Choose Connected Property --</option>
+                    {hotels.map(h => (
+                      <option key={h._id} value={h._id}>
+                        {h.name} ({h.city}) {h.isBlocked ? '🚫 Blocked' : '🟢 Live'}
+                      </option>
+                    ))}
+                  </select>
+
+                  <button
+                    type="button"
+                    className="btn btn-primary"
+                    disabled={!selectedAvailHotelId}
+                    onClick={() => {
+                      const h = hotels.find(x => x._id === selectedAvailHotelId);
+                      if (h) openBlockModal(h);
+                    }}
+                    style={{
+                      height: 46,
+                      padding: '0 24px',
+                      fontSize: '0.9rem',
+                      fontWeight: 700,
+                      opacity: selectedAvailHotelId ? 1 : 0.6,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 8
+                    }}
+                  >
+                    🔒 Open Smart Blocking Card
+                  </button>
                 </div>
-                
-                <h3 style={{ fontSize: '1rem', marginBottom: 'var(--space-4)' }}>Calendar Overview</h3>
-                <div style={{ padding: 'var(--space-8)', background: 'var(--bg-secondary)', border: '1px dashed var(--border)', borderRadius: 'var(--radius-lg)', textAlign: 'center' }}>
-                  <div style={{ fontSize: '2.5rem', marginBottom: 12, opacity: 0.5 }}>📅</div>
-                  <h4 style={{ margin: '0 0 8px 0' }}>Interactive Calendar Coming Soon</h4>
-                  <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', margin: 0 }}>Soon you'll be able to drag, drop, and manage rates directly on a visual calendar.</p>
+              </div>
+
+              {/* All Active Blocks Across Connected Properties */}
+              <div className="card" style={{ padding: 'var(--space-6)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                  <div>
+                    <h3 style={{ fontSize: '1.05rem', margin: 0, fontWeight: 800 }}>
+                      📋 Live Inventory Blocks Across All Properties ({allPartnerBlocks.length})
+                    </h3>
+                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.82rem', margin: '4px 0 0' }}>
+                      These rooms and dates are blocked from receiving customer bookings on StayBuddy.
+                    </p>
+                  </div>
+                  {loadingAllBlocks && (
+                    <div className="spinner" style={{ width: 16, height: 16, borderWidth: 2, borderColor: 'rgba(234, 88, 12, 0.3)', borderTopColor: '#ea580c' }} />
+                  )}
                 </div>
+
+                {allPartnerBlocks.length === 0 ? (
+                  <div style={{ padding: '36px', background: 'var(--bg-secondary)', border: '1px dashed var(--border)', borderRadius: 'var(--radius-lg)', textAlign: 'center' }}>
+                    <div style={{ fontSize: '2.5rem', marginBottom: 10 }}>🟢</div>
+                    <h4 style={{ margin: '0 0 6px 0', fontSize: '1rem', fontWeight: 700 }}>100% Inventory Available</h4>
+                    <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', margin: 0 }}>
+                      None of your properties currently have date or room stop-sells. All connected rooms are live for booking!
+                    </p>
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                    {allPartnerBlocks.map((b: any) => (
+                      <div
+                        key={b._id}
+                        style={{
+                          padding: '16px',
+                          borderRadius: 12,
+                          background: '#fff1f2',
+                          border: '1px solid #fecdd3',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          gap: 16,
+                          flexWrap: 'wrap'
+                        }}
+                      >
+                        <div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 4 }}>
+                            <span style={{ fontWeight: 800, color: '#0f172a', fontSize: '0.95rem' }}>
+                              🏨 {b.hotelName || 'Property'}
+                            </span>
+                            <span style={{ fontSize: '0.8rem', color: '#64748b' }}>
+                              📍 {b.hotelCity || ''}
+                            </span>
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                            <span style={{ fontWeight: 700, fontSize: '0.85rem', color: '#991b1b' }}>
+                              {b.roomId === 'all' ? '🏢 Entire Property Blocked' : `🛏️ ${b.roomType} (${b.roomsCount} rooms)`}
+                            </span>
+                            {b.isEntireDay && (
+                              <span style={{ background: '#fecdd3', color: '#991b1b', fontSize: '0.72rem', fontWeight: 700, padding: '2px 6px', borderRadius: 4 }}>
+                                24h Entire Day
+                              </span>
+                            )}
+                            <span style={{ background: '#ffffff', color: '#475569', fontSize: '0.75rem', fontWeight: 600, padding: '2px 8px', borderRadius: 999, border: '1px solid #e2e8f0' }}>
+                              {b.reason}
+                            </span>
+                          </div>
+                          <div style={{ fontSize: '0.82rem', color: '#64748b', marginTop: 4 }}>
+                            📅 <strong>{b.startDate}</strong> to <strong>{b.endDate}</strong>
+                          </div>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            if (!confirm('Are you sure you want to unblock these dates and restore live sales?')) return;
+                            try {
+                              const res = await fetch(`/api/hotels/block?blockId=${b._id}&hotelId=${b.hotelId}`, { method: 'DELETE' });
+                              if (res.ok) {
+                                setAllPartnerBlocks(p => p.filter(x => x._id !== b._id));
+                                fetchData(false);
+                              }
+                            } catch (e) {
+                              console.error(e);
+                            }
+                          }}
+                          className="btn"
+                          style={{
+                            padding: '8px 16px',
+                            fontSize: '0.82rem',
+                            fontWeight: 700,
+                            background: 'white',
+                            color: '#dc2626',
+                            border: '1px solid #f87171',
+                            borderRadius: 8,
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 4
+                          }}
+                        >
+                          Unblock 🔓
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -2248,9 +2632,31 @@ export default function PartnerDashboard() {
             <div style={{ padding: '24px 32px', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'white' }}>
               <div>
                 <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#0f172a' }}>Extranet Manager: {extranetModal.name}</h2>
-                <p style={{ color: '#64748b', fontSize: '0.9rem', marginTop: 4 }}>Review and correct property details provided by partner</p>
+                <p style={{ color: '#64748b', fontSize: '0.9rem', marginTop: 4 }}>Complete CRM, onboarding and inventory control for this property</p>
               </div>
-              <button onClick={() => setExtranetModal(null)} style={{ background: '#f1f5f9', border: 'none', width: 40, height: 40, borderRadius: '50%', cursor: 'pointer', fontSize: '1.2rem', color: '#64748b' }}>✕</button>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <button
+                  type="button"
+                  onClick={() => openBlockModal(extranetModal)}
+                  className="btn"
+                  style={{
+                    padding: '8px 16px',
+                    fontSize: '0.85rem',
+                    fontWeight: 700,
+                    background: '#fff7ed',
+                    color: '#ea580c',
+                    border: '1px solid #fdba74',
+                    borderRadius: 8,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6
+                  }}
+                >
+                  🔒 Smart Block Inventory
+                </button>
+                <button onClick={() => setExtranetModal(null)} style={{ background: '#f1f5f9', border: 'none', width: 40, height: 40, borderRadius: '50%', cursor: 'pointer', fontSize: '1.2rem', color: '#64748b' }}>✕</button>
+              </div>
             </div>
             
             <div className="hide-scrollbar" style={{ flex: 1, overflowY: 'auto', padding: '32px' }}>
@@ -2847,6 +3253,537 @@ export default function PartnerDashboard() {
                 )}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ===== SMART INVENTORY & PROPERTY BLOCKING MODAL / CARD ===== */}
+      {blockModalHotel && (
+        <div 
+          className="modal-overlay" 
+          onClick={() => !blockLoading && setBlockModalHotel(null)} 
+          style={{ 
+            zIndex: 10001, 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'center', 
+            padding: '16px',
+            background: 'rgba(15, 23, 42, 0.75)',
+            backdropFilter: 'blur(5px)'
+          }}
+        >
+          <div 
+            className="modal-content fade-in" 
+            onClick={e => e.stopPropagation()} 
+            style={{ 
+              maxWidth: 780, 
+              width: '100%', 
+              background: 'white', 
+              borderRadius: '24px', 
+              boxShadow: '0 25px 60px -15px rgba(0,0,0,0.4)',
+              border: '1px solid #e2e8f0',
+              maxHeight: '92vh',
+              display: 'flex',
+              flexDirection: 'column',
+              overflow: 'hidden'
+            }}
+          >
+            {/* Modal Header */}
+            <div style={{ padding: '24px 28px', borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', background: '#fafafa' }}>
+              <div>
+                <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '3px 10px', borderRadius: '999px', background: '#fff7ed', border: '1px solid #fdba74', color: '#c2410c', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>
+                  🔒 Partner Extranet Inventory CRM
+                </div>
+                <h2 style={{ margin: 0, fontSize: '1.4rem', fontWeight: 800, color: '#0f172a' }}>
+                  Smart Inventory & Room Blocking
+                </h2>
+                <div style={{ fontSize: '0.88rem', color: '#64748b', marginTop: 4, display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ fontWeight: 600, color: '#0f172a' }}>{blockModalHotel.name}</span>
+                  <span>•</span>
+                  <span>📍 {blockModalHotel.city}, {blockModalHotel.country}</span>
+                  <span>•</span>
+                  <span style={{ color: 'var(--brand-600)', fontWeight: 600 }}>ID: {blockModalHotel.hotelId || blockModalHotel._id?.slice(-8)}</span>
+                </div>
+              </div>
+              <button 
+                type="button" 
+                onClick={() => setBlockModalHotel(null)} 
+                style={{ background: '#f1f5f9', border: 'none', width: 36, height: 36, borderRadius: '50%', cursor: 'pointer', fontSize: '1.1rem', color: '#64748b', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="hide-scrollbar" style={{ flex: 1, overflowY: 'auto', padding: '24px 28px' }}>
+              <form onSubmit={handleCreateBlock}>
+                
+                {/* 1. Block Option / Scope Selector */}
+                <div style={{ marginBottom: 20 }}>
+                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: '#334155', marginBottom: 8 }}>
+                    1. Select Block Scope
+                  </label>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                    <button
+                      type="button"
+                      onClick={() => setBlockForm(p => ({ ...p, blockScope: 'property', roomId: 'all', roomType: 'Entire Property' }))}
+                      style={{
+                        padding: '14px 16px',
+                        borderRadius: 12,
+                        border: blockForm.blockScope === 'property' ? '2px solid #ea580c' : '1px solid #e2e8f0',
+                        background: blockForm.blockScope === 'property' ? '#fff7ed' : 'white',
+                        textAlign: 'left',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                      }}
+                    >
+                      <div style={{ fontWeight: 800, color: blockForm.blockScope === 'property' ? '#9a3412' : '#1e293b', fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span>🏢</span> Block Entire Property
+                      </div>
+                      <div style={{ fontSize: '0.78rem', color: '#64748b', marginTop: 4 }}>
+                        Stops 100% of room sales & bookings across all categories for chosen dates
+                      </div>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const firstRoom = blockHotelRooms[0];
+                        setBlockForm(p => ({
+                          ...p,
+                          blockScope: 'room',
+                          roomId: firstRoom ? firstRoom._id : 'all',
+                          roomType: firstRoom ? firstRoom.type : 'Selected Room',
+                          roomsCount: 1,
+                        }));
+                      }}
+                      style={{
+                        padding: '14px 16px',
+                        borderRadius: 12,
+                        border: blockForm.blockScope === 'room' ? '2px solid #ea580c' : '1px solid #e2e8f0',
+                        background: blockForm.blockScope === 'room' ? '#fff7ed' : 'white',
+                        textAlign: 'left',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                      }}
+                    >
+                      <div style={{ fontWeight: 800, color: blockForm.blockScope === 'room' ? '#9a3412' : '#1e293b', fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span>🛏️</span> Block Specific Rooms
+                      </div>
+                      <div style={{ fontSize: '0.78rem', color: '#64748b', marginTop: 4 }}>
+                        Block a specific number of rooms in Deluxe, Standard, Suite, etc.
+                      </div>
+                    </button>
+                  </div>
+                </div>
+
+                {/* 2. Below Block Option: Smart Side-by-Side Grid (Room Count & Beside It Date Calendar) */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 20, marginBottom: 20, padding: 18, background: '#f8fafc', borderRadius: 16, border: '1px solid #e2e8f0' }}>
+                  
+                  {/* Left Column: How many rooms to block */}
+                  <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                        <label style={{ fontSize: '0.85rem', fontWeight: 700, color: '#1e293b' }}>
+                          How Many Rooms to Block
+                        </label>
+                        {blockForm.blockScope === 'room' && (
+                          <span style={{ fontSize: '0.75rem', color: '#ea580c', fontWeight: 600 }}>
+                            Category Specific
+                          </span>
+                        )}
+                      </div>
+
+                      {blockForm.blockScope === 'property' ? (
+                        <div style={{ padding: '20px 16px', background: 'white', borderRadius: 10, border: '1px solid #cbd5e1', textAlign: 'center' }}>
+                          <div style={{ fontSize: '1.6rem', marginBottom: 6 }}>🔒</div>
+                          <div style={{ fontWeight: 700, color: '#0f172a', fontSize: '0.95rem' }}>All Rooms Locked</div>
+                          <div style={{ fontSize: '0.78rem', color: '#64748b', marginTop: 2 }}>
+                            Total property inventory will be held offline
+                          </div>
+                        </div>
+                      ) : (
+                        <div>
+                          {/* Room Category Dropdown */}
+                          <select
+                            className="form-input form-select"
+                            value={blockForm.roomId}
+                            onChange={(e) => {
+                              const rId = e.target.value;
+                              const target = blockHotelRooms.find((r: any) => r._id === rId);
+                              setBlockForm(p => ({
+                                ...p,
+                                roomId: rId,
+                                roomType: target?.type || 'Room',
+                                roomsCount: 1,
+                              }));
+                            }}
+                            style={{ height: 42, fontSize: '0.88rem', marginBottom: 12, width: '100%' }}
+                          >
+                            {blockHotelRooms.length === 0 ? (
+                              <option value="all">No specific room types found (All rooms)</option>
+                            ) : (
+                              blockHotelRooms.map((r: any) => (
+                                <option key={r._id} value={r._id}>
+                                  {r.type} (StayBuddy Alloc: {r.staybuddyAllocation || r.totalRooms || 5} rooms)
+                                </option>
+                              ))
+                            )}
+                          </select>
+
+                          {/* Room Count Stepper */}
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10 }}>
+                            <button
+                              type="button"
+                              onClick={() => setBlockForm(p => ({ ...p, roomsCount: Math.max(1, p.roomsCount - 1) }))}
+                              style={{ width: 40, height: 40, borderRadius: 8, border: '1px solid #cbd5e1', background: 'white', fontWeight: 800, fontSize: '1.2rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                            >
+                              -
+                            </button>
+                            <input
+                              type="number"
+                              min={1}
+                              max={50}
+                              value={blockForm.roomsCount}
+                              onChange={(e) => setBlockForm(p => ({ ...p, roomsCount: Math.max(1, parseInt(e.target.value) || 1) }))}
+                              style={{ width: 64, height: 40, textAlign: 'center', fontWeight: 800, fontSize: '1.2rem', borderRadius: 8, border: '1px solid #cbd5e1', color: '#0f172a' }}
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setBlockForm(p => ({ ...p, roomsCount: p.roomsCount + 1 }))}
+                              style={{ width: 40, height: 40, borderRadius: 8, border: '1px solid #cbd5e1', background: 'white', fontWeight: 800, fontSize: '1.2rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                            >
+                              +
+                            </button>
+                            <span style={{ fontSize: '0.82rem', color: '#475569', fontWeight: 600 }}>
+                              rooms to hold
+                            </span>
+                          </div>
+
+                          {/* Quick Count Preset Chips */}
+                          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                            {[1, 2, 3, 5].map(cnt => (
+                              <button
+                                key={cnt}
+                                type="button"
+                                onClick={() => setBlockForm(p => ({ ...p, roomsCount: cnt }))}
+                                style={{
+                                  padding: '4px 10px',
+                                  borderRadius: 6,
+                                  fontSize: '0.75rem',
+                                  fontWeight: 600,
+                                  background: blockForm.roomsCount === cnt ? '#ea580c' : 'white',
+                                  color: blockForm.roomsCount === cnt ? 'white' : '#475569',
+                                  border: '1px solid #cbd5e1',
+                                  cursor: 'pointer'
+                                }}
+                              >
+                                {cnt} {cnt === 1 ? 'Room' : 'Rooms'}
+                              </button>
+                            ))}
+                            {(() => {
+                              const currRoom = blockHotelRooms.find((r: any) => r._id === blockForm.roomId);
+                              const maxAlloc = Number(currRoom?.staybuddyAllocation) || Number(currRoom?.totalRooms) || 10;
+                              return (
+                                <button
+                                  type="button"
+                                  onClick={() => setBlockForm(p => ({ ...p, roomsCount: maxAlloc }))}
+                                  style={{
+                                    padding: '4px 10px',
+                                    borderRadius: 6,
+                                    fontSize: '0.75rem',
+                                    fontWeight: 600,
+                                    background: blockForm.roomsCount === maxAlloc ? '#ea580c' : '#f1f5f9',
+                                    color: blockForm.roomsCount === maxAlloc ? 'white' : '#0f172a',
+                                    border: '1px solid #cbd5e1',
+                                    cursor: 'pointer'
+                                  }}
+                                >
+                                  All ({maxAlloc})
+                                </button>
+                              );
+                            })()}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Right Column (Beside It): Smart Date Calendar Selector */}
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                      <label style={{ fontSize: '0.85rem', fontWeight: 700, color: '#1e293b' }}>
+                        📅 On What Date (Range)
+                      </label>
+                      <span style={{ fontSize: '0.75rem', color: '#64748b' }}>
+                        Live Synchronized
+                      </span>
+                    </div>
+
+                    {/* Date Inputs Side-by-Side */}
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 10 }}>
+                      <div>
+                        <div style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 600, marginBottom: 2 }}>START DATE</div>
+                        <input
+                          type="date"
+                          value={blockForm.startDate}
+                          min={getTodayStr()}
+                          onChange={(e) => setBlockForm(p => ({
+                            ...p,
+                            startDate: e.target.value,
+                            endDate: e.target.value > p.endDate ? e.target.value : p.endDate
+                          }))}
+                          className="form-input"
+                          style={{ height: 40, fontSize: '0.85rem', padding: '0 8px', width: '100%' }}
+                        />
+                      </div>
+                      <div>
+                        <div style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 600, marginBottom: 2 }}>END DATE</div>
+                        <input
+                          type="date"
+                          value={blockForm.endDate}
+                          min={blockForm.startDate || getTodayStr()}
+                          onChange={(e) => setBlockForm(p => ({ ...p, endDate: e.target.value }))}
+                          className="form-input"
+                          style={{ height: 40, fontSize: '0.85rem', padding: '0 8px', width: '100%' }}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Quick Date Range Preset Pills */}
+                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 12 }}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const today = getTodayStr();
+                          setBlockForm(p => ({ ...p, startDate: today, endDate: today }));
+                        }}
+                        style={{ padding: '4px 8px', fontSize: '0.73rem', borderRadius: 6, border: '1px solid #cbd5e1', background: 'white', cursor: 'pointer', fontWeight: 600 }}
+                      >
+                        Today
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const tmr = getTomorrowStr();
+                          setBlockForm(p => ({ ...p, startDate: tmr, endDate: tmr }));
+                        }}
+                        style={{ padding: '4px 8px', fontSize: '0.73rem', borderRadius: 6, border: '1px solid #cbd5e1', background: 'white', cursor: 'pointer', fontWeight: 600 }}
+                      >
+                        Tomorrow
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const rng = getWeekendRange();
+                          setBlockForm(p => ({ ...p, startDate: rng.start, endDate: rng.end }));
+                        }}
+                        style={{ padding: '4px 8px', fontSize: '0.73rem', borderRadius: 6, border: '1px solid #cbd5e1', background: 'white', cursor: 'pointer', fontWeight: 600 }}
+                      >
+                        This Weekend
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const rng = get7DaysRange();
+                          setBlockForm(p => ({ ...p, startDate: rng.start, endDate: rng.end }));
+                        }}
+                        style={{ padding: '4px 8px', fontSize: '0.73rem', borderRadius: 6, border: '1px solid #cbd5e1', background: 'white', cursor: 'pointer', fontWeight: 600 }}
+                      >
+                        Next 7 Days
+                      </button>
+                    </div>
+
+                    {/* Beside/Below It: Block on Entire Day Option */}
+                    <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, padding: '8px 10px', background: 'white', borderRadius: 8, border: '1px solid #cbd5e1', cursor: 'pointer' }}>
+                      <input
+                        type="checkbox"
+                        checked={blockForm.isEntireDay}
+                        onChange={(e) => setBlockForm(p => ({ ...p, isEntireDay: e.target.checked }))}
+                        style={{ width: 16, height: 16, marginTop: 2, accentColor: '#ea580c' }}
+                      />
+                      <div>
+                        <div style={{ fontWeight: 700, fontSize: '0.8rem', color: '#0f172a' }}>
+                          Block on Entire Day (24-Hour Lockdown)
+                        </div>
+                        <div style={{ fontSize: '0.7rem', color: '#64748b' }}>
+                          Closes all daytime and overnight slots for chosen dates
+                        </div>
+                      </div>
+                    </label>
+
+                  </div>
+                </div>
+
+                {/* 3. Reason for Block (CRM Intelligence) */}
+                <div style={{ marginBottom: 20 }}>
+                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: '#334155', marginBottom: 8 }}>
+                    Reason for Inventory Block (CRM Note)
+                  </label>
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 8 }}>
+                    {['Walk-in / Offline Booking', 'Maintenance & Repairs', 'Private Event / Wedding', 'Renovations', 'Other'].map(r => (
+                      <button
+                        key={r}
+                        type="button"
+                        onClick={() => setBlockForm(p => ({ ...p, reason: r }))}
+                        style={{
+                          padding: '6px 12px',
+                          borderRadius: 8,
+                          fontSize: '0.8rem',
+                          fontWeight: 600,
+                          background: blockForm.reason === r ? '#0f172a' : 'white',
+                          color: blockForm.reason === r ? 'white' : '#475569',
+                          border: blockForm.reason === r ? '1px solid #0f172a' : '1px solid #cbd5e1',
+                          cursor: 'pointer',
+                          transition: 'all 0.15s'
+                        }}
+                      >
+                        {r}
+                      </button>
+                    ))}
+                  </div>
+
+                  {blockForm.reason === 'Other' && (
+                    <input
+                      type="text"
+                      placeholder="Specify reason (e.g. VIP guest hold, deep sanitation)..."
+                      className="form-input"
+                      value={blockForm.customReason}
+                      onChange={(e) => setBlockForm(p => ({ ...p, customReason: e.target.value }))}
+                      style={{ height: 40, fontSize: '0.85rem', width: '100%', marginTop: 6 }}
+                    />
+                  )}
+                </div>
+
+                {/* Submit Action */}
+                <button
+                  type="submit"
+                  disabled={blockLoading}
+                  className="btn"
+                  style={{
+                    width: '100%',
+                    padding: '14px',
+                    fontSize: '1rem',
+                    fontWeight: 700,
+                    background: '#ea580c',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: 12,
+                    cursor: blockLoading ? 'not-allowed' : 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 8,
+                    boxShadow: '0 4px 12px rgba(234, 88, 12, 0.25)',
+                    transition: 'all 0.2s',
+                  }}
+                >
+                  {blockLoading ? (
+                    <>
+                      <div className="spinner" style={{ width: 18, height: 18, borderWidth: 2, borderColor: 'rgba(255,255,255,0.3)', borderTopColor: 'white' }} />
+                      <span>Applying Inventory Block...</span>
+                    </>
+                  ) : (
+                    <>🔒 Confirm & Apply Smart Block to Live Inventory</>
+                  )}
+                </button>
+              </form>
+
+              {/* Active Blocks List */}
+              <div style={{ marginTop: 28, paddingTop: 24, borderTop: '1px solid #e2e8f0' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+                  <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 800, color: '#0f172a' }}>
+                    Active Inventory Blocks on this Property ({existingBlocks.length})
+                  </h3>
+                  {loadingBlocks && (
+                    <div className="spinner" style={{ width: 16, height: 16, borderWidth: 2, borderColor: 'rgba(234, 88, 12, 0.3)', borderTopColor: '#ea580c' }} />
+                  )}
+                </div>
+
+                {existingBlocks.length === 0 ? (
+                  <div style={{ padding: '24px', background: '#f8fafc', borderRadius: 12, border: '1px dashed #cbd5e1', textAlign: 'center' }}>
+                    <div style={{ fontSize: '1.5rem', marginBottom: 6 }}>✅</div>
+                    <div style={{ fontWeight: 700, color: '#0f172a', fontSize: '0.9rem' }}>All Rooms Fully Open & Bookable</div>
+                    <div style={{ fontSize: '0.8rem', color: '#64748b', marginTop: 2 }}>
+                      No stop-sells or date blocks are currently active on this property.
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                    {existingBlocks.map((b: any) => (
+                      <div
+                        key={b._id}
+                        style={{
+                          padding: '12px 16px',
+                          borderRadius: 12,
+                          background: '#fff1f2',
+                          border: '1px solid #fecdd3',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          gap: 12,
+                          flexWrap: 'wrap'
+                        }}
+                      >
+                        <div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                            <span style={{ fontWeight: 800, fontSize: '0.88rem', color: '#991b1b' }}>
+                              {b.roomId === 'all' ? '🏢 Entire Property Blocked' : `🛏️ ${b.roomType} (${b.roomsCount} rooms)`}
+                            </span>
+                            {b.isEntireDay && (
+                              <span style={{ background: '#fecdd3', color: '#991b1b', fontSize: '0.7rem', fontWeight: 700, padding: '2px 6px', borderRadius: 4 }}>
+                                24h Entire Day
+                              </span>
+                            )}
+                            <span style={{ background: '#ffffff', color: '#475569', fontSize: '0.72rem', fontWeight: 600, padding: '2px 8px', borderRadius: 999, border: '1px solid #e2e8f0' }}>
+                              {b.reason}
+                            </span>
+                          </div>
+                          <div style={{ fontSize: '0.8rem', color: '#64748b', marginTop: 4 }}>
+                            📅 <strong>{b.startDate}</strong> to <strong>{b.endDate}</strong>
+                          </div>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteBlock(b._id)}
+                          className="btn"
+                          style={{
+                            padding: '6px 14px',
+                            fontSize: '0.8rem',
+                            fontWeight: 700,
+                            background: 'white',
+                            color: '#dc2626',
+                            border: '1px solid #f87171',
+                            borderRadius: 8,
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 4
+                          }}
+                        >
+                          Unblock 🔓
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+            </div>
+
+            {/* Modal Footer */}
+            <div style={{ padding: '14px 28px', borderTop: '1px solid #f1f5f9', background: '#fafafa', display: 'flex', justifyContent: 'flex-end' }}>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={() => setBlockModalHotel(null)}
+                style={{ padding: '8px 20px', fontSize: '0.88rem' }}
+              >
+                Close
+              </button>
+            </div>
+
           </div>
         </div>
       )}
