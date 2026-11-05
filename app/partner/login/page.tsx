@@ -11,12 +11,10 @@ export default function PartnerLoginPage() {
 
   useEffect(() => {
     if (status === 'authenticated') {
-      const userRole = (session?.user as any)?.role;
-      if (userRole === 'admin') router.push('/admin');
-      else if (userRole === 'partner') router.push('/partner');
-      else router.push('/'); 
+      // Always direct authenticated users (partner or admin) straight into the Partner Extranet Portal!
+      router.push('/partner');
     }
-  }, [status, session, router]);
+  }, [status, router]);
 
   async function handleGoogleSignIn() {
     setLoading(true);

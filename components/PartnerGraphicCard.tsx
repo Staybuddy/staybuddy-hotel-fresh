@@ -42,8 +42,8 @@ export default function PartnerGraphicCard() {
     const p2 = setTimeout(() => setLaunchProgress(100), 800);
 
     const redirectTimer = setTimeout(() => {
-      const isPartner = (session?.user as any)?.role === 'partner';
-      const targetUrl = isPartner ? '/partner' : '/partner/login';
+      // Directs straight to the Partner Extranet (/partner) where partners & admins manage/add properties
+      const targetUrl = session?.user ? '/partner' : '/partner/login';
       router.push(targetUrl);
     }, 1200);
 
@@ -951,7 +951,7 @@ export default function PartnerGraphicCard() {
 
                   <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
                     <Link
-                      href="/partner/login"
+                      href={session?.user ? "/partner" : "/partner/login"}
                       onClick={() => setModalStage('CLOSED')}
                       style={{
                         background: 'rgba(255, 255, 255, 0.08)',

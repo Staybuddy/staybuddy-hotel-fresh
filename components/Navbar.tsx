@@ -107,7 +107,7 @@ export default function Navbar({ middleContent, extendedContent }: { middleConte
                       <div style={{ padding: '8px 0' }}>
                         {[
                           ...(role === 'admin' ? [{ label: 'Admin Panel', href: '/admin', icon: '👑' }] : []),
-                          ...(role === 'partner' ? [{ label: 'Partner Dashboard', href: '/partner/dashboard', icon: '⊞' }] : []),
+                          ...(role === 'admin' || role === 'partner' ? [{ label: 'Partner Extranet', href: '/partner', icon: '🏨' }] : []),
                           { label: 'My Profile', href: '/profile', icon: '👤' },
                           { label: 'My Wallet', href: '/wallet', icon: '💰' },
                           { label: 'My Bookings', href: '/my-bookings', icon: '📋' },
