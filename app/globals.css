@@ -71,7 +71,7 @@ html, body {
   max-width: 100%;
   margin: 0;
   padding: 0;
-  overflow-x: hidden !important;
+  overflow-x: clip !important;
   position: relative;
 }
 
@@ -639,7 +639,7 @@ tbody tr:hover { background: var(--bg-secondary); }
   html, body {
     width: 100% !important;
     max-width: 100% !important;
-    overflow-x: hidden !important;
+    overflow-x: clip !important;
     margin: 0 !important;
     padding: 0 !important;
     border-radius: 0 !important;

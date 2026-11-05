@@ -508,14 +508,22 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
 
         return (
           <>
-            {/* Property Selector for Hero and Navbar */}
-            <Navbar 
-              middleContent={renderPropertySelector(true)}
-              extendedContent={showStickySearch ? renderSearchBar() : null}
-            />
+            <Navbar />
 
-            {/* HERO SECTION WITH INLINE PROPERTY TYPES */}
-            <div style={{ background: 'var(--bg-secondary)', padding: '20px 0 0 0', marginTop: '-8px' }}>
+            {/* STICKY PROPERTY SELECTOR HEADER */}
+            <div 
+              className="sticky-property-header"
+              style={{
+                position: 'sticky',
+                top: 68,
+                zIndex: 890,
+                background: 'var(--bg-secondary)',
+                padding: '16px 0 12px 0',
+                borderBottom: '1px solid var(--border)',
+                boxShadow: '0 4px 16px rgba(0, 0, 0, 0.05)',
+                transition: 'box-shadow 0.25s ease'
+              }}
+            >
               <div className="container hero-section-container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '0 16px' }}>
                 {renderPropertySelector(false)}
               </div>
