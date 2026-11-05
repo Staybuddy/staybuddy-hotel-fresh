@@ -570,53 +570,56 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
 
       {/* ===== PROMOTIONAL BANNER ===== */}
       <section className="container" style={{ margin: '20px auto' }}>
-        <div style={{
-          background: 'linear-gradient(135deg, #f59e0b 0%, #ea580c 50%, #d97706 100%)',
-          borderRadius: 'var(--radius-xl)',
-          padding: 'var(--space-6) var(--space-8)',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          flexWrap: 'wrap',
-          gap: 'var(--space-4)',
-          boxShadow: '0 16px 36px -8px rgba(234, 88, 12, 0.35)',
-          position: 'relative',
-          overflow: 'hidden',
-          transition: 'transform 0.3s ease, box-shadow 0.3s ease'
-        }}>
-          {/* Floating celebratory decorative graphics */}
-          <div style={{ position: 'absolute', right: '-3%', top: '-20%', fontSize: '9rem', opacity: 0.14, pointerEvents: 'none', animation: 'floatGentle 4s ease-in-out infinite' }}>🎉</div>
-          <div style={{ position: 'absolute', left: '42%', bottom: '-15%', fontSize: '5rem', opacity: 0.08, pointerEvents: 'none', animation: 'floatGentle 3.5s ease-in-out infinite' }}>✨</div>
-          
-          <div style={{ position: 'relative', zIndex: 1, flex: '1 1 400px' }}>
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'rgba(255,255,255,0.22)', backdropFilter: 'blur(4px)', color: 'white', padding: '4px 12px', borderRadius: 'var(--radius-full)', fontSize: '0.78rem', fontWeight: 800, marginBottom: 12, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-              <span>⚡</span> Limited Time Offer
+        <Link href="/hotels" style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
+          <div style={{
+            background: 'linear-gradient(135deg, #f59e0b 0%, #ea580c 50%, #d97706 100%)',
+            borderRadius: 'var(--radius-xl)',
+            padding: 'var(--space-6) var(--space-8)',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: 'var(--space-4)',
+            boxShadow: '0 16px 36px -8px rgba(234, 88, 12, 0.35)',
+            position: 'relative',
+            overflow: 'hidden',
+            cursor: 'pointer',
+            transition: 'transform 0.3s ease, box-shadow 0.3s ease'
+          }}
+          onMouseEnter={e => {
+            (e.currentTarget as HTMLElement).style.transform = 'translateY(-3px)';
+            (e.currentTarget as HTMLElement).style.boxShadow = '0 20px 40px -8px rgba(234, 88, 12, 0.45)';
+          }}
+          onMouseLeave={e => {
+            (e.currentTarget as HTMLElement).style.transform = 'translateY(0)';
+            (e.currentTarget as HTMLElement).style.boxShadow = '0 16px 36px -8px rgba(234, 88, 12, 0.35)';
+          }}>
+            {/* Floating celebratory decorative graphics */}
+            <div style={{ position: 'absolute', right: '-3%', top: '-20%', fontSize: '9rem', opacity: 0.14, pointerEvents: 'none', animation: 'floatGentle 4s ease-in-out infinite' }}>🎉</div>
+            <div style={{ position: 'absolute', left: '42%', bottom: '-15%', fontSize: '5rem', opacity: 0.08, pointerEvents: 'none', animation: 'floatGentle 3.5s ease-in-out infinite' }}>✨</div>
+            
+            <div style={{ position: 'relative', zIndex: 1, flex: '1 1 400px' }}>
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'rgba(255,255,255,0.22)', backdropFilter: 'blur(4px)', color: 'white', padding: '4px 12px', borderRadius: 'var(--radius-full)', fontSize: '0.78rem', fontWeight: 800, marginBottom: 12, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                <span>⚡</span> Limited Time Offer
+              </div>
+              <h2 style={{ color: 'white', marginBottom: 8, fontSize: '1.8rem', fontWeight: 900, textShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>Get 20% Off Your First Booking!</h2>
+              <p style={{ color: 'rgba(255,255,255,0.95)', fontSize: '1.02rem', margin: 0, lineHeight: 1.5 }}>
+                Use coupon <span style={{ background: 'rgba(255,255,255,0.25)', border: '1px dashed rgba(255,255,255,0.7)', padding: '2px 8px', borderRadius: 6, fontWeight: 900, letterSpacing: '0.04em' }}>STAYBUDDY20</span> at checkout across all premium hotels.
+              </p>
             </div>
-            <h2 style={{ color: 'white', marginBottom: 8, fontSize: '1.8rem', fontWeight: 900, textShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>Get 20% Off Your First Booking!</h2>
-            <p style={{ color: 'rgba(255,255,255,0.95)', fontSize: '1.02rem', margin: 0, lineHeight: 1.5 }}>
-              Use coupon <span style={{ background: 'rgba(255,255,255,0.25)', border: '1px dashed rgba(255,255,255,0.7)', padding: '2px 8px', borderRadius: 6, fontWeight: 900, letterSpacing: '0.04em' }}>STAYBUDDY20</span> at checkout across all premium hotels.
-            </p>
+            
+            <div style={{ position: 'relative', zIndex: 1 }}>
+              <span style={{
+                background: 'white', color: '#ea580c', fontWeight: 800, padding: '14px 28px', 
+                borderRadius: 'var(--radius-lg)', display: 'inline-flex',
+                alignItems: 'center', gap: 6,
+                boxShadow: '0 8px 20px -4px rgba(0,0,0,0.2)'
+              }}>
+                Claim Discount →
+              </span>
+            </div>
           </div>
-          
-          <div style={{ position: 'relative', zIndex: 1 }}>
-            <Link href="/hotels" style={{
-              background: 'white', color: '#ea580c', fontWeight: 800, padding: '14px 28px', 
-              borderRadius: 'var(--radius-lg)', textDecoration: 'none', display: 'inline-flex',
-              alignItems: 'center', gap: 6,
-              boxShadow: '0 8px 20px -4px rgba(0,0,0,0.2)', transition: 'all 0.25s cubic-bezier(0.16, 1, 0.3, 1)'
-            }}
-            onMouseEnter={e => {
-              e.currentTarget.style.transform = 'translateY(-2px) scale(1.04)';
-              e.currentTarget.style.boxShadow = '0 12px 24px -4px rgba(0,0,0,0.25)';
-            }}
-            onMouseLeave={e => {
-              e.currentTarget.style.transform = 'translateY(0) scale(1)';
-              e.currentTarget.style.boxShadow = '0 8px 20px -4px rgba(0,0,0,0.2)';
-            }}>
-              Claim Discount →
-            </Link>
-          </div>
-        </div>
+        </Link>
       </section>
 
       {/* ===== BUDGET STAYS CARD ===== */}
@@ -766,58 +769,94 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 'var(--space-6)' }}>
           
           {/* Card 1 */}
-          <div style={{
-            background: 'linear-gradient(135deg, var(--brand-50), var(--brand-100))',
-            borderRadius: 'var(--radius-xl)', padding: 'var(--space-6)',
-            border: '1px solid var(--brand-200)', position: 'relative', overflow: 'hidden',
-            display: 'flex', flexDirection: 'column', justifyContent: 'space-between'
-          }}>
-            <div style={{ position: 'absolute', right: '5%', bottom: '-10%', fontSize: '6rem', opacity: 0.1, pointerEvents: 'none' }}>🏨</div>
-            <div style={{ position: 'relative', zIndex: 1, marginBottom: 24 }}>
-              <div style={{ display: 'inline-block', background: 'white', color: 'var(--brand-700)', padding: '4px 10px', borderRadius: 'var(--radius-full)', fontSize: '0.75rem', fontWeight: 700, marginBottom: 12, textTransform: 'uppercase', border: '1px solid var(--brand-200)' }}>Curated Collections</div>
-              <h3 style={{ color: 'var(--brand-900)', marginBottom: 8, fontSize: '1.4rem' }}>Premium Hotel Groups</h3>
-              <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', margin: 0 }}>Discover luxury heritage chains and exclusive beachfront resorts.</p>
+          <Link href="/hotels?category=luxury" style={{ textDecoration: 'none', color: 'inherit', display: 'flex' }}>
+            <div style={{
+              background: 'linear-gradient(135deg, var(--brand-50), var(--brand-100))',
+              borderRadius: 'var(--radius-xl)', padding: 'var(--space-6)',
+              border: '1px solid var(--brand-200)', position: 'relative', overflow: 'hidden',
+              display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
+              width: '100%', cursor: 'pointer',
+              transition: 'transform 0.25s ease, box-shadow 0.25s ease'
+            }}
+            onMouseEnter={e => {
+              (e.currentTarget as HTMLElement).style.transform = 'translateY(-4px)';
+              (e.currentTarget as HTMLElement).style.boxShadow = '0 16px 32px rgba(234, 88, 12, 0.15)';
+            }}
+            onMouseLeave={e => {
+              (e.currentTarget as HTMLElement).style.transform = 'translateY(0)';
+              (e.currentTarget as HTMLElement).style.boxShadow = 'none';
+            }}>
+              <div style={{ position: 'absolute', right: '5%', bottom: '-10%', fontSize: '6rem', opacity: 0.1, pointerEvents: 'none' }}>🏨</div>
+              <div style={{ position: 'relative', zIndex: 1, marginBottom: 24 }}>
+                <div style={{ display: 'inline-block', background: 'white', color: 'var(--brand-700)', padding: '4px 10px', borderRadius: 'var(--radius-full)', fontSize: '0.75rem', fontWeight: 700, marginBottom: 12, textTransform: 'uppercase', border: '1px solid var(--brand-200)' }}>Curated Collections</div>
+                <h3 style={{ color: 'var(--brand-900)', marginBottom: 8, fontSize: '1.4rem' }}>Premium Hotel Groups</h3>
+                <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', margin: 0 }}>Discover luxury heritage chains and exclusive beachfront resorts.</p>
+              </div>
+              <div style={{ color: 'var(--brand-600)', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4, position: 'relative', zIndex: 1 }}>
+                View Collection →
+              </div>
             </div>
-            <Link href="/hotels?category=luxury" style={{ color: 'var(--brand-600)', fontWeight: 700, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 4, position: 'relative', zIndex: 1 }}>
-              View Collection →
-            </Link>
-          </div>
+          </Link>
 
           {/* Card 2 */}
-          <div style={{
-            background: 'linear-gradient(135deg, #f0fdfa, #ccfbf1)',
-            borderRadius: 'var(--radius-xl)', padding: 'var(--space-6)',
-            border: '1px solid #99f6e4', position: 'relative', overflow: 'hidden',
-            display: 'flex', flexDirection: 'column', justifyContent: 'space-between'
-          }}>
-            <div style={{ position: 'absolute', right: '5%', bottom: '-10%', fontSize: '6rem', opacity: 0.1, pointerEvents: 'none' }}>🌴</div>
-            <div style={{ position: 'relative', zIndex: 1, marginBottom: 24 }}>
-              <div style={{ display: 'inline-block', background: 'white', color: '#0f766e', padding: '4px 10px', borderRadius: 'var(--radius-full)', fontSize: '0.75rem', fontWeight: 700, marginBottom: 12, textTransform: 'uppercase', border: '1px solid #99f6e4' }}>Trending</div>
-              <h3 style={{ color: '#134e4a', marginBottom: 8, fontSize: '1.4rem' }}>Beachfront Resorts</h3>
-              <p style={{ color: '#0f766e', fontSize: '0.95rem', margin: 0, opacity: 0.8 }}>Escape to top-rated seaside getaways with private beaches.</p>
+          <Link href="/hotels?propertyType=Resort" style={{ textDecoration: 'none', color: 'inherit', display: 'flex' }}>
+            <div style={{
+              background: 'linear-gradient(135deg, #f0fdfa, #ccfbf1)',
+              borderRadius: 'var(--radius-xl)', padding: 'var(--space-6)',
+              border: '1px solid #99f6e4', position: 'relative', overflow: 'hidden',
+              display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
+              width: '100%', cursor: 'pointer',
+              transition: 'transform 0.25s ease, box-shadow 0.25s ease'
+            }}
+            onMouseEnter={e => {
+              (e.currentTarget as HTMLElement).style.transform = 'translateY(-4px)';
+              (e.currentTarget as HTMLElement).style.boxShadow = '0 16px 32px rgba(15, 118, 110, 0.15)';
+            }}
+            onMouseLeave={e => {
+              (e.currentTarget as HTMLElement).style.transform = 'translateY(0)';
+              (e.currentTarget as HTMLElement).style.boxShadow = 'none';
+            }}>
+              <div style={{ position: 'absolute', right: '5%', bottom: '-10%', fontSize: '6rem', opacity: 0.1, pointerEvents: 'none' }}>🌴</div>
+              <div style={{ position: 'relative', zIndex: 1, marginBottom: 24 }}>
+                <div style={{ display: 'inline-block', background: 'white', color: '#0f766e', padding: '4px 10px', borderRadius: 'var(--radius-full)', fontSize: '0.75rem', fontWeight: 700, marginBottom: 12, textTransform: 'uppercase', border: '1px solid #99f6e4' }}>Trending</div>
+                <h3 style={{ color: '#134e4a', marginBottom: 8, fontSize: '1.4rem' }}>Beachfront Resorts</h3>
+                <p style={{ color: '#0f766e', fontSize: '0.95rem', margin: 0, opacity: 0.8 }}>Escape to top-rated seaside getaways with private beaches.</p>
+              </div>
+              <div style={{ color: '#0d9488', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4, position: 'relative', zIndex: 1 }}>
+                Explore Resorts →
+              </div>
             </div>
-            <Link href="/hotels?propertyType=Resort" style={{ color: '#0d9488', fontWeight: 700, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 4, position: 'relative', zIndex: 1 }}>
-              Explore Resorts →
-            </Link>
-          </div>
+          </Link>
 
           {/* Card 3 */}
-          <div style={{
-            background: 'linear-gradient(135deg, #fef3c7, #fde68a)',
-            borderRadius: 'var(--radius-xl)', padding: 'var(--space-6)',
-            border: '1px solid #fcd34d', position: 'relative', overflow: 'hidden',
-            display: 'flex', flexDirection: 'column', justifyContent: 'space-between'
-          }}>
-            <div style={{ position: 'absolute', right: '5%', bottom: '-10%', fontSize: '6rem', opacity: 0.1, pointerEvents: 'none' }}>🏰</div>
-            <div style={{ position: 'relative', zIndex: 1, marginBottom: 24 }}>
-              <div style={{ display: 'inline-block', background: 'white', color: '#b45309', padding: '4px 10px', borderRadius: 'var(--radius-full)', fontSize: '0.75rem', fontWeight: 700, marginBottom: 12, textTransform: 'uppercase', border: '1px solid #fcd34d' }}>Experiences</div>
-              <h3 style={{ color: '#78350f', marginBottom: 8, fontSize: '1.4rem' }}>Heritage Stays</h3>
-              <p style={{ color: '#b45309', fontSize: '0.95rem', margin: 0, opacity: 0.8 }}>Experience royal treatment at historical palaces and forts.</p>
+          <Link href="/hotels?minRating=5" style={{ textDecoration: 'none', color: 'inherit', display: 'flex' }}>
+            <div style={{
+              background: 'linear-gradient(135deg, #fef3c7, #fde68a)',
+              borderRadius: 'var(--radius-xl)', padding: 'var(--space-6)',
+              border: '1px solid #fcd34d', position: 'relative', overflow: 'hidden',
+              display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
+              width: '100%', cursor: 'pointer',
+              transition: 'transform 0.25s ease, box-shadow 0.25s ease'
+            }}
+            onMouseEnter={e => {
+              (e.currentTarget as HTMLElement).style.transform = 'translateY(-4px)';
+              (e.currentTarget as HTMLElement).style.boxShadow = '0 16px 32px rgba(180, 83, 9, 0.15)';
+            }}
+            onMouseLeave={e => {
+              (e.currentTarget as HTMLElement).style.transform = 'translateY(0)';
+              (e.currentTarget as HTMLElement).style.boxShadow = 'none';
+            }}>
+              <div style={{ position: 'absolute', right: '5%', bottom: '-10%', fontSize: '6rem', opacity: 0.1, pointerEvents: 'none' }}>🏰</div>
+              <div style={{ position: 'relative', zIndex: 1, marginBottom: 24 }}>
+                <div style={{ display: 'inline-block', background: 'white', color: '#b45309', padding: '4px 10px', borderRadius: 'var(--radius-full)', fontSize: '0.75rem', fontWeight: 700, marginBottom: 12, textTransform: 'uppercase', border: '1px solid #fcd34d' }}>Experiences</div>
+                <h3 style={{ color: '#78350f', marginBottom: 8, fontSize: '1.4rem' }}>Heritage Stays</h3>
+                <p style={{ color: '#b45309', fontSize: '0.95rem', margin: 0, opacity: 0.8 }}>Experience royal treatment at historical palaces and forts.</p>
+              </div>
+              <div style={{ color: '#d97706', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4, position: 'relative', zIndex: 1 }}>
+                See Heritage Stays →
+              </div>
             </div>
-            <Link href="/hotels?minRating=5" style={{ color: '#d97706', fontWeight: 700, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 4, position: 'relative', zIndex: 1 }}>
-              See Heritage Stays →
-            </Link>
-          </div>
+          </Link>
 
         </div>
       </section>
@@ -940,150 +979,153 @@ function FeaturedSpotlightHotel({ hotel, isWishlisted }: { hotel: any, isWishlis
   };
 
   return (
-    <div className="card featured-spotlight-card">
-      {/* Left: Gallery (responsive) */}
-      <div className="featured-spotlight-gallery">
-        {images[imgIndex] ? (
-          <Image
-            src={images[imgIndex]}
-            alt={hotel.name}
-            fill
-            className="hotel-card-img"
-            style={{ objectFit: 'cover' }}
-            sizes="(max-width: 900px) 100vw, 50vw"
-            priority
-          />
-        ) : (
-          <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '4rem', color: '#64748b' }}>
-            🏨
+    <Link
+      href={`/hotels/${hotel._id}`}
+      style={{ textDecoration: 'none', color: 'inherit', display: 'block', width: '100%' }}
+    >
+      <div className="card featured-spotlight-card" style={{ cursor: 'pointer' }}>
+        {/* Left: Gallery (responsive) */}
+        <div className="featured-spotlight-gallery">
+          {images[imgIndex] ? (
+            <Image
+              src={images[imgIndex]}
+              alt={hotel.name}
+              fill
+              className="hotel-card-img"
+              style={{ objectFit: 'cover' }}
+              sizes="(max-width: 900px) 100vw, 50vw"
+              priority
+            />
+          ) : (
+            <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '4rem', color: '#64748b' }}>
+              🏨
+            </div>
+          )}
+
+          {/* Wishlist Button */}
+          <div style={{ position: 'absolute', top: 16, right: 16, zIndex: 5 }}>
+            <WishlistButton hotelId={hotel._id} initialIsWishlisted={isWishlisted} />
           </div>
-        )}
 
-        {/* Wishlist Button */}
-        <div style={{ position: 'absolute', top: 16, right: 16, zIndex: 5 }}>
-          <WishlistButton hotelId={hotel._id} initialIsWishlisted={isWishlisted} />
-        </div>
-
-        {/* Top Badges */}
-        <div style={{ position: 'absolute', top: 16, left: 16, display: 'flex', gap: 8, zIndex: 5 }}>
-          <span className="badge" style={{ background: 'linear-gradient(135deg, #ff6b35, #ea580c)', color: 'white', fontWeight: 800, padding: '4px 12px', fontSize: '0.78rem' }}>
-            ⭐ FEATURED STAY
-          </span>
-          <span className="badge" style={{ background: 'rgba(15, 23, 42, 0.75)', color: 'white', backdropFilter: 'blur(4px)', padding: '4px 10px', fontSize: '0.75rem' }}>
-            {hotel.category || 'Luxury'}
-          </span>
-        </div>
-
-        {/* Carousel controls */}
-        {images.length > 1 && (
-          <>
-            <button
-              type="button"
-              onClick={handlePrev}
-              aria-label="Previous photo"
-              style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', background: 'rgba(255,255,255,0.85)', border: 'none', borderRadius: '50%', width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', zIndex: 6, boxShadow: '0 4px 12px rgba(0,0,0,0.2)' }}
-            >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="black" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
-            </button>
-            <button
-              type="button"
-              onClick={handleNext}
-              aria-label="Next photo"
-              style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'rgba(255,255,255,0.85)', border: 'none', borderRadius: '50%', width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', zIndex: 6, boxShadow: '0 4px 12px rgba(0,0,0,0.2)' }}
-            >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="black" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6"/></svg>
-            </button>
-            <div style={{ position: 'absolute', bottom: 14, left: '50%', transform: 'translateX(-50%)', display: 'flex', gap: 6, zIndex: 6 }}>
-              {images.slice(0, 6).map((_: any, i: number) => (
-                <div key={i} style={{ width: 8, height: 8, borderRadius: '50%', background: i === imgIndex ? '#ff6b35' : 'rgba(255,255,255,0.6)', transition: 'all 0.2s' }} />
-              ))}
-            </div>
-          </>
-        )}
-      </div>
-
-      {/* Right: Details & Pricing */}
-      <div className="featured-spotlight-body">
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10, flexWrap: 'wrap', gap: 8 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ background: '#fef3c7', color: '#92400e', fontWeight: 800, fontSize: '0.85rem', padding: '3px 10px', borderRadius: '6px' }}>
-                ★ {Number(hotel.avgRating || 4.5).toFixed(1)} / 5.0
-              </span>
-              <span style={{ fontSize: '0.8rem', color: '#64748b' }}>
-                ({hotel.totalReviews || 184} verified reviews)
-              </span>
-            </div>
-            <span style={{ fontSize: '0.8rem', color: '#16a34a', fontWeight: 700, background: '#f0fdf4', border: '1px solid #bbf7d0', padding: '3px 10px', borderRadius: '6px' }}>
-              ✓ Verified Partner Stay
+          {/* Top Badges */}
+          <div style={{ position: 'absolute', top: 16, left: 16, display: 'flex', gap: 8, zIndex: 5 }}>
+            <span className="badge" style={{ background: 'linear-gradient(135deg, #ff6b35, #ea580c)', color: 'white', fontWeight: 800, padding: '4px 12px', fontSize: '0.78rem' }}>
+              ⭐ FEATURED STAY
+            </span>
+            <span className="badge" style={{ background: 'rgba(15, 23, 42, 0.75)', color: 'white', backdropFilter: 'blur(4px)', padding: '4px 10px', fontSize: '0.75rem' }}>
+              {hotel.category || 'Luxury'}
             </span>
           </div>
 
-          <h3 style={{ fontSize: '1.65rem', fontWeight: 800, color: '#0f172a', marginBottom: 8, lineHeight: 1.25 }}>
-            {hotel.name}
-          </h3>
-
-          <p style={{ color: '#64748b', fontSize: '0.92rem', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 6 }}>
-            <span>📍</span>
-            <span>{hotel.area ? `${hotel.area}, ` : ''}{hotel.city || 'Hyderabad'}</span>
-            <span style={{ color: '#cbd5e1' }}>•</span>
-            <span style={{ color: '#2563eb', fontWeight: 600 }}>Prime Transit Location</span>
-          </p>
-
-          <p style={{ color: '#475569', fontSize: '0.92rem', lineHeight: 1.55, marginBottom: 18 }}>
-            {hotel.description || 'Experience exceptional comfort and hospitality with spacious air-conditioned rooms, 24/7 power backup, high-speed WiFi, and round-the-clock front desk assistance.'}
-          </p>
-
-          {/* Amenities Grid */}
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 18 }}>
-            {(hotel.amenities || ['Free WiFi', 'Parking', '24-hour Front Desk', 'AC', 'Room Service']).slice(0, 5).map((a: string) => (
-              <span key={a} style={{ fontSize: '0.78rem', background: '#f1f5f9', color: '#334155', padding: '6px 12px', borderRadius: '8px', fontWeight: 600 }}>
-                {a}
-              </span>
-            ))}
-          </div>
-
-          {/* Urgency tag */}
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#fff7ed', border: '1px solid #fed7aa', color: '#c2410c', fontSize: '0.82rem', fontWeight: 700, padding: '5px 12px', borderRadius: '8px', marginBottom: 20 }}>
-            <span>🔥</span>
-            <span>Special Deal: Save flat 20% with coupon STAYBUDDY20</span>
-          </div>
+          {/* Carousel controls */}
+          {images.length > 1 && (
+            <>
+              <button
+                type="button"
+                onClick={handlePrev}
+                aria-label="Previous photo"
+                style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', background: 'rgba(255,255,255,0.85)', border: 'none', borderRadius: '50%', width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', zIndex: 6, boxShadow: '0 4px 12px rgba(0,0,0,0.2)' }}
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="black" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+              </button>
+              <button
+                type="button"
+                onClick={handleNext}
+                aria-label="Next photo"
+                style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'rgba(255,255,255,0.85)', border: 'none', borderRadius: '50%', width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', zIndex: 6, boxShadow: '0 4px 12px rgba(0,0,0,0.2)' }}
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="black" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+              </button>
+              <div style={{ position: 'absolute', bottom: 14, left: '50%', transform: 'translateX(-50%)', display: 'flex', gap: 6, zIndex: 6 }}>
+                {images.slice(0, 6).map((_: any, i: number) => (
+                  <div key={i} style={{ width: 8, height: 8, borderRadius: '50%', background: i === imgIndex ? '#ff6b35' : 'rgba(255,255,255,0.6)', transition: 'all 0.2s' }} />
+                ))}
+              </div>
+            </>
+          )}
         </div>
 
-        {/* Pricing & CTA Row */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: 18, borderTop: '1px solid #f1f5f9', flexWrap: 'wrap', gap: 16 }}>
+        {/* Right: Details & Pricing */}
+        <div className="featured-spotlight-body">
           <div>
-            <div style={{ fontSize: '0.78rem', color: '#64748b' }}>Starting from</div>
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
-              <span style={{ fontSize: '1.8rem', fontWeight: 900, color: 'var(--brand-700, #c2410c)' }}>
-                ₹{Number(hotel.startingPrice || 1265).toLocaleString('en-IN')}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10, flexWrap: 'wrap', gap: 8 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ background: '#fef3c7', color: '#92400e', fontWeight: 800, fontSize: '0.85rem', padding: '3px 10px', borderRadius: '6px' }}>
+                  ★ {Number(hotel.avgRating || 4.5).toFixed(1)} / 5.0
+                </span>
+                <span style={{ fontSize: '0.8rem', color: '#64748b' }}>
+                  ({hotel.totalReviews || 184} verified reviews)
+                </span>
+              </div>
+              <span style={{ fontSize: '0.8rem', color: '#16a34a', fontWeight: 700, background: '#f0fdf4', border: '1px solid #bbf7d0', padding: '3px 10px', borderRadius: '6px' }}>
+                ✓ Verified Partner Stay
               </span>
-              <span style={{ fontSize: '0.85rem', color: '#64748b' }}>/ night</span>
             </div>
-            <div style={{ fontSize: '0.72rem', color: '#94a3b8' }}>+ taxes & fees</div>
+
+            <h3 style={{ fontSize: '1.65rem', fontWeight: 800, color: '#0f172a', marginBottom: 8, lineHeight: 1.25 }}>
+              {hotel.name}
+            </h3>
+
+            <p style={{ color: '#64748b', fontSize: '0.92rem', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span>📍</span>
+              <span>{hotel.area ? `${hotel.area}, ` : ''}{hotel.city || 'Hyderabad'}</span>
+              <span style={{ color: '#cbd5e1' }}>•</span>
+              <span style={{ color: '#2563eb', fontWeight: 600 }}>Prime Transit Location</span>
+            </p>
+
+            <p style={{ color: '#475569', fontSize: '0.92rem', lineHeight: 1.55, marginBottom: 18 }}>
+              {hotel.description || 'Experience exceptional comfort and hospitality with spacious air-conditioned rooms, 24/7 power backup, high-speed WiFi, and round-the-clock front desk assistance.'}
+            </p>
+
+            {/* Amenities Grid */}
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 18 }}>
+              {(hotel.amenities || ['Free WiFi', 'Parking', '24-hour Front Desk', 'AC', 'Room Service']).slice(0, 5).map((a: string) => (
+                <span key={a} style={{ fontSize: '0.78rem', background: '#f1f5f9', color: '#334155', padding: '6px 12px', borderRadius: '8px', fontWeight: 600 }}>
+                  {a}
+                </span>
+              ))}
+            </div>
+
+            {/* Urgency tag */}
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#fff7ed', border: '1px solid #fed7aa', color: '#c2410c', fontSize: '0.82rem', fontWeight: 700, padding: '5px 12px', borderRadius: '8px', marginBottom: 20 }}>
+              <span>🔥</span>
+              <span>Special Deal: Save flat 20% with coupon STAYBUDDY20</span>
+            </div>
           </div>
 
-          <Link
-            href={`/hotels/${hotel._id}`}
-            className="btn btn-primary"
-            style={{
-              padding: '14px 34px',
-              borderRadius: '12px',
-              fontSize: '1rem',
-              fontWeight: 800,
-              textDecoration: 'none',
-              boxShadow: '0 4px 16px rgba(255, 107, 53, 0.35)',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 8,
-            }}
-          >
-            <span>Book Now</span>
-            <span style={{ fontSize: '1.1rem' }}>→</span>
-          </Link>
+          {/* Pricing & CTA Row */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: 18, borderTop: '1px solid #f1f5f9', flexWrap: 'wrap', gap: 16 }}>
+            <div>
+              <div style={{ fontSize: '0.78rem', color: '#64748b' }}>Starting from</div>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
+                <span style={{ fontSize: '1.8rem', fontWeight: 900, color: 'var(--brand-700, #c2410c)' }}>
+                  ₹{Number(hotel.startingPrice || 1265).toLocaleString('en-IN')}
+                </span>
+                <span style={{ fontSize: '0.85rem', color: '#64748b' }}>/ night</span>
+              </div>
+              <div style={{ fontSize: '0.72rem', color: '#94a3b8' }}>+ taxes & fees</div>
+            </div>
+
+            <div
+              className="btn btn-primary"
+              style={{
+                padding: '14px 34px',
+                borderRadius: '12px',
+                fontSize: '1rem',
+                fontWeight: 800,
+                boxShadow: '0 4px 16px rgba(255, 107, 53, 0.35)',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 8,
+              }}
+            >
+              <span>Book Now</span>
+              <span style={{ fontSize: '1.1rem' }}>→</span>
+            </div>
+          </div>
         </div>
       </div>
-    </div>
+    </Link>
   );
 }
 

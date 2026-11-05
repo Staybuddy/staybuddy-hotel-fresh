@@ -528,8 +528,7 @@ function HotelSearch() {
                         </div>
 
                         <div style={{ width: '100%', marginTop: 16 }}>
-                          <button
-                            type="button"
+                          <div
                             className="btn btn-primary"
                             style={{
                               width: '100%',
@@ -546,7 +545,7 @@ function HotelSearch() {
                           >
                             <span>View Hotel</span>
                             <span>→</span>
-                          </button>
+                          </div>
                         </div>
                       </div>
                     </div>
