@@ -49,52 +49,6 @@ function HotelSearch() {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [activeDateSelection, setActiveDateSelection] = useState<'checkIn' | 'checkOut'>('checkIn');
   const [showGuestPicker, setShowGuestPicker] = useState(false);
-  const [showMobileSearchEdit, setShowMobileSearchEdit] = useState(false);
-  const [showMobileFilterDrawer, setShowMobileFilterDrawer] = useState(false);
-  const [wishlistIds, setWishlistIds] = useState<string[]>([]);
-
-  useEffect(() => {
-    fetch('/api/wishlist')
-      .then(res => res.json())
-      .then(d => { if (d.wishlistIds) setWishlistIds(d.wishlistIds); })
-      .catch(() => {});
-  }, []);
-
-  const toggleWishlist = async (e: React.MouseEvent, hotelId: string) => {
-    e.preventDefault();
-    e.stopPropagation();
-    const isSaved = wishlistIds.includes(hotelId);
-    setWishlistIds(prev => isSaved ? prev.filter(id => id !== hotelId) : [...prev, hotelId]);
-    try {
-      await fetch('/api/wishlist', {
-        method: isSaved ? 'DELETE' : 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ hotelId }),
-      });
-    } catch (e) {
-      // revert on error
-    }
-  };
-
-  const cycleSort = () => {
-    setFilters(p => {
-      let nextSort = 'rating';
-      if (p.sortBy === 'rating') nextSort = 'price_low';
-      else if (p.sortBy === 'price_low') nextSort = 'price_high';
-      else if (p.sortBy === 'price_high') nextSort = 'newest';
-      else nextSort = 'rating';
-      return { ...p, sortBy: nextSort };
-    });
-  };
-
-  const getSortLabel = () => {
-    switch (filters.sortBy) {
-      case 'price_low': return 'Price: Low to High';
-      case 'price_high': return 'Price: High to Low';
-      case 'newest': return 'Newest';
-      default: return 'Top Rated';
-    }
-  };
 
   useEffect(() => {
     setFilters(p => ({
@@ -173,23 +127,7 @@ function HotelSearch() {
   return (
     <div>
       <style>{`
-        .mobile-results-header {
-          display: none;
-        }
-        .hotels-search-container {
-          display: block;
-        }
         @media (max-width: 1024px) {
-          .mobile-results-header {
-            display: block !important;
-          }
-          .hotels-search-container {
-            display: none !important;
-          }
-          .hotels-search-container.mobile-search-open {
-            display: block !important;
-            animation: fadeIn 0.25s ease;
-          }
           .hotels-search-wrapper {
             display: grid !important;
             grid-template-columns: 1fr 1fr !important;
@@ -219,7 +157,7 @@ function HotelSearch() {
           }
           .hotels-main-container {
             display: block !important;
-            padding: 12px 12px 32px !important;
+            padding: 16px 12px 32px !important;
             gap: 0 !important;
             width: 100% !important;
             max-width: 100% !important;
@@ -243,7 +181,7 @@ function HotelSearch() {
 
         @media (max-width: 639px) {
           .hotels-main-container {
-            padding: 10px 10px 24px !important;
+            padding: 12px 10px 24px !important;
           }
           .hotels-grid {
             display: grid !important;
@@ -254,211 +192,18 @@ function HotelSearch() {
           .hotels-grid .hotel-card {
             width: 100% !important;
             box-sizing: border-box !important;
-            border-radius: 16px !important;
-            overflow: hidden !important;
+            border-radius: 14px !important;
+          }
+          .hotels-grid .hotel-card-img-wrapper {
+            width: 100% !important;
+            height: 200px !important;
           }
         }
       `}</style>
       <Navbar />
 
-      {/* MOBILE STICKY HEADER (Photo 3 MakeMyTrip / StayBuddy Layout) */}
-      <div className="mobile-results-header" style={{
-        background: '#ffffff',
-        borderBottom: '1px solid #e2e8f0',
-        position: 'sticky',
-        top: 0,
-        zIndex: 1000,
-        boxShadow: '0 2px 8px rgba(0,0,0,0.06)'
-      }}>
-        {/* Top Bar: Back Arrow + Location & Dates + Search Edit Toggle */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', gap: 10 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0, flex: 1 }}>
-            <button
-              type="button"
-              onClick={() => router.back()}
-              style={{
-                background: 'transparent',
-                border: 'none',
-                cursor: 'pointer',
-                padding: '4px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: '#0f172a'
-              }}
-              aria-label="Back"
-            >
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="19" y1="12" x2="5" y2="12" />
-                <polyline points="12 19 5 12 12 5" />
-              </svg>
-            </button>
-            <div style={{ minWidth: 0, flex: 1 }}>
-              <div style={{ fontSize: '1.05rem', fontWeight: 900, color: '#0f172a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: 1.2 }}>
-                {filters.city || 'All Destinations'}
-              </div>
-              <div style={{ fontSize: '0.72rem', color: '#64748b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginTop: 2 }}>
-                {`${filters.checkIn ? formatDate(filters.checkIn) : '05 Nov'} - ${filters.checkOut ? formatDate(filters.checkOut) : '06 Nov'}, ${filters.rooms} room${filters.rooms > 1 ? 's' : ''}, ${filters.adults + filters.children} Guests`}
-              </div>
-            </div>
-          </div>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-            {/* Search Edit Toggle */}
-            <button
-              type="button"
-              onClick={() => setShowMobileSearchEdit(!showMobileSearchEdit)}
-              style={{
-                width: 38,
-                height: 38,
-                borderRadius: '50%',
-                background: showMobileSearchEdit ? 'var(--brand-50)' : '#f8fafc',
-                border: showMobileSearchEdit ? '1px solid var(--brand-300)' : '1px solid #e2e8f0',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: showMobileSearchEdit ? 'var(--brand-600)' : '#0f172a',
-                cursor: 'pointer'
-              }}
-              aria-label="Search"
-            >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="11" cy="11" r="8" />
-                <line x1="21" y1="21" x2="16.65" y2="16.65" />
-              </svg>
-            </button>
-          </div>
-        </div>
-
-        {/* Quick Filter Horizontal Scrolling Strip (Photo 3) */}
-        <div style={{
-          display: 'flex',
-          gap: 8,
-          overflowX: 'auto',
-          padding: '4px 14px 10px',
-          scrollbarWidth: 'none',
-          WebkitOverflowScrolling: 'touch',
-          alignItems: 'center'
-        }}>
-          {/* Maps Pill */}
-          <button
-            type="button"
-            onClick={() => alert("Interactive map view is active.")}
-            style={{
-              padding: '6px 12px',
-              borderRadius: '20px',
-              border: '1px solid #cbd5e1',
-              background: '#ffffff',
-              fontSize: '0.75rem',
-              fontWeight: 700,
-              color: '#1e293b',
-              whiteSpace: 'nowrap',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 4,
-              cursor: 'pointer',
-              flexShrink: 0
-            }}
-          >
-            <span>📍 Maps</span>
-          </button>
-
-          {/* Sort Pill */}
-          <button
-            type="button"
-            onClick={cycleSort}
-            style={{
-              padding: '6px 12px',
-              borderRadius: '20px',
-              border: filters.sortBy !== 'rating' ? '1px solid var(--brand-500)' : '1px solid #cbd5e1',
-              background: filters.sortBy !== 'rating' ? '#fff7ed' : '#ffffff',
-              color: filters.sortBy !== 'rating' ? 'var(--brand-700)' : '#1e293b',
-              fontSize: '0.75rem',
-              fontWeight: 700,
-              whiteSpace: 'nowrap',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 4,
-              cursor: 'pointer',
-              flexShrink: 0
-            }}
-          >
-            <span>⇅ Sort: {getSortLabel()}</span>
-          </button>
-
-          {/* All Filters Pill */}
-          <button
-            type="button"
-            onClick={() => setShowMobileFilterDrawer(true)}
-            style={{
-              padding: '6px 12px',
-              borderRadius: '20px',
-              border: (filters.category || filters.propertyType || filters.minRating) ? '1px solid var(--brand-500)' : '1px solid #cbd5e1',
-              background: (filters.category || filters.propertyType || filters.minRating) ? '#fff7ed' : '#ffffff',
-              color: (filters.category || filters.propertyType || filters.minRating) ? 'var(--brand-700)' : '#1e293b',
-              fontSize: '0.75rem',
-              fontWeight: 700,
-              whiteSpace: 'nowrap',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 4,
-              cursor: 'pointer',
-              flexShrink: 0
-            }}
-          >
-            <span>☵ All Filters {(filters.category || filters.propertyType || filters.minRating) ? '(Active)' : ''}</span>
-          </button>
-
-          {/* Budget Pill */}
-          <button
-            type="button"
-            onClick={() => setFilters(p => ({ ...p, category: p.category === 'budget' ? '' : 'budget' }))}
-            style={{
-              padding: '6px 12px',
-              borderRadius: '20px',
-              border: filters.category === 'budget' ? '1px solid var(--brand-500)' : '1px solid #cbd5e1',
-              background: filters.category === 'budget' ? '#fff7ed' : '#ffffff',
-              color: filters.category === 'budget' ? 'var(--brand-700)' : '#1e293b',
-              fontSize: '0.75rem',
-              fontWeight: 700,
-              whiteSpace: 'nowrap',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 4,
-              cursor: 'pointer',
-              flexShrink: 0
-            }}
-          >
-            <span>🏷️ ₹ Budget</span>
-          </button>
-
-          {/* 4+ Rating Pill */}
-          <button
-            type="button"
-            onClick={() => setFilters(p => ({ ...p, minRating: p.minRating === '4' ? '' : '4' }))}
-            style={{
-              padding: '6px 12px',
-              borderRadius: '20px',
-              border: filters.minRating === '4' ? '1px solid var(--brand-500)' : '1px solid #cbd5e1',
-              background: filters.minRating === '4' ? '#fff7ed' : '#ffffff',
-              color: filters.minRating === '4' ? 'var(--brand-700)' : '#1e293b',
-              fontSize: '0.75rem',
-              fontWeight: 700,
-              whiteSpace: 'nowrap',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 4,
-              cursor: 'pointer',
-              flexShrink: 0
-            }}
-          >
-            <span>⭐ 4+ Rating</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Search Bar (Collapsible on Mobile, Fixed/Sticky on Desktop) */}
-      <div className={`hotels-search-container ${showMobileSearchEdit ? 'mobile-search-open' : ''}`} style={{ background: 'var(--bg-secondary)', borderBottom: '1px solid var(--border)', padding: 'var(--space-4) 0', position: 'sticky', top: 68, zIndex: 100 }}>
+      {/* Search Bar */}
+      <div style={{ background: 'var(--bg-secondary)', borderBottom: '1px solid var(--border)', padding: 'var(--space-4) 0', position: 'sticky', top: 68, zIndex: 100 }}>
         <div className="container" style={{ padding: '0 12px' }}>
           <div className="hotels-search-wrapper" style={{ display: 'flex', gap: 'var(--space-3)', flexWrap: 'wrap', alignItems: 'stretch' }}>
             <div className="hotels-search-item hotels-search-item-location" style={{ flex: '2 1 200px', position: 'relative' }}>
@@ -671,284 +416,77 @@ function HotelSearch() {
           ) : (
             <>
               <div className="hotels-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 'var(--space-5)' }}>
-                {hotels.map((hotel, index) => {
-                  const basePrice = Number(hotel.startingPrice) || 3500;
-                  const strikethroughPrice = Math.round(basePrice * 1.6);
-                  const taxes = Math.round(basePrice * 0.12);
-                  const isSaved = wishlistIds.includes(hotel._id);
-                  const avgRating = Number(hotel.avgRating) || 4.2;
-
-                  return (
-                    <Link key={hotel._id} href={`/hotels/${hotel._id}${getQueryString()}`} style={{ textDecoration: 'none', color: 'inherit' }}>
-                      <div className="card card-hover hotel-card" style={{ height: '100%', borderRadius: 16, overflow: 'hidden', border: '1px solid #e2e8f0', boxShadow: '0 4px 16px rgba(0,0,0,0.06)' }}>
-                        {/* Hero Image Container with Carousel Dots & Wishlist Heart */}
-                        <div className="hotel-card-img-wrapper" style={{ position: 'relative', width: '100%', height: '220px', background: '#e2e8f0' }}>
-                          {hotel.images?.[0] ? (
-                            <Image src={hotel.images[0]} alt={hotel.name} fill priority={index < 2} className="hotel-card-img" style={{ objectFit: 'cover' }} sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw" />
-                          ) : (
-                            <div className="hotel-card-img" style={{ background: 'linear-gradient(135deg, var(--brand-100), var(--brand-200))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '3rem' }}>🏨</div>
-                          )}
-
-                          {/* Left Badges */}
-                          <div style={{ position: 'absolute', top: 10, left: 10, display: 'flex', gap: 6, zIndex: 4 }}>
-                            <span className="badge badge-gray" style={{ backdropFilter: 'blur(6px)', background: 'rgba(15, 23, 42, 0.7)', color: 'white', fontWeight: 700 }}>
-                              {hotel.propertyType || 'Hotel'}
-                            </span>
-                            {hotel.category && (
-                              <span className="badge badge-primary" style={{ backdropFilter: 'blur(6px)', background: 'rgba(37, 99, 235, 0.85)', color: 'white', fontWeight: 700 }}>
-                                {hotel.category}
+                {hotels.map((hotel, index) => (
+                  <Link key={hotel._id} href={`/hotels/${hotel._id}${getQueryString()}`} style={{ textDecoration: 'none' }}>
+                    <div className="card card-hover hotel-card" style={{ height: '100%' }}>
+                      <div className="hotel-card-img-wrapper" style={{ position: 'relative', width: '100%', height: '220px' }}>
+                        {hotel.images?.[0] ? (
+                          <Image src={hotel.images[0]} alt={hotel.name} fill priority={index < 2} className="hotel-card-img" style={{ objectFit: 'cover' }} sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw" />
+                        ) : (
+                          <div className="hotel-card-img" style={{ background: 'linear-gradient(135deg, var(--brand-100), var(--brand-200))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '3rem' }}>🏨</div>
+                        )}
+                        <div style={{ position: 'absolute', top: 10, left: 10, display: 'flex', gap: 6 }}>
+                          <span className="badge badge-gray" style={{ backdropFilter: 'blur(4px)', background: 'rgba(0,0,0,0.5)', color: 'white' }}>{hotel.propertyType || 'Hotel'}</span>
+                          <span className="badge badge-primary" style={{ backdropFilter: 'blur(4px)', background: 'rgba(59, 130, 246, 0.8)', color: 'white' }}>{hotel.category}</span>
+                        </div>
+                        {hotel.avgRating >= 4.5 && (
+                          <div style={{ position: 'absolute', top: 10, right: 10 }}>
+                            <span className="badge" style={{ background: 'var(--brand-500)', color: 'white' }}>⭐ Top Rated</span>
+                          </div>
+                        )}
+                      </div>
+                      <div className="card-body">
+                        <h3 style={{ fontSize: '1rem', marginBottom: 4 }}>{hotel.name}</h3>
+                        <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', marginBottom: 8 }}>📍 {hotel.area ? `${hotel.area}, ` : ''}{hotel.city}</p>
+                        {hotel.avgRating > 0 ? (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10 }}>
+                            <span style={{ background: 'var(--brand-500)', color: 'white', fontWeight: 700, fontSize: '0.8rem', padding: '2px 8px', borderRadius: 'var(--radius-sm)' }}>★ {hotel.avgRating.toFixed(1)}</span>
+                            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{hotel.totalReviews} {hotel.totalReviews === 1 ? 'review' : 'reviews'}</span>
+                          </div>
+                        ) : (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10 }}>
+                            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', background: '#f8fafc', padding: '2px 6px', borderRadius: '4px', border: '1px solid #f1f5f9' }}>⭐ New on StayBuddy</span>
+                          </div>
+                        )}
+                        <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginBottom: 12 }}>
+                          {hotel.amenities?.slice(0, 3).map((a: string) => (
+                            <span key={a} style={{ fontSize: '0.7rem', background: 'var(--bg-secondary)', padding: '2px 8px', borderRadius: 'var(--radius-full)', color: 'var(--text-secondary)' }}>{a}</span>
+                          ))}
+                        </div>
+                        {typeof hotel.roomsLeft === 'number' && (
+                          <div style={{ fontSize: '0.8rem', color: '#ea580c', fontWeight: 600, marginBottom: 8, display: 'flex', alignItems: 'center', gap: 4 }}>
+                            <span style={{ display: 'inline-block', width: 6, height: 6, borderRadius: '50%', background: '#ea580c' }}></span>
+                            {hotel.roomsLeft} {hotel.roomsLeft === 1 ? 'room' : 'rooms'} left
+                          </div>
+                        )}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <div>
+                            {hotel.startingPrice && Number(hotel.startingPrice) > 0 ? (
+                              <>
+                                <span className="price" style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--brand-700)' }}>
+                                  ₹{Number(hotel.startingPrice).toLocaleString('en-IN')}
+                                </span>
+                                <span className="price-suffix" style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}> /night</span>
+                                {filters.adults === 1 && (
+                                  <div style={{ fontSize: '0.7rem', color: '#16a34a', fontWeight: 600 }}>1 Adult rate</div>
+                                )}
+                                {filters.adults === 3 && (
+                                  <div style={{ fontSize: '0.7rem', color: '#2563eb', fontWeight: 600 }}>3 Adults rate</div>
+                                )}
+                              </>
+                            ) : (
+                              <span className="price" style={{ fontSize: '1rem', color: 'var(--text-muted)' }}>
+                                Check rates
                               </span>
                             )}
                           </div>
-
-                          {/* Wishlist Square/Circle Button (Photo 3) */}
-                          <button
-                            type="button"
-                            onClick={(e) => toggleWishlist(e, hotel._id)}
-                            style={{
-                              position: 'absolute',
-                              top: 10,
-                              right: 10,
-                              width: 36,
-                              height: 36,
-                              borderRadius: '50%',
-                              background: 'rgba(255, 255, 255, 0.92)',
-                              backdropFilter: 'blur(6px)',
-                              border: 'none',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              cursor: 'pointer',
-                              boxShadow: '0 2px 8px rgba(0,0,0,0.18)',
-                              zIndex: 5,
-                              transition: 'transform 0.2s'
-                            }}
-                            aria-label="Save to Wishlist"
-                          >
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill={isSaved ? '#ef4444' : 'none'} stroke={isSaved ? '#ef4444' : '#1e293b'} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-                            </svg>
-                          </button>
-
-                          {/* Carousel Dots Indicator (Photo 3) */}
-                          <div style={{ position: 'absolute', bottom: 8, left: '50%', transform: 'translateX(-50%)', display: 'flex', gap: 5, zIndex: 4 }}>
-                            <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#ffffff', opacity: 1, boxShadow: '0 1px 2px rgba(0,0,0,0.4)' }} />
-                            <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'rgba(255,255,255,0.6)' }} />
-                            <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'rgba(255,255,255,0.6)' }} />
-                            <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'rgba(255,255,255,0.6)' }} />
-                          </div>
-                        </div>
-
-                        {/* Card Content */}
-                        <div className="card-body" style={{ padding: '14px 16px' }}>
-                          {/* Rating Badge Row (Photo 3 MakeMyTrip) */}
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
-                            <span style={{ background: '#1d4ed8', color: '#ffffff', fontWeight: 800, fontSize: '0.8rem', padding: '2px 8px', borderRadius: '6px' }}>
-                              ★ {avgRating.toFixed(1)}
-                            </span>
-                            <span style={{ fontSize: '0.82rem', fontWeight: 800, color: '#1d4ed8' }}>
-                              Very Good
-                            </span>
-                            <span style={{ fontSize: '0.75rem', color: '#64748b' }}>
-                              ({hotel.totalReviews || 75} Ratings)
-                            </span>
-                            <span style={{ marginLeft: 'auto', background: '#f1f5f9', color: '#475569', fontSize: '0.65rem', fontWeight: 800, padding: '2px 6px', borderRadius: '4px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                              SPONSORED
-                            </span>
-                          </div>
-
-                          {/* Hotel Name */}
-                          <h3 style={{ fontSize: '1.12rem', fontWeight: 900, marginBottom: 4, color: '#0f172a', lineHeight: 1.25 }}>
-                            {hotel.name}
-                          </h3>
-
-                          {/* Location */}
-                          <p style={{ color: '#64748b', fontSize: '0.8rem', marginBottom: 8, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                            📍 {hotel.area ? `${hotel.area} | ` : ''}{hotel.city}
-                          </p>
-
-                          {/* Guaranteed Perk Banner (Photo 3) */}
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, margin: '8px 0', fontSize: '0.74rem', color: '#0369a1', background: '#f0f9ff', padding: '5px 10px', borderRadius: '8px', fontWeight: 600 }}>
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                              <circle cx="12" cy="12" r="10"/>
-                              <polyline points="12 6 12 12 16 14"/>
-                            </svg>
-                            <span>Guaranteed Late Check-out available</span>
-                          </div>
-
-                          {/* Pricing Row (Photo 3 Layout) */}
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: 10, paddingTop: 10, borderTop: '1px solid #f1f5f9' }}>
-                            <div style={{ display: 'flex', flexDirection: 'column' }}>
-                              <span style={{ fontSize: '0.65rem', background: '#fef2f2', color: '#dc2626', padding: '2px 6px', borderRadius: '4px', fontWeight: 800, width: 'fit-content', marginBottom: 3 }}>
-                                LIMITED TIME OFFER
-                              </span>
-                              <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
-                                <span style={{ textDecoration: 'line-through', color: '#94a3b8', fontSize: '0.82rem', fontWeight: 600 }}>
-                                  ₹{strikethroughPrice.toLocaleString('en-IN')}
-                                </span>
-                                <span style={{ fontSize: '1.38rem', fontWeight: 900, color: '#0f172a', lineHeight: 1.1 }}>
-                                  ₹{basePrice.toLocaleString('en-IN')}
-                                </span>
-                              </div>
-                              <div style={{ fontSize: '0.72rem', color: '#64748b', marginTop: 2 }}>
-                                + ₹{taxes.toLocaleString('en-IN')} taxes &amp; fees
-                              </div>
-                              <div style={{ fontSize: '0.68rem', color: '#475569', fontWeight: 600, marginTop: 1 }}>
-                                Per night for {filters.rooms} Room{filters.rooms > 1 ? 's' : ''}
-                              </div>
-                            </div>
-
-                            <button style={{
-                              background: 'linear-gradient(135deg, #ff6b35, #ea580c)',
-                              color: 'white',
-                              border: 'none',
-                              borderRadius: '8px',
-                              padding: '10px 18px',
-                              fontSize: '0.85rem',
-                              fontWeight: 800,
-                              cursor: 'pointer',
-                              boxShadow: '0 2px 8px rgba(255,107,53,0.3)',
-                              whiteSpace: 'nowrap'
-                            }}>
-                              SELECT ROOM →
-                            </button>
-                          </div>
-
-                          {/* Perks bullet line (Photo 3) */}
-                          <div style={{ marginTop: 10, fontSize: '0.72rem', color: '#475569', display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap' }}>
-                            <span style={{ color: '#2563eb' }}>✦</span>
-                            <span>Centrally located • Airport transfer service • Instant Confirmation</span>
-                          </div>
+                          <span style={{ fontSize: '0.8rem', color: 'var(--brand-600)', fontWeight: 600 }}>View →</span>
                         </div>
                       </div>
-                    </Link>
-                  );
-                })}
+                    </div>
+                  </Link>
+                ))}
               </div>
-
-              {/* Mobile Filter Drawer Modal */}
-              {showMobileFilterDrawer && (
-                <div style={{ position: 'fixed', inset: 0, zIndex: 10001, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
-                  <div style={{ position: 'absolute', inset: 0, background: 'rgba(15, 23, 42, 0.6)', backdropFilter: 'blur(4px)' }} onClick={() => setShowMobileFilterDrawer(false)} />
-                  <div style={{ position: 'relative', background: 'white', borderRadius: '24px 24px 0 0', maxHeight: '85vh', overflowY: 'auto', padding: '20px 20px 30px', boxShadow: '0 -10px 40px rgba(0,0,0,0.2)' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-                      <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 800, color: '#0f172a' }}>All Filters</h3>
-                      <button onClick={() => setShowMobileFilterDrawer(false)} style={{ background: '#f1f5f9', border: 'none', borderRadius: '50%', width: 34, height: 34, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        ✕
-                      </button>
-                    </div>
-
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-                      {/* Category */}
-                      <div>
-                        <div style={{ fontWeight: 800, fontSize: '0.88rem', color: '#0f172a', marginBottom: 10 }}>CATEGORY</div>
-                        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                          {['All', 'Budget', 'Standard', 'Premium', 'Luxury'].map(cat => {
-                            const isSel = filters.category === cat.toLowerCase() || (cat === 'All' && !filters.category);
-                            return (
-                              <button
-                                key={cat}
-                                type="button"
-                                onClick={() => setFilters(p => ({ ...p, category: cat === 'All' ? '' : cat.toLowerCase() }))}
-                                style={{
-                                  padding: '8px 14px',
-                                  borderRadius: 10,
-                                  border: isSel ? '2px solid var(--brand-500)' : '1px solid #cbd5e1',
-                                  background: isSel ? '#fff7ed' : '#ffffff',
-                                  color: isSel ? 'var(--brand-700)' : '#1e293b',
-                                  fontWeight: isSel ? 800 : 600,
-                                  fontSize: '0.82rem',
-                                  cursor: 'pointer'
-                                }}
-                              >
-                                {cat}
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </div>
-
-                      {/* Min Rating */}
-                      <div>
-                        <div style={{ fontWeight: 800, fontSize: '0.88rem', color: '#0f172a', marginBottom: 10 }}>MINIMUM RATING</div>
-                        <div style={{ display: 'flex', gap: 8 }}>
-                          {['4', '3', '2'].map(r => {
-                            const isSel = filters.minRating === r;
-                            return (
-                              <button
-                                key={r}
-                                type="button"
-                                onClick={() => setFilters(p => ({ ...p, minRating: isSel ? '' : r }))}
-                                style={{
-                                  flex: 1,
-                                  padding: '8px 12px',
-                                  borderRadius: 10,
-                                  border: isSel ? '2px solid var(--brand-500)' : '1px solid #cbd5e1',
-                                  background: isSel ? '#fff7ed' : '#ffffff',
-                                  color: isSel ? 'var(--brand-700)' : '#1e293b',
-                                  fontWeight: isSel ? 800 : 600,
-                                  fontSize: '0.82rem',
-                                  cursor: 'pointer'
-                                }}
-                              >
-                                ★ {r}+ Stars
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </div>
-
-                      {/* Property Type */}
-                      <div>
-                        <div style={{ fontWeight: 800, fontSize: '0.88rem', color: '#0f172a', marginBottom: 10 }}>PROPERTY TYPE</div>
-                        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                          {['Hotel', 'Resort', 'Villa', 'Homestay'].map(pt => {
-                            const isSel = filters.propertyType === pt;
-                            return (
-                              <button
-                                key={pt}
-                                type="button"
-                                onClick={() => setFilters(p => ({ ...p, propertyType: isSel ? '' : pt }))}
-                                style={{
-                                  padding: '8px 14px',
-                                  borderRadius: 10,
-                                  border: isSel ? '2px solid var(--brand-500)' : '1px solid #cbd5e1',
-                                  background: isSel ? '#fff7ed' : '#ffffff',
-                                  color: isSel ? 'var(--brand-700)' : '#1e293b',
-                                  fontWeight: isSel ? 800 : 600,
-                                  fontSize: '0.82rem',
-                                  cursor: 'pointer'
-                                }}
-                              >
-                                {pt}
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </div>
-
-                      {/* Apply Button */}
-                      <button
-                        type="button"
-                        onClick={() => setShowMobileFilterDrawer(false)}
-                        style={{
-                          marginTop: 10,
-                          background: 'linear-gradient(135deg, #ff6b35, #ea580c)',
-                          color: 'white',
-                          border: 'none',
-                          borderRadius: 12,
-                          padding: '14px',
-                          fontWeight: 800,
-                          fontSize: '0.98rem',
-                          cursor: 'pointer'
-                        }}
-                      >
-                        APPLY FILTERS
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )}
 
               {/* Pagination */}
               {pages > 1 && (
