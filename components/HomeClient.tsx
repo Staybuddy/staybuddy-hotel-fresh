@@ -36,7 +36,7 @@ const AMENITY_ICONS: Record<string, string> = {
 
 export default function HomeClient({ initialHotels, recentReviews = [] }: { initialHotels: any[], recentReviews?: any[] }) {
   const router = useRouter();
-  const [searchData, setSearchData] = useState({ propertyType: 'Hotel', location: '', checkIn: '', checkOut: '', rooms: 1, adults: 2, children: 0 });
+  const [searchData, setSearchData] = useState({ propertyType: '', location: '', checkIn: '', checkOut: '', rooms: 1, adults: 2, children: 0 });
   const [hotels, setHotels] = useState<any[]>(initialHotels);
   const [loading, setLoading] = useState(false);
   const [searchError, setSearchError] = useState('');
@@ -385,9 +385,11 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
       {(() => {
         const renderPropertySelector = (isCompact = false) => (
           <div 
-            className="hide-scrollbar property-selector-container"
+            className="hide-scrollbar property-type-tabs"
             style={{ 
               display: 'flex', 
+              flexDirection: 'row',
+              flexWrap: 'nowrap',
               gap: 0, 
               overflowX: 'auto', 
               borderRadius: isCompact ? 'var(--radius-full)' : 'var(--radius-xl)', 
@@ -410,14 +412,19 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
               { id: 'HolidayPackage', label: 'Packages', icon: '🎒' }
             ].map((card, index, array) => {
               const isLast = index === array.length - 1;
-              const isActive = (searchData.propertyType || 'Hotel') === card.id;
+              const isActive = searchData.propertyType === card.id;
               return (
                 <div
                   key={card.id}
                   onClick={() => {
-                    setSearchData(p => ({ ...p, propertyType: card.id }));
-                    if (window.scrollY > 200) {
-                      setShowStickySearch(true);
+                    const isOpening = searchData.propertyType !== card.id;
+                    setSearchData(p => ({ ...p, propertyType: isOpening ? card.id : '' }));
+                    if (isOpening) {
+                      if (window.scrollY > 200) {
+                        setShowStickySearch(true);
+                      }
+                    } else {
+                      setShowStickySearch(false);
                     }
                   }}
                   style={{
@@ -427,7 +434,7 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
                     padding: isCompact ? '6px 16px' : '12px 24px',
                     cursor: 'pointer',
                     minWidth: 0,
-                    flex: '1 0 auto',
+                    flex: '0 0 auto',
                     transition: 'all 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
                     textAlign: 'center',
                     display: 'flex',
@@ -517,16 +524,19 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
         );
       })()}
 
-      {/* SEARCH BAR SECTION */}
+      {/* SEARCH BAR SECTION - ONLY OPENS ON USER CLICK */}
       <div style={{
+        maxHeight: searchData.propertyType ? '1000px' : '0px',
+        opacity: searchData.propertyType ? 1 : 0,
+        overflow: searchData.propertyType ? 'visible' : 'hidden',
+        transition: 'max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s ease-in-out',
         background: 'var(--bg-secondary)',
-        padding: '12px 0 24px 0',
         position: 'relative',
         zIndex: 100
       }}>
-        <section style={{ padding: '0' }}>
+        <section style={{ padding: searchData.propertyType ? '12px 0 24px 0' : '0' }}>
           <div className="container hero-section-container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '0 16px' }}>
-            {renderSearchBar()}
+            {searchData.propertyType && renderSearchBar()}
             {searchError && (
               <div style={{ marginTop: 12, color: 'white', background: '#ef4444', padding: '6px 16px', borderRadius: 'var(--radius-full)', fontSize: '0.9rem', fontWeight: 600, animation: 'fadeIn 0.3s ease' }}>
                 {searchError}
@@ -537,12 +547,12 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
       </div>
 
       {/* ===== TRENDING DESTINATIONS ===== */}
-      <section style={{ padding: '14px 0 10px', background: 'var(--bg-secondary)' }}>
-        <div className="container">
-          <div style={{ textAlign: 'center', marginBottom: 18 }}>
-            <div style={{ display: 'inline-block', background: 'var(--brand-50)', color: 'var(--brand-700)', padding: '3px 12px', borderRadius: 'var(--radius-full)', fontSize: '0.75rem', fontWeight: 700, marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Popular Destinations</div>
-            <h2 style={{ fontSize: '1.8rem', margin: 0 }}>Trending <span style={{ color: 'var(--brand-600)' }}>Right Now</span></h2>
-            <p style={{ color: 'var(--text-secondary)', marginTop: 4, fontSize: '0.9rem' }}>Top-rated destinations loved by millions of travelers</p>
+      <section style={{ padding: '14px 0 10px', background: 'var(--bg-secondary)', userSelect: 'none', WebkitUserSelect: 'none' }}>
+        <div className="container" style={{ userSelect: 'none', WebkitUserSelect: 'none' }}>
+          <div style={{ textAlign: 'center', marginBottom: 18, userSelect: 'none', WebkitUserSelect: 'none' }}>
+            <div style={{ display: 'inline-block', background: 'var(--brand-50)', color: 'var(--brand-700)', padding: '3px 12px', borderRadius: 'var(--radius-full)', fontSize: '0.75rem', fontWeight: 700, marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em', userSelect: 'none', WebkitUserSelect: 'none' }}>Popular Destinations</div>
+            <h2 style={{ fontSize: '1.8rem', margin: 0, userSelect: 'none', WebkitUserSelect: 'none' }}>Trending <span style={{ color: 'var(--brand-600)' }}>Right Now</span></h2>
+            <p style={{ color: 'var(--text-secondary)', marginTop: 4, fontSize: '0.9rem', userSelect: 'none', WebkitUserSelect: 'none' }}>Top-rated destinations loved by millions of travelers</p>
           </div>
           <div
             className="no-scrollbar"

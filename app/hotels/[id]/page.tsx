@@ -5400,7 +5400,7 @@ export default function HotelDetailPage() {
         {/* Left Column: Price, Tax & Occupancy */}
         <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0, flex: 1, paddingRight: 10 }}>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
-            <span style={{ fontSize: '1.42rem', fontWeight: 900, color: '#ffffff', lineHeight: 1.1, letterSpacing: '-0.02em' }}>
+            <span style={{ fontSize: '1.45rem', fontWeight: 900, color: '#ff6b35', lineHeight: 1.1, letterSpacing: '-0.02em' }}>
               ₹{(bookingStep === 1 ? (currentPricing.totalAmount || bottomBarPrice) : bottomBarPrice).toLocaleString('en-IN')}
             </span>
           </div>
@@ -5455,7 +5455,7 @@ export default function HotelDetailPage() {
             </button>
           )}
 
-          {/* Main Action CTA Button with Fluid Glass Shimmer & StayBuddy Theme */}
+          {/* Main Action CTA Button (White button with brand color text) */}
           <button
             type="button"
             className="mobile-down-cta-btn"
@@ -5463,14 +5463,15 @@ export default function HotelDetailPage() {
             disabled={bookingLoading}
             style={{
               height: 46,
-              padding: bookingStep === 1 ? '0 22px' : '0 18px',
+              padding: bookingStep === 1 ? '0 22px' : '0 20px',
               borderRadius: 10,
-              fontWeight: 800,
+              fontWeight: 900,
               fontSize: bookingStep === 1 ? '0.92rem' : '0.88rem',
               letterSpacing: '0.04em',
               textTransform: 'uppercase',
-              color: '#ffffff',
-              border: 'none',
+              color: bookingStep === 1 ? '#1d4ed8' : '#ea580c',
+              background: '#ffffff',
+              border: '1.5px solid #ffffff',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
@@ -5478,12 +5479,7 @@ export default function HotelDetailPage() {
               gap: 6,
               position: 'relative',
               overflow: 'hidden',
-              background: bookingStep === 1
-                ? 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 50%, #1e40af 100%)'
-                : 'linear-gradient(135deg, #ff6b35 0%, #ea580c 50%, #f97316 100%)',
-              boxShadow: bookingStep === 1
-                ? '0 4px 18px rgba(37, 99, 235, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.35)'
-                : '0 4px 18px rgba(234, 88, 12, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.35)',
+              boxShadow: '0 4px 18px rgba(0, 0, 0, 0.35)',
               whiteSpace: 'nowrap',
             }}
           >
