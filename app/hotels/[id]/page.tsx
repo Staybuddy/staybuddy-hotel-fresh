@@ -95,15 +95,6 @@ export default function HotelDetailPage() {
   const [occupancy, setOccupancy] = useState<"single" | "double" | "triple">(
     initialAdults === 1 ? "single" : initialAdults === 3 ? "triple" : "double",
   );
-  const [reviewData, setReviewData] = useState({
-    rating: 5,
-    title: "",
-    comment: "",
-  });
-  const [submittingReview, setSubmittingReview] = useState(false);
-  const [reviewError, setReviewError] = useState("");
-  const [reviewSuccess, setReviewSuccess] = useState("");
-  const [showReviewModal, setShowReviewModal] = useState(false);
   const [confirmedBookingId, setConfirmedBookingId] = useState<string>("");
 
   useEffect(() => {
@@ -410,17 +401,22 @@ export default function HotelDetailPage() {
       return;
     }
 
-    // Persist contact number for this user/email so it is never asked again
+    // Persist contact number and email for this user/email so it is never asked again
     const userEmail = (bookingData.guestEmail || session?.user?.email || "").trim().toLowerCase();
-    if (userEmail && bookingData.guestPhone) {
+    if (userEmail) {
       try {
-        localStorage.setItem(`staybuddy_phone_${userEmail}`, bookingData.guestPhone.trim());
+        localStorage.setItem("staybuddy_guest_email", userEmail);
+        if (bookingData.guestPhone) {
+          localStorage.setItem(`staybuddy_phone_${userEmail}`, bookingData.guestPhone.trim());
+        }
       } catch (e) {}
-      fetch("/api/user/profile", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: userEmail, phone: bookingData.guestPhone.trim() }),
-      }).catch(() => {});
+      if (bookingData.guestPhone) {
+        fetch("/api/user/profile", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: userEmail, phone: bookingData.guestPhone.trim() }),
+        }).catch(() => {});
+      }
     }
 
     const calculatedPricing = selectedRoomsList.length > 0
@@ -581,44 +577,6 @@ export default function HotelDetailPage() {
       setBookingLoading(false);
     });
     rzp.open();
-  }
-
-  async function submitReview(e: React.FormEvent) {
-    e.preventDefault();
-    if (!session) {
-      setReviewError("Please sign in to leave a review.");
-      return;
-    }
-    setSubmittingReview(true);
-    setReviewError("");
-    setReviewSuccess("");
-
-    try {
-      const res = await fetch("/api/reviews", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          hotelId: id,
-          rating: reviewData.rating,
-          title: reviewData.title,
-          comment: reviewData.comment,
-        }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to submit review");
-
-      setReviewSuccess("Thank you! Your review has been published and the hotel rating has been updated.");
-      setReviewData({ rating: 5, title: "", comment: "" });
-      fetchHotelData();
-      setTimeout(() => {
-        setShowReviewModal(false);
-        setReviewSuccess("");
-      }, 2000);
-    } catch (err: any) {
-      setReviewError(err.message);
-    } finally {
-      setSubmittingReview(false);
-    }
   }
 
 
@@ -2176,28 +2134,6 @@ export default function HotelDetailPage() {
                     </span>
                   )}
                 </div>
-
-                <button
-                  type="button"
-                  className="btn btn-sm btn-outline"
-                  onClick={() => {
-                    if (!session) {
-                      router.push('/login?callbackUrl=' + encodeURIComponent(window.location.pathname));
-                      return;
-                    }
-                    setShowReviewModal(true);
-                  }}
-                  style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: 6,
-                    fontWeight: 700,
-                    padding: "6px 14px",
-                    borderRadius: "20px",
-                  }}
-                >
-                  ⭐ Write a Review
-                </button>
               </div>
 
               <div
@@ -2350,139 +2286,6 @@ export default function HotelDetailPage() {
                 )}
               </div>
             </div>
-
-            {/* Write Review Modal */}
-            {showReviewModal && (
-              <>
-                <div
-                  style={{
-                    position: "fixed",
-                    inset: 0,
-                    background: "rgba(0,0,0,0.5)",
-                    zIndex: 9999,
-                  }}
-                  onClick={() => setShowReviewModal(false)}
-                />
-                <div
-                  style={{
-                    position: "fixed",
-                    top: "50%",
-                    left: "50%",
-                    transform: "translate(-50%, -50%)",
-                    background: "white",
-                    padding: "28px",
-                    borderRadius: "16px",
-                    zIndex: 10000,
-                    width: "90%",
-                    maxWidth: 500,
-                    boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
-                  }}
-                >
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-                    <h2 style={{ fontSize: "1.25rem", margin: 0, fontWeight: 800 }}>Review {hotel.name}</h2>
-                    <button
-                      type="button"
-                      onClick={() => setShowReviewModal(false)}
-                      style={{
-                        background: "none",
-                        border: "none",
-                        fontSize: "1.3rem",
-                        cursor: "pointer",
-                        color: "#64748b",
-                      }}
-                    >
-                      ✕
-                    </button>
-                  </div>
-
-                  {reviewSuccess && (
-                    <div className="alert alert-success" style={{ marginBottom: 16 }}>
-                      {reviewSuccess}
-                    </div>
-                  )}
-                  {reviewError && (
-                    <div className="alert alert-danger" style={{ marginBottom: 16 }}>
-                      {reviewError}
-                    </div>
-                  )}
-
-                  <form onSubmit={submitReview} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-                    <div>
-                      <label className="form-label" style={{ fontWeight: 700, fontSize: "0.85rem", marginBottom: 6, display: "block" }}>
-                        Rating (1 to 5 Stars)
-                      </label>
-                      <div style={{ display: "flex", gap: 8 }}>
-                        {[1, 2, 3, 4, 5].map((num) => (
-                          <button
-                            type="button"
-                            key={num}
-                            onClick={() => setReviewData((p) => ({ ...p, rating: num }))}
-                            style={{
-                              background: "none",
-                              border: "none",
-                              fontSize: "2rem",
-                              cursor: "pointer",
-                              opacity: reviewData.rating >= num ? 1 : 0.25,
-                              transition: "opacity 0.15s ease",
-                            }}
-                          >
-                            ⭐
-                          </button>
-                        ))}
-                        <span style={{ alignSelf: "center", marginLeft: 8, fontWeight: 700, color: "var(--brand-600)" }}>
-                          {reviewData.rating}.0 / 5.0
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="form-group">
-                      <label className="form-label" style={{ fontWeight: 700, fontSize: "0.85rem", marginBottom: 6, display: "block" }}>
-                        Title
-                      </label>
-                      <input
-                        type="text"
-                        className="form-input"
-                        required
-                        placeholder="e.g. Wonderful stay, courteous staff!"
-                        value={reviewData.title}
-                        onChange={(e) => setReviewData((p) => ({ ...p, title: e.target.value }))}
-                      />
-                    </div>
-
-                    <div className="form-group">
-                      <label className="form-label" style={{ fontWeight: 700, fontSize: "0.85rem", marginBottom: 6, display: "block" }}>
-                        Your Review
-                      </label>
-                      <textarea
-                        className="form-input"
-                        rows={4}
-                        required
-                        placeholder="Share details about your room, cleanliness, amenities, and hospitality..."
-                        value={reviewData.comment}
-                        onChange={(e) => setReviewData((p) => ({ ...p, comment: e.target.value }))}
-                      />
-                    </div>
-
-                    <div style={{ display: "flex", gap: 12, justifyContent: "flex-end", marginTop: 8 }}>
-                      <button
-                        type="button"
-                        className="btn btn-outline"
-                        onClick={() => setShowReviewModal(false)}
-                      >
-                        Cancel
-                      </button>
-                      <button
-                        type="submit"
-                        className="btn btn-primary"
-                        disabled={submittingReview}
-                      >
-                        {submittingReview ? "Submitting..." : "Submit Review"}
-                      </button>
-                    </div>
-                  </form>
-                </div>
-              </>
-            )}
           </div>
 
 
@@ -3976,12 +3779,18 @@ export default function HotelDetailPage() {
                           value={
                             bookingData.guestEmail || session?.user?.email || ""
                           }
-                          onChange={(e) =>
+                          onChange={(e) => {
+                            const val = e.target.value;
                             setBookingData((p) => ({
                               ...p,
-                              guestEmail: e.target.value,
-                            }))
-                          }
+                              guestEmail: val,
+                            }));
+                            if (val && val.includes("@")) {
+                              try {
+                                localStorage.setItem("staybuddy_guest_email", val.trim().toLowerCase());
+                              } catch (err) {}
+                            }
+                          }}
                         />
                       </div>
                       <div style={{ flex: 0.9 }}>

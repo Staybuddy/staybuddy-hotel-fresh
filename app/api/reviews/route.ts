@@ -8,34 +8,52 @@ import { db } from '@/lib/firebaseAdmin';
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session || !session.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
     const body = await request.json();
-    const { hotelId, rating, title, comment, bookingId, guestName } = body;
+    const { hotelId, rating, title, comment, bookingId, guestName, cleanliness, service, location, value } = body;
 
     if (!hotelId || !rating || !title || !comment) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
-    let customerId = (session.user as any)?.id || (session.user as any)?._id || body.customerId;
-    if (!customerId && session.user.email) {
-      try {
-        const uSnap = await db.collection('users').where('email', '==', session.user.email).limit(1).get();
-        if (!uSnap.empty) {
-          customerId = uSnap.docs[0].id;
+    let customerId = (session?.user as any)?.id || (session?.user as any)?._id || body.customerId;
+    let authorName = guestName || session?.user?.name || 'Verified Guest';
+    let authorImage = session?.user?.image || '';
+
+    // If no active session, verify via valid booking in Firestore
+    if (!session || !session.user) {
+      if (bookingId) {
+        let bDoc = await db.collection('bookings').doc(bookingId).get();
+        if (!bDoc.exists) {
+          const bSnap = await db.collection('bookings').where('_id', '==', bookingId).limit(1).get();
+          if (!bSnap.empty) bDoc = bSnap.docs[0];
         }
-      } catch (err) {
-        console.warn('Error finding user by email:', err);
+        if (bDoc && bDoc.exists) {
+          const bData = bDoc.data();
+          customerId = bData?.customerId || bData?.guestEmail || `guest_${bookingId}`;
+          if (!guestName && bData?.guestName) {
+            authorName = bData.guestName;
+          }
+        } else {
+          return NextResponse.json({ error: 'Unauthorized or booking not found' }, { status: 401 });
+        }
+      } else {
+        return NextResponse.json({ error: 'Unauthorized. Sign in or provide a verified booking ID.' }, { status: 401 });
+      }
+    } else {
+      if (!customerId && session.user.email) {
+        try {
+          const uSnap = await db.collection('users').where('email', '==', session.user.email).limit(1).get();
+          if (!uSnap.empty) {
+            customerId = uSnap.docs[0].id;
+          }
+        } catch (err) {
+          console.warn('Error finding user by email:', err);
+        }
+      }
+      if (!customerId) {
+        customerId = session.user.email || 'customer_' + Date.now();
       }
     }
-    if (!customerId) {
-      customerId = session.user.email || 'customer_' + Date.now();
-    }
-
-    const authorName = guestName || session.user.name || 'Guest';
-    const authorImage = session.user.image || '';
 
     const reviewRef = db.collection('reviews').doc();
     const newReview = {
@@ -47,10 +65,10 @@ export async function POST(request: NextRequest) {
       rating: Number(rating), 
       title, 
       comment,
-      cleanliness: Number(rating),
-      service: Number(rating),
-      location: Number(rating),
-      value: Number(rating),
+      cleanliness: Number(cleanliness || rating),
+      service: Number(service || rating),
+      location: Number(location || rating),
+      value: Number(value || rating),
       status: 'approved',
       bookingId: bookingId || null,
       createdAt: new Date().toISOString()
