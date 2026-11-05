@@ -31,7 +31,7 @@ export default function Navbar({ middleContent, extendedContent }: { middleConte
       <nav style={{
         position: 'sticky', top: 0, zIndex: 999,
         background: 'white',
-        borderBottom: '1px solid var(--border)',
+        borderBottom: scrolled ? 'none' : '1px solid var(--border)',
         boxShadow: scrolled ? '0 4px 20px rgba(0,0,0,0.08)' : 'none',
         transition: 'all 0.3s ease',
       }}>
