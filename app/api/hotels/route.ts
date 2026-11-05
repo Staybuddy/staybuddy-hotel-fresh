@@ -2,10 +2,23 @@ import { NextRequest, NextResponse } from 'next/server';
 export const dynamic = 'force-dynamic';
 import { db } from '@/lib/firebaseAdmin';
 import { applyMarginToRoom, getRoomPriceForOccupancy } from '@/lib/occupancyPricing';
+import { getCached, setCached } from '@/lib/cache';
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
+
+    // 1. Ultra-fast In-Memory Cache (20s TTL)
+    const cacheKey = `hotels_search_${request.url}`;
+    const cachedResponse = getCached<any>(cacheKey);
+    if (cachedResponse) {
+      return NextResponse.json(cachedResponse, {
+        headers: {
+          'Cache-Control': 'public, s-maxage=15, stale-while-revalidate=59',
+          'X-Cache': 'HIT',
+        },
+      });
+    }
 
     const status = searchParams.get('status') || 'approved';
     const partnerId = searchParams.get('partnerId');
@@ -50,90 +63,127 @@ export async function GET(request: NextRequest) {
     const skip = (page - 1) * limitParam;
     const paginatedHotels = hotels.slice(skip, skip + limitParam);
 
-    // Attach starting prices
-    const hotelsWithPrices = await Promise.all(
-      paginatedHotels.map(async (hotel: any) => {
-        const roomsSnap = await db.collection('rooms').where('hotelId', '==', hotel._id).get();
-        let rooms = roomsSnap.docs.map((doc: any) => doc.data());
-        const margin = Number(hotel.marginPercentage) || 0;
-        rooms = rooms.map((r: any) => applyMarginToRoom(r, margin));
-        
-        // Calculate starting rate matching the requested occupancy (1 = single, 2 = double, 3 = triple) with margin
-        const validPrices: number[] = [];
-        const fallbackPrices: number[] = [];
-        rooms.forEach((r: any) => {
-          const occPrice = getRoomPriceForOccupancy(r, occPerRoom);
-          if (occPrice > 0) {
-            validPrices.push(occPrice);
+    // 2. High-Performance Batch Loading: Query rooms & bookings in single operations
+    const hotelIds = paginatedHotels.map((h: any) => h._id).filter(Boolean);
+
+    const roomsByHotelId: Record<string, any[]> = {};
+    if (hotelIds.length > 0) {
+      try {
+        const roomsSnap = await db.collection('rooms')
+          .where('hotelId', 'in', hotelIds.slice(0, 30))
+          .get();
+        roomsSnap.docs.forEach((doc: any) => {
+          const r = doc.data();
+          if (r.isActive !== false && r.hotelId) {
+            if (!roomsByHotelId[r.hotelId]) roomsByHotelId[r.hotelId] = [];
+            roomsByHotelId[r.hotelId].push(r);
           }
-          const fallback = Number(r.priceDouble) || Number(r.priceSingle) || Number(r.price) || Number(r.clientPrice) || 0;
-          if (fallback > 0) fallbackPrices.push(fallback);
         });
-        if (validPrices.length === 0 && fallbackPrices.length > 0) {
-          validPrices.push(...fallbackPrices);
-        }
-        if (hotel.basePrice && Number(hotel.basePrice) > 0) {
-          const baseNum = Number(hotel.basePrice);
-          const baseWithMargin = margin > 0 ? Math.round(baseNum * (1 + margin / 100)) : baseNum;
-          if (validPrices.length === 0) {
-            validPrices.push(baseWithMargin);
+      } catch (rErr) {
+        console.warn('Batch rooms fetch error', rErr);
+      }
+    }
+
+    const bookingsByHotelId: Record<string, any[]> = {};
+    if (hotelIds.length > 0) {
+      try {
+        const bookingsSnap = await db.collection('bookings')
+          .where('hotelId', 'in', hotelIds.slice(0, 30))
+          .get();
+        bookingsSnap.docs.forEach((doc: any) => {
+          const b = doc.data();
+          if (b.status === 'confirmed' && b.hotelId) {
+            if (!bookingsByHotelId[b.hotelId]) bookingsByHotelId[b.hotelId] = [];
+            bookingsByHotelId[b.hotelId].push(b);
           }
+        });
+      } catch (bErr) {
+        console.warn('Batch bookings fetch error', bErr);
+      }
+    }
+
+    // 3. Instant In-Memory Aggregation: 0ms per hotel instead of 100ms
+    const hotelsWithPrices = paginatedHotels.map((hotel: any) => {
+      let rooms = roomsByHotelId[hotel._id] || [];
+      const margin = Number(hotel.marginPercentage) || 0;
+      rooms = rooms.map((r: any) => applyMarginToRoom(r, margin));
+      
+      // Calculate starting rate matching requested occupancy
+      const validPrices: number[] = [];
+      const fallbackPrices: number[] = [];
+      rooms.forEach((r: any) => {
+        const occPrice = getRoomPriceForOccupancy(r, occPerRoom);
+        if (occPrice > 0) {
+          validPrices.push(occPrice);
         }
-        const startingPrice = validPrices.length > 0 ? Math.min(...validPrices) : 0;
+        const fallback = Number(r.priceDouble) || Number(r.priceSingle) || Number(r.price) || Number(r.clientPrice) || 0;
+        if (fallback > 0) fallbackPrices.push(fallback);
+      });
+      if (validPrices.length === 0 && fallbackPrices.length > 0) {
+        validPrices.push(...fallbackPrices);
+      }
+      if (hotel.basePrice && Number(hotel.basePrice) > 0) {
+        const baseNum = Number(hotel.basePrice);
+        const baseWithMargin = margin > 0 ? Math.round(baseNum * (1 + margin / 100)) : baseNum;
+        if (validPrices.length === 0) {
+          validPrices.push(baseWithMargin);
+        }
+      }
+      const startingPrice = validPrices.length > 0 ? Math.min(...validPrices) : 0;
 
-        // Image fallback: if hotel.images is empty, use any uploaded room images
-        const roomImages = rooms.flatMap((r: any) => r.images || []).filter(Boolean);
-        const hotelImages = (Array.isArray(hotel.images) && hotel.images.length > 0)
-          ? hotel.images
-          : roomImages;
+      // Image fallback
+      const roomImages = rooms.flatMap((r: any) => r.images || []).filter(Boolean);
+      const hotelImages = (Array.isArray(hotel.images) && hotel.images.length > 0)
+        ? hotel.images
+        : roomImages;
 
-        let baseAllocation = hotel.staybuddyAllocation 
-          ? Number(hotel.staybuddyAllocation) 
-          : rooms.reduce((sum: number, r: any) => sum + Number(r.staybuddyAllocation || 0) + Number(r.extraInventoryToday || 0), 0);
-        let roomsLeft = baseAllocation;
+      let baseAllocation = hotel.staybuddyAllocation 
+        ? Number(hotel.staybuddyAllocation) 
+        : rooms.reduce((sum: number, r: any) => sum + Number(r.staybuddyAllocation || 0) + Number(r.extraInventoryToday || 0), 0);
+      let roomsLeft = baseAllocation;
 
-        try {
-          const bookingsSnap = await db.collection('bookings')
-            .where('hotelId', '==', hotel._id)
-            .get();
-          
-          let activeBookingsCount = 0;
+      const hotelBookings = bookingsByHotelId[hotel._id] || [];
+      let activeBookingsCount = 0;
 
-          bookingsSnap.docs.forEach((doc: any) => {
-            const b = doc.data();
-            if (b.status === 'confirmed') {
-              const bCheckIn = new Date(b.checkIn).getTime();
-              const bCheckOut = new Date(b.checkOut).getTime();
-              
-              let overlap = false;
-              if (searchCheckIn && searchCheckOut) {
-                const sCheckIn = new Date(searchCheckIn).getTime();
-                const sCheckOut = new Date(searchCheckOut).getTime();
-                // Overlap: Booking starts before Search ends AND Booking ends after Search starts
-                if (bCheckIn < sCheckOut && bCheckOut > sCheckIn) {
-                  overlap = true;
-                }
-              } else {
-                // If no dates specified, just check if it's currently active today
-                const today = new Date().getTime();
-                if (bCheckOut > today) overlap = true;
-              }
-
-              if (overlap) {
-                activeBookingsCount += (b.rooms || 1);
-              }
-            }
-          });
-          roomsLeft = Math.max(0, roomsLeft - activeBookingsCount);
-        } catch (e) {
-          console.error('Error fetching bookings for availability', e);
+      hotelBookings.forEach((b: any) => {
+        const bCheckIn = new Date(b.checkIn).getTime();
+        const bCheckOut = new Date(b.checkOut).getTime();
+        
+        let overlap = false;
+        if (searchCheckIn && searchCheckOut) {
+          const sCheckIn = new Date(searchCheckIn).getTime();
+          const sCheckOut = new Date(searchCheckOut).getTime();
+          if (bCheckIn < sCheckOut && bCheckOut > sCheckIn) {
+            overlap = true;
+          }
+        } else {
+          const today = Date.now();
+          if (bCheckOut > today) overlap = true;
         }
 
-        return { ...hotel, images: hotelImages, startingPrice, roomsLeft };
-      })
-    );
+        if (overlap) {
+          activeBookingsCount += (b.rooms || 1);
+        }
+      });
+      roomsLeft = Math.max(0, roomsLeft - activeBookingsCount);
 
-    return NextResponse.json({ hotels: hotelsWithPrices, total, page, pages: Math.ceil(total / limitParam) });
+      return { ...hotel, images: hotelImages, startingPrice, roomsLeft };
+    });
+
+    const responsePayload = {
+      hotels: hotelsWithPrices,
+      total,
+      page,
+      pages: Math.ceil(total / limitParam),
+    };
+
+    setCached(cacheKey, responsePayload, 20);
+
+    return NextResponse.json(responsePayload, {
+      headers: {
+        'Cache-Control': 'public, s-maxage=15, stale-while-revalidate=59',
+      },
+    });
   } catch (error) {
     console.error('Hotels GET error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
@@ -303,6 +353,10 @@ export async function POST(request: NextRequest) {
       }
       await batch.commit();
     }
+
+    // Invalidate search and autocomplete caches so new hotel is instantly visible
+    invalidateCache('hotels_search_');
+    invalidateCache('approved_hotels_directory');
 
     return NextResponse.json({ hotel }, { status: 201 });
   } catch (error: any) {

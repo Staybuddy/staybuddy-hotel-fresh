@@ -11,6 +11,9 @@ import Image from 'next/image';
 const AMENITY_OPTIONS = ['Free WiFi', 'Pool', 'Spa', 'Gym', 'Restaurant', 'Parking', 'AC', 'Bar', 'Pet Friendly', 'Breakfast'];
 const CATEGORIES = ['all', 'budget', 'standard', 'premium', 'luxury'];
 
+// Client-side cache for ultra-fast instant filter & pagination transitions
+const searchClientCache = new Map<string, { hotels: any[]; total: number; pages: number }>();
+
 const formatDate = (dateString: string | null) => {
   if (!dateString) return 'Add date';
   const d = new Date(dateString);
@@ -62,35 +65,52 @@ function HotelSearch() {
   useEffect(() => { fetchHotels(); }, [filters, page]);
 
   async function fetchHotels() {
-    setLoading(true);
-    try {
-      const params = new URLSearchParams({ status: 'approved', page: page.toString(), limit: '9' });
-      if (filters.city) params.set('city', filters.city);
-      if (filters.category) params.set('category', filters.category);
-      if (filters.propertyType) params.set('propertyType', filters.propertyType);
-      if (filters.minRating) params.set('minRating', filters.minRating);
-      if (filters.adults) params.set('adults', filters.adults.toString());
-      if (filters.rooms) params.set('rooms', filters.rooms.toString());
-      if (filters.checkIn) params.set('checkIn', filters.checkIn);
-      if (filters.checkOut) params.set('checkOut', filters.checkOut);
+    const params = new URLSearchParams({ status: 'approved', page: page.toString(), limit: '9' });
+    if (filters.city) params.set('city', filters.city);
+    if (filters.category) params.set('category', filters.category);
+    if (filters.propertyType) params.set('propertyType', filters.propertyType);
+    if (filters.minRating) params.set('minRating', filters.minRating);
+    if (filters.adults) params.set('adults', filters.adults.toString());
+    if (filters.rooms) params.set('rooms', filters.rooms.toString());
+    if (filters.checkIn) params.set('checkIn', filters.checkIn);
+    if (filters.checkOut) params.set('checkOut', filters.checkOut);
 
+    const cacheKey = params.toString();
+
+    // Instant Cache Recovery: Show cached data immediately if user already viewed it
+    if (searchClientCache.has(cacheKey)) {
+      const cached = searchClientCache.get(cacheKey)!;
+      setHotels(cached.hotels);
+      setTotal(cached.total);
+      setPages(cached.pages);
+      setLoading(false);
+    } else {
+      setLoading(true);
+    }
+
+    try {
       const res = await fetch(`/api/hotels?${params}`);
       const data = await res.json();
-      setHotels(data.hotels || []);
-      setTotal(data.total || 0);
-      setPages(data.pages || 1);
+      if (data && Array.isArray(data.hotels)) {
+        searchClientCache.set(cacheKey, { hotels: data.hotels, total: data.total || 0, pages: data.pages || 1 });
+        setHotels(data.hotels);
+        setTotal(data.total || 0);
+        setPages(data.pages || 1);
+      }
       
       if (typeof window !== 'undefined') {
         window.scrollTo({ top: 0, behavior: 'smooth' });
       }
     } catch (e) {
-      setHotels([]);
+      if (!searchClientCache.has(cacheKey)) {
+        setHotels([]);
+      }
     } finally {
       setLoading(false);
     }
   }
 
-  
+
   const getQueryString = () => {
     const p = new URLSearchParams();
     if (filters.checkIn) p.set('checkIn', filters.checkIn);
@@ -190,7 +210,7 @@ function HotelSearch() {
               <LocationSearch city={filters.city} variant="compact" onChange={c => setFilters(p => ({ ...p, city: c }))} />
             </div>
             {/* Check-in */}
-            <div 
+            <div
               className="hotels-search-item hotels-search-item-checkin"
               onClick={() => { setActiveDateSelection('checkIn'); setShowDatePicker(true); }}
               style={{ flex: '1 1 140px', position: 'relative', background: 'white', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', padding: '6px 12px', cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: '2px', height: '54px', justifyContent: 'center' }}
@@ -198,9 +218,9 @@ function HotelSearch() {
               <span style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>CHECK-IN</span>
               <span style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text-primary)' }}>{formatDate(filters.checkIn)}</span>
             </div>
-            
+
             {/* Check-out */}
-            <div 
+            <div
               className="hotels-search-item hotels-search-item-checkout"
               onClick={() => { setActiveDateSelection('checkOut'); setShowDatePicker(true); }}
               style={{ flex: '1 1 140px', position: 'relative', background: 'white', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', padding: '6px 12px', cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: '2px', height: '54px', justifyContent: 'center' }}
@@ -211,7 +231,7 @@ function HotelSearch() {
 
             {/* Guests & Rooms */}
             <div className="hotels-search-item hotels-search-item-guests" style={{ flex: '1 1 160px', position: 'relative' }}>
-              <div 
+              <div
                 onClick={() => setShowGuestPicker(true)}
                 style={{ background: 'white', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', padding: '6px 12px', cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: '2px', height: '54px', justifyContent: 'center' }}
               >
@@ -224,41 +244,41 @@ function HotelSearch() {
                 <>
                   <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 999 }} onClick={() => setShowGuestPicker(false)} />
                   <div style={{ position: 'absolute', top: '100%', right: 0, zIndex: 1000, marginTop: '8px', background: 'white', borderRadius: 'var(--radius-xl)', boxShadow: '0 20px 40px rgba(0,0,0,0.2)', border: '1px solid var(--border)' }}>
-                  <GuestSelector 
-                    rooms={filters.rooms}
-                    adults={filters.adults}
-                    children={filters.children}
-                    onChange={(r, a, c) => setFilters(p => ({ ...p, rooms: r, adults: a, children: c, guests: String(a + c) }))}
-                    onClose={() => setShowGuestPicker(false)}
-                  />
-                </div>
+                    <GuestSelector
+                      rooms={filters.rooms}
+                      adults={filters.adults}
+                      children={filters.children}
+                      onChange={(r, a, c) => setFilters(p => ({ ...p, rooms: r, adults: a, children: c, guests: String(a + c) }))}
+                      onClose={() => setShowGuestPicker(false)}
+                    />
+                  </div>
                 </>
               )}
             </div>
             <button className="btn btn-primary hotels-search-btn" onClick={() => { setPage(1); fetchHotels(); }} style={{ height: '54px', padding: '0 24px', flex: '0 0 auto' }}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" /></svg>
               Search
             </button>
           </div>
-          
+
           {/* Date Picker Overlay */}
           {showDatePicker && (
             <>
               <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 999 }} onClick={() => setShowDatePicker(false)} />
               <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 1000, marginTop: '8px' }}>
-              <div className="container" style={{ position: 'relative' }}>
-                <div style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', background: 'white', borderRadius: 'var(--radius-xl)', boxShadow: '0 20px 40px rgba(0,0,0,0.2)', padding: '16px', border: '1px solid var(--border)' }}>
-                  <DateRangePicker 
-                    checkIn={filters.checkIn} 
-                    checkOut={filters.checkOut}
-                    onChange={(inDate, outDate) => setFilters(p => ({ ...p, checkIn: inDate, checkOut: outDate }))}
-                    onClose={() => setShowDatePicker(false)}
-                    activeSelection={activeDateSelection}
-                    setActiveSelection={setActiveDateSelection}
-                  />
+                <div className="container" style={{ position: 'relative' }}>
+                  <div style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', background: 'white', borderRadius: 'var(--radius-xl)', boxShadow: '0 20px 40px rgba(0,0,0,0.2)', padding: '16px', border: '1px solid var(--border)' }}>
+                    <DateRangePicker
+                      checkIn={filters.checkIn}
+                      checkOut={filters.checkOut}
+                      onChange={(inDate, outDate) => setFilters(p => ({ ...p, checkIn: inDate, checkOut: outDate }))}
+                      onClose={() => setShowDatePicker(false)}
+                      activeSelection={activeDateSelection}
+                      setActiveSelection={setActiveDateSelection}
+                    />
+                  </div>
                 </div>
               </div>
-            </div>
             </>
           )}
         </div>
@@ -269,7 +289,7 @@ function HotelSearch() {
         {/* Sidebar Filters */}
         <aside style={{ width: 260, flexShrink: 0, position: 'sticky', top: 160, display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }} className="hotels-sidebar hide-mobile">
           {/* Map Explore */}
-          <div style={{ position: 'relative', height: 120, borderRadius: 'var(--radius-lg)', overflow: 'hidden', cursor: 'pointer', border: '1px solid var(--border)' }} onClick={() => {}}>
+          <div style={{ position: 'relative', height: 120, borderRadius: 'var(--radius-lg)', overflow: 'hidden', cursor: 'pointer', border: '1px solid var(--border)' }} onClick={() => { }}>
             <div style={{ backgroundImage: 'url(/map-bg.jpg)', backgroundSize: 'cover', backgroundPosition: 'center', width: '100%', height: '100%', filter: 'opacity(0.8)' }}></div>
             <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', background: 'white', padding: '8px 16px', borderRadius: 'var(--radius-full)', fontWeight: 800, color: 'var(--brand-600)', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: 6, boxShadow: '0 4px 12px rgba(0,0,0,0.1)', whiteSpace: 'nowrap' }}>
               <span style={{ fontSize: '1rem' }}>📍</span> EXPLORE ON MAP
@@ -285,7 +305,7 @@ function HotelSearch() {
           {/* Main Filters Container */}
           <div style={{ background: 'transparent' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-6)' }}>
-              
+
               {/* For You */}
               <div>
                 <div style={{ fontWeight: 800, fontSize: '0.9rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-primary)', marginBottom: 12 }}>FOR YOU</div>
@@ -375,7 +395,7 @@ function HotelSearch() {
 
           {loading ? (
             <div className="hotels-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 'var(--space-5)' }}>
-              {[1,2,3,4,5,6].map(i => (
+              {[1, 2, 3, 4, 5, 6].map(i => (
                 <div key={i} className="card">
                   <div className="skeleton" style={{ height: 200 }} />
                   <div className="card-body" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -396,12 +416,12 @@ function HotelSearch() {
           ) : (
             <>
               <div className="hotels-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 'var(--space-5)' }}>
-                {hotels.map(hotel => (
+                {hotels.map((hotel, index) => (
                   <Link key={hotel._id} href={`/hotels/${hotel._id}${getQueryString()}`} style={{ textDecoration: 'none' }}>
                     <div className="card card-hover hotel-card" style={{ height: '100%' }}>
                       <div className="hotel-card-img-wrapper" style={{ position: 'relative', width: '100%', height: '220px' }}>
                         {hotel.images?.[0] ? (
-                          <Image src={hotel.images[0]} alt={hotel.name} fill className="hotel-card-img" style={{ objectFit: 'cover' }} sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw" />
+                          <Image src={hotel.images[0]} alt={hotel.name} fill priority={index < 2} className="hotel-card-img" style={{ objectFit: 'cover' }} sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw" />
                         ) : (
                           <div className="hotel-card-img" style={{ background: 'linear-gradient(135deg, var(--brand-100), var(--brand-200))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '3rem' }}>🏨</div>
                         )}

@@ -11,72 +11,97 @@ async function getFeaturedHotels() {
     let hotels = hotelsSnap.docs.map(doc => ({ _id: doc.id, ...doc.data() }) as any);
     hotels.sort((a, b) => (b.avgRating || 0) - (a.avgRating || 0));
     hotels = hotels.slice(0, 6);
+    const hotelIds = hotels.map((h: any) => h._id).filter(Boolean);
 
-    const hotelsWithPrices = await Promise.all(
-      hotels.map(async (hotel: any) => {
-        const roomsSnap = await db.collection('rooms').where('hotelId', '==', hotel._id).where('isActive', '==', true).get();
-        const rooms = roomsSnap.docs.map(doc => doc.data());
-        const margin = Number(hotel.marginPercentage) || 0;
-        const roomsWithMargin = rooms.map((r: any) => applyMarginToRoom(r, margin));
-
-        // Calculate true B2C starting rate with admin margin applied (default 2 adults / double occupancy)
-        const validPrices: number[] = [];
-        roomsWithMargin.forEach((r: any) => {
-          const occPrice = getRoomPriceForOccupancy(r, 2);
-          if (occPrice > 0) {
-            validPrices.push(occPrice);
-          } else {
-            const pSingle = Number(r.priceSingle) || 0;
-            const pFallback = Number(r.price) || Number(r.clientPrice) || 0;
-            const price = pSingle > 0 ? pSingle : pFallback;
-            if (price > 0) validPrices.push(price);
+    // Batch-load rooms for all 6 featured hotels in 1 query
+    const roomsByHotelId: Record<string, any[]> = {};
+    if (hotelIds.length > 0) {
+      try {
+        const roomsSnap = await db.collection('rooms')
+          .where('hotelId', 'in', hotelIds)
+          .get();
+        roomsSnap.docs.forEach((doc: any) => {
+          const r = doc.data();
+          if (r.isActive !== false && r.hotelId) {
+            if (!roomsByHotelId[r.hotelId]) roomsByHotelId[r.hotelId] = [];
+            roomsByHotelId[r.hotelId].push(r);
           }
         });
-        if (hotel.basePrice && Number(hotel.basePrice) > 0) {
-          const baseNum = Number(hotel.basePrice);
-          const baseWithMargin = margin > 0 ? Math.round(baseNum * (1 + margin / 100)) : baseNum;
-          validPrices.push(baseWithMargin);
+      } catch (e) {
+        console.warn('Batch rooms error in getFeaturedHotels', e);
+      }
+    }
+
+    // Batch-load active bookings for all 6 featured hotels in 1 query
+    const bookingsByHotelId: Record<string, any[]> = {};
+    if (hotelIds.length > 0) {
+      try {
+        const bookingsSnap = await db.collection('bookings')
+          .where('hotelId', 'in', hotelIds)
+          .get();
+        bookingsSnap.docs.forEach((doc: any) => {
+          const b = doc.data();
+          if (b.status !== 'cancelled' && b.status !== 'completed' && b.hotelId) {
+            if (!bookingsByHotelId[b.hotelId]) bookingsByHotelId[b.hotelId] = [];
+            bookingsByHotelId[b.hotelId].push(b);
+          }
+        });
+      } catch (e) {
+        console.warn('Batch bookings error in getFeaturedHotels', e);
+      }
+    }
+
+    const today = new Date();
+
+    const hotelsWithPrices = hotels.map((hotel: any) => {
+      const rooms = roomsByHotelId[hotel._id] || [];
+      const margin = Number(hotel.marginPercentage) || 0;
+      const roomsWithMargin = rooms.map((r: any) => applyMarginToRoom(r, margin));
+
+      // Calculate true B2C starting rate with admin margin applied (default 2 adults / double occupancy)
+      const validPrices: number[] = [];
+      roomsWithMargin.forEach((r: any) => {
+        const occPrice = getRoomPriceForOccupancy(r, 2);
+        if (occPrice > 0) {
+          validPrices.push(occPrice);
+        } else {
+          const pSingle = Number(r.priceSingle) || 0;
+          const pFallback = Number(r.price) || Number(r.clientPrice) || 0;
+          const price = pSingle > 0 ? pSingle : pFallback;
+          if (price > 0) validPrices.push(price);
         }
-        const startingPrice = validPrices.length > 0 ? Math.min(...validPrices) : null;
+      });
+      if (hotel.basePrice && Number(hotel.basePrice) > 0) {
+        const baseNum = Number(hotel.basePrice);
+        const baseWithMargin = margin > 0 ? Math.round(baseNum * (1 + margin / 100)) : baseNum;
+        validPrices.push(baseWithMargin);
+      }
+      const startingPrice = validPrices.length > 0 ? Math.min(...validPrices) : null;
 
-        const roomImages = rooms.flatMap((r: any) => r.images || []).filter(Boolean);
-        const hotelImages = (Array.isArray(hotel.images) && hotel.images.length > 0)
-          ? hotel.images
-          : roomImages;
+      const roomImages = rooms.flatMap((r: any) => r.images || []).filter(Boolean);
+      const hotelImages = (Array.isArray(hotel.images) && hotel.images.length > 0)
+        ? hotel.images
+        : roomImages;
 
-        let roomsLeft = rooms.reduce((sum: number, r: any) => sum + (r.staybuddyAllocation || 0), 0);
+      let roomsLeft = rooms.reduce((sum: number, r: any) => sum + (r.staybuddyAllocation || 0), 0);
 
-        try {
-          const bookingsSnap = await db.collection('bookings')
-            .where('hotelId', '==', hotel._id)
-            .get();
-          
-          const today = new Date();
-          let activeBookingsCount = 0;
-
-          bookingsSnap.docs.forEach((doc: any) => {
-            const b = doc.data();
-            if (b.status !== 'cancelled' && b.status !== 'completed') {
-              const bCheckOut = new Date(b.checkOut);
-              if (bCheckOut > today) {
-                activeBookingsCount += (b.rooms || 1);
-              }
-            }
-          });
-
-          roomsLeft = Math.max(0, roomsLeft - activeBookingsCount);
-        } catch (e) {
-          console.error('Error fetching bookings for availability', e);
+      const hotelBookings = bookingsByHotelId[hotel._id] || [];
+      let activeBookingsCount = 0;
+      hotelBookings.forEach((b: any) => {
+        const bCheckOut = new Date(b.checkOut);
+        if (bCheckOut > today) {
+          activeBookingsCount += (b.rooms || 1);
         }
-        
-        return {
-          ...hotel,
-          images: hotelImages,
-          startingPrice,
-          roomsLeft
-        };
-      })
-    );
+      });
+      roomsLeft = Math.max(0, roomsLeft - activeBookingsCount);
+
+      return {
+        ...hotel,
+        images: hotelImages,
+        startingPrice,
+        roomsLeft
+      };
+    });
     
     return hotelsWithPrices;
   } catch (error) {

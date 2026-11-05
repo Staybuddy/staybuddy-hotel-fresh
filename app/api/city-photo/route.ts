@@ -24,6 +24,8 @@ export async function GET(request: NextRequest) {
         city,
         photo: cityPhotoCache.get(norm),
         source: 'cache',
+      }, {
+        headers: { 'Cache-Control': 'public, s-maxage=86400, stale-while-revalidate=604800' }
       });
     }
 
@@ -37,6 +39,8 @@ export async function GET(request: NextRequest) {
         photo: url,
         landmark: CURATED_CITY_PHOTOS[norm].landmark,
         source: 'curated',
+      }, {
+        headers: { 'Cache-Control': 'public, s-maxage=86400, stale-while-revalidate=604800' }
       });
     }
 

@@ -2,10 +2,23 @@ import { NextRequest, NextResponse } from 'next/server';
 export const dynamic = 'force-dynamic';
 import { db } from '@/lib/firebaseAdmin';
 import { applyMarginToRoom } from '@/lib/occupancyPricing';
+import { getCached, setCached, invalidateCache } from '@/lib/cache';
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const resolvedParams = await params;
+
+    // Ultra-fast In-Memory Cache (15s TTL)
+    const cacheKey = `hotel_detail_${request.url}`;
+    const cachedResponse = getCached<any>(cacheKey);
+    if (cachedResponse) {
+      return NextResponse.json(cachedResponse, {
+        headers: {
+          'Cache-Control': 'public, s-maxage=15, stale-while-revalidate=59',
+          'X-Cache': 'HIT',
+        },
+      });
+    }
     
     // Check if the id is a document ID
     const hotelDoc = await db.collection('hotels').doc(resolvedParams.id).get();
@@ -146,7 +159,14 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       hotel.rooms = hotel.rooms.map((r: any) => applyMarginToRoom(r, margin));
     }
 
-    return NextResponse.json({ hotel, rooms, reviews });
+    const responsePayload = { hotel, rooms, reviews };
+    setCached(cacheKey, responsePayload, 15);
+
+    return NextResponse.json(responsePayload, {
+      headers: {
+        'Cache-Control': 'public, s-maxage=15, stale-while-revalidate=59',
+      },
+    });
   } catch (error) {
     console.error('Hotels [id] GET error', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
@@ -205,6 +225,9 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     await docRef.update(updateData);
     const updated = await docRef.get();
     
+    invalidateCache('hotel_detail_');
+    invalidateCache('hotels_search_');
+
     return NextResponse.json({ hotel: { _id: updated.id, ...updated.data() } });
   } catch (error) {
     console.error('Hotels [id] PUT error', error);
@@ -245,6 +268,9 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
     
     // 3. Delete the hotel
     await docRef.delete();
+    invalidateCache('hotel_detail_');
+    invalidateCache('hotels_search_');
+    invalidateCache('approved_hotels_directory');
     return NextResponse.json({ success: true, message: 'Hotel and all associated rooms deleted successfully' });
   } catch (error: any) {
     console.error('Hotel DELETE error:', error);
