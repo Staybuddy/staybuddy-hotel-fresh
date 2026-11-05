@@ -2,7 +2,7 @@ import HomeClient from '@/components/HomeClient';
 import { db } from '@/lib/firebaseAdmin';
 import { applyMarginToRoom, getRoomPriceForOccupancy } from '@/lib/occupancyPricing';
 
-export const revalidate = 60; // Cache and revalidate every 60 seconds
+export const dynamic = 'force-dynamic';
 
 async function getFeaturedHotels() {
   try {
