@@ -699,55 +699,6 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
         </Link>
       </section>
 
-      {/* ===== FEATURED HOTELS ===== */}
-      <section style={{ padding: '24px 0' }}>
-        <div className="container">
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24, flexWrap: 'wrap', gap: 16 }}>
-            <div>
-              <h2>Featured <span style={{ color: 'var(--brand-600)' }}>Hotels</span></h2>
-              <p style={{ color: 'var(--text-secondary)', marginTop: 4 }}>Hand-picked top-rated stays for you</p>
-            </div>
-            <Link href="/hotels" className="btn btn-outline">View All Hotels →</Link>
-          </div>
-
-          {loading ? (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 'var(--space-6)', width: '100%' }}>
-              {[1,2,3].map(i => (
-                <div key={i} className="card">
-                  <div className="skeleton" style={{ height: 220, borderRadius: 0 }} />
-                  <div className="card-body" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                    <div className="skeleton" style={{ height: 20, width: '70%' }} />
-                    <div className="skeleton" style={{ height: 14, width: '50%' }} />
-                    <div className="skeleton" style={{ height: 16, width: '40%' }} />
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : hotels.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '80px 0', color: 'var(--text-muted)' }}>
-              <div style={{ fontSize: '3rem', marginBottom: 16 }}>🏨</div>
-              <h3 style={{ color: 'var(--text-secondary)' }}>Hotels Coming Soon!</h3>
-              <p style={{ marginTop: 8 }}>Be the first to list your hotel on StayBuddy.</p>
-              <Link href="/partner/login" className="btn btn-primary" style={{ marginTop: 20, display: 'inline-flex' }}>List Your Hotel</Link>
-            </div>
-          ) : hotels.length === 1 ? (
-            <FeaturedSpotlightHotel hotel={hotels[0]} isWishlisted={userWishlistIds.includes(hotels[0]._id)} />
-          ) : (
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-              gap: 'var(--space-6)',
-              width: '100%',
-            }}>
-              {hotels.map(hotel => (
-                <div key={hotel._id} style={{ width: '100%' }}>
-                  <HotelCard hotel={hotel} isWishlisted={userWishlistIds.includes(hotel._id)} />
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </section>
 
       {/* ===== HOTEL COLLECTIONS CARDS ===== */}
       <section className="container" style={{ marginBottom: 'var(--space-8)' }}>
