@@ -796,109 +796,89 @@ export default function PartnerDashboard() {
                   <button className="btn btn-primary" style={{ marginTop: 20 }} onClick={() => setActiveTab('add-hotel')}>Add Your Hotel</button>
                 </div>
               ) : hotels.length === 1 ? (
-                /* Full-width Executive Property Card when partner has 1 hotel */
+                /* Smart, Compact & Crystal Clear Property Card */
                 <div className="card partner-hotel-spotlight-card" style={{
-                  borderRadius: 20,
+                  borderRadius: 16,
                   border: '1px solid #e2e8f0',
-                  overflow: 'hidden',
-                  boxShadow: '0 4px 20px rgba(0,0,0,0.06)',
+                  boxShadow: '0 4px 18px rgba(0,0,0,0.05)',
                   background: '#ffffff',
                   display: 'flex',
                   flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: 18,
+                  padding: 16,
                   width: '100%',
-                  marginBottom: 24,
+                  marginBottom: 20,
+                  flexWrap: 'wrap',
                 }}>
-                  {/* Left: Photo + Badges */}
-                  <div style={{ position: 'relative', width: 340, minWidth: 340, minHeight: 280, background: '#0f172a', flexShrink: 0 }}>
+                  {/* Left: Smart Compact Photo */}
+                  <div style={{ position: 'relative', width: 190, height: 130, borderRadius: 12, overflow: 'hidden', background: '#0f172a', flexShrink: 0 }}>
                     {hotels[0].images?.[0] ? (
                       <img src={hotels[0].images[0]} alt={hotels[0].name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                     ) : (
-                      <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '3.5rem' }}>🏨</div>
+                      <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2.5rem' }}>🏨</div>
                     )}
-                    <div style={{ position: 'absolute', top: 14, right: 14, display: 'flex', gap: 6 }}>
-                      <span className={`badge ${hotels[0].status === 'approved' ? 'badge-success' : hotels[0].status === 'rejected' ? 'badge-danger' : 'badge-warning'}`} style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.15)', fontSize: '0.8rem', padding: '4px 10px' }}>
-                        {hotels[0].status?.toUpperCase()}
+                    <div style={{ position: 'absolute', top: 8, right: 8 }}>
+                      <span className={`badge ${hotels[0].status === 'approved' ? 'badge-success' : hotels[0].status === 'rejected' ? 'badge-danger' : 'badge-warning'}`} style={{ fontSize: '0.7rem', padding: '2px 8px', fontWeight: 800, textTransform: 'uppercase' }}>
+                        {hotels[0].status}
                       </span>
                     </div>
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setDeleteHotelModal(hotels[0]);
-                      }}
-                      title="Delete entire property"
-                      style={{
-                        position: 'absolute',
-                        top: 14,
-                        left: 14,
-                        background: 'rgba(255, 255, 255, 0.95)',
-                        border: '1px solid #fecdd3',
-                        borderRadius: 8,
-                        padding: '5px 12px',
-                        fontSize: '0.78rem',
-                        fontWeight: 700,
-                        color: '#e11d48',
-                        cursor: 'pointer',
-                        boxShadow: '0 2px 8px rgba(0,0,0,0.12)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 4
-                      }}
-                    >
-                      🗑️ Delete
-                    </button>
                   </div>
 
-                  {/* Center: Details & Status */}
-                  <div style={{ flex: 1, padding: '24px 28px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', borderRight: '1px solid #f1f5f9', minWidth: 0 }}>
-                    <div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6, flexWrap: 'wrap' }}>
-                        <h2 style={{ fontSize: '1.45rem', fontWeight: 800, margin: 0, color: '#0f172a' }}>{hotels[0].name}</h2>
-                        <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#2563eb', background: '#eff6ff', padding: '2px 8px', borderRadius: 6 }}>
-                          ID: {hotels[0].hotelId || hotels[0]._id?.slice(-8)}
+                  {/* Center: Crystal Clear Details & Metrics */}
+                  <div style={{ flex: '1 1 320px', minWidth: 240, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                      <h2 style={{ fontSize: '1.25rem', fontWeight: 800, margin: 0, color: '#0f172a', lineHeight: 1.2 }}>{hotels[0].name}</h2>
+                      <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#2563eb', background: '#eff6ff', padding: '2px 8px', borderRadius: 6, border: '1px solid #dbeafe' }}>
+                        ID: {hotels[0].hotelId || hotels[0]._id?.slice(-8)}
+                      </span>
+                      {hotels[0].starRating > 0 && (
+                        <span style={{ fontSize: '0.75rem', color: '#f59e0b', fontWeight: 700 }}>
+                          {'★'.repeat(hotels[0].starRating)}
                         </span>
+                      )}
+                    </div>
+                    <p style={{ color: '#64748b', fontSize: '0.82rem', margin: 0, display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <span>📍</span>
+                      <span>{hotels[0].area ? `${hotels[0].area}, ` : ''}{hotels[0].city}, {hotels[0].country}</span>
+                    </p>
+
+                    {hotels[0].status === 'rejected' && hotels[0].rejectionReason && (
+                      <div className="alert alert-error" style={{ fontSize: '0.75rem', padding: '6px 10px', margin: 0 }}>⚠️ Rejection Reason: {hotels[0].rejectionReason}</div>
+                    )}
+                    {hotels[0].status === 'pending' && (
+                      <div className="alert alert-warning" style={{ fontSize: '0.75rem', padding: '6px 10px', margin: 0 }}>⏳ Property is currently under review by admin.</div>
+                    )}
+
+                    {/* Compact Metrics Row */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap', padding: '6px 12px', background: '#f8fafc', borderRadius: 8, border: '1px solid #f1f5f9', fontSize: '0.78rem' }}>
+                      <div>
+                        <span style={{ color: '#64748b' }}>Starting: </span>
+                        <strong style={{ color: 'var(--brand-600)', fontSize: '0.88rem' }}>{hotels[0].startingPrice ? `₹${hotels[0].startingPrice}` : 'N/A'}</strong>
+                        <span style={{ color: '#94a3b8', fontSize: '0.7rem' }}> /night</span>
                       </div>
-                      <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', margin: '0 0 16px 0', display: 'flex', alignItems: 'center', gap: 6 }}>
-                        <span>📍</span>
-                        <span>{hotels[0].area ? `${hotels[0].area}, ` : ''}{hotels[0].city}, {hotels[0].country}</span>
-                      </p>
-
-                      {hotels[0].status === 'rejected' && hotels[0].rejectionReason && (
-                        <div className="alert alert-error" style={{ fontSize: '0.82rem', marginBottom: 12 }}>⚠️ Rejection Reason: {hotels[0].rejectionReason}</div>
-                      )}
-                      {hotels[0].status === 'pending' && (
-                        <div className="alert alert-warning" style={{ fontSize: '0.82rem', marginBottom: 12 }}>⏳ Property is currently under review by the StayBuddy admin team.</div>
-                      )}
-
-                      {/* Quick Info Grid */}
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 12, padding: '16px', background: '#f8fafc', borderRadius: 12, border: '1px solid #e2e8f0', marginBottom: 16 }}>
-                        <div>
-                          <div style={{ fontSize: '0.72rem', color: '#64748b', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.05em' }}>Starting Rate</div>
-                          <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--brand-600)', marginTop: 2 }}>{hotels[0].startingPrice ? `₹${hotels[0].startingPrice}` : 'N/A'}</div>
-                          <div style={{ fontSize: '0.7rem', color: '#94a3b8' }}>per room / night</div>
-                        </div>
-                        <div>
-                          <div style={{ fontSize: '0.72rem', color: '#64748b', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.05em' }}>Room Types</div>
-                          <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#0f172a', marginTop: 2 }}>{hotels[0].rooms?.length || 0} Listed</div>
-                          <div style={{ fontSize: '0.7rem', color: '#16a34a', fontWeight: 600 }}>Active in catalog</div>
-                        </div>
-                        <div>
-                          <div style={{ fontSize: '0.72rem', color: '#64748b', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.05em' }}>Availability</div>
-                          <div style={{ fontSize: '1rem', fontWeight: 700, color: hotels[0].isBlocked ? '#dc2626' : '#16a34a', marginTop: 4 }}>
-                            {hotels[0].isBlocked ? '🚫 Blocked / Stopped' : '🟢 Live & Bookable'}
-                          </div>
-                          <div style={{ fontSize: '0.7rem', color: '#64748b' }}>Realtime status</div>
-                        </div>
+                      <div style={{ width: 1, height: 14, background: '#cbd5e1' }} />
+                      <div>
+                        <span style={{ color: '#64748b' }}>Rooms: </span>
+                        <strong style={{ color: '#0f172a' }}>{hotels[0].rooms?.length || 0} Listed</strong>
+                      </div>
+                      <div style={{ width: 1, height: 14, background: '#cbd5e1' }} />
+                      <div>
+                        <span style={{ color: '#64748b' }}>Status: </span>
+                        <strong style={{ color: hotels[0].isBlocked ? '#dc2626' : '#16a34a' }}>
+                          {hotels[0].isBlocked ? '🚫 Blocked' : '🟢 Live & Bookable'}
+                        </strong>
                       </div>
                     </div>
 
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
+                    {/* Footer Links */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginTop: 2 }}>
                       <Link
                         href={`/partner-agreement?hotelId=${hotels[0]._id}`}
                         target="_blank"
                         style={{
-                          fontSize: '0.85rem',
-                          color: '#1d4ed8',
+                          fontSize: '0.76rem',
+                          color: '#2563eb',
                           textDecoration: 'none',
                           fontWeight: 600,
                           display: 'inline-flex',
@@ -906,7 +886,7 @@ export default function PartnerDashboard() {
                           gap: 4
                         }}
                       >
-                        📜 View Partner Agreement & Tariffs →
+                        📜 View Partner Agreement →
                       </Link>
                       <button
                         type="button"
@@ -915,44 +895,44 @@ export default function PartnerDashboard() {
                           background: 'none',
                           border: 'none',
                           color: '#e11d48',
-                          fontSize: '0.82rem',
+                          fontSize: '0.76rem',
                           fontWeight: 600,
                           cursor: 'pointer',
                           padding: 0,
                           textDecoration: 'underline'
                         }}
                       >
-                        Delete Property
+                        🗑️ Delete Property
                       </button>
                     </div>
                   </div>
 
-                  {/* Right: Action Hub */}
-                  <div style={{ width: 280, minWidth: 280, padding: '24px 22px', background: '#f8fafc', display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 10, flexShrink: 0 }}>
+                  {/* Right: Smart 2x2 Action Grid */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, width: 270, flexShrink: 0 }}>
                     <button
                       type="button"
                       className="btn btn-primary"
-                      style={{ width: '100%', padding: '12px 0', fontSize: '0.9rem', fontWeight: 800, justifyContent: 'center', display: 'flex', alignItems: 'center', gap: 6, boxShadow: '0 4px 12px rgba(255, 107, 53, 0.25)' }}
+                      style={{ padding: '9px 8px', fontSize: '0.82rem', fontWeight: 700, justifyContent: 'center', display: 'flex', alignItems: 'center', gap: 5, borderRadius: 10, whiteSpace: 'nowrap' }}
                       onClick={() => openInventory(hotels[0])}
                     >
                       <span>📅</span>
-                      <span>Manage Inventory</span>
+                      <span>Inventory</span>
                     </button>
 
                     <button
                       type="button"
                       className="btn btn-secondary"
-                      style={{ width: '100%', padding: '11px 0', fontSize: '0.88rem', fontWeight: 700, justifyContent: 'center', background: 'white', border: '1px solid #cbd5e1', display: 'flex', alignItems: 'center', gap: 6 }}
+                      style={{ padding: '9px 8px', fontSize: '0.82rem', fontWeight: 700, justifyContent: 'center', background: 'white', border: '1px solid #cbd5e1', display: 'flex', alignItems: 'center', gap: 5, borderRadius: 10, whiteSpace: 'nowrap' }}
                       onClick={() => setAddRoomModal(hotels[0]._id)}
                     >
                       <span>➕</span>
-                      <span>Add Room Category</span>
+                      <span>Add Room</span>
                     </button>
 
                     <button
                       type="button"
                       className="btn btn-outline"
-                      style={{ width: '100%', padding: '11px 0', fontSize: '0.88rem', fontWeight: 700, justifyContent: 'center', border: '1px solid var(--brand-500)', color: 'var(--brand-600)', background: 'white', display: 'flex', alignItems: 'center', gap: 6 }}
+                      style={{ padding: '9px 8px', fontSize: '0.82rem', fontWeight: 700, justifyContent: 'center', border: '1px solid var(--brand-500)', color: 'var(--brand-600)', background: 'white', display: 'flex', alignItems: 'center', gap: 5, borderRadius: 10, whiteSpace: 'nowrap' }}
                       onClick={() => setExtranetIntroTarget(hotels[0])}
                     >
                       <span>⚙️</span>
@@ -962,23 +942,24 @@ export default function PartnerDashboard() {
                     <button
                       type="button"
                       style={{
-                        width: '100%',
-                        padding: '11px 0',
-                        fontSize: '0.88rem',
+                        padding: '9px 8px',
+                        fontSize: '0.82rem',
                         fontWeight: 700,
                         background: hotels[0].isBlocked ? '#fef2f2' : '#fff7ed',
                         color: hotels[0].isBlocked ? '#dc2626' : '#ea580c',
                         border: hotels[0].isBlocked ? '1px solid #fca5a5' : '1px solid #fdba74',
-                        borderRadius: 'var(--radius-md)',
+                        borderRadius: 10,
                         cursor: 'pointer',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        gap: 6
+                        gap: 5,
+                        whiteSpace: 'nowrap'
                       }}
                       onClick={() => openBlockModal(hotels[0])}
                     >
-                      {hotels[0].isBlocked ? '🚫 Blocked (Manage)' : '🔒 Smart Block'}
+                      <span>{hotels[0].isBlocked ? '🚫' : '🔒'}</span>
+                      <span>{hotels[0].isBlocked ? 'Blocked' : 'Smart Block'}</span>
                     </button>
                   </div>
                 </div>
