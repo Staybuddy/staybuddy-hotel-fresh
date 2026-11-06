@@ -3,19 +3,34 @@ import { useState, useEffect } from 'react';
 import Logo from './Logo';
 
 export default function SplashScreen() {
-  const [show, setShow] = useState(true);
+  const [show, setShow] = useState(false);
   const [fading, setFading] = useState(false);
 
   useEffect(() => {
-    // Start fade out after 2 seconds
+    // Only show once on the initial website opening, never block navigation or refresh
+    try {
+      if (typeof window !== 'undefined') {
+        const alreadyShown = sessionStorage.getItem('staybuddy_splash_shown');
+        if (alreadyShown) {
+          setShow(false);
+          return;
+        }
+        setShow(true);
+        sessionStorage.setItem('staybuddy_splash_shown', 'true');
+      }
+    } catch {
+      setShow(false);
+      return;
+    }
+
+    // Snappy, silky-smooth fadeout
     const fadeTimer = setTimeout(() => {
       setFading(true);
-    }, 2000);
+    }, 1100);
 
-    // Completely unmount after 2.5 seconds
     const removeTimer = setTimeout(() => {
       setShow(false);
-    }, 2500);
+    }, 1450);
 
     return () => {
       clearTimeout(fadeTimer);

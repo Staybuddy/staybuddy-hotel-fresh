@@ -123,7 +123,7 @@ export default function PartnerDashboard() {
   });
 
   useEffect(() => {
-    if (status === 'unauthenticated') { router.push('/login'); return; }
+    if (status === 'unauthenticated') { router.push('/partner/login'); return; }
     if (status === 'authenticated') {
       const role = (session.user as any)?.role;
       if (role !== 'partner' && role !== 'admin') { router.push('/'); return; }

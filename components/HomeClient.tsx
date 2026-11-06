@@ -837,23 +837,6 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
         </div>
       </section>
 
-      {/* ===== PARTNER CTA ===== */}
-      <section style={{ background: 'var(--brand-500)', padding: '80px 0' }}>
-        <div className="container" style={{ textAlign: 'center' }}>
-          <h2 style={{ color: 'white', marginBottom: 16 }}>Own a Hotel? Join StayBuddy</h2>
-          <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: '1.05rem', maxWidth: 520, margin: '0 auto 32px', lineHeight: 1.7 }}>
-            Reach millions of travelers, manage bookings in real-time, and grow your revenue — all in one powerful dashboard.
-          </p>
-          <div style={{ display: 'flex', justifyContent: 'center', gap: 'var(--space-4)', flexWrap: 'wrap' }}>
-            <Link href="/login" style={{ background: 'white', color: 'var(--brand-700)', fontWeight: 700, padding: '14px 28px', borderRadius: 'var(--radius-lg)', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 8, transition: 'all var(--transition-fast)' }}>
-              🚀 Start For Free
-            </Link>
-            <Link href="/hotels" style={{ background: 'rgba(255,255,255,0.15)', color: 'white', fontWeight: 600, padding: '14px 28px', borderRadius: 'var(--radius-lg)', textDecoration: 'none', border: '2px solid rgba(255,255,255,0.3)', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-              See How It Works
-            </Link>
-          </div>
-        </div>
-      </section>
 
       {/* ===== RECENT REVIEWS (What Our Guests Say - At the last of the page) ===== */}
       {recentReviews && recentReviews.length > 0 && (
@@ -909,7 +892,7 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
                 <div style={{ fontWeight: 700, color: 'white', marginBottom: 12, fontSize: '0.9rem' }}>{col.title}</div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                   {col.links.map(link => (
-                    <Link key={link} href={link === 'Partner Login' || link === 'List Your Hotel' ? '/partner/login' : link === 'Hotels' ? '/hotels' : link === 'Visiting Card' ? '/visiting-card' : link === 'Official Logo' ? '/logo' : '#'} style={{ fontSize: '0.875rem', color: '#64748b', transition: 'color var(--transition-fast)', textDecoration: 'none' }}
+                    <Link key={link} href={link === 'Partner Login' || link === 'List Your Hotel' ? '/partner' : link === 'Hotels' ? '/hotels' : link === 'Visiting Card' ? '/visiting-card' : link === 'Official Logo' ? '/logo' : '#'} style={{ fontSize: '0.875rem', color: '#64748b', transition: 'color var(--transition-fast)', textDecoration: 'none' }}
                       onMouseEnter={e => (e.currentTarget.style.color = 'var(--brand-400)')}
                       onMouseLeave={e => (e.currentTarget.style.color = '#64748b')}>{link}</Link>
                   ))}

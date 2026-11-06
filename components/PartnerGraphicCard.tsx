@@ -172,8 +172,8 @@ export default function PartnerGraphicCard() {
           }
 
           @keyframes pulseBrandGlow {
-            0%, 100% { box-shadow: 0 14px 36px -10px rgba(15, 23, 42, 0.5), 0 0 30px rgba(249, 115, 22, 0.2); }
-            50% { box-shadow: 0 18px 46px -8px rgba(15, 23, 42, 0.65), 0 0 45px rgba(249, 115, 22, 0.35); }
+            0%, 100% { box-shadow: 0 14px 38px -10px rgba(234, 88, 12, 0.45), 0 0 30px rgba(249, 115, 22, 0.25); }
+            50% { box-shadow: 0 18px 46px -8px rgba(234, 88, 12, 0.65), 0 0 45px rgba(255, 120, 68, 0.45); }
           }
 
           /* Individual Animated Letters for "Partner Extranet" */
@@ -181,17 +181,17 @@ export default function PartnerGraphicCard() {
             0%, 100% {
               transform: translateY(0px) scale(1);
               color: #ffffff;
-              text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+              text-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
             }
             25% {
-              transform: translateY(-8px) scale(1.16);
-              color: #ff7844;
-              text-shadow: 0 0 16px rgba(249, 115, 22, 0.9), 0 0 28px rgba(251, 191, 36, 0.8), 0 4px 10px rgba(0,0,0,0.4);
+              transform: translateY(-7px) scale(1.15);
+              color: #fffbeb;
+              text-shadow: 0 0 16px rgba(255, 255, 255, 0.95), 0 0 28px rgba(254, 240, 138, 0.85), 0 3px 8px rgba(0,0,0,0.25);
             }
             50% {
               transform: translateY(-2px) scale(1.05);
-              color: #fbbf24;
-              text-shadow: 0 0 14px rgba(251, 191, 36, 0.7);
+              color: #fef08a;
+              text-shadow: 0 0 14px rgba(254, 240, 138, 0.85);
             }
             75% {
               transform: translateY(0px) scale(1);
@@ -225,14 +225,14 @@ export default function PartnerGraphicCard() {
           }
         `}</style>
 
-        {/* SHORT, LUXURIOUS STAYBUDDY THEME PARTNER CARD */}
+        {/* SHORT, VIBRANT STAYBUDDY ORANGE THEME PARTNER CARD */}
         <div
           onClick={() => setModalStage('DOOR')}
           style={{
             position: 'relative',
             borderRadius: '22px',
-            background: 'linear-gradient(135deg, #090d16 0%, #0f172a 45%, #180d29 100%)',
-            border: '1px solid rgba(249, 115, 22, 0.35)',
+            background: 'linear-gradient(135deg, #ff6b35 0%, #f97316 45%, #ea580c 100%)',
+            border: '1.5px solid rgba(255, 255, 255, 0.4)',
             padding: '24px 32px',
             display: 'flex',
             alignItems: 'center',
@@ -254,7 +254,7 @@ export default function PartnerGraphicCard() {
         >
           {/* CONTINUOUS END-TO-END FLOATING GOLD COINS STREAM */}
           <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none', zIndex: 1 }}>
-            {/* Ambient luxury orange / amber glow orbs */}
+            {/* Ambient luxury glow orbs */}
             <div
               style={{
                 position: 'absolute',
@@ -263,7 +263,7 @@ export default function PartnerGraphicCard() {
                 width: 280,
                 height: 280,
                 borderRadius: '50%',
-                background: 'radial-gradient(circle, rgba(249, 115, 22, 0.22) 0%, transparent 70%)',
+                background: 'radial-gradient(circle, rgba(255, 255, 255, 0.22) 0%, transparent 70%)',
                 pointerEvents: 'none',
               }}
             />
@@ -275,7 +275,7 @@ export default function PartnerGraphicCard() {
                 width: 240,
                 height: 240,
                 borderRadius: '50%',
-                background: 'radial-gradient(circle, rgba(234, 88, 12, 0.18) 0%, transparent 70%)',
+                background: 'radial-gradient(circle, rgba(254, 240, 138, 0.22) 0%, transparent 70%)',
                 pointerEvents: 'none',
               }}
             />
@@ -397,12 +397,12 @@ export default function PartnerGraphicCard() {
                 width: 44,
                 height: 44,
                 borderRadius: 13,
-                background: 'linear-gradient(135deg, #ff7844 0%, #ea580c 100%)',
+                background: '#ffffff',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 fontSize: '1.4rem',
-                boxShadow: '0 4px 16px rgba(234, 88, 12, 0.45)',
+                boxShadow: '0 4px 14px rgba(0, 0, 0, 0.15)',
                 flexShrink: 0,
               }}
             >
@@ -441,26 +441,28 @@ export default function PartnerGraphicCard() {
             <button
               type="button"
               style={{
-                background: 'linear-gradient(135deg, #ff7844 0%, #ea580c 50%, #c2410c 100%)',
-                color: '#ffffff',
+                background: '#ffffff',
+                color: '#ea580c',
                 border: 'none',
-                padding: '13px 24px',
+                padding: '13px 26px',
                 borderRadius: '14px',
-                fontWeight: 800,
-                fontSize: '0.92rem',
+                fontWeight: 900,
+                fontSize: '0.94rem',
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: 8,
                 cursor: 'pointer',
-                boxShadow: '0 8px 24px -4px rgba(234, 88, 12, 0.5), 0 0 16px rgba(255, 120, 68, 0.35)',
+                boxShadow: '0 6px 20px rgba(0, 0, 0, 0.15), 0 0 16px rgba(255, 255, 255, 0.35)',
                 transition: 'all 0.2s ease',
                 whiteSpace: 'nowrap',
               }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.transform = 'scale(1.04)';
+                e.currentTarget.style.background = '#fff7ed';
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.transform = 'scale(1)';
+                e.currentTarget.style.background = '#ffffff';
               }}
             >
               <span>🚪 Open Partner Door</span>
