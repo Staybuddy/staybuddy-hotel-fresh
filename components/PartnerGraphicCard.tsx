@@ -14,6 +14,27 @@ export default function PartnerGraphicCard() {
   const [doorOpen, setDoorOpen] = useState(false);
   const [launchProgress, setLaunchProgress] = useState(0);
 
+  // Listen for open-partner-door event and URL hash to open animation modal from footer or links
+  useEffect(() => {
+    const handleOpenDoor = () => {
+      setModalStage('DOOR');
+    };
+    window.addEventListener('open-partner-door', handleOpenDoor);
+
+    const checkHash = () => {
+      if (typeof window !== 'undefined' && (window.location.hash === '#partner-extranet' || window.location.hash === '#partner-door' || window.location.hash === '#partner-login')) {
+        setModalStage('DOOR');
+      }
+    };
+    checkHash();
+    window.addEventListener('hashchange', checkHash);
+
+    return () => {
+      window.removeEventListener('open-partner-door', handleOpenDoor);
+      window.removeEventListener('hashchange', checkHash);
+    };
+  }, []);
+
   // When door modal opens, trigger the 3D door swing after a short delay, then transition to growth card
   useEffect(() => {
     if (modalStage === 'DOOR') {
@@ -227,6 +248,7 @@ export default function PartnerGraphicCard() {
 
         {/* SHORT, VIBRANT STAYBUDDY ORANGE THEME PARTNER CARD */}
         <div
+          id="partner-extranet-card"
           onClick={() => setModalStage('DOOR')}
           style={{
             position: 'relative',
@@ -252,7 +274,7 @@ export default function PartnerGraphicCard() {
             e.currentTarget.style.transform = 'translateY(0)';
           }}
         >
-          {/* CONTINUOUS END-TO-END FLOATING GOLD COINS STREAM */}
+          {/* CONTINUOUS END-TO-END FLOATING GOLD COINS STREAM (SYNCED ON MOBILE & DESKTOP) */}
           <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none', zIndex: 1 }}>
             {/* Ambient luxury glow orbs */}
             <div
@@ -280,14 +302,14 @@ export default function PartnerGraphicCard() {
               }}
             />
 
-            {/* Coins drifting continuously across the card */}
+            {/* Coins drifting continuously across the card - with staggered negative delays so always in-flight */}
             <div
               style={{
                 position: 'absolute',
                 fontSize: '2.8rem',
                 filter: 'drop-shadow(0 4px 10px rgba(245, 158, 11, 0.7)) drop-shadow(0 0 16px rgba(251, 191, 36, 0.5))',
                 animation: 'coinFlyEndToEnd1 9s linear infinite',
-                animationDelay: '0s',
+                animationDelay: '-2s',
                 pointerEvents: 'none',
               }}
             >
@@ -299,7 +321,7 @@ export default function PartnerGraphicCard() {
                 fontSize: '2.3rem',
                 filter: 'drop-shadow(0 4px 10px rgba(245, 158, 11, 0.65))',
                 animation: 'coinFlyEndToEnd2 11s linear infinite',
-                animationDelay: '2.2s',
+                animationDelay: '-5s',
                 pointerEvents: 'none',
               }}
             >
@@ -311,7 +333,7 @@ export default function PartnerGraphicCard() {
                 fontSize: '3.2rem',
                 filter: 'drop-shadow(0 4px 12px rgba(245, 158, 11, 0.75))',
                 animation: 'coinFlyEndToEnd3 10s linear infinite',
-                animationDelay: '4.5s',
+                animationDelay: '-8s',
                 pointerEvents: 'none',
               }}
             >
@@ -323,7 +345,7 @@ export default function PartnerGraphicCard() {
                 fontSize: '2.1rem',
                 filter: 'drop-shadow(0 4px 8px rgba(245, 158, 11, 0.6))',
                 animation: 'coinFlyEndToEnd4 8.5s linear infinite',
-                animationDelay: '6.8s',
+                animationDelay: '-1s',
                 pointerEvents: 'none',
               }}
             >
@@ -335,7 +357,7 @@ export default function PartnerGraphicCard() {
                 fontSize: '2.6rem',
                 filter: 'drop-shadow(0 4px 10px rgba(245, 158, 11, 0.7))',
                 animation: 'coinFlyEndToEnd1 12s linear infinite',
-                animationDelay: '3.5s',
+                animationDelay: '-6.5s',
                 pointerEvents: 'none',
               }}
             >
@@ -347,7 +369,7 @@ export default function PartnerGraphicCard() {
                 fontSize: '2.4rem',
                 filter: 'drop-shadow(0 4px 10px rgba(245, 158, 11, 0.65))',
                 animation: 'coinFlyEndToEnd2 9.5s linear infinite',
-                animationDelay: '7.2s',
+                animationDelay: '-3.2s',
                 pointerEvents: 'none',
               }}
             >
@@ -360,7 +382,7 @@ export default function PartnerGraphicCard() {
                 opacity: 0.85,
                 filter: 'drop-shadow(0 4px 12px rgba(245, 158, 11, 0.5))',
                 animation: 'coinFlyEndToEnd3 11.5s linear infinite',
-                animationDelay: '1.2s',
+                animationDelay: '-4.8s',
                 pointerEvents: 'none',
               }}
             >
@@ -373,7 +395,7 @@ export default function PartnerGraphicCard() {
                 opacity: 0.85,
                 filter: 'drop-shadow(0 4px 10px rgba(249, 115, 22, 0.5))',
                 animation: 'coinFlyEndToEnd4 10.5s linear infinite',
-                animationDelay: '5.4s',
+                animationDelay: '-7.4s',
                 pointerEvents: 'none',
               }}
             >

@@ -799,8 +799,8 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
 
       {/* ===== PARTNER GRAPHIC CARD ===== */}
       <PartnerGraphicCard />
-      <HomeReferralSection />
       <HomeStatsSection />
+      <HomeReferralSection />
 
       {/* ===== WHY STAYBUDDY ===== */}
       <section className="section" style={{ background: 'var(--bg-secondary)' }}>
@@ -847,23 +847,29 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
               <p style={{ color: 'var(--text-secondary)', marginTop: 4 }}>Real reviews from verified bookings</p>
             </div>
             
-            <div className="hide-scrollbar" style={{ display: 'flex', overflowX: 'auto', gap: 'var(--space-5)', paddingBottom: 'var(--space-4)', scrollSnapType: 'x mandatory' }}>
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+                gap: '20px',
+              }}
+            >
               {recentReviews.map(review => (
-                <div key={review._id} className="card" style={{ minWidth: 300, maxWidth: 350, flex: '0 0 auto', scrollSnapAlign: 'start', padding: 'var(--space-5)', display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <div key={review._id} className="card" style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: 12, border: '1.5px solid var(--border)', borderRadius: '18px', background: 'var(--surface)', boxShadow: '0 4px 18px rgba(0,0,0,0.04)' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                    <div style={{ fontWeight: 700, fontSize: '1.1rem' }}>{review.title}</div>
-                    <div style={{ background: 'var(--brand-500)', color: 'white', padding: '2px 8px', borderRadius: 'var(--radius-full)', fontWeight: 800, fontSize: '0.8rem' }}>
-                      {review.rating.toFixed(1)} ⭐
+                    <div style={{ fontWeight: 700, fontSize: '1.05rem', color: 'var(--text-primary)' }}>{review.title}</div>
+                    <div style={{ background: '#ea580c', color: 'white', padding: '2px 8px', borderRadius: 'var(--radius-full)', fontWeight: 800, fontSize: '0.8rem' }}>
+                      {typeof review.rating === 'number' ? review.rating.toFixed(1) : '5.0'} ⭐
                     </div>
                   </div>
                   
-                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', flex: 1, margin: 0, fontStyle: 'italic' }}>
+                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', flex: 1, margin: 0, fontStyle: 'italic', lineHeight: 1.5 }}>
                     &quot;{review.comment}&quot;
                   </p>
                   
                   <div style={{ borderTop: '1px solid var(--border)', paddingTop: 12, marginTop: 4 }}>
-                    <div style={{ fontWeight: 600, fontSize: '0.85rem' }}>{review.customerName}</div>
-                    <div style={{ color: 'var(--text-muted)', fontSize: '0.75rem', marginTop: 2 }}>Stayed at <span style={{ color: 'var(--brand-600)' }}>{review.hotelName}</span></div>
+                    <div style={{ fontWeight: 700, fontSize: '0.85rem' }}>{review.customerName}</div>
+                    <div style={{ color: 'var(--text-muted)', fontSize: '0.75rem', marginTop: 2 }}>Stayed at <span style={{ color: '#ea580c', fontWeight: 600 }}>{review.hotelName}</span></div>
                     <div suppressHydrationWarning style={{ color: 'var(--text-muted)', fontSize: '0.7rem', marginTop: 4 }}>{new Date(review.createdAt).toLocaleDateString()}</div>
                   </div>
                 </div>
@@ -891,11 +897,56 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
               <div key={col.title}>
                 <div style={{ fontWeight: 700, color: 'white', marginBottom: 12, fontSize: '0.9rem' }}>{col.title}</div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                  {col.links.map(link => (
-                    <Link key={link} href={link === 'Partner Login' || link === 'List Your Hotel' ? '/partner' : link === 'Hotels' ? '/hotels' : link === 'Visiting Card' ? '/visiting-card' : link === 'Official Logo' ? '/logo' : '#'} style={{ fontSize: '0.875rem', color: '#64748b', transition: 'color var(--transition-fast)', textDecoration: 'none' }}
-                      onMouseEnter={e => (e.currentTarget.style.color = 'var(--brand-400)')}
-                      onMouseLeave={e => (e.currentTarget.style.color = '#64748b')}>{link}</Link>
-                  ))}
+                  {col.links.map(link => {
+                    const isPartnerAction = link === 'Partner Login' || link === 'List Your Hotel';
+                    if (isPartnerAction) {
+                      return (
+                        <button
+                          key={link}
+                          type="button"
+                          onClick={() => {
+                            if (typeof window !== 'undefined') {
+                              window.dispatchEvent(new CustomEvent('open-partner-door'));
+                              const cardEl = document.getElementById('partner-extranet-card');
+                              if (cardEl) {
+                                cardEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                              }
+                            }
+                          }}
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            padding: 0,
+                            textAlign: 'left',
+                            fontSize: '0.875rem',
+                            color: link === 'Partner Login' ? '#f97316' : '#94a3b8',
+                            fontWeight: link === 'Partner Login' ? 700 : 500,
+                            cursor: 'pointer',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 6,
+                            transition: 'color var(--transition-fast)',
+                          }}
+                          onMouseEnter={e => (e.currentTarget.style.color = '#ffedd5')}
+                          onMouseLeave={e => (e.currentTarget.style.color = link === 'Partner Login' ? '#f97316' : '#94a3b8')}
+                        >
+                          {link === 'Partner Login' && <span>🚪</span>}
+                          {link}
+                        </button>
+                      );
+                    }
+                    return (
+                      <Link
+                        key={link}
+                        href={link === 'Hotels' ? '/hotels' : link === 'Visiting Card' ? '/visiting-card' : link === 'Official Logo' ? '/logo' : '#'}
+                        style={{ fontSize: '0.875rem', color: '#64748b', transition: 'color var(--transition-fast)', textDecoration: 'none' }}
+                        onMouseEnter={e => (e.currentTarget.style.color = 'var(--brand-400)')}
+                        onMouseLeave={e => (e.currentTarget.style.color = '#64748b')}
+                      >
+                        {link}
+                      </Link>
+                    );
+                  })}
                 </div>
               </div>
             ))}

@@ -18,12 +18,24 @@ export async function GET(request: NextRequest) {
     }
     const user = userDoc.data() as any;
 
+    let referralCode = user.referralCode;
+    if (!referralCode) {
+      const base = (user.name || 'USER').replace(/[^a-zA-Z]/g, '').toUpperCase().substring(0, 4) || 'USER';
+      const randomSuffix = Math.random().toString(36).substring(2, 6).toUpperCase();
+      referralCode = `SB${base}${randomSuffix}`;
+      await userRef.update({ 
+        referralCode,
+        walletBalance: user.walletBalance || 0,
+        referralCount: user.referralCount || 0
+      });
+    }
+
     const txSnap = await db.collection('wallet_transactions').where('userId', '==', userId).orderBy('createdAt', 'desc').get();
     const transactions = txSnap.docs.map(doc => ({ _id: doc.id, ...doc.data() }));
 
     return NextResponse.json({ 
       walletBalance: user.walletBalance || 0,
-      referralCode: user.referralCode,
+      referralCode,
       referralCount: user.referralCount || 0,
       transactions 
     });
