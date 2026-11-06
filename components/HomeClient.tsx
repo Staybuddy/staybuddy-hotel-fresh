@@ -643,7 +643,7 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
       </section>
 
       {/* ===== BUDGET STAYS CARD ===== */}
-      <section className="container" style={{ marginBottom: '32px' }}>
+      <section className="container" style={{ marginBottom: '22px' }}>
         <Link href="/hotels?maxPrice=1199" style={{ textDecoration: 'none' }}>
           <div style={{
             position: 'relative',
@@ -701,7 +701,7 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
 
 
       {/* ===== HOTEL COLLECTIONS CARDS ===== */}
-      <section className="container" style={{ marginBottom: 'var(--space-8)' }}>
+      <section className="container" style={{ marginBottom: '22px' }}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 'var(--space-6)' }}>
           
           {/* Card 1 */}
@@ -802,87 +802,157 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
       <HomeStatsSection />
       <HomeReferralSection />
 
-      {/* ===== WHY STAYBUDDY ===== */}
-      <section className="section" style={{ background: 'var(--bg-secondary)' }}>
+      {/* ===== WHY STAYBUDDY & GUEST REVIEWS (Smart Unified Section) ===== */}
+      <section style={{ padding: '36px 0 40px', background: 'var(--bg-secondary)', borderTop: '1px solid var(--border)' }}>
         <div className="container">
-          <div style={{ textAlign: 'center', marginBottom: 56 }}>
-            <h2>Why <span style={{ color: 'var(--brand-600)' }}>StayBuddy?</span></h2>
-            <p style={{ color: 'var(--text-secondary)', marginTop: 8 }}>We make booking effortless and transparent</p>
+          {/* 1. WHY STAYBUDDY HEADER */}
+          <div style={{ textAlign: 'center', marginBottom: 20 }}>
+            <h2 style={{ fontSize: '1.85rem', fontWeight: 900, margin: 0, letterSpacing: '-0.02em' }}>
+              Why <span style={{ color: 'var(--brand-600)' }}>StayBuddy?</span>
+            </h2>
+            <p style={{ color: 'var(--text-secondary)', marginTop: 4, fontSize: '0.92rem' }}>
+              We make booking effortless, transparent, and rewarding
+            </p>
           </div>
+
+          {/* SMART 6-CARD RESPONSIVE GRID (No scrollbars, No cutoff cards!) */}
           <div style={{
-            display: 'flex', gap: 16, overflowX: 'auto',
-            paddingBottom: '20px', scrollSnapType: 'x mandatory',
-            scrollbarWidth: 'thin', scrollbarColor: 'var(--brand-200) transparent'
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+            gap: '14px',
+            marginBottom: '36px'
           }}>
             {[
-              { icon: '🔒', title: 'Secure Booking', desc: 'Your payments are protected with bank-grade security and Razorpay encryption.' },
-              { icon: '💸', title: 'Best Price Guarantee', desc: 'Find a cheaper rate elsewhere? We\'ll match it — no questions asked.' },
-              { icon: '⚡', title: 'Instant Confirmation', desc: 'Book in under 2 minutes. Get your confirmation email immediately.' },
-              { icon: '📞', title: '24/7 Support', desc: 'Our team is always available to help with any booking or travel concern.' },
-              { icon: '🌟', title: 'Verified Reviews', desc: 'Only real guests can write reviews — so you always know what to expect.' },
-              { icon: '🏨', title: 'Curated Properties', desc: 'Every hotel is verified by our team before going live on the platform.' },
+              { icon: '🔒', title: 'Secure Booking', desc: 'Your payments are protected with bank-grade security and Razorpay 256-bit encryption.' },
+              { icon: '💸', title: 'Best Price Guarantee', desc: 'Find a cheaper rate elsewhere? We\'ll match it immediately — no questions asked.' },
+              { icon: '⚡', title: 'Instant Confirmation', desc: 'Book in under 2 minutes. Instant WhatsApp & SMS confirmation vouchers.' },
+              { icon: '📞', title: '24/7 Priority Support', desc: 'Our team is always available to help before, during, and after your stay.' },
+              { icon: '🌟', title: '100% Verified Reviews', desc: 'Only authentic guests from verified stays can write reviews — total transparency.' },
+              { icon: '🏨', title: 'Curated Properties', desc: 'Every hotel is verified for hygiene, comfort, and service quality before going live.' },
             ].map(item => (
-              <div key={item.title} style={{ 
-                textAlign: 'center', padding: 'var(--space-6)', flexShrink: 0, 
-                scrollSnapAlign: 'start', width: 280,
-                background: 'var(--surface)', borderRadius: 'var(--radius-lg)',
-                border: '1px solid var(--border)'
-              }}>
-                <div style={{ fontSize: '2.5rem', marginBottom: 16 }}>{item.icon}</div>
-                <h3 style={{ fontSize: '1.1rem', marginBottom: 8 }}>{item.title}</h3>
-                <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: 1.6 }}>{item.desc}</p>
+              <div
+                key={item.title}
+                style={{ 
+                  padding: '16px 18px',
+                  background: 'var(--surface)',
+                  borderRadius: '16px',
+                  border: '1.5px solid var(--border)',
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: 14,
+                  boxShadow: '0 2px 10px rgba(0, 0, 0, 0.03)',
+                  transition: 'all 0.25s ease',
+                  cursor: 'default'
+                }}
+                onMouseEnter={e => {
+                  (e.currentTarget as HTMLElement).style.transform = 'translateY(-3px)';
+                  (e.currentTarget as HTMLElement).style.borderColor = 'var(--brand-300)';
+                  (e.currentTarget as HTMLElement).style.boxShadow = '0 8px 24px rgba(234, 88, 12, 0.08)';
+                }}
+                onMouseLeave={e => {
+                  (e.currentTarget as HTMLElement).style.transform = 'translateY(0)';
+                  (e.currentTarget as HTMLElement).style.borderColor = 'var(--border)';
+                  (e.currentTarget as HTMLElement).style.boxShadow = '0 2px 10px rgba(0, 0, 0, 0.03)';
+                }}
+              >
+                <div style={{
+                  width: 44,
+                  height: 44,
+                  borderRadius: 12,
+                  background: 'linear-gradient(135deg, var(--brand-50), #fff7ed)',
+                  border: '1px solid var(--brand-200)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '1.4rem',
+                  flexShrink: 0,
+                  boxShadow: '0 2px 8px rgba(249, 115, 22, 0.1)'
+                }}>
+                  {item.icon}
+                </div>
+                <div>
+                  <h3 style={{ fontSize: '1rem', fontWeight: 800, margin: '0 0 4px', color: 'var(--text-primary)' }}>
+                    {item.title}
+                  </h3>
+                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.84rem', margin: 0, lineHeight: 1.45 }}>
+                    {item.desc}
+                  </p>
+                </div>
               </div>
             ))}
           </div>
+
+          {/* 2. WHAT OUR GUESTS SAY (Seamless, rhythmic flow with elegant divider) */}
+          {recentReviews && recentReviews.length > 0 && (
+            <div>
+              <div style={{ height: '1px', background: 'var(--border)', margin: '0 auto 28px', maxWidth: '85%' }} />
+
+              <div style={{ marginBottom: 20, textAlign: 'center' }}>
+                <h2 style={{ fontSize: '1.85rem', fontWeight: 900, margin: 0, letterSpacing: '-0.02em' }}>
+                  What Our <span style={{ color: 'var(--brand-600)' }}>Guests</span> Say
+                </h2>
+                <p style={{ color: 'var(--text-secondary)', marginTop: 4, fontSize: '0.92rem' }}>
+                  Real reviews from verified bookings
+                </p>
+              </div>
+              
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(290px, 1fr))',
+                  gap: '16px',
+                }}
+              >
+                {recentReviews.map(review => (
+                  <div
+                    key={review._id}
+                    className="card"
+                    style={{
+                      padding: '18px 20px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: 12,
+                      border: '1.5px solid var(--border)',
+                      borderRadius: '16px',
+                      background: 'var(--surface)',
+                      boxShadow: '0 2px 12px rgba(0,0,0,0.03)',
+                      transition: 'transform 0.25s ease',
+                    }}
+                    onMouseEnter={e => (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)'}
+                    onMouseLeave={e => (e.currentTarget as HTMLElement).style.transform = 'translateY(0)'}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                      <div style={{ fontWeight: 800, fontSize: '1.02rem', color: 'var(--text-primary)' }}>{review.title}</div>
+                      <div style={{ background: '#ea580c', color: 'white', padding: '3px 8px', borderRadius: 'var(--radius-full)', fontWeight: 800, fontSize: '0.78rem' }}>
+                        {typeof review.rating === 'number' ? review.rating.toFixed(1) : '5.0'} ⭐
+                      </div>
+                    </div>
+                    
+                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.88rem', flex: 1, margin: 0, fontStyle: 'italic', lineHeight: 1.5 }}>
+                      &quot;{review.comment}&quot;
+                    </p>
+                    
+                    <div style={{ borderTop: '1px solid var(--border)', paddingTop: 10, marginTop: 4 }}>
+                      <div style={{ fontWeight: 700, fontSize: '0.84rem' }}>{review.customerName}</div>
+                      <div style={{ color: 'var(--text-muted)', fontSize: '0.74rem', marginTop: 2 }}>
+                        Stayed at <span style={{ color: '#ea580c', fontWeight: 600 }}>{review.hotelName}</span>
+                      </div>
+                      <div suppressHydrationWarning style={{ color: 'var(--text-muted)', fontSize: '0.68rem', marginTop: 3 }}>
+                        {new Date(review.createdAt).toLocaleDateString()}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </section>
 
-
-      {/* ===== RECENT REVIEWS (What Our Guests Say - At the last of the page) ===== */}
-      {recentReviews && recentReviews.length > 0 && (
-        <section style={{ padding: '40px 0', background: 'var(--bg-secondary)' }}>
-          <div className="container">
-            <div style={{ marginBottom: 24, textAlign: 'center' }}>
-              <h2>What Our <span style={{ color: 'var(--brand-600)' }}>Guests</span> Say</h2>
-              <p style={{ color: 'var(--text-secondary)', marginTop: 4 }}>Real reviews from verified bookings</p>
-            </div>
-            
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-                gap: '20px',
-              }}
-            >
-              {recentReviews.map(review => (
-                <div key={review._id} className="card" style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: 12, border: '1.5px solid var(--border)', borderRadius: '18px', background: 'var(--surface)', boxShadow: '0 4px 18px rgba(0,0,0,0.04)' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                    <div style={{ fontWeight: 700, fontSize: '1.05rem', color: 'var(--text-primary)' }}>{review.title}</div>
-                    <div style={{ background: '#ea580c', color: 'white', padding: '2px 8px', borderRadius: 'var(--radius-full)', fontWeight: 800, fontSize: '0.8rem' }}>
-                      {typeof review.rating === 'number' ? review.rating.toFixed(1) : '5.0'} ⭐
-                    </div>
-                  </div>
-                  
-                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', flex: 1, margin: 0, fontStyle: 'italic', lineHeight: 1.5 }}>
-                    &quot;{review.comment}&quot;
-                  </p>
-                  
-                  <div style={{ borderTop: '1px solid var(--border)', paddingTop: 12, marginTop: 4 }}>
-                    <div style={{ fontWeight: 700, fontSize: '0.85rem' }}>{review.customerName}</div>
-                    <div style={{ color: 'var(--text-muted)', fontSize: '0.75rem', marginTop: 2 }}>Stayed at <span style={{ color: '#ea580c', fontWeight: 600 }}>{review.hotelName}</span></div>
-                    <div suppressHydrationWarning style={{ color: 'var(--text-muted)', fontSize: '0.7rem', marginTop: 4 }}>{new Date(review.createdAt).toLocaleDateString()}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
-
       {/* ===== FOOTER ===== */}
-      <footer style={{ background: '#0f172a', color: '#94a3b8', padding: '60px 0 32px' }}>
+      <footer style={{ background: '#0f172a', color: '#94a3b8', padding: '48px 0 28px' }}>
         <div className="container">
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 40, marginBottom: 40 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 32, marginBottom: 32 }}>
             <div>
               <div style={{ marginBottom: 12 }}>
                 <Logo size="md" light={true} />

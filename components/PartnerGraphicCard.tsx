@@ -77,7 +77,7 @@ export default function PartnerGraphicCard() {
 
   return (
     <>
-      <section className="container" style={{ marginBottom: '36px' }}>
+      <section className="container" style={{ marginBottom: '22px' }}>
         <style>{`
           /* CONTINUOUS END-TO-END FLOATING GOLD COIN ANIMATIONS */
           @keyframes coinFlyEndToEnd1 {

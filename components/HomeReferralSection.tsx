@@ -34,12 +34,12 @@ export default function HomeReferralSection() {
 
   if (status === 'unauthenticated') {
     return (
-      <section className="container" style={{ margin: '24px auto', padding: '0 16px' }}>
+      <section className="container" style={{ margin: '0 auto 22px', padding: '0 16px' }}>
         <div style={{
           background: 'linear-gradient(135deg, #fff7ed 0%, #ffffff 100%)',
           border: '1.5px solid #fed7aa',
           borderRadius: '20px',
-          padding: '24px 28px',
+          padding: '20px 24px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
@@ -86,12 +86,12 @@ export default function HomeReferralSection() {
 
   // Authenticated (or loading with fallback activeCode) - ALWAYS renders on both desktop and mobile!
   return (
-    <section className="container" style={{ margin: '24px auto', padding: '0 16px' }}>
+    <section className="container" style={{ margin: '0 auto 22px', padding: '0 16px' }}>
       <div style={{
         background: 'linear-gradient(135deg, #fff7ed 0%, #ffffff 100%)',
         border: '1.5px dashed #f97316',
         borderRadius: '20px',
-        padding: '24px 28px',
+        padding: '20px 24px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
