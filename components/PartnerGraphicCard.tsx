@@ -56,7 +56,7 @@ export default function PartnerGraphicCard() {
 
   return (
     <>
-      <section className="container" style={{ marginBottom: '32px' }}>
+      <section className="container" style={{ marginBottom: '36px' }}>
         <style>{`
           /* CONTINUOUS END-TO-END FLOATING GOLD COIN ANIMATIONS */
           @keyframes coinFlyEndToEnd1 {
@@ -171,17 +171,9 @@ export default function PartnerGraphicCard() {
             }
           }
 
-          @keyframes coinGlint {
-            0%, 100% { opacity: 0.8; transform: scale(1); }
-            50% { opacity: 1; transform: scale(1.2) rotate(15deg); }
-          }
-          @keyframes pulseGoldGlow {
-            0%, 100% { box-shadow: 0 12px 32px -8px rgba(5, 150, 105, 0.4), 0 0 24px rgba(245, 158, 11, 0.25); }
-            50% { box-shadow: 0 16px 42px -6px rgba(5, 150, 105, 0.55), 0 0 36px rgba(245, 158, 11, 0.45); }
-          }
-          @keyframes shimmerSweep {
-            0% { background-position: -200% 0; }
-            100% { background-position: 200% 0; }
+          @keyframes pulseBrandGlow {
+            0%, 100% { box-shadow: 0 14px 36px -10px rgba(15, 23, 42, 0.5), 0 0 30px rgba(249, 115, 22, 0.2); }
+            50% { box-shadow: 0 18px 46px -8px rgba(15, 23, 42, 0.65), 0 0 45px rgba(249, 115, 22, 0.35); }
           }
 
           /* 3D House Door Animations */
@@ -210,24 +202,24 @@ export default function PartnerGraphicCard() {
           }
         `}</style>
 
-        {/* SHORT, ULTRA-SLEEK & LUXURIOUS PARTNER GRAPHIC CARD */}
+        {/* SHORT, LUXURIOUS STAYBUDDY THEME PARTNER CARD */}
         <div
           onClick={() => setModalStage('DOOR')}
           style={{
             position: 'relative',
-            borderRadius: 'var(--radius-xl, 20px)',
-            background: 'linear-gradient(135deg, #064e3b 0%, #047857 32%, #0f172a 75%, #1e1b4b 100%)',
-            border: '1px solid rgba(251, 191, 36, 0.35)',
-            padding: '22px 32px',
+            borderRadius: '22px',
+            background: 'linear-gradient(135deg, #090d16 0%, #0f172a 45%, #180d29 100%)',
+            border: '1px solid rgba(249, 115, 22, 0.35)',
+            padding: '24px 32px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
             flexWrap: 'wrap',
-            gap: 20,
+            gap: 22,
             overflow: 'hidden',
             cursor: 'pointer',
             transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
-            animation: 'pulseGoldGlow 4s infinite ease-in-out',
+            animation: 'pulseBrandGlow 4s infinite ease-in-out',
             color: 'white',
           }}
           onMouseEnter={(e) => {
@@ -237,13 +229,39 @@ export default function PartnerGraphicCard() {
             e.currentTarget.style.transform = 'translateY(0)';
           }}
         >
-          {/* CONTINUOUS END-TO-END FLOATING GOLD COINS (Floating Across the Card Width) */}
+          {/* CONTINUOUS END-TO-END FLOATING GOLD COINS STREAM */}
           <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none', zIndex: 1 }}>
-            {/* Coin 1 - Big Gold Coin */}
+            {/* Ambient luxury orange / amber glow orbs */}
             <div
               style={{
                 position: 'absolute',
-                fontSize: '3rem',
+                top: '-25%',
+                right: '15%',
+                width: 280,
+                height: 280,
+                borderRadius: '50%',
+                background: 'radial-gradient(circle, rgba(249, 115, 22, 0.22) 0%, transparent 70%)',
+                pointerEvents: 'none',
+              }}
+            />
+            <div
+              style={{
+                position: 'absolute',
+                bottom: '-25%',
+                left: '20%',
+                width: 240,
+                height: 240,
+                borderRadius: '50%',
+                background: 'radial-gradient(circle, rgba(234, 88, 12, 0.18) 0%, transparent 70%)',
+                pointerEvents: 'none',
+              }}
+            />
+
+            {/* Coins drifting continuously across the card */}
+            <div
+              style={{
+                position: 'absolute',
+                fontSize: '2.8rem',
                 filter: 'drop-shadow(0 4px 10px rgba(245, 158, 11, 0.7)) drop-shadow(0 0 16px rgba(251, 191, 36, 0.5))',
                 animation: 'coinFlyEndToEnd1 9s linear infinite',
                 animationDelay: '0s',
@@ -252,12 +270,10 @@ export default function PartnerGraphicCard() {
             >
               🪙
             </div>
-
-            {/* Coin 2 - Medium Gold Coin */}
             <div
               style={{
                 position: 'absolute',
-                fontSize: '2.4rem',
+                fontSize: '2.3rem',
                 filter: 'drop-shadow(0 4px 10px rgba(245, 158, 11, 0.65))',
                 animation: 'coinFlyEndToEnd2 11s linear infinite',
                 animationDelay: '2.2s',
@@ -266,12 +282,10 @@ export default function PartnerGraphicCard() {
             >
               🪙
             </div>
-
-            {/* Coin 3 - Giant Gold Coin */}
             <div
               style={{
                 position: 'absolute',
-                fontSize: '3.4rem',
+                fontSize: '3.2rem',
                 filter: 'drop-shadow(0 4px 12px rgba(245, 158, 11, 0.75))',
                 animation: 'coinFlyEndToEnd3 10s linear infinite',
                 animationDelay: '4.5s',
@@ -280,12 +294,10 @@ export default function PartnerGraphicCard() {
             >
               🪙
             </div>
-
-            {/* Coin 4 - Glinting Gold Coin */}
             <div
               style={{
                 position: 'absolute',
-                fontSize: '2.2rem',
+                fontSize: '2.1rem',
                 filter: 'drop-shadow(0 4px 8px rgba(245, 158, 11, 0.6))',
                 animation: 'coinFlyEndToEnd4 8.5s linear infinite',
                 animationDelay: '6.8s',
@@ -294,12 +306,10 @@ export default function PartnerGraphicCard() {
             >
               🪙
             </div>
-
-            {/* Coin 5 - Flying Gold Coin */}
             <div
               style={{
                 position: 'absolute',
-                fontSize: '2.8rem',
+                fontSize: '2.6rem',
                 filter: 'drop-shadow(0 4px 10px rgba(245, 158, 11, 0.7))',
                 animation: 'coinFlyEndToEnd1 12s linear infinite',
                 animationDelay: '3.5s',
@@ -308,12 +318,10 @@ export default function PartnerGraphicCard() {
             >
               🪙
             </div>
-
-            {/* Coin 6 - Shimmering Coin */}
             <div
               style={{
                 position: 'absolute',
-                fontSize: '2.5rem',
+                fontSize: '2.4rem',
                 filter: 'drop-shadow(0 4px 10px rgba(245, 158, 11, 0.65))',
                 animation: 'coinFlyEndToEnd2 9.5s linear infinite',
                 animationDelay: '7.2s',
@@ -322,13 +330,11 @@ export default function PartnerGraphicCard() {
             >
               🪙
             </div>
-
-            {/* Coin 7 - Money Bag */}
             <div
               style={{
                 position: 'absolute',
-                fontSize: '2.6rem',
-                opacity: 0.8,
+                fontSize: '2.4rem',
+                opacity: 0.85,
                 filter: 'drop-shadow(0 4px 12px rgba(245, 158, 11, 0.5))',
                 animation: 'coinFlyEndToEnd3 11.5s linear infinite',
                 animationDelay: '1.2s',
@@ -337,49 +343,47 @@ export default function PartnerGraphicCard() {
             >
               💰
             </div>
-
-            {/* Coin 8 - Flying Banknote */}
             <div
               style={{
                 position: 'absolute',
-                fontSize: '2.3rem',
+                fontSize: '2.2rem',
                 opacity: 0.85,
-                filter: 'drop-shadow(0 4px 10px rgba(52, 211, 153, 0.5))',
+                filter: 'drop-shadow(0 4px 10px rgba(249, 115, 22, 0.5))',
                 animation: 'coinFlyEndToEnd4 10.5s linear infinite',
                 animationDelay: '5.4s',
                 pointerEvents: 'none',
               }}
             >
-              💸
+              ✨
             </div>
           </div>
 
-          {/* LEFT CONTENT: BADGE, HEADLINE & PROMISE */}
-          <div style={{ position: 'relative', zIndex: 2, flex: '1 1 480px', minWidth: 260 }}>
-            {/* Golden Header Badge */}
+          {/* LEFT CONTENT: STAYBUDDY OTA BRANDING & PROMISE */}
+          <div style={{ position: 'relative', zIndex: 2, flex: '1 1 500px', minWidth: 260 }}>
+            {/* Signature StayBuddy Orange Header Badge */}
             <div
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
-                gap: 6,
-                background: 'rgba(251, 191, 36, 0.18)',
-                backdropFilter: 'blur(6px)',
-                border: '1px solid rgba(251, 191, 36, 0.45)',
-                color: '#fef08a',
-                padding: '3px 12px',
+                gap: 7,
+                background: 'rgba(249, 115, 22, 0.15)',
+                backdropFilter: 'blur(8px)',
+                border: '1px solid rgba(249, 115, 22, 0.4)',
+                color: '#fdba74',
+                padding: '4px 12px',
                 borderRadius: 'var(--radius-full, 999px)',
                 fontSize: '0.72rem',
                 fontWeight: 800,
                 marginBottom: 8,
                 textTransform: 'uppercase',
-                letterSpacing: '0.05em',
+                letterSpacing: '0.06em',
               }}
             >
-              <span>💰 0% ONBOARDING FEE</span>
-              <span style={{ opacity: 0.5 }}>•</span>
-              <span>📈 3.4X REVENUE</span>
-              <span style={{ opacity: 0.5 }}>•</span>
-              <span>🔒 SMART OVERBOOKING SHIELD</span>
+              <span>🏨 STAYBUDDY PARTNER NETWORK</span>
+              <span style={{ opacity: 0.4 }}>•</span>
+              <span>0% ONBOARDING FEE</span>
+              <span style={{ opacity: 0.4 }}>•</span>
+              <span>INSTANT T+1 PAYOUT</span>
             </div>
 
             {/* Headline */}
@@ -394,20 +398,20 @@ export default function PartnerGraphicCard() {
                 textShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
               }}
             >
-              Grow Your Hotel Business with <span style={{ color: '#fbbf24' }}>StayBuddy Extranet CRM</span> 🚀
+              Grow Your Hotel Business with <span style={{ color: '#ff7844' }}>StayBuddy Extranet CRM</span> 🚀
             </h2>
 
             {/* Subtitle */}
             <p
               style={{
-                color: 'rgba(255, 255, 255, 0.9)',
+                color: '#cbd5e1',
                 fontSize: '0.88rem',
                 margin: 0,
-                lineHeight: 1.45,
-                maxWidth: 580,
+                lineHeight: 1.5,
+                maxWidth: 600,
               }}
             >
-              Showcase your rooms to millions of verified travelers, automate 100% of bookings, and enjoy daily bank settlements.
+              Showcase your rooms to millions of verified travelers, enjoy 1-click booking automation, and take 100% control over your hotel occupancy and revenue.
             </p>
           </div>
 
@@ -416,10 +420,10 @@ export default function PartnerGraphicCard() {
             <button
               type="button"
               style={{
-                background: 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 50%, #d97706 100%)',
-                color: '#0f172a',
+                background: 'linear-gradient(135deg, #ff7844 0%, #ea580c 50%, #c2410c 100%)',
+                color: '#ffffff',
                 border: 'none',
-                padding: '12px 22px',
+                padding: '13px 24px',
                 borderRadius: '14px',
                 fontWeight: 800,
                 fontSize: '0.92rem',
@@ -427,7 +431,7 @@ export default function PartnerGraphicCard() {
                 alignItems: 'center',
                 gap: 8,
                 cursor: 'pointer',
-                boxShadow: '0 8px 24px -4px rgba(245, 158, 11, 0.5), 0 0 12px rgba(251, 191, 36, 0.4)',
+                boxShadow: '0 8px 24px -4px rgba(234, 88, 12, 0.5), 0 0 16px rgba(255, 120, 68, 0.35)',
                 transition: 'all 0.2s ease',
                 whiteSpace: 'nowrap',
               }}
@@ -457,7 +461,7 @@ export default function PartnerGraphicCard() {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            background: 'rgba(9, 13, 22, 0.85)',
+            background: 'rgba(9, 13, 22, 0.88)',
             backdropFilter: 'blur(16px)',
             WebkitBackdropFilter: 'blur(16px)',
             padding: '16px',
@@ -494,14 +498,14 @@ export default function PartnerGraphicCard() {
                   alignItems: 'flex-end',
                 }}
               >
-                {/* Triangular Gable Roof with Terracotta Gradient */}
+                {/* Triangular Gable Roof with Terracotta StayBuddy Accent */}
                 <div
                   style={{
                     width: 0,
                     height: 0,
                     borderLeft: '160px solid transparent',
                     borderRight: '160px solid transparent',
-                    borderBottom: '55px solid #b45309',
+                    borderBottom: '55px solid #9a3412',
                     position: 'absolute',
                     top: 5,
                     filter: 'drop-shadow(0 -4px 10px rgba(0,0,0,0.4))',
@@ -513,7 +517,7 @@ export default function PartnerGraphicCard() {
                     height: 0,
                     borderLeft: '150px solid transparent',
                     borderRight: '150px solid transparent',
-                    borderBottom: '50px solid #d97706',
+                    borderBottom: '50px solid #ea580c',
                     position: 'absolute',
                     top: 8,
                   }}
@@ -523,15 +527,15 @@ export default function PartnerGraphicCard() {
                   style={{
                     position: 'relative',
                     zIndex: 5,
-                    background: '#064e3b',
-                    border: '2px solid #fbbf24',
+                    background: '#0f172a',
+                    border: '2px solid #f97316',
                     borderRadius: 20,
                     padding: '4px 14px',
-                    color: '#fef08a',
+                    color: '#ffedd5',
                     fontWeight: 900,
                     fontSize: '0.75rem',
                     letterSpacing: '0.05em',
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.4)',
                     transform: 'translateY(-12px)',
                   }}
                 >
@@ -539,30 +543,29 @@ export default function PartnerGraphicCard() {
                 </div>
               </div>
 
-              {/* House Frame & Wall with Lanterns */}
+              {/* House Frame & Wall with Warm Hotel Entryway */}
               <div
                 style={{
                   width: 300,
                   background: 'linear-gradient(180deg, #1e293b 0%, #0f172a 100%)',
-                  border: '3px solid #78350f',
+                  border: '2px solid rgba(249, 115, 22, 0.4)',
                   borderRadius: '16px 16px 8px 8px',
                   padding: '24px 20px 20px',
-                  boxShadow: '0 25px 60px rgba(0,0,0,0.8), 0 0 40px rgba(245, 158, 11, 0.3)',
+                  boxShadow: '0 25px 60px rgba(0,0,0,0.85), 0 0 40px rgba(249, 115, 22, 0.25)',
                   position: 'relative',
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'center',
                 }}
               >
-                {/* Warm Lantern Lights on Left & Right */}
+                {/* Warm Entryway Lanterns */}
                 <div
                   style={{
                     position: 'absolute',
                     left: 12,
                     top: 40,
                     fontSize: '1.4rem',
-                    filter: 'drop-shadow(0 0 12px #fde047)',
-                    animation: 'coinGlint 2s infinite ease-in-out',
+                    filter: 'drop-shadow(0 0 12px #fdba74)',
                   }}
                 >
                   🏮
@@ -573,8 +576,7 @@ export default function PartnerGraphicCard() {
                     right: 12,
                     top: 40,
                     fontSize: '1.4rem',
-                    filter: 'drop-shadow(0 0 12px #fde047)',
-                    animation: 'coinGlint 2s infinite ease-in-out',
+                    filter: 'drop-shadow(0 0 12px #fdba74)',
                   }}
                 >
                   🏮
@@ -587,20 +589,20 @@ export default function PartnerGraphicCard() {
                     height: 220,
                     background: '#040711',
                     borderRadius: '80px 80px 4px 4px',
-                    border: '4px solid #b45309',
+                    border: '3px solid #ea580c',
                     position: 'relative',
                     overflow: 'hidden',
                     display: 'flex',
-                    boxShadow: 'inset 0 0 30px rgba(0,0,0,0.9), 0 0 25px rgba(251, 191, 36, 0.25)',
+                    boxShadow: 'inset 0 0 30px rgba(0,0,0,0.95), 0 0 25px rgba(249, 115, 22, 0.35)',
                     perspective: 1000,
                   }}
                 >
-                  {/* Glowing Portal Interior behind doors (revealed as doors swing open) */}
+                  {/* Glowing Portal Interior behind doors */}
                   <div
                     style={{
                       position: 'absolute',
                       inset: 0,
-                      background: 'radial-gradient(circle at center, #fef08a 0%, #f59e0b 40%, #064e3b 85%)',
+                      background: 'radial-gradient(circle at center, #ffedd5 0%, #f97316 45%, #0f172a 90%)',
                       display: 'flex',
                       flexDirection: 'column',
                       alignItems: 'center',
@@ -609,18 +611,16 @@ export default function PartnerGraphicCard() {
                       transition: 'opacity 0.6s ease',
                     }}
                   >
-                    {/* Beaming Light Radiation */}
                     <div
                       style={{
                         position: 'absolute',
                         width: 250,
                         height: 250,
-                        background: 'radial-gradient(circle, rgba(254, 240, 138, 0.8) 0%, transparent 60%)',
+                        background: 'radial-gradient(circle, rgba(254, 215, 170, 0.8) 0%, transparent 60%)',
                         animation: doorOpen ? 'doorGlowBurst 1.2s ease-out forwards' : 'none',
                       }}
                     />
 
-                    {/* Flying Money Stream Burst */}
                     {doorOpen && (
                       <>
                         <div style={{ fontSize: '2rem', animation: 'coinsBurstOut 1.2s ease-out infinite' }}>🪙</div>
@@ -635,7 +635,7 @@ export default function PartnerGraphicCard() {
                     style={{
                       width: '50%',
                       height: '100%',
-                      background: 'linear-gradient(135deg, #78350f 0%, #451a03 100%)',
+                      background: 'linear-gradient(135deg, #7c2d12 0%, #431407 100%)',
                       borderRight: '1px solid rgba(0,0,0,0.6)',
                       transformOrigin: 'left center',
                       transform: doorOpen ? 'perspective(800px) rotateY(-88deg)' : 'perspective(800px) rotateY(0deg)',
@@ -646,10 +646,8 @@ export default function PartnerGraphicCard() {
                       justifyContent: 'center',
                       alignItems: 'flex-end',
                       paddingRight: 6,
-                      boxShadow: 'inset -2px 0 6px rgba(0,0,0,0.4)',
                     }}
                   >
-                    {/* Inset Door Panels */}
                     <div
                       style={{
                         position: 'absolute',
@@ -657,9 +655,9 @@ export default function PartnerGraphicCard() {
                         left: 8,
                         right: 8,
                         height: 60,
-                        border: '2px solid rgba(251, 191, 36, 0.3)',
+                        border: '2px solid rgba(249, 115, 22, 0.35)',
                         borderRadius: '40px 40px 6px 6px',
-                        background: 'rgba(0,0,0,0.15)',
+                        background: 'rgba(0,0,0,0.2)',
                       }}
                     />
                     <div
@@ -669,17 +667,16 @@ export default function PartnerGraphicCard() {
                         left: 8,
                         right: 8,
                         height: 80,
-                        border: '2px solid rgba(251, 191, 36, 0.3)',
+                        border: '2px solid rgba(249, 115, 22, 0.35)',
                         borderRadius: 6,
-                        background: 'rgba(0,0,0,0.15)',
+                        background: 'rgba(0,0,0,0.2)',
                       }}
                     />
-                    {/* Golden Door Handle */}
                     <div
                       style={{
                         width: 8,
                         height: 24,
-                        background: 'linear-gradient(180deg, #fef08a, #d97706)',
+                        background: 'linear-gradient(180deg, #fed7aa, #ea580c)',
                         borderRadius: 4,
                         boxShadow: '0 2px 6px rgba(0,0,0,0.5)',
                         zIndex: 2,
@@ -692,7 +689,7 @@ export default function PartnerGraphicCard() {
                     style={{
                       width: '50%',
                       height: '100%',
-                      background: 'linear-gradient(225deg, #78350f 0%, #451a03 100%)',
+                      background: 'linear-gradient(225deg, #7c2d12 0%, #431407 100%)',
                       borderLeft: '1px solid rgba(0,0,0,0.6)',
                       transformOrigin: 'right center',
                       transform: doorOpen ? 'perspective(800px) rotateY(88deg)' : 'perspective(800px) rotateY(0deg)',
@@ -703,10 +700,8 @@ export default function PartnerGraphicCard() {
                       justifyContent: 'center',
                       alignItems: 'flex-start',
                       paddingLeft: 6,
-                      boxShadow: 'inset 2px 0 6px rgba(0,0,0,0.4)',
                     }}
                   >
-                    {/* Inset Door Panels */}
                     <div
                       style={{
                         position: 'absolute',
@@ -714,9 +709,9 @@ export default function PartnerGraphicCard() {
                         left: 8,
                         right: 8,
                         height: 60,
-                        border: '2px solid rgba(251, 191, 36, 0.3)',
+                        border: '2px solid rgba(249, 115, 22, 0.35)',
                         borderRadius: '40px 40px 6px 6px',
-                        background: 'rgba(0,0,0,0.15)',
+                        background: 'rgba(0,0,0,0.2)',
                       }}
                     />
                     <div
@@ -726,17 +721,16 @@ export default function PartnerGraphicCard() {
                         left: 8,
                         right: 8,
                         height: 80,
-                        border: '2px solid rgba(251, 191, 36, 0.3)',
+                        border: '2px solid rgba(249, 115, 22, 0.35)',
                         borderRadius: 6,
-                        background: 'rgba(0,0,0,0.15)',
+                        background: 'rgba(0,0,0,0.2)',
                       }}
                     />
-                    {/* Golden Door Handle */}
                     <div
                       style={{
                         width: 8,
                         height: 24,
-                        background: 'linear-gradient(180deg, #fef08a, #d97706)',
+                        background: 'linear-gradient(180deg, #fed7aa, #ea580c)',
                         borderRadius: 4,
                         boxShadow: '0 2px 6px rgba(0,0,0,0.5)',
                         zIndex: 2,
@@ -745,16 +739,14 @@ export default function PartnerGraphicCard() {
                   </div>
                 </div>
 
-                {/* Animated Status Label below the door */}
                 <div
                   style={{
                     marginTop: 18,
                     textAlign: 'center',
-                    color: '#fef08a',
+                    color: '#fed7aa',
                     fontWeight: 800,
                     fontSize: '0.9rem',
                     letterSpacing: '0.03em',
-                    textShadow: '0 2px 8px rgba(0,0,0,0.5)',
                   }}
                 >
                   {doorOpen ? '✨ Opening StayBuddy Growth Portal...' : '🚪 Unlocking Partner House...'}
@@ -780,88 +772,89 @@ export default function PartnerGraphicCard() {
           )}
 
           {/* ========================================================= */}
-          {/* STAGE 2: THE BEAUTIFUL STAYBUDDY GROWTH SHOWCASE CARD */}
+          {/* STAGE 2: PROFESSIONAL STAYBUDDY OTA PARTNER GROWTH CARD   */}
           {/* ========================================================= */}
           {modalStage === 'GROWTH_CARD' && (
             <div
               style={{
                 width: '100%',
-                maxWidth: 720,
-                background: 'linear-gradient(145deg, #09131e 0%, #064e3b 40%, #0f172a 80%, #1e1b4b 100%)',
-                border: '1.5px solid rgba(251, 191, 36, 0.4)',
-                borderRadius: '28px',
-                boxShadow: '0 25px 70px rgba(0,0,0,0.7), 0 0 50px rgba(245, 158, 11, 0.25)',
+                maxWidth: 760,
+                background: 'linear-gradient(145deg, #090d16 0%, #0f172a 45%, #180d29 100%)',
+                border: '1.5px solid rgba(249, 115, 22, 0.35)',
+                borderRadius: '26px',
+                boxShadow: '0 25px 80px rgba(0,0,0,0.85), 0 0 50px rgba(249, 115, 22, 0.18)',
                 color: 'white',
                 position: 'relative',
                 overflow: 'hidden',
-                animation: 'scaleIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards',
-                maxHeight: '90vh',
+                animation: 'scaleIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+                maxHeight: '92vh',
                 display: 'flex',
                 flexDirection: 'column',
               }}
             >
-              {/* Floating ambient coins & money particles in modal background */}
+              {/* Refined ambient glow blooms - No cheesy oversized watermarks */}
               <div
                 style={{
                   position: 'absolute',
-                  right: -20,
-                  top: -20,
-                  fontSize: '8rem',
-                  opacity: 0.08,
+                  top: '-15%',
+                  right: '-10%',
+                  width: 320,
+                  height: 320,
+                  borderRadius: '50%',
+                  background: 'radial-gradient(circle, rgba(249, 115, 22, 0.16) 0%, transparent 70%)',
                   pointerEvents: 'none',
-                  animation: 'moneyFloat1 5s infinite ease-in-out',
                 }}
-              >
-                💰
-              </div>
+              />
               <div
                 style={{
                   position: 'absolute',
-                  left: -20,
-                  bottom: -20,
-                  fontSize: '7rem',
-                  opacity: 0.06,
+                  bottom: '-15%',
+                  left: '-10%',
+                  width: 300,
+                  height: 300,
+                  borderRadius: '50%',
+                  background: 'radial-gradient(circle, rgba(168, 85, 247, 0.12) 0%, transparent 70%)',
                   pointerEvents: 'none',
-                  animation: 'moneyFloat2 6s infinite ease-in-out',
                 }}
-              >
-                📈
-              </div>
+              />
 
-              {/* CARD TOP BAR: BADGE & CLOSE BUTTON */}
+              {/* CARD TOP BAR: STAYBUDDY BRANDING & CLOSE BUTTON */}
               <div
                 style={{
-                  padding: '20px 26px 14px',
+                  padding: '20px 28px 16px',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
-                  borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+                  borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
                   position: 'relative',
                   zIndex: 2,
                 }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                   <div
                     style={{
-                      width: 36,
-                      height: 36,
-                      borderRadius: 10,
-                      background: 'linear-gradient(135deg, #fbbf24, #d97706)',
+                      width: 42,
+                      height: 42,
+                      borderRadius: 12,
+                      background: 'linear-gradient(135deg, #ff7844 0%, #ea580c 100%)',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      fontSize: '1.2rem',
-                      boxShadow: '0 4px 12px rgba(245, 158, 11, 0.4)',
+                      fontSize: '1.3rem',
+                      boxShadow: '0 4px 14px rgba(234, 88, 12, 0.4)',
                     }}
                   >
                     🏨
                   </div>
                   <div>
-                    <div style={{ fontSize: '0.96rem', fontWeight: 900, color: '#fef08a', letterSpacing: '-0.01em' }}>
-                      StayBuddy Partner Growth Engine
+                    <div style={{ fontSize: '1rem', fontWeight: 900, color: '#ffffff', letterSpacing: '-0.01em', display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span>StayBuddy Partner Extranet OS</span>
+                      <span style={{ fontSize: '0.68rem', background: 'rgba(34, 197, 94, 0.15)', color: '#4ade80', border: '1px solid rgba(34, 197, 94, 0.3)', padding: '2px 8px', borderRadius: 12, fontWeight: 700, textTransform: 'uppercase' }}>
+                        ● Live OTA Network
+                      </span>
                     </div>
-                    <div style={{ fontSize: '0.72rem', color: '#94a3b8' }}>
-                      Proven Performance Across 2,400+ Verified Stays
+                    <div style={{ fontSize: '0.74rem', color: '#94a3b8', marginTop: 2 }}>
+                      Enterprise Hospitality Distribution & Revenue Engine
                     </div>
                   </div>
                 </div>
@@ -870,11 +863,11 @@ export default function PartnerGraphicCard() {
                   type="button"
                   onClick={() => setModalStage('CLOSED')}
                   style={{
-                    background: 'rgba(255, 255, 255, 0.1)',
+                    background: 'rgba(255, 255, 255, 0.08)',
                     border: '1px solid rgba(255, 255, 255, 0.15)',
-                    color: '#e2e8f0',
-                    width: 32,
-                    height: 32,
+                    color: '#cbd5e1',
+                    width: 34,
+                    height: 34,
                     borderRadius: '50%',
                     display: 'flex',
                     alignItems: 'center',
@@ -883,201 +876,253 @@ export default function PartnerGraphicCard() {
                     fontSize: '1.1rem',
                     transition: 'all 0.15s ease',
                   }}
-                  onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)')}
-                  onMouseLeave={(e) => (e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)')}
+                  onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(255, 255, 255, 0.18)')}
+                  onMouseLeave={(e) => (e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)')}
                 >
                   ✕
                 </button>
               </div>
 
-              {/* CARD SCROLLABLE CONTENT: HOW STAYBUDDY GROWS YOUR BUSINESS */}
+              {/* CARD SCROLLABLE CONTENT */}
               <div
                 style={{
-                  padding: '22px 26px',
+                  padding: '24px 28px',
                   overflowY: 'auto',
                   display: 'flex',
                   flexDirection: 'column',
-                  gap: 18,
+                  gap: 20,
                   position: 'relative',
                   zIndex: 2,
                 }}
               >
                 {/* Hero Header inside card */}
                 <div style={{ textAlign: 'center' }}>
+                  <div
+                    style={{
+                      display: 'inline-block',
+                      fontSize: '0.72rem',
+                      fontWeight: 800,
+                      letterSpacing: '0.08em',
+                      textTransform: 'uppercase',
+                      color: '#f97316',
+                      marginBottom: 6,
+                    }}
+                  >
+                    REVENUE ACCELERATION PLATFORM
+                  </div>
                   <h2
                     style={{
-                      fontSize: '1.5rem',
+                      fontSize: '1.65rem',
                       fontWeight: 900,
                       margin: '0 0 6px 0',
                       letterSpacing: '-0.02em',
                       color: 'white',
+                      lineHeight: 1.25,
                     }}
                   >
-                    How StayBuddy Multiplies Your <span style={{ color: '#fbbf24' }}>Hotel Revenue & Bookings</span>
+                    How StayBuddy Multiplies Your <span style={{ color: '#f97316' }}>Hotel Bookings & Revenue</span>
                   </h2>
-                  <p style={{ color: '#94a3b8', fontSize: '0.85rem', margin: 0, lineHeight: 1.5 }}>
-                    Real-time inventory management, 0% onboarding fee, and verified direct customer demand.
+                  <p style={{ color: '#94a3b8', fontSize: '0.88rem', margin: 0, lineHeight: 1.5, maxWidth: 580, marginLeft: 'auto', marginRight: 'auto' }}>
+                    Seamless 1-click room inventory distribution, 0% commission on direct bookings, and verified traveler demand.
                   </p>
                 </div>
 
-                {/* 4 INTERACTIVE GROWTH PILLARS (Grid) */}
+                {/* 4 PROFESSIONAL OTA METRIC CARDS */}
                 <div
                   style={{
                     display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-                    gap: 12,
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+                    gap: 14,
                   }}
                 >
-                  {/* Pillar 1: Occupancy Surge */}
+                  {/* Metric 1: Occupancy Growth */}
                   <div
                     style={{
-                      background: 'rgba(15, 23, 42, 0.65)',
-                      border: '1px solid rgba(52, 211, 153, 0.25)',
-                      borderRadius: 16,
-                      padding: '16px',
+                      background: 'rgba(15, 23, 42, 0.7)',
+                      border: '1px solid rgba(255, 255, 255, 0.1)',
+                      borderRadius: 18,
+                      padding: '18px 20px',
                       display: 'flex',
                       flexDirection: 'column',
                       gap: 8,
+                      transition: 'all 0.2s ease',
+                      boxShadow: '0 8px 24px rgba(0,0,0,0.2)',
                     }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                      <span style={{ fontSize: '1.3rem' }}>📈</span>
-                      <span style={{ background: '#059669', color: 'white', fontSize: '0.7rem', fontWeight: 800, padding: '2px 8px', borderRadius: 6 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span style={{ fontSize: '1.25rem' }}>📈</span>
+                        <span style={{ fontSize: '0.82rem', fontWeight: 800, color: '#f8fafc' }}>Direct Occupancy Surge</span>
+                      </div>
+                      <span style={{ background: 'rgba(16, 185, 129, 0.15)', color: '#34d399', border: '1px solid rgba(16, 185, 129, 0.3)', fontSize: '0.72rem', fontWeight: 800, padding: '3px 10px', borderRadius: 20 }}>
                         +44% SURGE
                       </span>
                     </div>
                     <div>
-                      <div style={{ fontSize: '1.25rem', fontWeight: 900, color: '#34d399' }}>
-                        52% ➔ 96% Occupancy
+                      <div style={{ fontSize: '1.45rem', fontWeight: 900, color: '#ffffff', letterSpacing: '-0.02em' }}>
+                        52% ➔ <span style={{ color: '#34d399' }}>96% Occupancy</span>
                       </div>
-                      <div style={{ fontSize: '0.76rem', color: '#cbd5e1', marginTop: 4, lineHeight: 1.4 }}>
-                        Fills empty weekday and weekend rooms with high-intent verified travelers.
+                      <div style={{ fontSize: '0.78rem', color: '#94a3b8', marginTop: 4, lineHeight: 1.45 }}>
+                        Fills empty weekday and peak weekend rooms with verified corporate and leisure travelers.
                       </div>
                     </div>
                   </div>
 
-                  {/* Pillar 2: 3.4x Direct Revenue Bump */}
+                  {/* Metric 2: Revenue Multiplier */}
                   <div
                     style={{
-                      background: 'rgba(15, 23, 42, 0.65)',
-                      border: '1px solid rgba(251, 191, 36, 0.25)',
-                      borderRadius: 16,
-                      padding: '16px',
+                      background: 'rgba(15, 23, 42, 0.7)',
+                      border: '1px solid rgba(255, 255, 255, 0.1)',
+                      borderRadius: 18,
+                      padding: '18px 20px',
                       display: 'flex',
                       flexDirection: 'column',
                       gap: 8,
+                      transition: 'all 0.2s ease',
+                      boxShadow: '0 8px 24px rgba(0,0,0,0.2)',
                     }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                      <span style={{ fontSize: '1.3rem' }}>💰</span>
-                      <span style={{ background: '#d97706', color: 'white', fontSize: '0.7rem', fontWeight: 800, padding: '2px 8px', borderRadius: 6 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span style={{ fontSize: '1.25rem' }}>💰</span>
+                        <span style={{ fontSize: '0.82rem', fontWeight: 800, color: '#f8fafc' }}>Direct Revenue Growth</span>
+                      </div>
+                      <span style={{ background: 'rgba(249, 115, 22, 0.15)', color: '#fb923c', border: '1px solid rgba(249, 115, 22, 0.35)', fontSize: '0.72rem', fontWeight: 800, padding: '3px 10px', borderRadius: 20 }}>
                         3.4X MULTIPLIER
                       </span>
                     </div>
                     <div>
-                      <div style={{ fontSize: '1.25rem', fontWeight: 900, color: '#fef08a' }}>
-                        ₹1.2L ➔ ₹4.8L+ Monthly
+                      <div style={{ fontSize: '1.45rem', fontWeight: 900, color: '#ffffff', letterSpacing: '-0.02em' }}>
+                        ₹1.2L ➔ <span style={{ color: '#fbbf24' }}>₹4.8L+ Monthly</span>
                       </div>
-                      <div style={{ fontSize: '0.76rem', color: '#cbd5e1', marginTop: 4, lineHeight: 1.4 }}>
-                        Keep 100% of your listed room price. 0% commission on direct inventory.
+                      <div style={{ fontSize: '0.78rem', color: '#94a3b8', marginTop: 4, lineHeight: 1.45 }}>
+                        Keep 100% of your listed room rates with 0% onboarding fee and daily T+1 direct bank deposits.
                       </div>
                     </div>
                   </div>
 
-                  {/* Pillar 3: Fast 45-Second Bookings */}
+                  {/* Metric 3: Frictionless Booking Engine */}
                   <div
                     style={{
-                      background: 'rgba(15, 23, 42, 0.65)',
-                      border: '1px solid rgba(56, 189, 248, 0.25)',
-                      borderRadius: 16,
-                      padding: '16px',
+                      background: 'rgba(15, 23, 42, 0.7)',
+                      border: '1px solid rgba(255, 255, 255, 0.1)',
+                      borderRadius: 18,
+                      padding: '18px 20px',
                       display: 'flex',
                       flexDirection: 'column',
                       gap: 8,
+                      transition: 'all 0.2s ease',
+                      boxShadow: '0 8px 24px rgba(0,0,0,0.2)',
                     }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                      <span style={{ fontSize: '1.3rem' }}>⚡</span>
-                      <span style={{ background: '#0284c7', color: 'white', fontSize: '0.7rem', fontWeight: 800, padding: '2px 8px', borderRadius: 6 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span style={{ fontSize: '1.25rem' }}>⚡</span>
+                        <span style={{ fontSize: '0.82rem', fontWeight: 800, color: '#f8fafc' }}>Frictionless Checkout</span>
+                      </div>
+                      <span style={{ background: 'rgba(14, 165, 233, 0.15)', color: '#38bdf8', border: '1px solid rgba(14, 165, 233, 0.3)', fontSize: '0.72rem', fontWeight: 800, padding: '3px 10px', borderRadius: 20 }}>
                         45S CHECKOUT
                       </span>
                     </div>
                     <div>
-                      <div style={{ fontSize: '1.25rem', fontWeight: 900, color: '#38bdf8' }}>
+                      <div style={{ fontSize: '1.45rem', fontWeight: 900, color: '#ffffff', letterSpacing: '-0.02em' }}>
                         Zero Booking Drops
                       </div>
-                      <div style={{ fontSize: '0.76rem', color: '#cbd5e1', marginTop: 4, lineHeight: 1.4 }}>
-                        Guests confirm in seconds with WhatsApp vouchers & Razorpay payment security.
+                      <div style={{ fontSize: '0.78rem', color: '#94a3b8', marginTop: 4, lineHeight: 1.45 }}>
+                        Instant WhatsApp vouchers & SMS confirmations backed by bank-grade Razorpay payment security.
                       </div>
                     </div>
                   </div>
 
-                  {/* Pillar 4: Smart Overbooking Shield */}
+                  {/* Metric 4: Smart Walk-In Shield */}
                   <div
                     style={{
-                      background: 'rgba(15, 23, 42, 0.65)',
-                      border: '1px solid rgba(244, 63, 94, 0.25)',
-                      borderRadius: 16,
-                      padding: '16px',
+                      background: 'rgba(15, 23, 42, 0.7)',
+                      border: '1px solid rgba(255, 255, 255, 0.1)',
+                      borderRadius: 18,
+                      padding: '18px 20px',
                       display: 'flex',
                       flexDirection: 'column',
                       gap: 8,
+                      transition: 'all 0.2s ease',
+                      boxShadow: '0 8px 24px rgba(0,0,0,0.2)',
                     }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                      <span style={{ fontSize: '1.3rem' }}>🔒</span>
-                      <span style={{ background: '#e11d48', color: 'white', fontSize: '0.7rem', fontWeight: 800, padding: '2px 8px', borderRadius: 6 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span style={{ fontSize: '1.25rem' }}>🔒</span>
+                        <span style={{ fontSize: '0.82rem', fontWeight: 800, color: '#f8fafc' }}>Smart Inventory Shield</span>
+                      </div>
+                      <span style={{ background: 'rgba(239, 68, 68, 0.15)', color: '#f87171', border: '1px solid rgba(239, 68, 68, 0.3)', fontSize: '0.72rem', fontWeight: 800, padding: '3px 10px', borderRadius: 20 }}>
                         1-CLICK SHIELD
                       </span>
                     </div>
                     <div>
-                      <div style={{ fontSize: '1.25rem', fontWeight: 900, color: '#fb7185' }}>
-                        Smart Room Block
+                      <div style={{ fontSize: '1.45rem', fontWeight: 900, color: '#ffffff', letterSpacing: '-0.02em' }}>
+                        Zero Overbookings
                       </div>
-                      <div style={{ fontSize: '0.76rem', color: '#cbd5e1', marginTop: 4, lineHeight: 1.4 }}>
-                        Lock offline walk-in rooms in 1 click so double bookings never happen.
+                      <div style={{ fontSize: '0.78rem', color: '#94a3b8', marginTop: 4, lineHeight: 1.45 }}>
+                        Instantly lock walk-in rooms during offline peak rush so double bookings never occur.
                       </div>
                     </div>
                   </div>
                 </div>
 
-                {/* LIVE HOTEL CASE STUDY TICKER */}
+                {/* VERIFIED LIVE PARTNER BENCHMARK TICKER */}
                 <div
                   style={{
-                    background: 'rgba(6, 78, 59, 0.45)',
-                    border: '1px solid rgba(52, 211, 153, 0.35)',
-                    borderRadius: 14,
-                    padding: '12px 16px',
+                    background: 'rgba(30, 41, 59, 0.65)',
+                    backdropFilter: 'blur(10px)',
+                    border: '1px solid rgba(249, 115, 22, 0.25)',
+                    borderRadius: 16,
+                    padding: '14px 20px',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
-                    gap: 12,
+                    gap: 14,
                     flexWrap: 'wrap',
                   }}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <span style={{ fontSize: '1.4rem' }}>🏨</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <div
+                      style={{
+                        width: 38,
+                        height: 38,
+                        borderRadius: 10,
+                        background: 'linear-gradient(135deg, #f97316, #c2410c)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '1.2rem',
+                        flexShrink: 0,
+                      }}
+                    >
+                      🏨
+                    </div>
                     <div>
-                      <div style={{ fontSize: '0.86rem', fontWeight: 800, color: 'white' }}>
-                        Hotel Pushpa Grand (Shamshabad, Hyderabad)
+                      <div style={{ fontSize: '0.9rem', fontWeight: 800, color: '#ffffff' }}>
+                        Hotel Pushpa Grand <span style={{ color: '#94a3b8', fontWeight: 500, fontSize: '0.8rem' }}>(Shamshabad, Hyderabad)</span>
                       </div>
-                      <div style={{ fontSize: '0.72rem', color: '#86efac' }}>
-                        ● 98% Occupancy • Booking Just Received: Deluxe AC (₹2,650)
+                      <div style={{ fontSize: '0.75rem', color: '#4ade80', fontWeight: 600, marginTop: 2 }}>
+                        ● 98% Occupancy • Booking Just Received: Deluxe AC Room (₹2,650)
                       </div>
                     </div>
                   </div>
                   <div
                     style={{
-                      background: 'rgba(251, 191, 36, 0.2)',
-                      border: '1px solid rgba(251, 191, 36, 0.4)',
-                      color: '#fef08a',
-                      padding: '4px 10px',
+                      background: 'rgba(249, 115, 22, 0.15)',
+                      border: '1px solid rgba(249, 115, 22, 0.35)',
+                      color: '#fb923c',
+                      padding: '5px 12px',
                       borderRadius: 10,
                       fontSize: '0.74rem',
                       fontWeight: 800,
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 6,
                     }}
                   >
-                    T+1 Bank Payout Active ⚡
+                    <span>⚡ Daily T+1 Settlement Active</span>
                   </div>
                 </div>
 
@@ -1089,30 +1134,33 @@ export default function PartnerGraphicCard() {
                     justifyContent: 'space-between',
                     flexWrap: 'wrap',
                     gap: 14,
-                    marginTop: 6,
-                    paddingTop: 12,
-                    borderTop: '1px solid rgba(255, 255, 255, 0.1)',
+                    marginTop: 4,
+                    paddingTop: 16,
+                    borderTop: '1px solid rgba(255, 255, 255, 0.08)',
                   }}
                 >
-                  <div style={{ fontSize: '0.78rem', color: '#94a3b8' }}>
-                    Instant 1-Click Access for Verified Hoteliers
+                  <div style={{ fontSize: '0.8rem', color: '#94a3b8' }}>
+                    100% Encrypted & Authenticated Partner Access
                   </div>
 
-                  <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                  <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
                     <Link
                       href={session?.user ? "/partner" : "/partner/login"}
                       onClick={() => setModalStage('CLOSED')}
                       style={{
                         background: 'rgba(255, 255, 255, 0.08)',
-                        color: '#e2e8f0',
-                        border: '1px solid rgba(255, 255, 255, 0.15)',
-                        padding: '10px 18px',
-                        borderRadius: 12,
-                        fontSize: '0.85rem',
+                        color: '#ffffff',
+                        border: '1px solid rgba(255, 255, 255, 0.2)',
+                        padding: '12px 20px',
+                        borderRadius: 14,
+                        fontSize: '0.88rem',
                         fontWeight: 700,
                         textDecoration: 'none',
                         cursor: 'pointer',
+                        transition: 'all 0.15s ease',
                       }}
+                      onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(255, 255, 255, 0.15)')}
+                      onMouseLeave={(e) => (e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)')}
                     >
                       List Your Hotel Free →
                     </Link>
@@ -1122,18 +1170,18 @@ export default function PartnerGraphicCard() {
                       type="button"
                       onClick={handleLaunchExtranet}
                       style={{
-                        background: 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 50%, #d97706 100%)',
-                        color: '#0f172a',
+                        background: 'linear-gradient(135deg, #ff7844 0%, #ea580c 50%, #c2410c 100%)',
+                        color: '#ffffff',
                         border: 'none',
-                        padding: '12px 24px',
-                        borderRadius: 12,
-                        fontSize: '0.92rem',
+                        padding: '12px 26px',
+                        borderRadius: 14,
+                        fontSize: '0.94rem',
                         fontWeight: 900,
                         cursor: 'pointer',
                         display: 'inline-flex',
                         alignItems: 'center',
                         gap: 8,
-                        boxShadow: '0 6px 20px rgba(245, 158, 11, 0.45), 0 0 16px rgba(251, 191, 36, 0.3)',
+                        boxShadow: '0 6px 24px rgba(234, 88, 12, 0.45)',
                         transition: 'all 0.2s ease',
                       }}
                       onMouseEnter={(e) => {
@@ -1159,12 +1207,12 @@ export default function PartnerGraphicCard() {
               style={{
                 width: '100%',
                 maxWidth: 480,
-                background: 'linear-gradient(145deg, #09131e 0%, #064e3b 60%, #0f172a 100%)',
-                border: '2px solid #fbbf24',
+                background: 'linear-gradient(145deg, #090d16 0%, #0f172a 60%, #1e1b4b 100%)',
+                border: '2px solid #f97316',
                 borderRadius: '24px',
                 padding: '36px 28px',
                 textAlign: 'center',
-                boxShadow: '0 25px 80px rgba(0,0,0,0.85), 0 0 60px rgba(245, 158, 11, 0.4)',
+                boxShadow: '0 25px 80px rgba(0,0,0,0.85), 0 0 60px rgba(249, 115, 22, 0.35)',
                 color: 'white',
                 position: 'relative',
                 overflow: 'hidden',
@@ -1177,7 +1225,7 @@ export default function PartnerGraphicCard() {
                   fontSize: '4.5rem',
                   display: 'inline-block',
                   animation: 'rocketFlyUp 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards',
-                  filter: 'drop-shadow(0 0 20px #fbbf24)',
+                  filter: 'drop-shadow(0 0 20px #f97316)',
                 }}
               >
                 🚀
@@ -1189,7 +1237,7 @@ export default function PartnerGraphicCard() {
               <div style={{ position: 'absolute', left: 80, bottom: 40, fontSize: '1.8rem', animation: 'coinsBurstOut 1.3s infinite 0.3s' }}>✨</div>
               <div style={{ position: 'absolute', right: 80, bottom: 40, fontSize: '1.8rem', animation: 'coinsBurstOut 1.2s infinite 0.1s' }}>💰</div>
 
-              <h2 style={{ fontSize: '1.4rem', fontWeight: 900, margin: '14px 0 6px', color: '#fef08a' }}>
+              <h2 style={{ fontSize: '1.4rem', fontWeight: 900, margin: '14px 0 6px', color: '#ffedd5' }}>
                 Connecting to Partner Extranet...
               </h2>
               <p style={{ color: '#cbd5e1', fontSize: '0.85rem', margin: '0 0 20px', lineHeight: 1.4 }}>
@@ -1211,9 +1259,9 @@ export default function PartnerGraphicCard() {
                   style={{
                     height: '100%',
                     width: `${launchProgress}%`,
-                    background: 'linear-gradient(90deg, #34d399, #fbbf24, #ea580c)',
+                    background: 'linear-gradient(90deg, #34d399, #f97316, #ea580c)',
                     transition: 'width 0.4s ease',
-                    boxShadow: '0 0 12px rgba(251, 191, 36, 0.6)',
+                    boxShadow: '0 0 12px rgba(249, 115, 22, 0.6)',
                   }}
                 />
               </div>
