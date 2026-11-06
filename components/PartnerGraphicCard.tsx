@@ -176,6 +176,29 @@ export default function PartnerGraphicCard() {
             50% { box-shadow: 0 18px 46px -8px rgba(15, 23, 42, 0.65), 0 0 45px rgba(249, 115, 22, 0.35); }
           }
 
+          /* Individual Animated Letters for "Partner Extranet" */
+          @keyframes partnerLetterWave {
+            0%, 100% {
+              transform: translateY(0px) scale(1);
+              color: #ffffff;
+              text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+            }
+            25% {
+              transform: translateY(-8px) scale(1.16);
+              color: #ff7844;
+              text-shadow: 0 0 16px rgba(249, 115, 22, 0.9), 0 0 28px rgba(251, 191, 36, 0.8), 0 4px 10px rgba(0,0,0,0.4);
+            }
+            50% {
+              transform: translateY(-2px) scale(1.05);
+              color: #fbbf24;
+              text-shadow: 0 0 14px rgba(251, 191, 36, 0.7);
+            }
+            75% {
+              transform: translateY(0px) scale(1);
+              color: #ffffff;
+            }
+          }
+
           /* 3D House Door Animations */
           @keyframes doorSwingLeft {
             0% { transform: perspective(800px) rotateY(0deg); }
@@ -358,61 +381,59 @@ export default function PartnerGraphicCard() {
             </div>
           </div>
 
-          {/* LEFT CONTENT: STAYBUDDY OTA BRANDING & PROMISE */}
-          <div style={{ position: 'relative', zIndex: 2, flex: '1 1 500px', minWidth: 260 }}>
-            {/* Signature StayBuddy Orange Header Badge */}
+          {/* LEFT CONTENT: ONLY ANIMATED "PARTNER EXTRANET" LETTERS BESIDE THE DOOR */}
+          <div
+            style={{
+              position: 'relative',
+              zIndex: 2,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 16,
+              flexWrap: 'wrap',
+            }}
+          >
+            <div
+              style={{
+                width: 44,
+                height: 44,
+                borderRadius: 13,
+                background: 'linear-gradient(135deg, #ff7844 0%, #ea580c 100%)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '1.4rem',
+                boxShadow: '0 4px 16px rgba(234, 88, 12, 0.45)',
+                flexShrink: 0,
+              }}
+            >
+              🏨
+            </div>
+
             <div
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
-                gap: 7,
-                background: 'rgba(249, 115, 22, 0.15)',
-                backdropFilter: 'blur(8px)',
-                border: '1px solid rgba(249, 115, 22, 0.4)',
-                color: '#fdba74',
-                padding: '4px 12px',
-                borderRadius: 'var(--radius-full, 999px)',
-                fontSize: '0.72rem',
-                fontWeight: 800,
-                marginBottom: 8,
-                textTransform: 'uppercase',
-                letterSpacing: '0.06em',
+                userSelect: 'none',
               }}
             >
-              <span>🏨 STAYBUDDY PARTNER NETWORK</span>
-              <span style={{ opacity: 0.4 }}>•</span>
-              <span>0% ONBOARDING FEE</span>
-              <span style={{ opacity: 0.4 }}>•</span>
-              <span>INSTANT T+1 PAYOUT</span>
+              {"Partner Extranet".split("").map((char, idx) => (
+                <span
+                  key={idx}
+                  style={{
+                    display: 'inline-block',
+                    whiteSpace: 'pre',
+                    fontSize: 'clamp(1.45rem, 3.2vw, 2.1rem)',
+                    fontWeight: 900,
+                    letterSpacing: char === ' ' ? '0.35em' : '0.01em',
+                    animation: 'partnerLetterWave 2.4s ease-in-out infinite',
+                    animationDelay: `${idx * 0.09}s`,
+                    lineHeight: 1,
+                  }}
+                >
+                  {char}
+                </span>
+              ))}
             </div>
-
-            {/* Headline */}
-            <h2
-              style={{
-                color: 'white',
-                margin: '0 0 6px 0',
-                fontSize: '1.45rem',
-                fontWeight: 900,
-                letterSpacing: '-0.02em',
-                lineHeight: 1.25,
-                textShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
-              }}
-            >
-              Grow Your Hotel Business with <span style={{ color: '#ff7844' }}>StayBuddy Extranet CRM</span> 🚀
-            </h2>
-
-            {/* Subtitle */}
-            <p
-              style={{
-                color: '#cbd5e1',
-                fontSize: '0.88rem',
-                margin: 0,
-                lineHeight: 1.5,
-                maxWidth: 600,
-              }}
-            >
-              Showcase your rooms to millions of verified travelers, enjoy 1-click booking automation, and take 100% control over your hotel occupancy and revenue.
-            </p>
           </div>
 
           {/* RIGHT ACTION BUTTON: DOOR OPENER */}
@@ -779,11 +800,11 @@ export default function PartnerGraphicCard() {
               style={{
                 width: '100%',
                 maxWidth: 760,
-                background: 'linear-gradient(145deg, #090d16 0%, #0f172a 45%, #180d29 100%)',
+                background: '#ffffff',
                 border: '1.5px solid rgba(249, 115, 22, 0.35)',
                 borderRadius: '26px',
-                boxShadow: '0 25px 80px rgba(0,0,0,0.85), 0 0 50px rgba(249, 115, 22, 0.18)',
-                color: 'white',
+                boxShadow: '0 25px 80px -10px rgba(15, 23, 42, 0.22), 0 0 50px rgba(249, 115, 22, 0.12)',
+                color: '#0f172a',
                 position: 'relative',
                 overflow: 'hidden',
                 animation: 'scaleIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards',
@@ -792,7 +813,7 @@ export default function PartnerGraphicCard() {
                 flexDirection: 'column',
               }}
             >
-              {/* Refined ambient glow blooms - No cheesy oversized watermarks */}
+              {/* Subtle ambient blooms on white */}
               <div
                 style={{
                   position: 'absolute',
@@ -801,7 +822,7 @@ export default function PartnerGraphicCard() {
                   width: 320,
                   height: 320,
                   borderRadius: '50%',
-                  background: 'radial-gradient(circle, rgba(249, 115, 22, 0.16) 0%, transparent 70%)',
+                  background: 'radial-gradient(circle, rgba(249, 115, 22, 0.08) 0%, transparent 70%)',
                   pointerEvents: 'none',
                 }}
               />
@@ -813,7 +834,7 @@ export default function PartnerGraphicCard() {
                   width: 300,
                   height: 300,
                   borderRadius: '50%',
-                  background: 'radial-gradient(circle, rgba(168, 85, 247, 0.12) 0%, transparent 70%)',
+                  background: 'radial-gradient(circle, rgba(251, 191, 36, 0.08) 0%, transparent 70%)',
                   pointerEvents: 'none',
                 }}
               />
@@ -825,7 +846,8 @@ export default function PartnerGraphicCard() {
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
-                  borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+                  borderBottom: '1px solid #f1f5f9',
+                  background: 'rgba(255, 255, 255, 0.95)',
                   position: 'relative',
                   zIndex: 2,
                 }}
@@ -841,19 +863,19 @@ export default function PartnerGraphicCard() {
                       alignItems: 'center',
                       justifyContent: 'center',
                       fontSize: '1.3rem',
-                      boxShadow: '0 4px 14px rgba(234, 88, 12, 0.4)',
+                      boxShadow: '0 4px 14px rgba(234, 88, 12, 0.35)',
                     }}
                   >
                     🏨
                   </div>
                   <div>
-                    <div style={{ fontSize: '1rem', fontWeight: 900, color: '#ffffff', letterSpacing: '-0.01em', display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <div style={{ fontSize: '1rem', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.01em', display: 'flex', alignItems: 'center', gap: 8 }}>
                       <span>StayBuddy Partner Extranet OS</span>
-                      <span style={{ fontSize: '0.68rem', background: 'rgba(34, 197, 94, 0.15)', color: '#4ade80', border: '1px solid rgba(34, 197, 94, 0.3)', padding: '2px 8px', borderRadius: 12, fontWeight: 700, textTransform: 'uppercase' }}>
+                      <span style={{ fontSize: '0.68rem', background: '#ecfdf5', color: '#059669', border: '1px solid #a7f3d0', padding: '2px 8px', borderRadius: 12, fontWeight: 700, textTransform: 'uppercase' }}>
                         ● Live OTA Network
                       </span>
                     </div>
-                    <div style={{ fontSize: '0.74rem', color: '#94a3b8', marginTop: 2 }}>
+                    <div style={{ fontSize: '0.74rem', color: '#64748b', marginTop: 2 }}>
                       Enterprise Hospitality Distribution & Revenue Engine
                     </div>
                   </div>
@@ -863,9 +885,9 @@ export default function PartnerGraphicCard() {
                   type="button"
                   onClick={() => setModalStage('CLOSED')}
                   style={{
-                    background: 'rgba(255, 255, 255, 0.08)',
-                    border: '1px solid rgba(255, 255, 255, 0.15)',
-                    color: '#cbd5e1',
+                    background: '#f1f5f9',
+                    border: '1px solid #e2e8f0',
+                    color: '#475569',
                     width: 34,
                     height: 34,
                     borderRadius: '50%',
@@ -874,10 +896,17 @@ export default function PartnerGraphicCard() {
                     justifyContent: 'center',
                     cursor: 'pointer',
                     fontSize: '1.1rem',
+                    fontWeight: 700,
                     transition: 'all 0.15s ease',
                   }}
-                  onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(255, 255, 255, 0.18)')}
-                  onMouseLeave={(e) => (e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)')}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = '#e2e8f0';
+                    e.currentTarget.style.color = '#0f172a';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = '#f1f5f9';
+                    e.currentTarget.style.color = '#475569';
+                  }}
                 >
                   ✕
                 </button>
@@ -904,8 +933,12 @@ export default function PartnerGraphicCard() {
                       fontWeight: 800,
                       letterSpacing: '0.08em',
                       textTransform: 'uppercase',
-                      color: '#f97316',
-                      marginBottom: 6,
+                      color: '#ea580c',
+                      background: '#fff7ed',
+                      border: '1px solid #ffedd5',
+                      padding: '3px 10px',
+                      borderRadius: 12,
+                      marginBottom: 8,
                     }}
                   >
                     REVENUE ACCELERATION PLATFORM
@@ -916,13 +949,13 @@ export default function PartnerGraphicCard() {
                       fontWeight: 900,
                       margin: '0 0 6px 0',
                       letterSpacing: '-0.02em',
-                      color: 'white',
+                      color: '#0f172a',
                       lineHeight: 1.25,
                     }}
                   >
-                    How StayBuddy Multiplies Your <span style={{ color: '#f97316' }}>Hotel Bookings & Revenue</span>
+                    How StayBuddy Multiplies Your <span style={{ color: '#ea580c' }}>Hotel Bookings & Revenue</span>
                   </h2>
-                  <p style={{ color: '#94a3b8', fontSize: '0.88rem', margin: 0, lineHeight: 1.5, maxWidth: 580, marginLeft: 'auto', marginRight: 'auto' }}>
+                  <p style={{ color: '#64748b', fontSize: '0.88rem', margin: 0, lineHeight: 1.5, maxWidth: 580, marginLeft: 'auto', marginRight: 'auto' }}>
                     Seamless 1-click room inventory distribution, 0% commission on direct bookings, and verified traveler demand.
                   </p>
                 </div>
@@ -938,31 +971,31 @@ export default function PartnerGraphicCard() {
                   {/* Metric 1: Occupancy Growth */}
                   <div
                     style={{
-                      background: 'rgba(15, 23, 42, 0.7)',
-                      border: '1px solid rgba(255, 255, 255, 0.1)',
+                      background: 'linear-gradient(135deg, #ffffff 0%, #f0fdf4 100%)',
+                      border: '1.5px solid #bbf7d0',
                       borderRadius: 18,
                       padding: '18px 20px',
                       display: 'flex',
                       flexDirection: 'column',
                       gap: 8,
                       transition: 'all 0.2s ease',
-                      boxShadow: '0 8px 24px rgba(0,0,0,0.2)',
+                      boxShadow: '0 4px 18px rgba(16, 185, 129, 0.08)',
                     }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                         <span style={{ fontSize: '1.25rem' }}>📈</span>
-                        <span style={{ fontSize: '0.82rem', fontWeight: 800, color: '#f8fafc' }}>Direct Occupancy Surge</span>
+                        <span style={{ fontSize: '0.82rem', fontWeight: 800, color: '#0f172a' }}>Direct Occupancy Surge</span>
                       </div>
-                      <span style={{ background: 'rgba(16, 185, 129, 0.15)', color: '#34d399', border: '1px solid rgba(16, 185, 129, 0.3)', fontSize: '0.72rem', fontWeight: 800, padding: '3px 10px', borderRadius: 20 }}>
+                      <span style={{ background: '#dcfce7', color: '#15803d', border: '1px solid #86efac', fontSize: '0.72rem', fontWeight: 800, padding: '3px 10px', borderRadius: 20 }}>
                         +44% SURGE
                       </span>
                     </div>
                     <div>
-                      <div style={{ fontSize: '1.45rem', fontWeight: 900, color: '#ffffff', letterSpacing: '-0.02em' }}>
-                        52% ➔ <span style={{ color: '#34d399' }}>96% Occupancy</span>
+                      <div style={{ fontSize: '1.45rem', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.02em' }}>
+                        52% ➔ <span style={{ color: '#16a34a' }}>96% Occupancy</span>
                       </div>
-                      <div style={{ fontSize: '0.78rem', color: '#94a3b8', marginTop: 4, lineHeight: 1.45 }}>
+                      <div style={{ fontSize: '0.78rem', color: '#475569', marginTop: 4, lineHeight: 1.45 }}>
                         Fills empty weekday and peak weekend rooms with verified corporate and leisure travelers.
                       </div>
                     </div>
@@ -971,31 +1004,31 @@ export default function PartnerGraphicCard() {
                   {/* Metric 2: Revenue Multiplier */}
                   <div
                     style={{
-                      background: 'rgba(15, 23, 42, 0.7)',
-                      border: '1px solid rgba(255, 255, 255, 0.1)',
+                      background: 'linear-gradient(135deg, #ffffff 0%, #fff7ed 100%)',
+                      border: '1.5px solid #fed7aa',
                       borderRadius: 18,
                       padding: '18px 20px',
                       display: 'flex',
                       flexDirection: 'column',
                       gap: 8,
                       transition: 'all 0.2s ease',
-                      boxShadow: '0 8px 24px rgba(0,0,0,0.2)',
+                      boxShadow: '0 4px 18px rgba(249, 115, 22, 0.08)',
                     }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                         <span style={{ fontSize: '1.25rem' }}>💰</span>
-                        <span style={{ fontSize: '0.82rem', fontWeight: 800, color: '#f8fafc' }}>Direct Revenue Growth</span>
+                        <span style={{ fontSize: '0.82rem', fontWeight: 800, color: '#0f172a' }}>Direct Revenue Growth</span>
                       </div>
-                      <span style={{ background: 'rgba(249, 115, 22, 0.15)', color: '#fb923c', border: '1px solid rgba(249, 115, 22, 0.35)', fontSize: '0.72rem', fontWeight: 800, padding: '3px 10px', borderRadius: 20 }}>
+                      <span style={{ background: '#ffedd5', color: '#c2410c', border: '1px solid #fdba74', fontSize: '0.72rem', fontWeight: 800, padding: '3px 10px', borderRadius: 20 }}>
                         3.4X MULTIPLIER
                       </span>
                     </div>
                     <div>
-                      <div style={{ fontSize: '1.45rem', fontWeight: 900, color: '#ffffff', letterSpacing: '-0.02em' }}>
-                        ₹1.2L ➔ <span style={{ color: '#fbbf24' }}>₹4.8L+ Monthly</span>
+                      <div style={{ fontSize: '1.45rem', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.02em' }}>
+                        ₹1.2L ➔ <span style={{ color: '#ea580c' }}>₹4.8L+ Monthly</span>
                       </div>
-                      <div style={{ fontSize: '0.78rem', color: '#94a3b8', marginTop: 4, lineHeight: 1.45 }}>
+                      <div style={{ fontSize: '0.78rem', color: '#475569', marginTop: 4, lineHeight: 1.45 }}>
                         Keep 100% of your listed room rates with 0% onboarding fee and daily T+1 direct bank deposits.
                       </div>
                     </div>
@@ -1004,31 +1037,31 @@ export default function PartnerGraphicCard() {
                   {/* Metric 3: Frictionless Booking Engine */}
                   <div
                     style={{
-                      background: 'rgba(15, 23, 42, 0.7)',
-                      border: '1px solid rgba(255, 255, 255, 0.1)',
+                      background: 'linear-gradient(135deg, #ffffff 0%, #f0f9ff 100%)',
+                      border: '1.5px solid #bae6fd',
                       borderRadius: 18,
                       padding: '18px 20px',
                       display: 'flex',
                       flexDirection: 'column',
                       gap: 8,
                       transition: 'all 0.2s ease',
-                      boxShadow: '0 8px 24px rgba(0,0,0,0.2)',
+                      boxShadow: '0 4px 18px rgba(14, 165, 233, 0.08)',
                     }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                         <span style={{ fontSize: '1.25rem' }}>⚡</span>
-                        <span style={{ fontSize: '0.82rem', fontWeight: 800, color: '#f8fafc' }}>Frictionless Checkout</span>
+                        <span style={{ fontSize: '0.82rem', fontWeight: 800, color: '#0f172a' }}>Frictionless Checkout</span>
                       </div>
-                      <span style={{ background: 'rgba(14, 165, 233, 0.15)', color: '#38bdf8', border: '1px solid rgba(14, 165, 233, 0.3)', fontSize: '0.72rem', fontWeight: 800, padding: '3px 10px', borderRadius: 20 }}>
+                      <span style={{ background: '#e0f2fe', color: '#0369a1', border: '1px solid #7dd3fc', fontSize: '0.72rem', fontWeight: 800, padding: '3px 10px', borderRadius: 20 }}>
                         45S CHECKOUT
                       </span>
                     </div>
                     <div>
-                      <div style={{ fontSize: '1.45rem', fontWeight: 900, color: '#ffffff', letterSpacing: '-0.02em' }}>
+                      <div style={{ fontSize: '1.45rem', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.02em' }}>
                         Zero Booking Drops
                       </div>
-                      <div style={{ fontSize: '0.78rem', color: '#94a3b8', marginTop: 4, lineHeight: 1.45 }}>
+                      <div style={{ fontSize: '0.78rem', color: '#475569', marginTop: 4, lineHeight: 1.45 }}>
                         Instant WhatsApp vouchers & SMS confirmations backed by bank-grade Razorpay payment security.
                       </div>
                     </div>
@@ -1037,31 +1070,31 @@ export default function PartnerGraphicCard() {
                   {/* Metric 4: Smart Walk-In Shield */}
                   <div
                     style={{
-                      background: 'rgba(15, 23, 42, 0.7)',
-                      border: '1px solid rgba(255, 255, 255, 0.1)',
+                      background: 'linear-gradient(135deg, #ffffff 0%, #fff1f2 100%)',
+                      border: '1.5px solid #fecdd3',
                       borderRadius: 18,
                       padding: '18px 20px',
                       display: 'flex',
                       flexDirection: 'column',
                       gap: 8,
                       transition: 'all 0.2s ease',
-                      boxShadow: '0 8px 24px rgba(0,0,0,0.2)',
+                      boxShadow: '0 4px 18px rgba(244, 63, 94, 0.08)',
                     }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                         <span style={{ fontSize: '1.25rem' }}>🔒</span>
-                        <span style={{ fontSize: '0.82rem', fontWeight: 800, color: '#f8fafc' }}>Smart Inventory Shield</span>
+                        <span style={{ fontSize: '0.82rem', fontWeight: 800, color: '#0f172a' }}>Smart Inventory Shield</span>
                       </div>
-                      <span style={{ background: 'rgba(239, 68, 68, 0.15)', color: '#f87171', border: '1px solid rgba(239, 68, 68, 0.3)', fontSize: '0.72rem', fontWeight: 800, padding: '3px 10px', borderRadius: 20 }}>
+                      <span style={{ background: '#ffe4e6', color: '#be123c', border: '1px solid #fda4af', fontSize: '0.72rem', fontWeight: 800, padding: '3px 10px', borderRadius: 20 }}>
                         1-CLICK SHIELD
                       </span>
                     </div>
                     <div>
-                      <div style={{ fontSize: '1.45rem', fontWeight: 900, color: '#ffffff', letterSpacing: '-0.02em' }}>
+                      <div style={{ fontSize: '1.45rem', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.02em' }}>
                         Zero Overbookings
                       </div>
-                      <div style={{ fontSize: '0.78rem', color: '#94a3b8', marginTop: 4, lineHeight: 1.45 }}>
+                      <div style={{ fontSize: '0.78rem', color: '#475569', marginTop: 4, lineHeight: 1.45 }}>
                         Instantly lock walk-in rooms during offline peak rush so double bookings never occur.
                       </div>
                     </div>
@@ -1071,9 +1104,8 @@ export default function PartnerGraphicCard() {
                 {/* VERIFIED LIVE PARTNER BENCHMARK TICKER */}
                 <div
                   style={{
-                    background: 'rgba(30, 41, 59, 0.65)',
-                    backdropFilter: 'blur(10px)',
-                    border: '1px solid rgba(249, 115, 22, 0.25)',
+                    background: 'linear-gradient(135deg, #fff7ed 0%, #f8fafc 100%)',
+                    border: '1.5px solid #fed7aa',
                     borderRadius: 16,
                     padding: '14px 20px',
                     display: 'flex',
@@ -1081,6 +1113,7 @@ export default function PartnerGraphicCard() {
                     justifyContent: 'space-between',
                     gap: 14,
                     flexWrap: 'wrap',
+                    boxShadow: '0 4px 16px rgba(249, 115, 22, 0.08)',
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -1095,24 +1128,25 @@ export default function PartnerGraphicCard() {
                         justifyContent: 'center',
                         fontSize: '1.2rem',
                         flexShrink: 0,
+                        boxShadow: '0 4px 10px rgba(234, 88, 12, 0.25)',
                       }}
                     >
                       🏨
                     </div>
                     <div>
-                      <div style={{ fontSize: '0.9rem', fontWeight: 800, color: '#ffffff' }}>
-                        Hotel Pushpa Grand <span style={{ color: '#94a3b8', fontWeight: 500, fontSize: '0.8rem' }}>(Shamshabad, Hyderabad)</span>
+                      <div style={{ fontSize: '0.9rem', fontWeight: 800, color: '#0f172a' }}>
+                        Hotel Pushpa Grand <span style={{ color: '#64748b', fontWeight: 500, fontSize: '0.8rem' }}>(Shamshabad, Hyderabad)</span>
                       </div>
-                      <div style={{ fontSize: '0.75rem', color: '#4ade80', fontWeight: 600, marginTop: 2 }}>
+                      <div style={{ fontSize: '0.75rem', color: '#16a34a', fontWeight: 700, marginTop: 2 }}>
                         ● 98% Occupancy • Booking Just Received: Deluxe AC Room (₹2,650)
                       </div>
                     </div>
                   </div>
                   <div
                     style={{
-                      background: 'rgba(249, 115, 22, 0.15)',
-                      border: '1px solid rgba(249, 115, 22, 0.35)',
-                      color: '#fb923c',
+                      background: '#ffedd5',
+                      border: '1px solid #fdba74',
+                      color: '#c2410c',
                       padding: '5px 12px',
                       borderRadius: 10,
                       fontSize: '0.74rem',
@@ -1136,10 +1170,10 @@ export default function PartnerGraphicCard() {
                     gap: 14,
                     marginTop: 4,
                     paddingTop: 16,
-                    borderTop: '1px solid rgba(255, 255, 255, 0.08)',
+                    borderTop: '1px solid #f1f5f9',
                   }}
                 >
-                  <div style={{ fontSize: '0.8rem', color: '#94a3b8' }}>
+                  <div style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 500 }}>
                     100% Encrypted & Authenticated Partner Access
                   </div>
 
@@ -1148,9 +1182,9 @@ export default function PartnerGraphicCard() {
                       href={session?.user ? "/partner" : "/partner/login"}
                       onClick={() => setModalStage('CLOSED')}
                       style={{
-                        background: 'rgba(255, 255, 255, 0.08)',
-                        color: '#ffffff',
-                        border: '1px solid rgba(255, 255, 255, 0.2)',
+                        background: '#f8fafc',
+                        color: '#0f172a',
+                        border: '1.5px solid #cbd5e1',
                         padding: '12px 20px',
                         borderRadius: 14,
                         fontSize: '0.88rem',
@@ -1159,8 +1193,8 @@ export default function PartnerGraphicCard() {
                         cursor: 'pointer',
                         transition: 'all 0.15s ease',
                       }}
-                      onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(255, 255, 255, 0.15)')}
-                      onMouseLeave={(e) => (e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)')}
+                      onMouseEnter={(e) => (e.currentTarget.style.background = '#f1f5f9')}
+                      onMouseLeave={(e) => (e.currentTarget.style.background = '#f8fafc')}
                     >
                       List Your Hotel Free →
                     </Link>
@@ -1181,14 +1215,16 @@ export default function PartnerGraphicCard() {
                         display: 'inline-flex',
                         alignItems: 'center',
                         gap: 8,
-                        boxShadow: '0 6px 24px rgba(234, 88, 12, 0.45)',
+                        boxShadow: '0 8px 24px rgba(234, 88, 12, 0.45)',
                         transition: 'all 0.2s ease',
                       }}
                       onMouseEnter={(e) => {
                         e.currentTarget.style.transform = 'scale(1.04)';
+                        e.currentTarget.style.boxShadow = '0 10px 28px rgba(234, 88, 12, 0.6)';
                       }}
                       onMouseLeave={(e) => {
                         e.currentTarget.style.transform = 'scale(1)';
+                        e.currentTarget.style.boxShadow = '0 8px 24px rgba(234, 88, 12, 0.45)';
                       }}
                     >
                       <span>🚀 Launch Partner Extranet</span>
