@@ -118,17 +118,28 @@ export async function reconcileBookingPayment(bookingId: string, options: Paymen
 
     if (hotel) {
       const notificationEmails = new Set<string>();
-      if (hotel.partnerId) {
-        try {
-          const pSnap = await db.collection('users').doc(hotel.partnerId).get();
-          if (pSnap.exists && pSnap.data()?.email) {
-            notificationEmails.add(pSnap.data()!.email);
-          }
-        } catch (_) {}
+      
+      const partnerUserRef = hotel.partnerId || hotel.ownerId || hotel.userId;
+      if (partnerUserRef) {
+        if (typeof partnerUserRef === 'string') {
+          try {
+            const pSnap = await db.collection('users').doc(partnerUserRef).get();
+            if (pSnap.exists && pSnap.data()?.email) {
+              notificationEmails.add(pSnap.data()!.email.trim().toLowerCase());
+            }
+          } catch (_) {}
+        } else if (typeof partnerUserRef === 'object' && partnerUserRef.email) {
+          notificationEmails.add(partnerUserRef.email.trim().toLowerCase());
+        }
       }
-      if (hotel.contactEmail) {
-        notificationEmails.add(hotel.contactEmail);
-      }
+      
+      if (hotel.contactEmail) notificationEmails.add(hotel.contactEmail.trim().toLowerCase());
+      if (hotel.email) notificationEmails.add(hotel.email.trim().toLowerCase());
+      if (hotel.partnerEmail) notificationEmails.add(hotel.partnerEmail.trim().toLowerCase());
+      if (hotel.ownerEmail) notificationEmails.add(hotel.ownerEmail.trim().toLowerCase());
+
+      console.log(`[Reconcile] Dispatching partner notification to ${notificationEmails.size} email(s):`, Array.from(notificationEmails));
+
       notificationEmails.forEach(email => {
         sendPartnerNotificationEmail(populatedBooking, email).catch(err => {
           console.error(`Failed to send partner notification email to ${email}:`, err);

@@ -35,6 +35,9 @@ async function getTransporter() {
 export async function sendBookingConfirmationEmail(booking: any) {
   const { customerId, hotelId, checkIn, checkOut, totalPrice, _id, guestEmail, guestName } = booking;
   
+  const hotelName = (typeof hotelId === 'object' && hotelId?.name) ? hotelId.name : (booking.hotelName || 'StayBuddy Hotel');
+  const hotelCity = (typeof hotelId === 'object' && hotelId?.city) ? hotelId.city : (booking.hotelCity || '');
+
   const checkInStr = new Date(checkIn).toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
   const checkOutStr = new Date(checkOut).toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
   
@@ -49,7 +52,7 @@ export async function sendBookingConfirmationEmail(booking: any) {
   const mailOptions = {
     from: process.env.EMAIL_FROM || 'StayBuddy <noreply@staybuddy.com>',
     to: recipientEmail,
-    subject: `Booking Confirmed & Tax Invoice: ${hotelId.name}`,
+    subject: `Booking Confirmed & Tax Invoice: ${hotelName}`,
     html: `
       <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 650px; margin: 0 auto; border: 1px solid #e5e7eb; border-radius: 12px; overflow: hidden; background-color: #ffffff; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
         
@@ -61,7 +64,7 @@ export async function sendBookingConfirmationEmail(booking: any) {
 
         <div style="padding: 32px;">
           <p style="font-size: 16px; color: #374151; margin-top: 0;">Dear <strong>${recipientName}</strong>,</p>
-          <p style="font-size: 15px; color: #4b5563; line-height: 1.5;">Thank you for choosing StayBuddy. Your reservation at <strong>${hotelId.name}</strong> is confirmed. Below is your official tax invoice for this booking.</p>
+          <p style="font-size: 15px; color: #4b5563; line-height: 1.5;">Thank you for choosing StayBuddy. Your reservation at <strong>${hotelName}</strong> is confirmed. Below is your official tax invoice for this booking.</p>
           
           {/* Invoice Summary Cards */}
           <div style="display: flex; gap: 16px; margin: 24px 0;">
@@ -79,7 +82,7 @@ export async function sendBookingConfirmationEmail(booking: any) {
           <table style="width: 100%; border-collapse: collapse; margin-bottom: 32px; font-size: 14px;">
             <tr>
               <td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb; color: #6b7280; width: 40%;">Hotel Name</td>
-              <td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb; color: #1f2937; font-weight: 600; text-align: right;">${hotelId.name}, ${hotelId.city}</td>
+              <td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb; color: #1f2937; font-weight: 600; text-align: right;">${hotelName}${hotelCity ? `, ${hotelCity}` : ''}</td>
             </tr>
             <tr>
               <td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb; color: #6b7280;">Check-in Date</td>
@@ -135,12 +138,15 @@ export async function sendBookingConfirmationEmail(booking: any) {
 }
 
 export async function sendPartnerNotificationEmail(booking: any, partnerEmail: string) {
-  const { hotelId, checkIn, checkOut, _id, guestName, totalPartnerPrice, nights } = booking;
+  const { hotelId, checkIn, checkOut, _id, guestName, guestPhone, totalPartnerPrice, nights, occupancySummary } = booking;
   
   if (!partnerEmail) {
     console.log('Skipping partner email - no partner email provided');
     return;
   }
+
+  const hotelName = (typeof hotelId === 'object' && hotelId?.name) ? hotelId.name : (booking.hotelName || 'StayBuddy Hotel');
+  const hotelCity = (typeof hotelId === 'object' && hotelId?.city) ? hotelId.city : (booking.hotelCity || '');
 
   const checkInStr = new Date(checkIn).toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
   const checkOutStr = new Date(checkOut).toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
@@ -148,7 +154,7 @@ export async function sendPartnerNotificationEmail(booking: any, partnerEmail: s
   const mailOptions = {
     from: process.env.EMAIL_FROM || 'StayBuddy <noreply@staybuddy.com>',
     to: partnerEmail,
-    subject: `New Booking Alert: ${hotelId.name}`,
+    subject: `New Booking Alert: ${hotelName}`,
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #eaeaea; border-radius: 8px; overflow: hidden;">
         <div style="background-color: #10b981; padding: 24px; text-align: center; color: white;">
@@ -156,12 +162,14 @@ export async function sendPartnerNotificationEmail(booking: any, partnerEmail: s
         </div>
         <div style="padding: 24px;">
           <p>Hi Partner,</p>
-          <p>You have a new confirmed booking at <strong>${hotelId.name}</strong>!</p>
+          <p>You have a new confirmed booking at <strong>${hotelName}</strong>${hotelCity ? ` (${hotelCity})` : ''}!</p>
           
           <div style="background-color: #f9fafb; padding: 16px; border-radius: 8px; margin: 24px 0; border: 1px solid #e5e7eb;">
             <h3 style="margin-top: 0; color: #1f2937;">Booking Summary</h3>
             <p style="margin: 8px 0;"><strong>Booking ID:</strong> ${booking.bookingId || _id}</p>
             <p style="margin: 8px 0;"><strong>Guest Name:</strong> ${guestName || 'Guest'}</p>
+            ${guestPhone ? `<p style="margin: 8px 0;"><strong>Guest Phone:</strong> ${guestPhone}</p>` : ''}
+            ${occupancySummary ? `<p style="margin: 8px 0;"><strong>Room & Occupancy:</strong> ${occupancySummary}</p>` : ''}
             <p style="margin: 8px 0;"><strong>Check-in:</strong> ${checkInStr}</p>
             <p style="margin: 8px 0;"><strong>Check-out:</strong> ${checkOutStr}</p>
             <p style="margin: 8px 0;"><strong>Duration:</strong> ${nights} Night(s)</p>

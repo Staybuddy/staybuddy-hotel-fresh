@@ -702,10 +702,47 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
 
       {/* ===== HOTEL COLLECTIONS CARDS ===== */}
       <section className="container" style={{ marginBottom: '22px' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 'var(--space-6)' }}>
+        <style>{`
+          .home-collections-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+          }
+          @media (max-width: 900px) {
+            .home-collections-grid {
+              grid-template-columns: repeat(2, 1fr);
+            }
+          }
+          @media (max-width: 768px) {
+            .home-collections-grid {
+              display: flex !important;
+              flex-direction: row !important;
+              flex-wrap: nowrap !important;
+              overflow-x: auto !important;
+              scroll-snap-type: x mandatory;
+              gap: 14px;
+              padding: 4px 16px 14px !important;
+              margin-left: -16px;
+              margin-right: -16px;
+              scrollbar-width: none;
+              -ms-overflow-style: none;
+              -webkit-overflow-scrolling: touch;
+            }
+            .home-collections-grid::-webkit-scrollbar {
+              display: none;
+            }
+            .home-collections-card {
+              flex: 0 0 280px !important;
+              width: 280px !important;
+              min-width: 280px !important;
+              scroll-snap-align: start;
+            }
+          }
+        `}</style>
+        <div className="home-collections-grid">
           
           {/* Card 1 */}
-          <Link href="/hotels?category=luxury" style={{ textDecoration: 'none', color: 'inherit', display: 'flex' }}>
+          <Link href="/hotels?category=luxury" className="home-collections-card" style={{ textDecoration: 'none', color: 'inherit', display: 'flex' }}>
             <div style={{
               background: 'linear-gradient(135deg, var(--brand-50), var(--brand-100))',
               borderRadius: 'var(--radius-xl)', padding: 'var(--space-6)',
@@ -735,7 +772,7 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
           </Link>
 
           {/* Card 2 */}
-          <Link href="/hotels?propertyType=Resort" style={{ textDecoration: 'none', color: 'inherit', display: 'flex' }}>
+          <Link href="/hotels?propertyType=Resort" className="home-collections-card" style={{ textDecoration: 'none', color: 'inherit', display: 'flex' }}>
             <div style={{
               background: 'linear-gradient(135deg, #f0fdfa, #ccfbf1)',
               borderRadius: 'var(--radius-xl)', padding: 'var(--space-6)',
@@ -765,7 +802,7 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
           </Link>
 
           {/* Card 3 */}
-          <Link href="/hotels?minRating=5" style={{ textDecoration: 'none', color: 'inherit', display: 'flex' }}>
+          <Link href="/hotels?minRating=5" className="home-collections-card" style={{ textDecoration: 'none', color: 'inherit', display: 'flex' }}>
             <div style={{
               background: 'linear-gradient(135deg, #fef3c7, #fde68a)',
               borderRadius: 'var(--radius-xl)', padding: 'var(--space-6)',
@@ -828,6 +865,11 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
             .why-staybuddy-indicator {
               display: none;
             }
+            .home-reviews-grid {
+              display: grid;
+              grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+              gap: 16px;
+            }
             @media (max-width: 900px) {
               .why-staybuddy-grid {
                 grid-template-columns: repeat(2, 1fr);
@@ -836,6 +878,8 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
             @media (max-width: 768px) {
               .why-staybuddy-grid {
                 display: flex !important;
+                flex-direction: row !important;
+                flex-wrap: nowrap !important;
                 overflow-x: auto !important;
                 scroll-snap-type: x mandatory;
                 gap: 12px;
@@ -853,6 +897,8 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
               .why-staybuddy-card {
                 flex: 0 0 240px !important;
                 width: 240px !important;
+                min-width: 240px !important;
+                max-width: 240px !important;
                 scroll-snap-align: start;
                 padding: 22px 18px;
               }
@@ -863,6 +909,30 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
                 background: linear-gradient(90deg, #ff6b35, #ea580c);
                 border-radius: 4px;
                 margin: 0 auto 28px;
+              }
+              .home-reviews-grid {
+                display: flex !important;
+                flex-direction: row !important;
+                flex-wrap: nowrap !important;
+                overflow-x: auto !important;
+                scroll-snap-type: x mandatory;
+                gap: 14px;
+                padding: 4px 16px 16px !important;
+                margin-left: -16px;
+                margin-right: -16px;
+                scrollbar-width: none;
+                -ms-overflow-style: none;
+                -webkit-overflow-scrolling: touch;
+              }
+              .home-reviews-grid::-webkit-scrollbar {
+                display: none;
+              }
+              .home-review-card {
+                flex: 0 0 280px !important;
+                width: 280px !important;
+                min-width: 280px !important;
+                max-width: 280px !important;
+                scroll-snap-align: start;
               }
             }
           `}</style>
@@ -945,17 +1015,11 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
                 </p>
               </div>
               
-              <div
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fit, minmax(290px, 1fr))',
-                  gap: '16px',
-                }}
-              >
+              <div className="home-reviews-grid">
                 {recentReviews.map(review => (
                   <div
                     key={review._id}
-                    className="card"
+                    className="card home-review-card"
                     style={{
                       padding: '18px 20px',
                       display: 'flex',
