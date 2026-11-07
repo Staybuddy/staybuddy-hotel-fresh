@@ -139,7 +139,11 @@ export async function POST(request: NextRequest) {
     }
 
     const hasMultiRooms = Array.isArray(body.selectedRooms) && body.selectedRooms.length > 0;
-    const requestedAdults = Number(body.adults || body.guests || 1);
+    const requestedAdults = Number(
+      body.adults !== undefined && body.adults !== null && body.adults !== ''
+        ? body.adults
+        : (body.occupancy === 'single' ? 1 : (body.guests || 1))
+    );
 
     const margin = Number(hotelData?.marginPercentage) || 0;
     let pricing: any;

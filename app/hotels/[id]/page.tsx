@@ -450,6 +450,11 @@ export default function HotelDetailPage() {
           quantity: bookingData.rooms,
         }];
 
+    const effectiveAdults = bookingData.rooms === 1
+      ? (occupancy === 'single' ? 1 : (occupancy === 'triple' ? 3 : Math.max(1, bookingData.adults)))
+      : Math.max(1, bookingData.adults);
+    const effectiveOccupancy = effectiveAdults === 1 ? 'single' : (effectiveAdults === 3 ? 'triple' : 'double');
+
     const res = await fetch("/api/bookings", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -458,9 +463,9 @@ export default function HotelDetailPage() {
         hotelId: id,
         roomId: primaryRoom._id,
         rooms: bookingData.rooms,
-        adults: bookingData.adults,
-        guests: bookingData.adults + (bookingData.children || 0),
-        occupancy: bookingData.adults === 1 ? 'single' : (bookingData.adults === 3 ? 'triple' : 'double'),
+        adults: effectiveAdults,
+        guests: effectiveAdults + (bookingData.children || 0),
+        occupancy: effectiveOccupancy,
         selectedRooms: selectedRoomsPayload,
         roomBreakdowns: calculatedPricing.roomBreakdowns,
         occupancySummary: calculatedPricing.summaryText,
@@ -1932,30 +1937,110 @@ export default function HotelDetailPage() {
                             </div>
 
                             {bookingData.rooms === 1 ? (
-                              Boolean(bookingData.adults === 3 && !(Number(room.priceTriple) > 0)) ? (
-                                <button
-                                  type="button"
-                                  disabled={true}
-                                  className="btn btn-sm"
-                                  style={{ marginTop: 8, background: '#e2e8f0', color: '#64748b', cursor: 'not-allowed', border: 'none', fontWeight: 700 }}
-                                  title="3-occupancy is not offered for this room. Max 2 guests allowed."
+                              <>
+                                <div
+                                  style={{
+                                    display: "flex",
+                                    gap: 4,
+                                    marginTop: 8,
+                                    marginBottom: 6,
+                                    justifyContent: "flex-end",
+                                    flexWrap: "wrap",
+                                  }}
                                   onClick={(e) => e.stopPropagation()}
                                 >
-                                  Max 2 Guests Only
-                                </button>
-                              ) : (
-                                <button
-                                  className="btn btn-primary btn-sm"
-                                  style={{ marginTop: 8 }}
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setSelectedRoom(room);
-                                    setSelectedRoomsMap({ [room._id]: 1 });
-                                  }}
-                                >
-                                  {selectedRoom?._id === room._id ? "Selected ✓" : "Select"}
-                                </button>
-                              )
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setOccupancy("single");
+                                      setBookingData((prev) => ({ ...prev, adults: 1 }));
+                                      setSelectedRoom(room);
+                                      setSelectedRoomsMap({ [room._id]: 1 });
+                                    }}
+                                    style={{
+                                      padding: "3px 8px",
+                                      borderRadius: 6,
+                                      fontSize: "0.72rem",
+                                      fontWeight: 700,
+                                      cursor: "pointer",
+                                      border: (bookingData.adults === 1 && selectedRoom?._id === room._id) ? "1.5px solid #ea580c" : "1px solid #cbd5e1",
+                                      background: (bookingData.adults === 1 && selectedRoom?._id === room._id) ? "#fff7ed" : "#ffffff",
+                                      color: (bookingData.adults === 1 && selectedRoom?._id === room._id) ? "#c2410c" : "#475569",
+                                    }}
+                                  >
+                                    👤 1 Adult {Number(room.priceSingle) > 0 ? `(₹${Number(room.priceSingle).toLocaleString()})` : ''}
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setOccupancy("double");
+                                      setBookingData((prev) => ({ ...prev, adults: 2 }));
+                                      setSelectedRoom(room);
+                                      setSelectedRoomsMap({ [room._id]: 1 });
+                                    }}
+                                    style={{
+                                      padding: "3px 8px",
+                                      borderRadius: 6,
+                                      fontSize: "0.72rem",
+                                      fontWeight: 700,
+                                      cursor: "pointer",
+                                      border: ((bookingData.adults === 2 || !bookingData.adults) && selectedRoom?._id === room._id) ? "1.5px solid #ea580c" : "1px solid #cbd5e1",
+                                      background: ((bookingData.adults === 2 || !bookingData.adults) && selectedRoom?._id === room._id) ? "#fff7ed" : "#ffffff",
+                                      color: ((bookingData.adults === 2 || !bookingData.adults) && selectedRoom?._id === room._id) ? "#c2410c" : "#475569",
+                                    }}
+                                  >
+                                    👥 2 Adults {Number(room.priceDouble) > 0 ? `(₹${Number(room.priceDouble).toLocaleString()})` : ''}
+                                  </button>
+                                  {Number(room.priceTriple) > 0 && (
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setOccupancy("triple");
+                                        setBookingData((prev) => ({ ...prev, adults: 3 }));
+                                        setSelectedRoom(room);
+                                        setSelectedRoomsMap({ [room._id]: 1 });
+                                      }}
+                                      style={{
+                                        padding: "3px 8px",
+                                        borderRadius: 6,
+                                        fontSize: "0.72rem",
+                                        fontWeight: 700,
+                                        cursor: "pointer",
+                                        border: (bookingData.adults === 3 && selectedRoom?._id === room._id) ? "1.5px solid #ea580c" : "1px solid #cbd5e1",
+                                        background: (bookingData.adults === 3 && selectedRoom?._id === room._id) ? "#fff7ed" : "#ffffff",
+                                        color: (bookingData.adults === 3 && selectedRoom?._id === room._id) ? "#c2410c" : "#475569",
+                                      }}
+                                    >
+                                      👨‍👩‍👦 3 Adults (₹{Number(room.priceTriple).toLocaleString()})
+                                    </button>
+                                  )}
+                                </div>
+
+                                {Boolean(bookingData.adults === 3 && !(Number(room.priceTriple) > 0)) ? (
+                                  <button
+                                    type="button"
+                                    disabled={true}
+                                    className="btn btn-sm"
+                                    style={{ marginTop: 4, background: '#e2e8f0', color: '#64748b', cursor: 'not-allowed', border: 'none', fontWeight: 700 }}
+                                    title="3-occupancy is not offered for this room. Max 2 guests allowed."
+                                    onClick={(e) => e.stopPropagation()}
+                                  >
+                                    Max 2 Guests Only
+                                  </button>
+                                ) : (
+                                  <button
+                                    className="btn btn-primary btn-sm"
+                                    style={{ marginTop: 4 }}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setSelectedRoom(room);
+                                      setSelectedRoomsMap({ [room._id]: 1 });
+                                    }}
+                                  >
+                                    {selectedRoom?._id === room._id ? "Selected ✓" : "Select"}
+                                  </button>
+                                )}
+                              </>
                             ) : (
                               <div style={{ marginTop: 8, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4 }}>
                                 {allocatedCount > 0 ? (
@@ -3293,6 +3378,8 @@ export default function HotelDetailPage() {
                           display: "flex",
                           justifyContent: "space-between",
                           alignItems: "center",
+                          flexWrap: "wrap",
+                          gap: 8,
                         }}
                       >
                         <div style={{ fontSize: "0.9rem", fontWeight: 700 }}>
@@ -3341,6 +3428,74 @@ export default function HotelDetailPage() {
                           </button>
                         </div>
                       </div>
+
+                      {bookingData.rooms === 1 && (
+                        <div style={{ display: "flex", gap: 8, marginTop: 4, flexWrap: "wrap", alignItems: "center", background: "#f8fafc", padding: "8px 12px", borderRadius: 8, border: "1px solid #e2e8f0" }}>
+                          <span style={{ fontSize: "0.78rem", fontWeight: 700, color: "#64748b" }}>Quick Occupancy:</span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setOccupancy("single");
+                              setBookingData(prev => ({ ...prev, adults: 1 }));
+                            }}
+                            style={{
+                              padding: "4px 10px",
+                              borderRadius: 20,
+                              fontSize: "0.78rem",
+                              fontWeight: 700,
+                              cursor: "pointer",
+                              border: bookingData.adults === 1 ? "1.5px solid #ea580c" : "1px solid #cbd5e1",
+                              background: bookingData.adults === 1 ? "#fff7ed" : "#ffffff",
+                              color: bookingData.adults === 1 ? "#c2410c" : "#475569",
+                              transition: "all 0.15s ease",
+                            }}
+                          >
+                            👤 1 Adult (Single)
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setOccupancy("double");
+                              setBookingData(prev => ({ ...prev, adults: 2 }));
+                            }}
+                            style={{
+                              padding: "4px 10px",
+                              borderRadius: 20,
+                              fontSize: "0.78rem",
+                              fontWeight: 700,
+                              cursor: "pointer",
+                              border: bookingData.adults === 2 ? "1.5px solid #ea580c" : "1px solid #cbd5e1",
+                              background: bookingData.adults === 2 ? "#fff7ed" : "#ffffff",
+                              color: bookingData.adults === 2 ? "#c2410c" : "#475569",
+                              transition: "all 0.15s ease",
+                            }}
+                          >
+                            👥 2 Adults (Double)
+                          </button>
+                          {Number(selectedRoom?.priceTriple) > 0 && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setOccupancy("triple");
+                                setBookingData(prev => ({ ...prev, adults: 3 }));
+                              }}
+                              style={{
+                                padding: "4px 10px",
+                                borderRadius: 20,
+                                fontSize: "0.78rem",
+                                fontWeight: 700,
+                                cursor: "pointer",
+                                border: bookingData.adults === 3 ? "1.5px solid #ea580c" : "1px solid #cbd5e1",
+                                background: bookingData.adults === 3 ? "#fff7ed" : "#ffffff",
+                                color: bookingData.adults === 3 ? "#c2410c" : "#475569",
+                                transition: "all 0.15s ease",
+                              }}
+                            >
+                              👨‍👩‍👦 3 Adults (Triple)
+                            </button>
+                          )}
+                        </div>
+                      )}
                     </div>
 
                     <div

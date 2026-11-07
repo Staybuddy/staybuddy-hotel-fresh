@@ -1407,7 +1407,7 @@ export default function PartnerDashboard() {
                   <div style={{ minWidth: 0 }}>
                     <h2 style={{ margin: '0 0 2px 0', fontSize: '1.15rem', fontWeight: 800, letterSpacing: '-0.01em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Add New Property — Extranet Onboarding</h2>
                     <div style={{ fontSize: '0.8rem', opacity: 0.9, fontWeight: 500 }}>Step {formStep} of 6 — {
-                      ['Property Info', 'Location & Map', 'Amenities', 'Room Types & Inventory', 'Photos & Gallery (20+ Photos)', 'Policies & Agreement'][formStep - 1] || 'Details'
+                      ['Property Info', 'Location & Map', 'Amenities', 'Room Types & Inventory', 'Photos & Gallery (Up to 30 Photos)', 'Policies & Agreement'][formStep - 1] || 'Details'
                     }</div>
                   </div>
                 </div>
@@ -1932,9 +1932,8 @@ export default function PartnerDashboard() {
                                   <input type="file" multiple accept="image/*" style={{ display: 'none' }} disabled={uploadingImage} onChange={(e) => handleMultipleImageUpload(e, (urls) => {
                                     const newRooms = [...hotelForm.rooms];
                                     newRooms[index].images = [...(newRooms[index].images || []), ...urls];
-                                    const currentHotelImgs = hotelForm.images || [];
-                                    const mergedHotelImgs = Array.from(new Set([...currentHotelImgs, ...urls]));
-                                    setHotelForm({ ...hotelForm, images: mergedHotelImgs, rooms: newRooms });
+                                    // Room photos stay strictly with this room only — not merged into hotel hero gallery
+                                    setHotelForm({ ...hotelForm, rooms: newRooms });
                                   })} />
                                 </label>
                               </div>
@@ -1948,7 +1947,7 @@ export default function PartnerDashboard() {
                     <button type="button" className="btn btn-secondary" style={{ alignSelf: 'center', padding: '12px 24px', borderStyle: 'dashed', borderWidth: 2 }} onClick={() => {
                       setHotelForm(p => ({
                         ...p,
-                        rooms: [...p.rooms, { id: Date.now().toString(), type: '', priceSingle: '', priceDouble: '', priceTriple: '', b2bPrice: '', amenities: [], images: [], size: '', bedType: 'Double', maxGuests: 3, totalRooms: 0, ratePlan: 'EP', description: '' }]
+                        rooms: [...p.rooms, { id: Date.now().toString(), type: 'Standard Room', priceSingle: '', priceDouble: '', priceTriple: '', b2bPrice: '', amenities: [], images: [], size: '', bedType: 'Double', maxGuests: 3, totalRooms: 0, ratePlan: 'EP', description: '' }]
                       }))
                     }}>
                       + Add Another Room Type
@@ -1956,7 +1955,7 @@ export default function PartnerDashboard() {
                   </div>
                 )}
 
-                {/* STEP 5: Photos & Hero Landing Spaces (Up to 20+ Photos) */}
+                {/* STEP 5: Photos & Hero Landing Spaces (Up to 30 Photos) */}
                 {formStep === 5 && (
                   <div className="card fade-in" style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
                     <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10, padding: '14px 18px' }}>
@@ -1971,11 +1970,11 @@ export default function PartnerDashboard() {
                             fontSize: '0.78rem', 
                             fontWeight: 700 
                           }}>
-                            {(hotelForm.images || []).length} / 20+ Photos Added
+                            {(hotelForm.images || []).length} / 30 Photos Added
                           </span>
                         </h3>
                         <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                          Add around 20 high-quality photos (Exterior, Lobby, Rooms, Bathrooms, Dining, Amenities). First 3 photos form your Live Hero Gallery.
+                          Add up to 30 high-quality photos (Exterior, Lobby, Rooms, Bathrooms, Dining, Amenities). First 3 photos form your Live Hero Gallery.
                         </p>
                       </div>
                       {uploadingImage && <span style={{ fontSize: '0.8rem', color: 'var(--brand-600)', fontWeight: 700 }}>⏳ Uploading Photos...</span>}
@@ -2098,7 +2097,7 @@ export default function PartnerDashboard() {
                       {/* Multi-File Upload & Bulk URL Paste Bar */}
                       <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center', marginBottom: 16 }}>
                         <label className="btn btn-primary" style={{ padding: '10px 20px', cursor: uploadingImage ? 'not-allowed' : 'pointer', display: 'inline-flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-                          <span>{uploadingImage ? '⏳ Uploading...' : '📤 Upload Multiple Photos (Up to 20+)'}</span>
+                          <span>{uploadingImage ? '⏳ Uploading...' : '📤 Upload Multiple Photos (Up to 30)'}</span>
                           <input
                             type="file"
                             multiple
@@ -2147,14 +2146,14 @@ export default function PartnerDashboard() {
                         </div>
                       </div>
 
-                      {/* Comprehensive Gallery of all Photos (Up to 20+ Photos) */}
+                      {/* Comprehensive Gallery of all Photos (Up to 30 Photos) */}
                       <div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
                           <span style={{ fontSize: '0.82rem', fontWeight: 700, color: '#334155', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                            🖼️ All Hotel Photos ({(hotelForm.images || []).length} of 20+ Photos):
+                            🖼️ All Hotel Photos ({(hotelForm.images || []).length} of 30 Photos):
                           </span>
                           <span style={{ fontSize: '0.75rem', color: '#64748b' }}>
-                            Drag or click "+ Upload" to add more photos
+                            Drag or click "+ Upload" to add more photos (Max 30)
                           </span>
                         </div>
 
@@ -2215,7 +2214,7 @@ export default function PartnerDashboard() {
                             <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#2563eb', marginTop: 2, textAlign: 'center' }}>
                               Add Photo #{(hotelForm.images || []).length + 1}
                             </span>
-                            <span style={{ fontSize: '0.6rem', color: '#64748b' }}>Up to 20+</span>
+                            <span style={{ fontSize: '0.6rem', color: '#64748b' }}>Up to 30</span>
                             <input
                               type="file"
                               multiple
@@ -2944,12 +2943,8 @@ export default function PartnerDashboard() {
             <div className="hide-scrollbar" style={{ flex: 1, overflowY: 'auto', padding: '32px' }}>
               <form onSubmit={(e) => {
                 e.preventDefault();
-                const roomPhotos = (extranetModal.rooms || []).flatMap((r: any) => Array.isArray(r.images) ? r.images : []).filter(Boolean);
-                let finalImgs = [...(extranetModal.images || [])];
-                if (finalImgs.length < 3 && roomPhotos.length > 0) {
-                  finalImgs = Array.from(new Set([...finalImgs, ...roomPhotos]));
-                }
-                const updatedPayload = { ...extranetModal, images: finalImgs };
+                // Property images stay property images; room images stay for that room only
+                const updatedPayload = { ...extranetModal, images: extranetModal.images || [] };
                 updateHotelStatus(extranetModal._id, updatedPayload);
                 setExtranetModal(null);
                 alert('Property updated successfully!');
@@ -3000,17 +2995,17 @@ export default function PartnerDashboard() {
                       <h3 style={{ fontSize: '1.2rem', margin: '0 0 4px 0', color: '#0f172a', display: 'flex', alignItems: 'center', gap: 8 }}>
                         <span>📸 Property Photos & Hero Landing Spaces</span>
                         <span style={{ fontSize: '0.75rem', background: '#dbeafe', color: '#1d4ed8', padding: '2px 8px', borderRadius: 12, fontWeight: 700 }}>
-                          {(extranetModal.images || []).length} Photos
+                          {(extranetModal.images || []).length} / 30 Photos
                         </span>
                       </h3>
                       <p style={{ margin: 0, fontSize: '0.85rem', color: '#64748b' }}>
-                        Photos added here land directly into the Hero Gallery Spaces on your hotel page and search card.
+                        Photos added here land directly into the Hero Gallery Spaces on your hotel page and search card. Up to 30 photos supported.
                       </p>
                     </div>
 
                     <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
                       <label className="btn btn-primary" style={{ padding: '8px 16px', fontSize: '0.85rem', cursor: uploadingImage ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: 6, margin: 0 }}>
-                        <span>{uploadingImage ? '⏳ Uploading...' : '📤 Upload Photos'}</span>
+                        <span>{uploadingImage ? '⏳ Uploading...' : '📤 Upload Photos (Up to 30)'}</span>
                         <input
                           type="file"
                           multiple
@@ -3282,25 +3277,43 @@ export default function PartnerDashboard() {
                           }} style={{ color: 'red', background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 600 }}>Remove</button>
                         </div>
                         
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 12 }}>
                           <div>
-                            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: '#64748b', marginBottom: 4 }}>Room Type</label>
-                            <input type="text" value={room.type || ''} onChange={e => {
+                            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: '#64748b', marginBottom: 4 }}>Room Category</label>
+                            <input type="text" value={room.type || 'Standard Room'} onChange={e => {
                               const updatedRooms = [...extranetModal.rooms];
                               updatedRooms[rIdx].type = e.target.value;
                               setExtranetModal({...extranetModal, rooms: updatedRooms});
                             }} style={{ width: '100%', padding: '8px 12px', borderRadius: 6, border: '1px solid #cbd5e1', fontSize: '0.9rem' }} />
                           </div>
                           <div>
-                            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: '#64748b', marginBottom: 4 }}>B2C Price (Double)</label>
-                            <input type="number" value={room.priceDouble || ''} onChange={e => {
+                            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#c2410c', marginBottom: 4 }}>Single Price (₹)</label>
+                            <input type="number" placeholder="e.g. 1500" value={room.priceSingle !== undefined ? room.priceSingle : ''} onChange={e => {
                               const updatedRooms = [...extranetModal.rooms];
-                              updatedRooms[rIdx].priceDouble = Number(e.target.value);
+                              updatedRooms[rIdx].priceSingle = Number(e.target.value) || 0;
+                              setExtranetModal({...extranetModal, rooms: updatedRooms});
+                            }} style={{ width: '100%', padding: '8px 12px', borderRadius: 6, border: '1.5px solid #fed7aa', background: '#fff7ed', fontSize: '0.9rem', fontWeight: 700 }} />
+                          </div>
+                          <div>
+                            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#15803d', marginBottom: 4 }}>Double Price (₹)</label>
+                            <input type="number" placeholder="e.g. 2000" value={room.priceDouble || ''} onChange={e => {
+                              const updatedRooms = [...extranetModal.rooms];
+                              updatedRooms[rIdx].priceDouble = Number(e.target.value) || 0;
+                              setExtranetModal({...extranetModal, rooms: updatedRooms});
+                            }} style={{ width: '100%', padding: '8px 12px', borderRadius: 6, border: '1.5px solid #bbf7d0', background: '#f0fdf4', fontSize: '0.9rem', fontWeight: 700 }} />
+                          </div>
+                          <div>
+                            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: '#1e40af', marginBottom: 4 }}>Triple Price (₹)</label>
+                            <input type="number" placeholder="Optional" value={room.priceTriple || ''} onChange={e => {
+                              const updatedRooms = [...extranetModal.rooms];
+                              const numTrp = Number(e.target.value) || 0;
+                              updatedRooms[rIdx].priceTriple = numTrp;
+                              updatedRooms[rIdx].maxGuests = numTrp > 0 ? 3 : 2;
                               setExtranetModal({...extranetModal, rooms: updatedRooms});
                             }} style={{ width: '100%', padding: '8px 12px', borderRadius: 6, border: '1px solid #cbd5e1', fontSize: '0.9rem' }} />
                           </div>
                           <div>
-                            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: '#64748b', marginBottom: 4 }}>B2B Price (Double)</label>
+                            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: '#64748b', marginBottom: 4 }}>B2B Rate (₹)</label>
                             <input type="number" value={room.b2bPrice || ''} onChange={e => {
                               const updatedRooms = [...extranetModal.rooms];
                               updatedRooms[rIdx].b2bPrice = Number(e.target.value);
@@ -3345,7 +3358,7 @@ export default function PartnerDashboard() {
                               <label style={{ fontSize: '0.8rem', fontWeight: 700, color: '#334155', display: 'flex', alignItems: 'center', gap: 6 }}>
                                 <span>📷 Room Images</span>
                                 <span style={{ fontSize: '0.75rem', fontWeight: 500, color: '#64748b' }}>
-                                  ({(room.images || []).length} photos — lands directly in Hotel Hero Spaces)
+                                  ({(room.images || []).length} photos — Room Photos Only)
                                 </span>
                               </label>
                               {uploadingImage && <span style={{ fontSize: '0.75rem', color: '#4f46e5', fontWeight: 600 }}>Uploading...</span>}
@@ -3412,13 +3425,9 @@ export default function PartnerDashboard() {
                                     const updatedRooms = [...extranetModal.rooms];
                                     const currRoomImgs = updatedRooms[rIdx].images || [];
                                     updatedRooms[rIdx].images = [...currRoomImgs, ...urls];
-
-                                    // Auto-sync into extranetModal.images so Space 1, 2, 3 show them immediately!
-                                    const currPropImgs = extranetModal.images || [];
-                                    const mergedPropImgs = Array.from(new Set([...currPropImgs, ...urls]));
+                                    // Room photos stay strictly with this room only
                                     setExtranetModal({
                                       ...extranetModal,
-                                      images: mergedPropImgs,
                                       rooms: updatedRooms
                                     });
                                   })}

@@ -69,10 +69,15 @@ export function applyMarginToRoom(room: any, marginPercentage: number = 0) {
   const margin = Number(marginPercentage) || 0;
 
   // Partner B2B base rates (preserve if already set)
-  const rawSingle = Number(room.b2bPriceSingle !== undefined ? room.b2bPriceSingle : room.priceSingle) || 0;
+  let rawSingle = Number(room.b2bPriceSingle !== undefined ? room.b2bPriceSingle : room.priceSingle) || 0;
   const rawDouble = Number(room.b2bPriceDouble !== undefined ? room.b2bPriceDouble : (room.priceDouble || room.priceSingle)) || 0;
   const rawTriple = Number(room.b2bPriceTriple !== undefined ? room.b2bPriceTriple : room.priceTriple) || 0;
   const rawFallback = Number(room.b2bPrice !== undefined ? room.b2bPrice : (room.price || room.clientPrice)) || 0;
+
+  // Safeguard: If single occupancy rate wasn't explicitly entered, inherit from b2bPrice or double price safely
+  if (rawSingle <= 0) {
+    rawSingle = Number(room.b2bPrice) || (rawDouble > 0 ? Math.round(rawDouble * 0.9) : rawFallback);
+  }
 
   if (margin <= 0) {
     return {

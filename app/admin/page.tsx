@@ -2248,25 +2248,43 @@ export default function AdminDashboard() {
                           }} style={{ color: 'red', background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 600 }}>Remove</button>
                         </div>
                         
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 12 }}>
                           <div>
-                            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: '#64748b', marginBottom: 4 }}>Room Type</label>
-                            <input type="text" value={room.type || ''} onChange={e => {
+                            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: '#64748b', marginBottom: 4 }}>Room Category</label>
+                            <input type="text" value={room.type || 'Standard Room'} onChange={e => {
                               const updatedRooms = [...extranetModal.rooms];
                               updatedRooms[rIdx].type = e.target.value;
                               setExtranetModal({...extranetModal, rooms: updatedRooms});
                             }} style={{ width: '100%', padding: '8px 12px', borderRadius: 6, border: '1px solid #cbd5e1', fontSize: '0.9rem' }} />
                           </div>
                           <div>
-                            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: '#64748b', marginBottom: 4 }}>B2C Price (Double)</label>
-                            <input type="number" value={room.priceDouble || ''} onChange={e => {
+                            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#c2410c', marginBottom: 4 }}>Single Price (₹)</label>
+                            <input type="number" placeholder="e.g. 1500" value={room.priceSingle !== undefined ? room.priceSingle : ''} onChange={e => {
                               const updatedRooms = [...extranetModal.rooms];
-                              updatedRooms[rIdx].priceDouble = Number(e.target.value);
+                              updatedRooms[rIdx].priceSingle = Number(e.target.value) || 0;
+                              setExtranetModal({...extranetModal, rooms: updatedRooms});
+                            }} style={{ width: '100%', padding: '8px 12px', borderRadius: 6, border: '1.5px solid #fed7aa', background: '#fff7ed', fontSize: '0.9rem', fontWeight: 700 }} />
+                          </div>
+                          <div>
+                            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#15803d', marginBottom: 4 }}>Double Price (₹)</label>
+                            <input type="number" placeholder="e.g. 2000" value={room.priceDouble || ''} onChange={e => {
+                              const updatedRooms = [...extranetModal.rooms];
+                              updatedRooms[rIdx].priceDouble = Number(e.target.value) || 0;
+                              setExtranetModal({...extranetModal, rooms: updatedRooms});
+                            }} style={{ width: '100%', padding: '8px 12px', borderRadius: 6, border: '1.5px solid #bbf7d0', background: '#f0fdf4', fontSize: '0.9rem', fontWeight: 700 }} />
+                          </div>
+                          <div>
+                            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: '#1e40af', marginBottom: 4 }}>Triple Price (₹)</label>
+                            <input type="number" placeholder="Optional" value={room.priceTriple || ''} onChange={e => {
+                              const updatedRooms = [...extranetModal.rooms];
+                              const numTrp = Number(e.target.value) || 0;
+                              updatedRooms[rIdx].priceTriple = numTrp;
+                              updatedRooms[rIdx].maxGuests = numTrp > 0 ? 3 : 2;
                               setExtranetModal({...extranetModal, rooms: updatedRooms});
                             }} style={{ width: '100%', padding: '8px 12px', borderRadius: 6, border: '1px solid #cbd5e1', fontSize: '0.9rem' }} />
                           </div>
                           <div>
-                            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: '#64748b', marginBottom: 4 }}>B2B Price (Double)</label>
+                            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: '#64748b', marginBottom: 4 }}>B2B Rate (₹)</label>
                             <input type="number" value={room.b2bPrice || ''} onChange={e => {
                               const updatedRooms = [...extranetModal.rooms];
                               updatedRooms[rIdx].b2bPrice = Number(e.target.value);

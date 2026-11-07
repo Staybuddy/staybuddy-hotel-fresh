@@ -1,12 +1,14 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { Suspense, useState, useEffect } from 'react';
 import { signIn, useSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Navbar from '@/components/Navbar';
 
-export default function LoginPage() {
+function LoginContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const callbackUrl = searchParams.get('callbackUrl');
   const { data: session, status } = useSession();
   
   // Phone OTP State
@@ -23,21 +25,20 @@ export default function LoginPage() {
   useEffect(() => {
     if (status === 'authenticated') {
       const userRole = (session?.user as any)?.role;
-      if (userRole === 'admin') {
-        router.push('/admin');
-      } else if (userRole === 'partner') {
+      if (callbackUrl) {
+        router.push(callbackUrl);
+      } else if (userRole === 'admin' || userRole === 'partner') {
+        // Direct admins and partners straight to the Partner Extranet portal to manage hotels
         router.push('/partner');
       } else {
         router.push('/'); // B2C Client Panel
       }
     }
-  }, [status, session, router]);
+  }, [status, session, router, callbackUrl]);
 
   async function handleGoogleSignIn() {
     setLoading(true);
-    // Role will be mapped automatically if user exists, else defaults to 'customer'
-    // in the NextAuth configuration for Google. 
-    await signIn('google', { callbackUrl: '/' });
+    await signIn('google', { callbackUrl: callbackUrl || '/partner' });
   }
 
   async function handleSendOtp(e: React.FormEvent) {
@@ -164,5 +165,13 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div style={{ minHeight: '80vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><div className="spinner" /></div>}>
+      <LoginContent />
+    </Suspense>
   );
 }

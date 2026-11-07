@@ -805,45 +805,91 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
       {/* ===== WHY STAYBUDDY & GUEST REVIEWS (Smart Unified Section) ===== */}
       <section style={{ padding: '36px 0 40px', background: 'var(--bg-secondary)', borderTop: '1px solid var(--border)' }}>
         <div className="container">
+          <style>{`
+            .why-staybuddy-grid {
+              display: grid;
+              grid-template-columns: repeat(3, 1fr);
+              gap: 16px;
+              margin-bottom: 28px;
+            }
+            .why-staybuddy-card {
+              padding: 24px 20px;
+              background: #ffffff;
+              border-radius: 18px;
+              border: 1.5px solid var(--border);
+              display: flex;
+              flex-direction: column;
+              align-items: center;
+              text-align: center;
+              gap: 12px;
+              box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+              transition: all 0.25s ease;
+            }
+            .why-staybuddy-indicator {
+              display: none;
+            }
+            @media (max-width: 900px) {
+              .why-staybuddy-grid {
+                grid-template-columns: repeat(2, 1fr);
+              }
+            }
+            @media (max-width: 768px) {
+              .why-staybuddy-grid {
+                display: flex !important;
+                overflow-x: auto !important;
+                scroll-snap-type: x mandatory;
+                gap: 12px;
+                padding: 4px 16px 14px !important;
+                margin-left: -16px;
+                margin-right: -16px;
+                margin-bottom: 12px !important;
+                scrollbar-width: none;
+                -ms-overflow-style: none;
+                -webkit-overflow-scrolling: touch;
+              }
+              .why-staybuddy-grid::-webkit-scrollbar {
+                display: none;
+              }
+              .why-staybuddy-card {
+                flex: 0 0 240px !important;
+                width: 240px !important;
+                scroll-snap-align: start;
+                padding: 22px 18px;
+              }
+              .why-staybuddy-indicator {
+                display: block;
+                width: 70px;
+                height: 4px;
+                background: linear-gradient(90deg, #ff6b35, #ea580c);
+                border-radius: 4px;
+                margin: 0 auto 28px;
+              }
+            }
+          `}</style>
+
           {/* 1. WHY STAYBUDDY HEADER */}
           <div style={{ textAlign: 'center', marginBottom: 20 }}>
             <h2 style={{ fontSize: '1.85rem', fontWeight: 900, margin: 0, letterSpacing: '-0.02em' }}>
               Why <span style={{ color: 'var(--brand-600)' }}>StayBuddy?</span>
             </h2>
             <p style={{ color: 'var(--text-secondary)', marginTop: 4, fontSize: '0.92rem' }}>
-              We make booking effortless, transparent, and rewarding
+              We make booking effortless and transparent
             </p>
           </div>
 
-          {/* SMART 6-CARD RESPONSIVE GRID (No scrollbars, No cutoff cards!) */}
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-            gap: '14px',
-            marginBottom: '36px'
-          }}>
+          {/* 6-CARD HORIZONTAL ROW ON MOBILE, 3x2 GRID ON DESKTOP */}
+          <div className="why-staybuddy-grid">
             {[
-              { icon: '🔒', title: 'Secure Booking', desc: 'Your payments are protected with bank-grade security and Razorpay 256-bit encryption.' },
-              { icon: '💸', title: 'Best Price Guarantee', desc: 'Find a cheaper rate elsewhere? We\'ll match it immediately — no questions asked.' },
-              { icon: '⚡', title: 'Instant Confirmation', desc: 'Book in under 2 minutes. Instant WhatsApp & SMS confirmation vouchers.' },
-              { icon: '📞', title: '24/7 Priority Support', desc: 'Our team is always available to help before, during, and after your stay.' },
-              { icon: '🌟', title: '100% Verified Reviews', desc: 'Only authentic guests from verified stays can write reviews — total transparency.' },
+              { icon: '🔒', title: 'Secure Booking', desc: 'Your payments are protected with bank-grade security and Razorpay encryption.' },
+              { icon: '💸', title: 'Best Price Guarantee', desc: 'Find a cheaper rate elsewhere? We\'ll match it — no questions asked.' },
+              { icon: '⚡', title: 'Instant Confirmation', desc: 'Book in under 2 minutes. Get your confirmation email immediately.' },
+              { icon: '📞', title: '24/7 Support', desc: 'Our team is always here to help with any booking or hotel issues.' },
+              { icon: '🌟', title: '100% Verified Reviews', desc: 'Real reviews from genuine guests who completed their stay.' },
               { icon: '🏨', title: 'Curated Properties', desc: 'Every hotel is verified for hygiene, comfort, and service quality before going live.' },
             ].map(item => (
               <div
                 key={item.title}
-                style={{ 
-                  padding: '16px 18px',
-                  background: 'var(--surface)',
-                  borderRadius: '16px',
-                  border: '1.5px solid var(--border)',
-                  display: 'flex',
-                  alignItems: 'flex-start',
-                  gap: 14,
-                  boxShadow: '0 2px 10px rgba(0, 0, 0, 0.03)',
-                  transition: 'all 0.25s ease',
-                  cursor: 'default'
-                }}
+                className="why-staybuddy-card"
                 onMouseEnter={e => {
                   (e.currentTarget as HTMLElement).style.transform = 'translateY(-3px)';
                   (e.currentTarget as HTMLElement).style.borderColor = 'var(--brand-300)';
@@ -856,22 +902,22 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
                 }}
               >
                 <div style={{
-                  width: 44,
-                  height: 44,
-                  borderRadius: 12,
+                  width: 48,
+                  height: 48,
+                  borderRadius: 14,
                   background: 'linear-gradient(135deg, var(--brand-50), #fff7ed)',
                   border: '1px solid var(--brand-200)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  fontSize: '1.4rem',
+                  fontSize: '1.5rem',
                   flexShrink: 0,
                   boxShadow: '0 2px 8px rgba(249, 115, 22, 0.1)'
                 }}>
                   {item.icon}
                 </div>
                 <div>
-                  <h3 style={{ fontSize: '1rem', fontWeight: 800, margin: '0 0 4px', color: 'var(--text-primary)' }}>
+                  <h3 style={{ fontSize: '1.02rem', fontWeight: 800, margin: '0 0 6px', color: 'var(--text-primary)' }}>
                     {item.title}
                   </h3>
                   <p style={{ color: 'var(--text-secondary)', fontSize: '0.84rem', margin: 0, lineHeight: 1.45 }}>
@@ -881,6 +927,9 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
               </div>
             ))}
           </div>
+
+          {/* ORANGE INDICATOR BAR ON MOBILE (Matches user screenshot) */}
+          <div className="why-staybuddy-indicator" />
 
           {/* 2. WHAT OUR GUESTS SAY (Seamless, rhythmic flow with elegant divider) */}
           {recentReviews && recentReviews.length > 0 && (
