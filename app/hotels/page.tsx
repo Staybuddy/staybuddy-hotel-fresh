@@ -228,7 +228,9 @@ function HotelSearch() {
           }
           .hotels-grid .hotel-card-img-wrapper {
             width: 100% !important;
-            height: 200px !important;
+            height: auto !important;
+            aspect-ratio: 16 / 10 !important;
+            min-height: 200px !important;
           }
         }
       `}</style>

@@ -95,6 +95,14 @@ export default async function PartnerAgreementPage({
   const totalInventory = rooms.reduce((sum, r) => sum + (Number(r.totalRooms) || 0), 0);
   const totalStayBuddyAlloc = rooms.reduce((sum, r) => sum + (Number(r.staybuddyAllocation ?? r.totalRooms) || 0), 0);
 
+  // Strict Partner Contact Isolation:
+  // When an admin adds or manages the property, the agreement must strictly display that hotel's
+  // designated contact person, phone number, and email—never the StayBuddy admin's personal details.
+  const isPartnerAdmin = partner?.role === 'admin' || (typeof partner?.email === 'string' && partner.email.toLowerCase().includes('staybuddy'));
+  const partnerContactName = hotel?.contactName || (!isPartnerAdmin ? partner?.name : '') || hotel?.partnerName || 'Authorized Hotel Partner';
+  const partnerContactEmail = hotel?.contactEmail || hotel?.partnerEmail || (!isPartnerAdmin ? partner?.email : '') || hotel?.email || 'N/A';
+  const partnerContactPhone = hotel?.contactPhone || hotel?.phone || (!isPartnerAdmin ? partner?.phone : '') || hotel?.partnerPhone || 'N/A';
+
   return (
     <div className="agreement-container" style={{ minHeight: '100vh', background: '#f8fafc', padding: '40px 20px', fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' }}>
       <div className="agreement-inner-card" style={{ maxWidth: '920px', margin: '0 auto', background: 'white', padding: '48px', borderRadius: '16px', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.06), 0 8px 10px -6px rgba(0,0,0,0.04)', border: '1px solid #e2e8f0' }}>
@@ -143,15 +151,15 @@ export default async function PartnerAgreementPage({
               </div>
               <div>
                 <div style={{ color: '#64748b', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Registered Partner</div>
-                <div style={{ fontWeight: 700, color: '#0f172a', marginTop: '2px' }}>{partner?.name || hotel.contactName || 'Property Owner'}</div>
+                <div style={{ fontWeight: 700, color: '#0f172a', marginTop: '2px' }}>{partnerContactName}</div>
               </div>
               <div>
                 <div style={{ color: '#64748b', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Partner Email</div>
-                <div style={{ fontWeight: 600, color: '#334155', marginTop: '2px' }}>{partner?.email || hotel.contactEmail || 'N/A'}</div>
+                <div style={{ fontWeight: 600, color: '#334155', marginTop: '2px' }}>{partnerContactEmail}</div>
               </div>
               <div>
                 <div style={{ color: '#64748b', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Contact Phone</div>
-                <div style={{ fontWeight: 600, color: '#334155', marginTop: '2px' }}>{partner?.phone || hotel.phone || 'N/A'}</div>
+                <div style={{ fontWeight: 600, color: '#334155', marginTop: '2px' }}>{partnerContactPhone}</div>
               </div>
               <div>
                 <div style={{ color: '#64748b', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Total Rooms Enrolled</div>
@@ -437,10 +445,10 @@ export default async function PartnerAgreementPage({
                 ✓ Digitally Acknowledged & Signed
               </div>
               <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#0f172a' }}>
-                {partner?.name || hotel?.contactName || 'Authorized Hotel Partner'}
+                {partnerContactName}
               </div>
               <div style={{ fontSize: '0.75rem', color: '#64748b' }}>
-                Authenticated via Partner Extranet • {agreementDate}
+                {partnerContactEmail !== 'N/A' ? partnerContactEmail : 'Authenticated via Partner Extranet'} • {agreementDate}
               </div>
             </div>
 

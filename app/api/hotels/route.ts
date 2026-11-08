@@ -146,6 +146,18 @@ export async function GET(request: NextRequest) {
       }
       const startingPrice = validPrices.length > 0 ? Math.min(...validPrices) : 0;
 
+      // Calculate contracted B2B Net starting price for Partner Extranet view
+      const rawRooms = roomsByHotelId[hotel._id] || [];
+      const validB2BPrices: number[] = [];
+      rawRooms.forEach((r: any) => {
+        const b2b = Number(r.b2bPrice) || Number(r.priceSingle) || Number(r.priceDouble) || 0;
+        if (b2b > 0) validB2BPrices.push(b2b);
+      });
+      if (hotel.basePrice && Number(hotel.basePrice) > 0) {
+        validB2BPrices.push(Number(hotel.basePrice));
+      }
+      const startingB2BPrice = validB2BPrices.length > 0 ? Math.min(...validB2BPrices) : startingPrice;
+
       // Image fallback
       const roomImages = rooms.flatMap((r: any) => r.images || []).filter(Boolean);
       const hotelImages = (Array.isArray(hotel.images) && hotel.images.length > 0)
@@ -182,7 +194,7 @@ export async function GET(request: NextRequest) {
       });
       roomsLeft = Math.max(0, roomsLeft - activeBookingsCount);
 
-      return { ...hotel, images: hotelImages, startingPrice, roomsLeft };
+      return { ...hotel, images: hotelImages, startingPrice, startingB2BPrice, roomsLeft };
     });
 
     const responsePayload = {
@@ -329,6 +341,9 @@ export async function POST(request: NextRequest) {
       contactDesignation, 
       contactPhone, 
       contactEmail, 
+      partnerEmail: contactEmail || undefined,
+      partnerPhone: contactPhone || undefined,
+      partnerName: contactName || undefined, 
       avgRating: 0,
       totalReviews: 0,
       createdAt: new Date().toISOString()

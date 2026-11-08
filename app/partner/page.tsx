@@ -983,8 +983,8 @@ export default function PartnerDashboard() {
                     {/* Compact Metrics Row */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap', padding: '6px 12px', background: '#f8fafc', borderRadius: 8, border: '1px solid #f1f5f9', fontSize: '0.78rem' }}>
                       <div>
-                        <span style={{ color: '#64748b' }}>Starting: </span>
-                        <strong style={{ color: 'var(--brand-600)', fontSize: '0.88rem' }}>{hotels[0].startingPrice ? `₹${hotels[0].startingPrice}` : 'N/A'}</strong>
+                        <span style={{ color: '#047857', fontWeight: 600 }}>B2B Rate: </span>
+                        <strong style={{ color: '#047857', fontSize: '0.88rem' }}>{hotels[0].startingB2BPrice ? `₹${hotels[0].startingB2BPrice}` : (hotels[0].startingPrice ? `₹${hotels[0].startingPrice}` : 'N/A')}</strong>
                         <span style={{ color: '#94a3b8', fontSize: '0.7rem' }}> /night</span>
                       </div>
                       <div style={{ width: 1, height: 14, background: '#cbd5e1' }} />
@@ -1143,8 +1143,8 @@ export default function PartnerDashboard() {
                         
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 16, padding: '12px 0', borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)' }}>
                           <div>
-                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Starting From</div>
-                            <div style={{ fontWeight: 700, color: 'var(--brand-600)' }}>{hotel.startingPrice ? `₹${hotel.startingPrice}` : 'N/A'}</div>
+                            <div style={{ fontSize: '0.75rem', color: '#047857', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 700 }}>Contracted B2B Net</div>
+                            <div style={{ fontWeight: 800, color: '#047857', fontSize: '1.15rem' }}>{hotel.startingB2BPrice ? `₹${hotel.startingB2BPrice}` : (hotel.startingPrice ? `₹${hotel.startingPrice}` : 'N/A')}</div>
                           </div>
                           <div>
                             <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Inventory</div>
@@ -3548,6 +3548,18 @@ export default function PartnerDashboard() {
                       <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#64748b', marginBottom: 6 }}>Contact Phone</label>
                       <input type="text" value={extranetModal.contactPhone || ''} onChange={e => setExtranetModal({...extranetModal, contactPhone: e.target.value})} style={{ width: '100%', padding: '10px 14px', borderRadius: 8, border: '1px solid #cbd5e1' }} />
                     </div>
+                    <div style={{ gridColumn: '1 / -1' }}>
+                      <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#0f172a', marginBottom: 6 }}>
+                        Hotel Designated Contact Email (Strict: Only this email receives partner booking alerts & signs agreement)
+                      </label>
+                      <input 
+                        type="email" 
+                        placeholder="e.g. hotelcapitalo@gmail.com" 
+                        value={extranetModal.contactEmail || extranetModal.partnerEmail || ''} 
+                        onChange={e => setExtranetModal({...extranetModal, contactEmail: e.target.value, partnerEmail: e.target.value})} 
+                        style={{ width: '100%', padding: '10px 14px', borderRadius: 8, border: '1.5px solid #fdba74', background: '#fffaf0', fontWeight: 600 }} 
+                      />
+                    </div>
                   </div>
                 </div>
 
@@ -3607,13 +3619,13 @@ export default function PartnerDashboard() {
                               setExtranetModal({...extranetModal, rooms: updatedRooms});
                             }} style={{ width: '100%', padding: '8px 12px', borderRadius: 6, border: '1px solid #cbd5e1', fontSize: '0.9rem' }} />
                           </div>
-                          <div>
-                            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: '#64748b', marginBottom: 4 }}>B2B Rate (₹)</label>
-                            <input type="number" value={room.b2bPrice || ''} onChange={e => {
+                          <div style={{ background: '#f0fdf4', padding: '4px 6px', borderRadius: 8, border: '1.5px solid #86efac' }}>
+                            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 800, color: '#166534', marginBottom: 4 }}>★ B2B Rate (₹) [Net Payout]</label>
+                            <input type="number" placeholder="Net Payout" value={room.b2bPrice !== undefined ? room.b2bPrice : ''} onChange={e => {
                               const updatedRooms = [...extranetModal.rooms];
                               updatedRooms[rIdx].b2bPrice = Number(e.target.value);
                               setExtranetModal({...extranetModal, rooms: updatedRooms});
-                            }} style={{ width: '100%', padding: '8px 12px', borderRadius: 6, border: '1px solid #cbd5e1', fontSize: '0.9rem' }} />
+                            }} style={{ width: '100%', padding: '8px 12px', borderRadius: 6, border: '1px solid #16a34a', background: '#ffffff', fontSize: '0.9rem', fontWeight: 800, color: '#166534' }} />
                           </div>
                           <div>
                             <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: '#64748b', marginBottom: 4 }}>Staybuddy Allocation</label>

@@ -2224,6 +2224,18 @@ export default function AdminDashboard() {
                       <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#64748b', marginBottom: 6 }}>Contact Phone</label>
                       <input type="text" value={extranetModal.contactPhone || ''} onChange={e => setExtranetModal({...extranetModal, contactPhone: e.target.value})} style={{ width: '100%', padding: '10px 14px', borderRadius: 8, border: '1px solid #cbd5e1' }} />
                     </div>
+                    <div style={{ gridColumn: '1 / -1' }}>
+                      <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#0f172a', marginBottom: 6 }}>
+                        Hotel Designated Contact Email (Strict: Only this email receives partner booking alerts & signs agreement)
+                      </label>
+                      <input 
+                        type="email" 
+                        placeholder="e.g. hotelcapitalo@gmail.com" 
+                        value={extranetModal.contactEmail || extranetModal.partnerEmail || ''} 
+                        onChange={e => setExtranetModal({...extranetModal, contactEmail: e.target.value, partnerEmail: e.target.value})} 
+                        style={{ width: '100%', padding: '10px 14px', borderRadius: 8, border: '1.5px solid #fdba74', background: '#fffaf0', fontWeight: 600 }} 
+                      />
+                    </div>
                   </div>
                 </div>
 

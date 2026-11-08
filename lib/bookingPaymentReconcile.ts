@@ -119,26 +119,45 @@ export async function reconcileBookingPayment(bookingId: string, options: Paymen
     if (hotel) {
       const notificationEmails = new Set<string>();
       
-      const partnerUserRef = hotel.partnerId || hotel.ownerId || hotel.userId;
-      if (partnerUserRef) {
-        if (typeof partnerUserRef === 'string') {
-          try {
-            const pSnap = await db.collection('users').doc(partnerUserRef).get();
-            if (pSnap.exists && pSnap.data()?.email) {
-              notificationEmails.add(pSnap.data()!.email.trim().toLowerCase());
+      // Strict Partner Email Notification:
+      // When an admin adds a property and enters a specific hotel email in Partner Extranet,
+      // the partner booking alert must ONLY be sent to that designated hotel email (contactEmail / partnerEmail).
+      // StayBuddy admin emails must NEVER receive the hotel partner notification (Admin already receives sendPaymentAuditEmail).
+      if (hotel.contactEmail && typeof hotel.contactEmail === 'string' && hotel.contactEmail.includes('@')) {
+        notificationEmails.add(hotel.contactEmail.trim().toLowerCase());
+      }
+      if (hotel.partnerEmail && typeof hotel.partnerEmail === 'string' && hotel.partnerEmail.includes('@')) {
+        notificationEmails.add(hotel.partnerEmail.trim().toLowerCase());
+      }
+
+      // Fallback: If no dedicated hotel email was configured, look up partner user account,
+      // but ensure we NEVER dispatch partner emails to an admin's personal or StayBuddy account.
+      if (notificationEmails.size === 0) {
+        const partnerUserRef = hotel.partnerId || hotel.ownerId || hotel.userId;
+        if (partnerUserRef) {
+          if (typeof partnerUserRef === 'string') {
+            try {
+              const pSnap = await db.collection('users').doc(partnerUserRef).get();
+              if (pSnap.exists) {
+                const uData = pSnap.data();
+                const uEmail = uData?.email?.trim().toLowerCase();
+                const isAdmin = uData?.role === 'admin' || (uEmail && uEmail.includes('staybuddy'));
+                if (!isAdmin && uEmail) {
+                  notificationEmails.add(uEmail);
+                }
+              }
+            } catch (_) {}
+          } else if (typeof partnerUserRef === 'object' && partnerUserRef.email) {
+            const uEmail = partnerUserRef.email.trim().toLowerCase();
+            const isAdmin = partnerUserRef.role === 'admin' || uEmail.includes('staybuddy');
+            if (!isAdmin && uEmail) {
+              notificationEmails.add(uEmail);
             }
-          } catch (_) {}
-        } else if (typeof partnerUserRef === 'object' && partnerUserRef.email) {
-          notificationEmails.add(partnerUserRef.email.trim().toLowerCase());
+          }
         }
       }
-      
-      if (hotel.contactEmail) notificationEmails.add(hotel.contactEmail.trim().toLowerCase());
-      if (hotel.email) notificationEmails.add(hotel.email.trim().toLowerCase());
-      if (hotel.partnerEmail) notificationEmails.add(hotel.partnerEmail.trim().toLowerCase());
-      if (hotel.ownerEmail) notificationEmails.add(hotel.ownerEmail.trim().toLowerCase());
 
-      console.log(`[Reconcile] Dispatching partner notification to ${notificationEmails.size} email(s):`, Array.from(notificationEmails));
+      console.log(`[Reconcile] Dispatching hotel partner notification to ${notificationEmails.size} email(s):`, Array.from(notificationEmails));
 
       notificationEmails.forEach(email => {
         sendPartnerNotificationEmail(populatedBooking, email).catch(err => {
