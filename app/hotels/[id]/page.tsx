@@ -3,7 +3,7 @@ import { useState, useEffect, useRef, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { useSession } from "next-auth/react";
+import { useSession, signIn } from "next-auth/react";
 import Navbar from "@/components/Navbar";
 import DateRangePicker from "@/components/DateRangePicker";
 import Image from "next/image";
@@ -183,6 +183,40 @@ export default function HotelDetailPage() {
       }
     }
   }, [session]);
+
+  // Automatically restore in-progress booking if returning from Google login/sign-in
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem('staybuddy_pending_checkout') || sessionStorage.getItem('staybuddy_pending_checkout');
+      if (raw) {
+        const saved = JSON.parse(raw);
+        if (saved && (saved.hotelId === id || !saved.hotelId)) {
+          if (saved.bookingData) {
+            setBookingData(prev => ({
+              ...prev,
+              ...saved.bookingData,
+              guestFirstName: session?.user ? ((session.user.name || '').split(' ')[0] || prev.guestFirstName) : (saved.bookingData.guestFirstName || prev.guestFirstName),
+              guestLastName: session?.user ? ((session.user.name || '').split(' ').slice(1).join(' ') || prev.guestLastName) : (saved.bookingData.guestLastName || prev.guestLastName),
+              guestEmail: session?.user?.email || saved.bookingData.guestEmail || prev.guestEmail,
+              guestPhone: (session?.user as any)?.phone || saved.bookingData.guestPhone || prev.guestPhone,
+            }));
+          }
+          if (saved.occupancy) setOccupancy(saved.occupancy);
+          if (saved.selectedRoom) setSelectedRoom(saved.selectedRoom);
+          if (saved.selectedRoomsList && saved.selectedRoomsList.length > 0) {
+            setSelectedRoomsList(saved.selectedRoomsList);
+          }
+          setBookingStep(1);
+          localStorage.removeItem('staybuddy_pending_checkout');
+          sessionStorage.removeItem('staybuddy_pending_checkout');
+        }
+      } else if (typeof window !== 'undefined' && window.location.hash === '#review') {
+        setBookingStep(1);
+      }
+    } catch (e) {
+      console.error('Failed to restore pending checkout:', e);
+    }
+  }, [id, session]);
 
   const handlePhoneUpdate = (newPhone: string) => {
     setBookingData((p) => ({ ...p, guestPhone: newPhone }));
@@ -385,9 +419,36 @@ export default function HotelDetailPage() {
     return getRoomPriceForOccupancy(room, occPerRoom);
   };
 
+  const savePendingBookingState = () => {
+    try {
+      const state = {
+        hotelId: id,
+        selectedRoomId: selectedRoom?.id || selectedRoom?._id,
+        selectedRoom,
+        selectedRoomsList,
+        bookingData,
+        occupancy,
+        step: 1,
+        timestamp: Date.now()
+      };
+      localStorage.setItem('staybuddy_pending_checkout', JSON.stringify(state));
+      sessionStorage.setItem('staybuddy_pending_checkout', JSON.stringify(state));
+    } catch (e) {
+      console.error('Error saving pending checkout:', e);
+    }
+  };
+
+  const handleQuickGoogleSignIn = () => {
+    savePendingBookingState();
+    const returnUrl = window.location.pathname + window.location.search + (window.location.hash || '#review');
+    signIn('google', { callbackUrl: returnUrl });
+  };
+
   async function handleBooking() {
     if (!session) {
-      router.push("/login");
+      savePendingBookingState();
+      const returnUrl = window.location.pathname + window.location.search + (window.location.hash || '#review');
+      router.push(`/login?callbackUrl=${encodeURIComponent(returnUrl)}`);
       return;
     }
     setAttemptedCheckout(true);
@@ -3757,11 +3818,80 @@ export default function HotelDetailPage() {
                         fontSize: "1.5rem",
                         fontWeight: 800,
                         color: "#1e293b",
-                        marginBottom: 24,
+                        marginBottom: 20,
                       }}
                     >
                       Guest Details
                     </h3>
+
+                    {!session && (
+                      <div style={{
+                        background: 'linear-gradient(135deg, #fff7ed 0%, #ffffff 100%)',
+                        border: '1.5px solid #fdba74',
+                        borderRadius: 'var(--radius-lg)',
+                        padding: '16px 20px',
+                        marginBottom: '22px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        flexWrap: 'wrap',
+                        gap: 14,
+                        boxShadow: '0 4px 15px rgba(234, 88, 12, 0.08)'
+                      }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                          <div style={{
+                            width: 44,
+                            height: 44,
+                            borderRadius: 12,
+                            background: 'white',
+                            border: '1px solid #e2e8f0',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            boxShadow: '0 2px 6px rgba(0,0,0,0.06)',
+                            flexShrink: 0
+                          }}>
+                            <svg width="22" height="22" viewBox="0 0 24 24">
+                              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                              <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                            </svg>
+                          </div>
+                          <div>
+                            <h4 style={{ margin: 0, fontSize: '0.98rem', fontWeight: 800, color: '#0f172a' }}>
+                              Sign in with Google to Auto-Fill & Proceed
+                            </h4>
+                            <p style={{ margin: '3px 0 0', fontSize: '0.82rem', color: '#64748b' }}>
+                              Auto-fills your name, email & keeps your room selection without starting over.
+                            </p>
+                          </div>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={handleQuickGoogleSignIn}
+                          className="btn"
+                          style={{
+                            background: 'white',
+                            border: '1.5px solid #cbd5e1',
+                            borderRadius: 12,
+                            padding: '10px 18px',
+                            fontWeight: 800,
+                            fontSize: '0.88rem',
+                            color: '#0f172a',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 8,
+                            cursor: 'pointer',
+                            boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+                            whiteSpace: 'nowrap'
+                          }}
+                        >
+                          <span>Continue with Google →</span>
+                        </button>
+                      </div>
+                    )}
 
                     <div className="guest-form-row" style={{ marginBottom: 20 }}>
                       <div style={{ width: "90px" }}>
@@ -4520,16 +4650,40 @@ export default function HotelDetailPage() {
                       Encrypted
                     </div>
                     {!session && (
-                      <p
-                        style={{
-                          fontSize: "0.8rem",
-                          color: "var(--text-muted)",
-                          textAlign: "center",
-                          marginTop: 4,
-                        }}
-                      >
-                        You'll be asked to sign in first
-                      </p>
+                      <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'center', width: '100%' }}>
+                        <button
+                          type="button"
+                          onClick={handleQuickGoogleSignIn}
+                          className="btn"
+                          style={{
+                            width: "100%",
+                            padding: "12px",
+                            fontSize: "0.92rem",
+                            borderRadius: "var(--radius-lg)",
+                            background: "white",
+                            border: "1.5px solid #cbd5e1",
+                            color: "#0f172a",
+                            fontWeight: 700,
+                            display: "flex",
+                            justifyContent: "center",
+                            alignItems: "center",
+                            gap: 8,
+                            boxShadow: "0 2px 6px rgba(0,0,0,0.06)",
+                            cursor: "pointer"
+                          }}
+                        >
+                          <svg width="18" height="18" viewBox="0 0 24 24">
+                            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                          </svg>
+                          <span>Sign in with Google to Book Faster</span>
+                        </button>
+                        <span style={{ fontSize: "0.75rem", color: "var(--text-muted)", textAlign: "center" }}>
+                          Keeps your selected room and dates intact without starting over.
+                        </span>
+                      </div>
                     )}
                   </div>
                 </div>

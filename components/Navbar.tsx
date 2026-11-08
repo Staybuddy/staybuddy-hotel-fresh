@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Logo from './Logo';
 import { useSession, signOut } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 
 export default function Navbar({ middleContent, extendedContent }: { middleContent?: React.ReactNode, extendedContent?: React.ReactNode }) {
   const { data: session } = useSession();
@@ -17,6 +17,19 @@ export default function Navbar({ middleContent, extendedContent }: { middleConte
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  const pathname = usePathname();
+  const [currentUrl, setCurrentUrl] = useState('');
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setCurrentUrl(window.location.pathname + window.location.search);
+    }
+  }, [pathname]);
+
+  const loginUrl = (currentUrl && currentUrl !== '/' && !currentUrl.startsWith('/login'))
+    ? `/login?callbackUrl=${encodeURIComponent(currentUrl)}`
+    : '/login';
 
   const role = (session?.user as any)?.role;
 
@@ -62,8 +75,8 @@ export default function Navbar({ middleContent, extendedContent }: { middleConte
             {!session && (
               <>
                 <Link href="/partner" className="btn btn-ghost hide-mobile" style={{ fontWeight: 600 }}>List Your Hotel</Link>
-                <Link href="/login" className="btn btn-outline" style={{ border: '2px solid var(--border)' }}>Log In</Link>
-                <Link href="/login" className="btn btn-primary hide-mobile">Get Started</Link>
+                <Link href={loginUrl} className="btn btn-outline" style={{ border: '2px solid var(--border)' }}>Log In</Link>
+                <Link href={loginUrl} className="btn btn-primary hide-mobile">Get Started</Link>
               </>
             )}
             {session && (

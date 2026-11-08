@@ -8,7 +8,7 @@ import Navbar from '@/components/Navbar';
 function LoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get('callbackUrl');
+  const rawCallbackUrl = searchParams.get('callbackUrl');
   const { data: session, status } = useSession();
   
   // Phone OTP State
@@ -21,12 +21,30 @@ function LoginContent() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
+  // Determine effective redirect destination (honoring callbackUrl or pending hotel checkout)
+  const getTargetUrl = () => {
+    if (rawCallbackUrl) return rawCallbackUrl;
+    if (typeof window !== 'undefined') {
+      try {
+        const raw = localStorage.getItem('staybuddy_pending_checkout') || sessionStorage.getItem('staybuddy_pending_checkout');
+        if (raw) {
+          const saved = JSON.parse(raw);
+          if (saved?.hotelId) {
+            return `/hotels/${saved.hotelId}#review`;
+          }
+        }
+      } catch (e) {}
+    }
+    return '/';
+  };
+
   // Automatically redirect if already logged in
   useEffect(() => {
     if (status === 'authenticated') {
       const userRole = (session?.user as any)?.role;
-      if (callbackUrl) {
-        router.push(callbackUrl);
+      const target = getTargetUrl();
+      if (rawCallbackUrl || target !== '/') {
+        router.push(target);
       } else if (userRole === 'admin' || userRole === 'partner') {
         // Direct admins and partners straight to the Partner Extranet portal to manage hotels
         router.push('/partner');
@@ -34,11 +52,12 @@ function LoginContent() {
         router.push('/'); // B2C Client Panel
       }
     }
-  }, [status, session, router, callbackUrl]);
+  }, [status, session, router, rawCallbackUrl]);
 
   async function handleGoogleSignIn() {
     setLoading(true);
-    await signIn('google', { callbackUrl: callbackUrl || '/partner' });
+    const target = getTargetUrl();
+    await signIn('google', { callbackUrl: target });
   }
 
   async function handleSendOtp(e: React.FormEvent) {
@@ -74,7 +93,8 @@ function LoginContent() {
     if (res?.error) {
       setError(res.error);
     } else {
-      router.push('/');
+      const target = getTargetUrl();
+      router.push(target);
       router.refresh();
     }
   }
