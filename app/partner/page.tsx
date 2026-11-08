@@ -27,6 +27,20 @@ export default function PartnerDashboard() {
   const [bookings, setBookings] = useState<any[]>([]);
   const [stats, setStats] = useState({ totalHotels: 0, totalBookings: 0, totalRevenue: 0, pendingHotels: 0 });
   const [loading, setLoading] = useState(true);
+  const [hasShownSplash, setHasShownSplash] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      return Boolean(sessionStorage.getItem('staybuddy_extranet_splash_shown'));
+    }
+    return false;
+  });
+  const [isGeneratingAi, setIsGeneratingAi] = useState(false);
+  const [aiSuccessMsg, setAiSuccessMsg] = useState('');
+  const [aiTransitBadges, setAiTransitBadges] = useState<{
+    railway?: any;
+    bus?: any;
+    airport?: any;
+    metroOrLandmark?: any;
+  } | null>(null);
   const [addLoading, setAddLoading] = useState(false);
   const [addError, setAddError] = useState('');
   const [addSuccess, setAddSuccess] = useState('');
@@ -89,6 +103,57 @@ export default function PartnerDashboard() {
     return dateStr;
   }
 
+  async function generateAiDescriptionAndDistances(triggerSource: 'location' | 'property' = 'location') {
+    setIsGeneratingAi(true);
+    setAiSuccessMsg('');
+    try {
+      const res = await fetch('/api/partner/ai-description', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: hotelForm.name,
+          propertyType: hotelForm.propertyType,
+          starRating: hotelForm.starRating,
+          category: hotelForm.category,
+          totalPropertyRooms: hotelForm.totalPropertyRooms,
+          city: hotelForm.city,
+          area: hotelForm.area,
+          address: hotelForm.address,
+          lat: hotelForm.lat,
+          lng: hotelForm.lng,
+          amenities: hotelForm.amenities,
+          extraAmenities: hotelForm.extraAmenities
+        })
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Failed to auto-generate description');
+      }
+
+      setHotelForm(p => ({
+        ...p,
+        location: data.locationDescription || p.location,
+        description: data.propertyDescription || p.description,
+        city: p.city || data.detectedCity || p.city,
+        area: p.area || data.detectedArea || p.area
+      }));
+
+      setAiTransitBadges(data.transitHubs || null);
+      setAiSuccessMsg(
+        triggerSource === 'property'
+          ? '✨ Property description enriched with hotel standard & amenities!'
+          : '✨ Nearby transit distances (railway, bus, airport) & description successfully generated!'
+      );
+      setTimeout(() => setAiSuccessMsg(''), 6000);
+    } catch (err: any) {
+      console.error(err);
+      alert('Could not auto-generate description: ' + (err.message || 'Please check your inputs and try again.'));
+    } finally {
+      setIsGeneratingAi(false);
+    }
+  }
+
   function getCurrentLocation() {
     if (!navigator.geolocation) {
       alert("Geolocation is not supported by your browser");
@@ -96,13 +161,54 @@ export default function PartnerDashboard() {
     }
     setIsLocating(true);
     navigator.geolocation.getCurrentPosition(
-      (position) => {
+      async (position) => {
+        const lat = position.coords.latitude.toFixed(6);
+        const lng = position.coords.longitude.toFixed(6);
         setHotelForm(p => ({ 
           ...p, 
-          lat: position.coords.latitude.toFixed(6), 
-          lng: position.coords.longitude.toFixed(6) 
+          lat, 
+          lng 
         }));
         setIsLocating(false);
+
+        // Auto-fetch nearby transit distances & auto-populate descriptions from GPS coordinates
+        try {
+          const res = await fetch('/api/partner/ai-description', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              name: hotelForm.name,
+              propertyType: hotelForm.propertyType,
+              starRating: hotelForm.starRating,
+              category: hotelForm.category,
+              totalPropertyRooms: hotelForm.totalPropertyRooms,
+              city: hotelForm.city,
+              area: hotelForm.area,
+              address: hotelForm.address,
+              lat,
+              lng,
+              amenities: hotelForm.amenities,
+              extraAmenities: hotelForm.extraAmenities
+            })
+          });
+          const data = await res.json();
+          if (data && data.success) {
+            setHotelForm(p => ({
+              ...p,
+              lat,
+              lng,
+              location: data.locationDescription || p.location,
+              description: data.propertyDescription || p.description,
+              city: p.city || data.detectedCity || p.city,
+              area: p.area || data.detectedArea || p.area
+            }));
+            setAiTransitBadges(data.transitHubs || null);
+            setAiSuccessMsg('✨ GPS coordinates & transit distances (Railway, Bus Stand, Airport) detected & auto-filled!');
+            setTimeout(() => setAiSuccessMsg(''), 6000);
+          }
+        } catch (e) {
+          console.error('Auto transit detection error:', e);
+        }
       },
       (error) => {
         alert("Unable to retrieve your location. Please check your browser permissions.");
@@ -137,7 +243,16 @@ export default function PartnerDashboard() {
     }
   }, [activeTab, hotels]);
 
-  async function fetchData(showLoadingIndicator = true) {
+  useEffect(() => {
+    if (!loading && status !== 'loading') {
+      if (typeof window !== 'undefined') {
+        sessionStorage.setItem('staybuddy_extranet_splash_shown', 'true');
+      }
+      setHasShownSplash(true);
+    }
+  }, [loading, status]);
+
+  async function fetchData(showLoadingIndicator = !hasShownSplash) {
     if (showLoadingIndicator) setLoading(true);
     const partnerId = (session?.user as any)?.id || (session?.user as any)?.email;
     const role = (session?.user as any)?.role;
@@ -694,7 +809,8 @@ export default function PartnerDashboard() {
     );
   }
 
-  if (status === 'loading' || loading) return (
+  // Only show the full-screen branded splash ONCE on the opening of the website/extranet session
+  if (!hasShownSplash && (status === 'loading' || loading)) return (
     <div style={{ 
       minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
       background: 'linear-gradient(135deg, #fff7ed, white)', position: 'fixed', inset: 0, zIndex: 9999
@@ -713,7 +829,21 @@ export default function PartnerDashboard() {
   );
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg-secondary)' }}>
+    <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg-secondary)', position: 'relative' }}>
+      {/* Background sync indicator (subtle top line, never interrupts user) */}
+      {loading && hasShownSplash && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          height: '3px',
+          background: 'linear-gradient(90deg, #ea580c, #f59e0b, #ea580c)',
+          backgroundSize: '200% 100%',
+          animation: 'pulse 1.2s infinite',
+          zIndex: 99999
+        }} />
+      )}
       {/* Sidebar Overlay for Mobile */}
       <div 
         className="admin-overlay" 
@@ -1526,8 +1656,30 @@ export default function PartnerDashboard() {
                         </div>
                       </div>
                       <div className="form-group">
-                        <label className="form-label" style={{ textTransform: 'uppercase', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Description <span className="required">*</span></label>
-                        <textarea className="form-input form-textarea" placeholder="Describe your property, its unique features, and what guests can expect..." value={hotelForm.description} onChange={e => setHotelForm(p => ({ ...p, description: e.target.value }))} required />
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                          <label className="form-label" style={{ textTransform: 'uppercase', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', margin: 0 }}>Description <span className="required">*</span></label>
+                          <button
+                            type="button"
+                            onClick={() => generateAiDescriptionAndDistances('property')}
+                            disabled={isGeneratingAi}
+                            style={{
+                              background: 'linear-gradient(135deg, #fff7ed, #ffedd5)',
+                              border: '1px solid #fdba74',
+                              color: '#ea580c',
+                              fontSize: '0.76rem',
+                              fontWeight: 700,
+                              borderRadius: 6,
+                              padding: '3px 10px',
+                              cursor: 'pointer',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: 4
+                            }}
+                          >
+                            {isGeneratingAi ? '⏳ Generating...' : '✨ Auto-Generate with AI'}
+                          </button>
+                        </div>
+                        <textarea className="form-input form-textarea" rows={4} placeholder="Describe your property, its unique features, and what guests can expect..." value={hotelForm.description} onChange={e => setHotelForm(p => ({ ...p, description: e.target.value }))} required />
                       </div>
                     </div>
                   </div>
@@ -1607,7 +1759,150 @@ export default function PartnerDashboard() {
 
                       <div className="form-group">
                         <label className="form-label">Location / Area Description</label>
-                        <input className="form-input" type="text" placeholder="e.g., Near Bandra-Kurla Complex, 2km from airport" value={hotelForm.location} onChange={e => setHotelForm(p => ({ ...p, location: e.target.value }))} />
+                        <textarea 
+                          className="form-input form-textarea" 
+                          rows={3} 
+                          placeholder="e.g., • 3.5 km from Railway Station&#10;• 2 km from Central Bus Stand&#10;• 15 km from Airport" 
+                          value={hotelForm.location} 
+                          onChange={e => setHotelForm(p => ({ ...p, location: e.target.value }))} 
+                        />
+                      </div>
+
+                      {/* AI Transit Distances & Location Generator (Coordinates / Google Based) */}
+                      <div style={{
+                        background: 'linear-gradient(135deg, #fff7ed 0%, #ffffff 100%)',
+                        border: '1.5px solid #fdba74',
+                        borderRadius: 'var(--radius-lg)',
+                        padding: '16px',
+                        boxShadow: '0 4px 15px rgba(234, 88, 12, 0.06)'
+                      }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, marginBottom: 12 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                            <div style={{
+                              width: 38,
+                              height: 38,
+                              borderRadius: 10,
+                              background: 'linear-gradient(135deg, #ea580c, #f97316)',
+                              color: 'white',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              fontSize: '1.2rem',
+                              boxShadow: '0 3px 10px rgba(234, 88, 12, 0.3)'
+                            }}>
+                              ✨
+                            </div>
+                            <div>
+                              <h4 style={{ margin: 0, fontSize: '0.96rem', fontWeight: 800, color: '#0f172a' }}>
+                                AI Transit Distances & Property Description
+                              </h4>
+                              <p style={{ margin: '2px 0 0', fontSize: '0.8rem', color: '#64748b' }}>
+                                Auto-calculates distances to Railway Station, Bus Stand, Airport & fills location & hotel description tailored to hotel standard.
+                              </p>
+                            </div>
+                          </div>
+
+                          <button
+                            type="button"
+                            className="btn btn-primary"
+                            style={{
+                              padding: '10px 18px',
+                              fontSize: '0.86rem',
+                              fontWeight: 800,
+                              borderRadius: '10px',
+                              boxShadow: '0 4px 14px rgba(234, 88, 12, 0.35)',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: 8,
+                              cursor: isGeneratingAi ? 'not-allowed' : 'pointer',
+                              opacity: isGeneratingAi ? 0.7 : 1
+                            }}
+                            onClick={() => generateAiDescriptionAndDistances('location')}
+                            disabled={isGeneratingAi}
+                          >
+                            {isGeneratingAi ? (
+                              <>
+                                <div className="spinner" style={{ width: 16, height: 16, borderColor: 'white', borderTopColor: 'transparent' }} />
+                                <span>Calculating Distances...</span>
+                              </>
+                            ) : (
+                              <>
+                                <span>✨</span>
+                                <span>Auto-Detect Distances & Fill AI Copy</span>
+                              </>
+                            )}
+                          </button>
+                        </div>
+
+                        {/* Real-time Transit Badges Display */}
+                        {aiTransitBadges && (
+                          <div style={{
+                            display: 'grid',
+                            gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+                            gap: 10,
+                            marginTop: 12,
+                            padding: '12px',
+                            background: 'white',
+                            borderRadius: '10px',
+                            border: '1px solid #fed7aa'
+                          }}>
+                            {aiTransitBadges.railway && (
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.82rem' }}>
+                                <span style={{ fontSize: '1.25rem' }}>🚆</span>
+                                <div>
+                                  <div style={{ fontWeight: 700, color: '#0f172a' }}>{aiTransitBadges.railway.distanceKm} km</div>
+                                  <div style={{ color: '#64748b', fontSize: '0.74rem' }}>{aiTransitBadges.railway.name}</div>
+                                </div>
+                              </div>
+                            )}
+                            {aiTransitBadges.bus && (
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.82rem' }}>
+                                <span style={{ fontSize: '1.25rem' }}>🚌</span>
+                                <div>
+                                  <div style={{ fontWeight: 700, color: '#0f172a' }}>{aiTransitBadges.bus.distanceKm} km</div>
+                                  <div style={{ color: '#64748b', fontSize: '0.74rem' }}>{aiTransitBadges.bus.name}</div>
+                                </div>
+                              </div>
+                            )}
+                            {aiTransitBadges.airport && (
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.82rem' }}>
+                                <span style={{ fontSize: '1.25rem' }}>✈️</span>
+                                <div>
+                                  <div style={{ fontWeight: 700, color: '#0f172a' }}>{aiTransitBadges.airport.distanceKm} km</div>
+                                  <div style={{ color: '#64748b', fontSize: '0.74rem' }}>{aiTransitBadges.airport.name}</div>
+                                </div>
+                              </div>
+                            )}
+                            {aiTransitBadges.metroOrLandmark && (
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.82rem' }}>
+                                <span style={{ fontSize: '1.25rem' }}>🚇</span>
+                                <div>
+                                  <div style={{ fontWeight: 700, color: '#0f172a' }}>{aiTransitBadges.metroOrLandmark.distanceKm} km</div>
+                                  <div style={{ color: '#64748b', fontSize: '0.74rem' }}>{aiTransitBadges.metroOrLandmark.name}</div>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        {aiSuccessMsg && (
+                          <div style={{
+                            marginTop: 10,
+                            padding: '8px 12px',
+                            background: '#dcfce7',
+                            border: '1px solid #86efac',
+                            borderRadius: '8px',
+                            color: '#166534',
+                            fontSize: '0.82rem',
+                            fontWeight: 600,
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 6
+                          }}>
+                            <span>✓</span>
+                            <span>{aiSuccessMsg}</span>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
