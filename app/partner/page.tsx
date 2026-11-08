@@ -136,7 +136,8 @@ export default function PartnerDashboard() {
         location: data.locationDescription || p.location,
         description: data.propertyDescription || p.description,
         city: p.city || data.detectedCity || p.city,
-        area: p.area || data.detectedArea || p.area
+        area: p.area || data.detectedArea || p.area,
+        transitHubs: data.transitHubs || (p as any).transitHubs
       }));
 
       setAiTransitBadges(data.transitHubs || null);
@@ -200,7 +201,8 @@ export default function PartnerDashboard() {
               location: data.locationDescription || p.location,
               description: data.propertyDescription || p.description,
               city: p.city || data.detectedCity || p.city,
-              area: p.area || data.detectedArea || p.area
+              area: p.area || data.detectedArea || p.area,
+              transitHubs: data.transitHubs || (p as any).transitHubs
             }));
             setAiTransitBadges(data.transitHubs || null);
             setAiSuccessMsg('✨ GPS coordinates & transit distances (Railway, Bus Stand, Airport) detected & auto-filled!');
@@ -222,6 +224,7 @@ export default function PartnerDashboard() {
     category: 'standard', starRating: '3', checkInTime: '14:00', checkOutTime: '11:00',
     totalPropertyRooms: '', staybuddyAllocation: '', totalFloors: '',
     contactName: '', contactDesignation: '', contactPhone: '', contactEmail: '',
+    transitHubs: null as any,
     amenities: [] as string[], roomAmenities: [] as string[], extraAmenities: '', policies: '', images: [] as string[],
     rooms: [
       { id: Date.now().toString(), type: 'Standard Room', priceSingle: '', priceDouble: '', priceTriple: '', b2bPrice: '', amenities: [] as string[], images: [] as string[], size: '', bedType: 'Double', maxGuests: 3, totalRooms: 0, ratePlan: 'EP', description: '' }
@@ -1680,6 +1683,72 @@ export default function PartnerDashboard() {
                           </button>
                         </div>
                         <textarea className="form-input form-textarea" rows={4} placeholder="Describe your property, its unique features, and what guests can expect..." value={hotelForm.description} onChange={e => setHotelForm(p => ({ ...p, description: e.target.value }))} required />
+
+                        {/* Dedicated 2x2 Transit Distances Card (Shown below Description) */}
+                        {aiTransitBadges && (
+                          <div style={{
+                            marginTop: 14,
+                            padding: '16px 18px',
+                            background: '#ffffff',
+                            borderRadius: '14px',
+                            border: '1.5px solid #fed7aa',
+                            boxShadow: '0 4px 14px rgba(254, 215, 170, 0.18)'
+                          }}>
+                            <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#c2410c', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
+                              <span>📍</span> Nearby Transit & Key Landmarks (Rendered in dedicated visual card below description)
+                            </div>
+                            <div style={{
+                              display: 'grid',
+                              gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+                              gap: '16px 14px'
+                            }}>
+                              {aiTransitBadges.railway && (
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                  <div style={{ width: 40, height: 40, minWidth: 40, borderRadius: 10, background: '#fff7ed', border: '1px solid #ffedd5', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem' }}>
+                                    🚆
+                                  </div>
+                                  <div style={{ minWidth: 0, flex: 1 }}>
+                                    <div style={{ fontWeight: 800, color: '#0f172a', fontSize: '1.05rem', lineHeight: 1.2 }}>{aiTransitBadges.railway.distanceKm} km</div>
+                                    <div style={{ color: '#475569', fontSize: '0.8rem', fontWeight: 600, marginTop: 2, lineHeight: 1.3 }}>{aiTransitBadges.railway.name}</div>
+                                  </div>
+                                </div>
+                              )}
+                              {aiTransitBadges.bus && (
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                  <div style={{ width: 40, height: 40, minWidth: 40, borderRadius: 10, background: '#fff7ed', border: '1px solid #ffedd5', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem' }}>
+                                    🚌
+                                  </div>
+                                  <div style={{ minWidth: 0, flex: 1 }}>
+                                    <div style={{ fontWeight: 800, color: '#0f172a', fontSize: '1.05rem', lineHeight: 1.2 }}>{aiTransitBadges.bus.distanceKm} km</div>
+                                    <div style={{ color: '#475569', fontSize: '0.8rem', fontWeight: 600, marginTop: 2, lineHeight: 1.3 }}>{aiTransitBadges.bus.name}</div>
+                                  </div>
+                                </div>
+                              )}
+                              {aiTransitBadges.airport && (
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                  <div style={{ width: 40, height: 40, minWidth: 40, borderRadius: 10, background: '#fff7ed', border: '1px solid #ffedd5', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem' }}>
+                                    ✈️
+                                  </div>
+                                  <div style={{ minWidth: 0, flex: 1 }}>
+                                    <div style={{ fontWeight: 800, color: '#0f172a', fontSize: '1.05rem', lineHeight: 1.2 }}>{aiTransitBadges.airport.distanceKm} km</div>
+                                    <div style={{ color: '#475569', fontSize: '0.8rem', fontWeight: 600, marginTop: 2, lineHeight: 1.3 }}>{aiTransitBadges.airport.name}</div>
+                                  </div>
+                                </div>
+                              )}
+                              {aiTransitBadges.metroOrLandmark && (
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                  <div style={{ width: 40, height: 40, minWidth: 40, borderRadius: 10, background: '#fff7ed', border: '1px solid #ffedd5', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem' }}>
+                                    🚇
+                                  </div>
+                                  <div style={{ minWidth: 0, flex: 1 }}>
+                                    <div style={{ fontWeight: 800, color: '#0f172a', fontSize: '1.05rem', lineHeight: 1.2 }}>{aiTransitBadges.metroOrLandmark.distanceKm} km</div>
+                                    <div style={{ color: '#475569', fontSize: '0.8rem', fontWeight: 600, marginTop: 2, lineHeight: 1.3 }}>{aiTransitBadges.metroOrLandmark.name}</div>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>

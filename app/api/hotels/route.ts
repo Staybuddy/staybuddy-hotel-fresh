@@ -223,7 +223,7 @@ import { authOptions } from '@/lib/auth';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { partnerId, name, description, location, city, area, country, address, images, amenities, extraAmenities, propertyType, category, starRating, checkInTime, checkOutTime, policies, lat, lng, rooms, totalPropertyRooms, staybuddyAllocation, totalFloors, contactName, contactDesignation, contactPhone, contactEmail } = body;
+    const { partnerId, name, description, location, city, area, country, address, images, amenities, extraAmenities, propertyType, category, starRating, checkInTime, checkOutTime, policies, lat, lng, rooms, totalPropertyRooms, staybuddyAllocation, totalFloors, contactName, contactDesignation, contactPhone, contactEmail, transitHubs } = body;
 
     let finalPartnerId = partnerId;
     if (!finalPartnerId) {
@@ -344,6 +344,7 @@ export async function POST(request: NextRequest) {
       partnerEmail: contactEmail || undefined,
       partnerPhone: contactPhone || undefined,
       partnerName: contactName || undefined, 
+      transitHubs: transitHubs || undefined,
       avgRating: 0,
       totalReviews: 0,
       createdAt: new Date().toISOString()

@@ -1848,4 +1848,32 @@ tbody tr:hover { background: var(--bg-secondary); }
   }
 }
 
+/* Transit & Nearby Landmarks Dedicated Feature Card */
+.transit-distance-card {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+@media (max-width: 480px) {
+  .transit-distance-card {
+    padding: 16px 14px !important;
+  }
+  .transit-distance-grid {
+    gap: 16px 10px !important;
+  }
+  .transit-distance-icon {
+    width: 38px !important;
+    height: 38px !important;
+    min-width: 38px !important;
+    font-size: 1.45rem !important;
+    border-radius: 10px !important;
+  }
+  .transit-distance-km {
+    font-size: 1.05rem !important;
+  }
+  .transit-distance-name {
+    font-size: 0.78rem !important;
+  }
+}
+
 

@@ -328,17 +328,8 @@ export async function POST(req: Request) {
       standardTagline = `Enjoy hassle-free lodging, comfortable bedding, prompt assistance, and unbeatable convenience without compromising on quality.`;
     }
 
-    // Transit highlight sentence for description
-    const transitHighlights: string[] = [];
-    if (nearestRailway) transitHighlights.push(`${nearestRailway.distanceKm} km from ${nearestRailway.name}`);
-    if (nearestBus) transitHighlights.push(`${nearestBus.distanceKm} km from ${nearestBus.name}`);
-    if (nearestAirport) transitHighlights.push(`${nearestAirport.distanceKm} km from ${nearestAirport.name}`);
-
-    const transitSentence = transitHighlights.length > 0
-      ? `Strategically positioned for effortless transit, the property is just ${transitHighlights.join(', ')}.`
-      : `The property enjoys prime connectivity to central transit networks and commercial centers across the city.`;
-
-    const generatedPropertyDescription = `${standardIntro}\n\n${transitSentence}\n\nGuests enjoy an array of modern amenities including ${keyAmenities}.${extraAmenities ? ` Additionally, ${extraAmenities}.` : ''} ${standardTagline}`;
+    // Clean property description without transit sentences baked in (distances are rendered in their own dedicated visual card)
+    const generatedPropertyDescription = `${standardIntro}\n\nGuests enjoy an array of modern amenities including ${keyAmenities}.${extraAmenities ? ` Additionally, ${extraAmenities}.` : ''} ${standardTagline}`;
 
     return NextResponse.json({
       success: true,

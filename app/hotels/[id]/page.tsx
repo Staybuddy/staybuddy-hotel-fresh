@@ -14,6 +14,7 @@ import {
   getRoomPriceForOccupancy,
   MAX_ADULTS_PER_ROOM,
 } from "@/lib/occupancyPricing";
+import { getTransitDistancesForHotel, TransitItem } from "@/lib/transitHubs";
 
 const formatDate = (dateString: string | null) => {
   if (!dateString) return "Select date";
@@ -268,6 +269,31 @@ export default function HotelDetailPage() {
     });
     return Array.from(map.values());
   }, [hotel?.images, rooms]);
+
+  // Clean description removing any raw bullet distances (distances are rendered in their own dedicated visual card)
+  const cleanDescription = useMemo(() => {
+    if (!hotel?.description) {
+      return "Experience a wonderful stay at our property, offering premium amenities and excellent service. Perfectly located for both business and leisure travelers.";
+    }
+    const lines = hotel.description.split('\n');
+    const filtered = lines.filter((l: string) => {
+      const trimmed = l.trim();
+      if (trimmed.startsWith('•') && (trimmed.includes('km from') || trimmed.includes('Railway') || trimmed.includes('Airport') || trimmed.includes('Bus Station') || trimmed.includes('Metro'))) {
+        return false;
+      }
+      return true;
+    });
+    const cleaned = filtered.join('\n')
+      .replace(/Strategically positioned for effortless transit[^\.\n]*\./gi, '')
+      .replace(/The property enjoys prime connectivity to central transit networks[^\.\n]*\./gi, '')
+      .trim();
+    return cleaned || hotel.description;
+  }, [hotel?.description]);
+
+  // Dedicated Nearby Transit & Key Landmarks Distances
+  const transitPoints = useMemo<TransitItem[]>(() => {
+    return hotel ? getTransitDistancesForHotel(hotel) : [];
+  }, [hotel]);
 
   const openPhotoViewer = (index: number) => {
     if (allPhotos.length === 0) return;
@@ -1266,10 +1292,92 @@ export default function HotelDetailPage() {
               </div>
               <div className="card-body">
                 <p style={{ color: "var(--text-secondary)", lineHeight: 1.6, fontSize: "0.95rem", margin: 0 }}>
-                  {hotel.description || "Experience a wonderful stay at our property, offering premium amenities and excellent service. Perfectly located for both business and leisure travelers."}
+                  {cleanDescription}
                 </p>
               </div>
             </div>
+
+            {/* Transit Distances Feature Card (Shown directly below Description, above Amenities) */}
+            {transitPoints && transitPoints.length > 0 && (
+              <div
+                className="card transit-distance-card"
+                style={{
+                  marginBottom: 16,
+                  padding: "22px 24px",
+                  borderRadius: "16px",
+                  border: "1.5px solid #fed7aa",
+                  background: "#ffffff",
+                  boxShadow: "0 4px 18px rgba(254, 215, 170, 0.16)",
+                }}
+              >
+                <div
+                  className="transit-distance-grid"
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+                    gap: "22px 20px",
+                  }}
+                >
+                  {transitPoints.map((item, idx) => (
+                    <div
+                      key={idx}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 14,
+                        minWidth: 0,
+                      }}
+                    >
+                      <div
+                        className="transit-distance-icon"
+                        style={{
+                          width: 48,
+                          height: 48,
+                          minWidth: 48,
+                          borderRadius: 14,
+                          background: "#fff7ed",
+                          border: "1px solid #ffedd5",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          fontSize: "1.75rem",
+                          flexShrink: 0,
+                        }}
+                      >
+                        {item.icon}
+                      </div>
+                      <div style={{ minWidth: 0, flex: 1 }}>
+                        <div
+                          className="transit-distance-km"
+                          style={{
+                            fontSize: "1.2rem",
+                            fontWeight: 800,
+                            color: "#0f172a",
+                            lineHeight: 1.15,
+                            letterSpacing: "-0.01em",
+                          }}
+                        >
+                          {item.distanceKm} km
+                        </div>
+                        <div
+                          className="transit-distance-name"
+                          style={{
+                            fontSize: "0.9rem",
+                            color: "#475569",
+                            fontWeight: 600,
+                            marginTop: 3,
+                            lineHeight: 1.3,
+                            wordBreak: "break-word",
+                          }}
+                        >
+                          {item.name}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Amenities */}
             <div className="card" style={{ marginBottom: 16 }}>
