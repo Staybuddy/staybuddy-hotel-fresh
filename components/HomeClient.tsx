@@ -40,6 +40,7 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
   const [hotels, setHotels] = useState<any[]>(initialHotels);
   const [loading, setLoading] = useState(false);
   const [searchError, setSearchError] = useState('');
+  const [validationErrorField, setValidationErrorField] = useState<'location' | 'dates' | 'adults' | null>(null);
   const [userWishlistIds, setUserWishlistIds] = useState<string[]>([]);
   
   // Smart Dynamic Destinations: Consolidates localities (e.g. Shamshabad -> Hyderabad) without duplicate cards
@@ -119,22 +120,35 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
   function handleSearch(e: React.FormEvent) {
     e.preventDefault();
     if (!searchData.location.trim()) {
-      setSearchError('Please enter a destination to search.');
-      setTimeout(() => setSearchError(''), 3000);
+      setValidationErrorField('location');
+      setSearchError('Destination is mandatory. Please enter or select a city or hotel.');
+      setTimeout(() => setSearchError(''), 4500);
       document.getElementById('location-search-trigger')?.click();
       return;
     }
     if (!searchData.checkIn || !searchData.checkOut) {
-      setSearchError('Please select both check-in and check-out dates.');
+      setValidationErrorField('dates');
+      setSearchError('Dates are mandatory. Please select check-in and check-out dates.');
+      setTimeout(() => setSearchError(''), 4500);
+      setActiveDateSelection(!searchData.checkIn ? 'checkIn' : 'checkOut');
+      setShowDatePicker(true);
+      return;
+    }
+    if (!searchData.adults || searchData.adults < 1) {
+      setValidationErrorField('adults');
+      setSearchError('Guests are mandatory. Please select at least 1 adult.');
+      setTimeout(() => setSearchError(''), 4500);
+      setShowGuestPicker(true);
       return;
     }
     
+    setValidationErrorField(null);
     setSearchError('');
     const params = new URLSearchParams({
       ...(searchData.propertyType && searchData.propertyType !== 'All' && { propertyType: searchData.propertyType }),
-      ...(searchData.location && { city: searchData.location }),
-      ...(searchData.checkIn && { checkIn: searchData.checkIn }),
-      ...(searchData.checkOut && { checkOut: searchData.checkOut }),
+      city: searchData.location.trim(),
+      checkIn: searchData.checkIn,
+      checkOut: searchData.checkOut,
       rooms: searchData.rooms.toString(),
       adults: searchData.adults.toString(),
       children: searchData.children.toString(),
@@ -173,18 +187,47 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
               <div className="hero-search-item" style={{ minWidth: 0 }}>
                 <LocationSearch 
                   city={searchData.location} 
-                  onChange={c => setSearchData(p => ({ ...p, location: c }))} 
+                  hasError={validationErrorField === 'location' && !searchData.location.trim()}
+                  onChange={c => {
+                    setSearchData(p => ({ ...p, location: c }));
+                    if (c && c.trim()) {
+                      setValidationErrorField(null);
+                      setSearchError('');
+                    }
+                  }} 
                 />
               </div>
               
               {/* Check-in Block */}
               <div className="hero-search-item"
-                onClick={() => { setShowDatePicker(true); setActiveDateSelection('checkIn'); }}
-                style={{ background: '#f8fafc', borderRadius: '12px', padding: '12px 16px', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 4, cursor: 'pointer', border: '1px solid transparent', transition: 'border 0.2s' }}
-                onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--brand-200)'}
-                onMouseLeave={e => e.currentTarget.style.borderColor = 'transparent'}
+                onClick={() => { 
+                  setValidationErrorField(null);
+                  setSearchError('');
+                  setShowDatePicker(true); 
+                  setActiveDateSelection('checkIn'); 
+                }}
+                style={{ 
+                  background: validationErrorField === 'dates' && !searchData.checkIn ? '#fef2f2' : '#f8fafc', 
+                  borderRadius: '12px', 
+                  padding: '12px 16px', 
+                  minWidth: 0, 
+                  display: 'flex', 
+                  flexDirection: 'column', 
+                  gap: 4, 
+                  cursor: 'pointer', 
+                  border: validationErrorField === 'dates' && !searchData.checkIn ? '2px solid #ef4444' : '1px solid transparent', 
+                  transition: 'all 0.2s' 
+                }}
+                onMouseEnter={e => {
+                  if (validationErrorField !== 'dates' || searchData.checkIn) e.currentTarget.style.borderColor = 'var(--brand-200)';
+                }}
+                onMouseLeave={e => {
+                  if (validationErrorField !== 'dates' || searchData.checkIn) e.currentTarget.style.borderColor = 'transparent';
+                }}
               >
-                <label style={{ fontSize: '0.7rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', cursor: 'pointer' }}>CHECK-IN</label>
+                <label style={{ fontSize: '0.7rem', fontWeight: 800, color: validationErrorField === 'dates' && !searchData.checkIn ? '#dc2626' : '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', cursor: 'pointer' }}>
+                  CHECK-IN <span style={{ color: '#ef4444', fontWeight: 900 }}>*</span>
+                </label>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--brand-600)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
                   <div style={{ flex: 1, minWidth: 0 }}>
@@ -196,12 +239,34 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
 
               {/* Check-out Block */}
               <div className="hero-search-item"
-                onClick={() => { setShowDatePicker(true); setActiveDateSelection('checkOut'); }}
-                style={{ background: '#f8fafc', borderRadius: '12px', padding: '12px 16px', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 4, cursor: 'pointer', border: '1px solid transparent', transition: 'border 0.2s' }}
-                onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--brand-200)'}
-                onMouseLeave={e => e.currentTarget.style.borderColor = 'transparent'}
+                onClick={() => { 
+                  setValidationErrorField(null);
+                  setSearchError('');
+                  setShowDatePicker(true); 
+                  setActiveDateSelection('checkOut'); 
+                }}
+                style={{ 
+                  background: validationErrorField === 'dates' && !searchData.checkOut ? '#fef2f2' : '#f8fafc', 
+                  borderRadius: '12px', 
+                  padding: '12px 16px', 
+                  minWidth: 0, 
+                  display: 'flex', 
+                  flexDirection: 'column', 
+                  gap: 4, 
+                  cursor: 'pointer', 
+                  border: validationErrorField === 'dates' && !searchData.checkOut ? '2px solid #ef4444' : '1px solid transparent', 
+                  transition: 'all 0.2s' 
+                }}
+                onMouseEnter={e => {
+                  if (validationErrorField !== 'dates' || searchData.checkOut) e.currentTarget.style.borderColor = 'var(--brand-200)';
+                }}
+                onMouseLeave={e => {
+                  if (validationErrorField !== 'dates' || searchData.checkOut) e.currentTarget.style.borderColor = 'transparent';
+                }}
               >
-                <label style={{ fontSize: '0.7rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', cursor: 'pointer' }}>CHECK-OUT</label>
+                <label style={{ fontSize: '0.7rem', fontWeight: 800, color: validationErrorField === 'dates' && !searchData.checkOut ? '#dc2626' : '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', cursor: 'pointer' }}>
+                  CHECK-OUT <span style={{ color: '#ef4444', fontWeight: 900 }}>*</span>
+                </label>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--brand-600)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
                   <div style={{ flex: 1, minWidth: 0 }}>
@@ -218,7 +283,13 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
                      <DateRangePicker 
                        checkIn={searchData.checkIn} 
                        checkOut={searchData.checkOut}
-                       onChange={(inDate, outDate) => setSearchData(p => ({ ...p, checkIn: inDate, checkOut: outDate }))}
+                       onChange={(inDate, outDate) => {
+                         setSearchData(p => ({ ...p, checkIn: inDate, checkOut: outDate }));
+                         if (inDate && outDate) {
+                           setValidationErrorField(null);
+                           setSearchError('');
+                         }
+                       }}
                        onClose={() => setShowDatePicker(false)}
                        activeSelection={activeDateSelection}
                        setActiveSelection={setActiveDateSelection}
@@ -230,12 +301,34 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
 
               {/* Guests Block */}
               <div className="hero-search-item"
-                onClick={() => setShowGuestPicker(!showGuestPicker)}
-                style={{ background: '#f8fafc', borderRadius: '12px', padding: '12px 16px', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 4, cursor: 'pointer', border: '1px solid transparent', transition: 'border 0.2s', position: 'relative' }}
-                onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--brand-200)'}
-                onMouseLeave={e => e.currentTarget.style.borderColor = 'transparent'}
+                onClick={() => {
+                  setValidationErrorField(null);
+                  setSearchError('');
+                  setShowGuestPicker(!showGuestPicker);
+                }}
+                style={{ 
+                  background: validationErrorField === 'adults' && (!searchData.adults || searchData.adults < 1) ? '#fef2f2' : '#f8fafc', 
+                  borderRadius: '12px', 
+                  padding: '12px 16px', 
+                  minWidth: 0, 
+                  display: 'flex', 
+                  flexDirection: 'column', 
+                  gap: 4, 
+                  cursor: 'pointer', 
+                  border: validationErrorField === 'adults' && (!searchData.adults || searchData.adults < 1) ? '2px solid #ef4444' : '1px solid transparent', 
+                  transition: 'all 0.2s', 
+                  position: 'relative' 
+                }}
+                onMouseEnter={e => {
+                  if (validationErrorField !== 'adults' || (searchData.adults && searchData.adults >= 1)) e.currentTarget.style.borderColor = 'var(--brand-200)';
+                }}
+                onMouseLeave={e => {
+                  if (validationErrorField !== 'adults' || (searchData.adults && searchData.adults >= 1)) e.currentTarget.style.borderColor = 'transparent';
+                }}
               >
-                <label style={{ fontSize: '0.7rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', cursor: 'pointer' }}>ROOMS & GUESTS</label>
+                <label style={{ fontSize: '0.7rem', fontWeight: 800, color: validationErrorField === 'adults' && (!searchData.adults || searchData.adults < 1) ? '#dc2626' : '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', cursor: 'pointer' }}>
+                  ROOMS & GUESTS <span style={{ color: '#ef4444', fontWeight: 900 }}>*</span>
+                </label>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--brand-600)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
                   <div style={{ flex: 1 }}>
@@ -315,6 +408,32 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
                   document.body
                 )}
               </div>
+
+              {/* Validation Error Alert Banner */}
+              {searchError && (
+                <div style={{
+                  width: '100%',
+                  background: '#fef2f2',
+                  border: '1.5px solid #ef4444',
+                  color: '#b91c1c',
+                  padding: '9px 14px',
+                  borderRadius: '10px',
+                  fontSize: '0.86rem',
+                  fontWeight: 700,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 8,
+                  textAlign: 'center',
+                  animation: 'fadeIn 0.25s ease-in-out',
+                  boxShadow: '0 2px 8px rgba(239, 68, 68, 0.15)',
+                  marginTop: 2,
+                  marginBottom: 2,
+                }}>
+                  <span style={{ fontSize: '1.1rem' }}>⚠️</span>
+                  <span>{searchError}</span>
+                </div>
+              )}
 
               {/* Search Button */}
               <button className="hero-search-btn"

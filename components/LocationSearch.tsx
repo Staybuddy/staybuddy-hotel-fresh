@@ -10,9 +10,10 @@ interface LocationSearchProps {
   dropdownLeftOffset?: string;
   dropdownRightOffset?: string;
   variant?: 'default' | 'compact';
+  hasError?: boolean;
 }
 
-export default function LocationSearch({ city, onChange, placeholder = "Search destination...", dropdownLeftOffset = "0px", dropdownRightOffset = "0px", variant = 'default' }: LocationSearchProps) {
+export default function LocationSearch({ city, onChange, placeholder = "Search destination...", dropdownLeftOffset = "0px", dropdownRightOffset = "0px", variant = 'default', hasError = false }: LocationSearchProps) {
   const router = useRouter();
   const [query, setQuery] = useState(city);
   const [results, setResults] = useState<{ hotels: any[], cities: string[] }>({ hotels: [], cities: [] });
@@ -141,7 +142,7 @@ export default function LocationSearch({ city, onChange, placeholder = "Search d
         id="location-search-trigger"
         onClick={() => setIsModalOpen(true)}
         style={{
-          background: variant === 'compact' ? 'white' : '#f8fafc',
+          background: hasError ? '#fef2f2' : (variant === 'compact' ? 'white' : '#f8fafc'),
           borderRadius: variant === 'compact' ? 'var(--radius-md)' : '12px',
           padding: variant === 'compact' ? '4px 12px' : '12px 16px',
           display: 'flex',
@@ -150,14 +151,20 @@ export default function LocationSearch({ city, onChange, placeholder = "Search d
           height: variant === 'compact' ? '54px' : 'auto',
           justifyContent: 'center',
           cursor: 'pointer',
-          border: variant === 'compact' ? '1px solid var(--border)' : '1px solid transparent',
-          transition: 'border 0.2s',
+          border: hasError ? '2px solid #ef4444' : (variant === 'compact' ? '1px solid var(--border)' : '1px solid transparent'),
+          transition: 'all 0.2s',
           position: 'relative'
         }}
-        onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--brand-200)'}
-        onMouseLeave={e => e.currentTarget.style.borderColor = variant === 'compact' ? 'var(--border)' : 'transparent'}
+        onMouseEnter={e => {
+          if (!hasError) e.currentTarget.style.borderColor = 'var(--brand-200)';
+        }}
+        onMouseLeave={e => {
+          if (!hasError) e.currentTarget.style.borderColor = variant === 'compact' ? 'var(--border)' : 'transparent';
+        }}
       >
-        <label style={{ fontSize: variant === 'compact' ? '0.65rem' : '0.7rem', fontWeight: variant === 'compact' ? 700 : 800, color: variant === 'compact' ? 'var(--text-muted)' : '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', cursor: 'pointer' }}>CITY, PROPERTY OR LOCATION</label>
+        <label style={{ fontSize: variant === 'compact' ? '0.65rem' : '0.7rem', fontWeight: variant === 'compact' ? 700 : 800, color: hasError ? '#dc2626' : (variant === 'compact' ? 'var(--text-muted)' : '#64748b'), textTransform: 'uppercase', letterSpacing: '0.05em', cursor: 'pointer' }}>
+          CITY, PROPERTY OR LOCATION <span style={{ color: '#ef4444', fontWeight: 900 }}>*</span>
+        </label>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <svg width={variant === 'compact' ? 20 : 24} height={variant === 'compact' ? 20 : 24} viewBox="0 0 24 24" fill="none" stroke="var(--brand-600)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z" /><circle cx="12" cy="10" r="3" /></svg>
           <div style={{ flex: 1, display: 'flex', flexDirection: variant === 'compact' ? 'row' : 'column', alignItems: variant === 'compact' ? 'baseline' : 'flex-start', gap: variant === 'compact' ? '6px' : '2px' }}>

@@ -49,6 +49,38 @@ function HotelSearch() {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [activeDateSelection, setActiveDateSelection] = useState<'checkIn' | 'checkOut'>('checkIn');
   const [showGuestPicker, setShowGuestPicker] = useState(false);
+  const [hotelsSearchError, setHotelsSearchError] = useState('');
+  const [hotelsValidationErrorField, setHotelsValidationErrorField] = useState<'city' | 'dates' | 'adults' | null>(null);
+
+  function handleHotelsSearch() {
+    if (!filters.city.trim()) {
+      setHotelsValidationErrorField('city');
+      setHotelsSearchError('Destination is mandatory. Please enter or select a city or hotel.');
+      setTimeout(() => setHotelsSearchError(''), 4500);
+      document.getElementById('location-search-trigger')?.click();
+      return;
+    }
+    if (!filters.checkIn || !filters.checkOut) {
+      setHotelsValidationErrorField('dates');
+      setHotelsSearchError('Dates are mandatory. Please select check-in and check-out dates.');
+      setTimeout(() => setHotelsSearchError(''), 4500);
+      setActiveDateSelection(!filters.checkIn ? 'checkIn' : 'checkOut');
+      setShowDatePicker(true);
+      return;
+    }
+    if (!filters.adults || filters.adults < 1) {
+      setHotelsValidationErrorField('adults');
+      setHotelsSearchError('Guests are mandatory. Please select at least 1 adult.');
+      setTimeout(() => setHotelsSearchError(''), 4500);
+      setShowGuestPicker(true);
+      return;
+    }
+
+    setHotelsValidationErrorField(null);
+    setHotelsSearchError('');
+    setPage(1);
+    fetchHotels();
+  }
 
   useEffect(() => {
     setFilters(p => ({
@@ -207,35 +239,106 @@ function HotelSearch() {
         <div className="container" style={{ padding: '0 12px' }}>
           <div className="hotels-search-wrapper" style={{ display: 'flex', gap: 'var(--space-3)', flexWrap: 'wrap', alignItems: 'stretch' }}>
             <div className="hotels-search-item hotels-search-item-location" style={{ flex: '2 1 200px', position: 'relative' }}>
-              <LocationSearch city={filters.city} variant="compact" onChange={c => setFilters(p => ({ ...p, city: c }))} />
+              <LocationSearch 
+                city={filters.city} 
+                variant="compact" 
+                hasError={hotelsValidationErrorField === 'city' && !filters.city.trim()}
+                onChange={c => {
+                  setFilters(p => ({ ...p, city: c }));
+                  if (c && c.trim()) {
+                    setHotelsValidationErrorField(null);
+                    setHotelsSearchError('');
+                  }
+                }} 
+              />
             </div>
             {/* Check-in */}
             <div
               className="hotels-search-item hotels-search-item-checkin"
-              onClick={() => { setActiveDateSelection('checkIn'); setShowDatePicker(true); }}
-              style={{ flex: '1 1 140px', position: 'relative', background: 'white', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', padding: '6px 12px', cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: '2px', height: '54px', justifyContent: 'center' }}
+              onClick={() => { 
+                setHotelsValidationErrorField(null);
+                setHotelsSearchError('');
+                setActiveDateSelection('checkIn'); 
+                setShowDatePicker(true); 
+              }}
+              style={{ 
+                flex: '1 1 140px', 
+                position: 'relative', 
+                background: hotelsValidationErrorField === 'dates' && !filters.checkIn ? '#fef2f2' : 'white', 
+                border: hotelsValidationErrorField === 'dates' && !filters.checkIn ? '2px solid #ef4444' : '1px solid var(--border)', 
+                borderRadius: 'var(--radius-md)', 
+                padding: '6px 12px', 
+                cursor: 'pointer', 
+                display: 'flex', 
+                flexDirection: 'column', 
+                gap: '2px', 
+                height: '54px', 
+                justifyContent: 'center',
+                transition: 'all 0.2s'
+              }}
             >
-              <span style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>CHECK-IN</span>
+              <span style={{ fontSize: '0.65rem', fontWeight: 700, color: hotelsValidationErrorField === 'dates' && !filters.checkIn ? '#dc2626' : 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                CHECK-IN <span style={{ color: '#ef4444', fontWeight: 900 }}>*</span>
+              </span>
               <span style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text-primary)' }}>{formatDate(filters.checkIn)}</span>
             </div>
 
             {/* Check-out */}
             <div
               className="hotels-search-item hotels-search-item-checkout"
-              onClick={() => { setActiveDateSelection('checkOut'); setShowDatePicker(true); }}
-              style={{ flex: '1 1 140px', position: 'relative', background: 'white', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', padding: '6px 12px', cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: '2px', height: '54px', justifyContent: 'center' }}
+              onClick={() => { 
+                setHotelsValidationErrorField(null);
+                setHotelsSearchError('');
+                setActiveDateSelection('checkOut'); 
+                setShowDatePicker(true); 
+              }}
+              style={{ 
+                flex: '1 1 140px', 
+                position: 'relative', 
+                background: hotelsValidationErrorField === 'dates' && !filters.checkOut ? '#fef2f2' : 'white', 
+                border: hotelsValidationErrorField === 'dates' && !filters.checkOut ? '2px solid #ef4444' : '1px solid var(--border)', 
+                borderRadius: 'var(--radius-md)', 
+                padding: '6px 12px', 
+                cursor: 'pointer', 
+                display: 'flex', 
+                flexDirection: 'column', 
+                gap: '2px', 
+                height: '54px', 
+                justifyContent: 'center',
+                transition: 'all 0.2s'
+              }}
             >
-              <span style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>CHECK-OUT</span>
+              <span style={{ fontSize: '0.65rem', fontWeight: 700, color: hotelsValidationErrorField === 'dates' && !filters.checkOut ? '#dc2626' : 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                CHECK-OUT <span style={{ color: '#ef4444', fontWeight: 900 }}>*</span>
+              </span>
               <span style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text-primary)' }}>{formatDate(filters.checkOut)}</span>
             </div>
 
             {/* Guests & Rooms */}
             <div className="hotels-search-item hotels-search-item-guests" style={{ flex: '1 1 160px', position: 'relative' }}>
               <div
-                onClick={() => setShowGuestPicker(true)}
-                style={{ background: 'white', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', padding: '6px 12px', cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: '2px', height: '54px', justifyContent: 'center' }}
+                onClick={() => {
+                  setHotelsValidationErrorField(null);
+                  setHotelsSearchError('');
+                  setShowGuestPicker(true);
+                }}
+                style={{ 
+                  background: hotelsValidationErrorField === 'adults' && (!filters.adults || filters.adults < 1) ? '#fef2f2' : 'white', 
+                  border: hotelsValidationErrorField === 'adults' && (!filters.adults || filters.adults < 1) ? '2px solid #ef4444' : '1px solid var(--border)', 
+                  borderRadius: 'var(--radius-md)', 
+                  padding: '6px 12px', 
+                  cursor: 'pointer', 
+                  display: 'flex', 
+                  flexDirection: 'column', 
+                  gap: '2px', 
+                  height: '54px', 
+                  justifyContent: 'center',
+                  transition: 'all 0.2s'
+                }}
               >
-                <span style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>ROOMS & GUESTS</span>
+                <span style={{ fontSize: '0.65rem', fontWeight: 700, color: hotelsValidationErrorField === 'adults' && (!filters.adults || filters.adults < 1) ? '#dc2626' : 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  ROOMS & GUESTS <span style={{ color: '#ef4444', fontWeight: 900 }}>*</span>
+                </span>
                 <span style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                   {`${filters.rooms} Room${filters.rooms > 1 ? 's' : ''}, ${filters.adults + filters.children} Guest${(filters.adults + filters.children) > 1 ? 's' : ''}`}
                 </span>
@@ -248,18 +351,47 @@ function HotelSearch() {
                       rooms={filters.rooms}
                       adults={filters.adults}
                       children={filters.children}
-                      onChange={(r, a, c) => setFilters(p => ({ ...p, rooms: r, adults: a, children: c, guests: String(a + c) }))}
+                      onChange={(r, a, c) => {
+                        setFilters(p => ({ ...p, rooms: r, adults: a, children: c, guests: String(a + c) }));
+                        if (a && a >= 1) {
+                          setHotelsValidationErrorField(null);
+                          setHotelsSearchError('');
+                        }
+                      }}
                       onClose={() => setShowGuestPicker(false)}
                     />
                   </div>
                 </>
               )}
             </div>
-            <button className="btn btn-primary hotels-search-btn" onClick={() => { setPage(1); fetchHotels(); }} style={{ height: '54px', padding: '0 24px', flex: '0 0 auto' }}>
+            <button className="btn btn-primary hotels-search-btn" onClick={handleHotelsSearch} style={{ height: '54px', padding: '0 24px', flex: '0 0 auto' }}>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" /></svg>
               Search
             </button>
           </div>
+
+          {hotelsSearchError && (
+            <div style={{
+              width: '100%',
+              background: '#fef2f2',
+              border: '1.5px solid #ef4444',
+              color: '#b91c1c',
+              padding: '8px 14px',
+              borderRadius: '8px',
+              fontSize: '0.85rem',
+              fontWeight: 700,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 8,
+              textAlign: 'center',
+              animation: 'fadeIn 0.25s ease-in-out',
+              marginTop: 10
+            }}>
+              <span>⚠️</span>
+              <span>{hotelsSearchError}</span>
+            </div>
+          )}
 
           {/* Date Picker Overlay */}
           {showDatePicker && (
