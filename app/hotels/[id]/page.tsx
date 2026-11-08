@@ -97,6 +97,21 @@ export default function HotelDetailPage() {
   );
   const [confirmedBookingId, setConfirmedBookingId] = useState<string>("");
 
+  const searchParamsInitialized = useRef(false);
+
+  const updateUrlParams = (updates: { adults?: number; rooms?: number; checkIn?: string; checkOut?: string; children?: number }) => {
+    try {
+      if (typeof window === "undefined") return;
+      const url = new URL(window.location.href);
+      if (updates.adults !== undefined) url.searchParams.set("adults", String(updates.adults));
+      if (updates.rooms !== undefined) url.searchParams.set("rooms", String(updates.rooms));
+      if (updates.checkIn !== undefined) url.searchParams.set("checkIn", updates.checkIn);
+      if (updates.checkOut !== undefined) url.searchParams.set("checkOut", updates.checkOut);
+      if (updates.children !== undefined) url.searchParams.set("children", String(updates.children));
+      window.history.replaceState(null, "", url.pathname + url.search + (url.hash || ""));
+    } catch (e) {}
+  };
+
   useEffect(() => {
     if (id) fetchHotelData();
   }, [id, bookingData.checkIn, bookingData.checkOut]);
@@ -113,6 +128,8 @@ export default function HotelDetailPage() {
   }, [bookingData.adults, bookingData.rooms, occupancy]);
 
   useEffect(() => {
+    if (searchParamsInitialized.current) return;
+    searchParamsInitialized.current = true;
     const checkInParam = searchParams.get("checkIn");
     const checkOutParam = searchParams.get("checkOut");
     if (checkInParam || searchParams.has("adults") || searchParams.has("rooms")) {
@@ -625,13 +642,26 @@ export default function HotelDetailPage() {
         }
       } catch (e) {}
     }
+    if (bookingData.rooms === 1) {
+      setOccupancy(bookingData.adults === 1 ? "single" : bookingData.adults === 3 ? "triple" : "double");
+    }
     setBookingStep(1);
     setTimeout(() => window.scrollTo(0, 0), 10);
-    window.history.pushState(
-      null,
-      "",
-      window.location.pathname + window.location.search + "#review",
-    );
+    try {
+      const url = new URL(window.location.href);
+      url.searchParams.set("adults", String(bookingData.adults));
+      url.searchParams.set("rooms", String(bookingData.rooms));
+      if (bookingData.checkIn) url.searchParams.set("checkIn", bookingData.checkIn);
+      if (bookingData.checkOut) url.searchParams.set("checkOut", bookingData.checkOut);
+      url.hash = "review";
+      window.history.pushState(null, "", url.pathname + url.search + url.hash);
+    } catch (e) {
+      window.history.pushState(
+        null,
+        "",
+        window.location.pathname + window.location.search + "#review",
+      );
+    }
   };
 
   const closeReview = () => {
@@ -1373,13 +1403,14 @@ export default function HotelDetailPage() {
                       <DateRangePicker
                         checkIn={bookingData.checkIn}
                         checkOut={bookingData.checkOut}
-                        onChange={(inDate, outDate) =>
+                        onChange={(inDate, outDate) => {
                           setBookingData((p) => ({
                             ...p,
                             checkIn: inDate,
                             checkOut: outDate,
-                          }))
-                        }
+                          }));
+                          updateUrlParams({ checkIn: inDate, checkOut: outDate });
+                        }}
                         onClose={() => setShowDatePicker(false)}
                         activeSelection={activeDateSelection}
                         setActiveSelection={setActiveDateSelection}
@@ -1533,12 +1564,14 @@ export default function HotelDetailPage() {
                             <button
                               className="btn-ghost"
                               style={{ padding: "4px 8px", fontSize: "1.2rem", lineHeight: 1 }}
-                              onClick={() =>
-                                setBookingData((p) => {
-                                  const adj = adjustRoomsAndAdults(p.rooms, p.adults, 'rooms', p.rooms - 1);
-                                  return { ...p, rooms: adj.rooms, adults: adj.adults };
-                                })
-                              }
+                              onClick={() => {
+                                const adj = adjustRoomsAndAdults(bookingData.rooms, bookingData.adults, 'rooms', bookingData.rooms - 1);
+                                setBookingData((p) => ({ ...p, rooms: adj.rooms, adults: adj.adults }));
+                                updateUrlParams({ rooms: adj.rooms, adults: adj.adults });
+                                if (adj.rooms === 1) {
+                                  setOccupancy(adj.adults === 1 ? "single" : adj.adults === 3 ? "triple" : "double");
+                                }
+                              }}
                             >
                               −
                             </button>
@@ -1546,12 +1579,14 @@ export default function HotelDetailPage() {
                             <button
                               className="btn-ghost"
                               style={{ padding: "4px 8px", fontSize: "1.2rem", lineHeight: 1 }}
-                              onClick={() =>
-                                setBookingData((p) => {
-                                  const adj = adjustRoomsAndAdults(p.rooms, p.adults, 'rooms', Math.min(10, p.rooms + 1));
-                                  return { ...p, rooms: adj.rooms, adults: adj.adults };
-                                })
-                              }
+                              onClick={() => {
+                                const adj = adjustRoomsAndAdults(bookingData.rooms, bookingData.adults, 'rooms', Math.min(10, bookingData.rooms + 1));
+                                setBookingData((p) => ({ ...p, rooms: adj.rooms, adults: adj.adults }));
+                                updateUrlParams({ rooms: adj.rooms, adults: adj.adults });
+                                if (adj.rooms === 1) {
+                                  setOccupancy(adj.adults === 1 ? "single" : adj.adults === 3 ? "triple" : "double");
+                                }
+                              }}
                             >
                               +
                             </button>
@@ -1569,12 +1604,14 @@ export default function HotelDetailPage() {
                             <button
                               className="btn-ghost"
                               style={{ padding: "4px 8px", fontSize: "1.2rem", lineHeight: 1 }}
-                              onClick={() =>
-                                setBookingData((p) => {
-                                  const adj = adjustRoomsAndAdults(p.rooms, p.adults, 'adults', Math.max(1, p.adults - 1));
-                                  return { ...p, rooms: adj.rooms, adults: adj.adults };
-                                })
-                              }
+                              onClick={() => {
+                                const adj = adjustRoomsAndAdults(bookingData.rooms, bookingData.adults, 'adults', Math.max(1, bookingData.adults - 1));
+                                setBookingData((p) => ({ ...p, rooms: adj.rooms, adults: adj.adults }));
+                                updateUrlParams({ rooms: adj.rooms, adults: adj.adults });
+                                if (adj.rooms === 1) {
+                                  setOccupancy(adj.adults === 1 ? "single" : adj.adults === 3 ? "triple" : "double");
+                                }
+                              }}
                             >
                               −
                             </button>
@@ -1582,12 +1619,14 @@ export default function HotelDetailPage() {
                             <button
                               className="btn-ghost"
                               style={{ padding: "4px 8px", fontSize: "1.2rem", lineHeight: 1 }}
-                              onClick={() =>
-                                setBookingData((p) => {
-                                  const adj = adjustRoomsAndAdults(p.rooms, p.adults, 'adults', Math.min(30, p.adults + 1));
-                                  return { ...p, rooms: adj.rooms, adults: adj.adults };
-                                })
-                              }
+                              onClick={() => {
+                                const adj = adjustRoomsAndAdults(bookingData.rooms, bookingData.adults, 'adults', Math.min(30, bookingData.adults + 1));
+                                setBookingData((p) => ({ ...p, rooms: adj.rooms, adults: adj.adults }));
+                                updateUrlParams({ rooms: adj.rooms, adults: adj.adults });
+                                if (adj.rooms === 1) {
+                                  setOccupancy(adj.adults === 1 ? "single" : adj.adults === 3 ? "triple" : "double");
+                                }
+                              }}
                             >
                               +
                             </button>
@@ -1603,12 +1642,11 @@ export default function HotelDetailPage() {
                             <button
                               className="btn-ghost"
                               style={{ padding: "4px 8px", fontSize: "1.2rem", lineHeight: 1 }}
-                              onClick={() =>
-                                setBookingData((p) => ({
-                                  ...p,
-                                  children: Math.max(0, p.children - 1),
-                                }))
-                              }
+                              onClick={() => {
+                                const nextChildren = Math.max(0, bookingData.children - 1);
+                                setBookingData((p) => ({ ...p, children: nextChildren }));
+                                updateUrlParams({ children: nextChildren });
+                              }}
                             >
                               −
                             </button>
@@ -1616,12 +1654,11 @@ export default function HotelDetailPage() {
                             <button
                               className="btn-ghost"
                               style={{ padding: "4px 8px", fontSize: "1.2rem", lineHeight: 1 }}
-                              onClick={() =>
-                                setBookingData((p) => ({
-                                  ...p,
-                                  children: Math.min(10, p.children + 1),
-                                }))
-                              }
+                              onClick={() => {
+                                const nextChildren = Math.min(10, bookingData.children + 1);
+                                setBookingData((p) => ({ ...p, children: nextChildren }));
+                                updateUrlParams({ children: nextChildren });
+                              }}
                             >
                               +
                             </button>
@@ -1938,90 +1975,12 @@ export default function HotelDetailPage() {
 
                             {bookingData.rooms === 1 ? (
                               <>
-                                <div
-                                  style={{
-                                    display: "flex",
-                                    gap: 4,
-                                    marginTop: 8,
-                                    marginBottom: 6,
-                                    justifyContent: "flex-end",
-                                    flexWrap: "wrap",
-                                  }}
-                                  onClick={(e) => e.stopPropagation()}
-                                >
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      setOccupancy("single");
-                                      setBookingData((prev) => ({ ...prev, adults: 1 }));
-                                      setSelectedRoom(room);
-                                      setSelectedRoomsMap({ [room._id]: 1 });
-                                    }}
-                                    style={{
-                                      padding: "3px 8px",
-                                      borderRadius: 6,
-                                      fontSize: "0.72rem",
-                                      fontWeight: 700,
-                                      cursor: "pointer",
-                                      border: (bookingData.adults === 1 && selectedRoom?._id === room._id) ? "1.5px solid #ea580c" : "1px solid #cbd5e1",
-                                      background: (bookingData.adults === 1 && selectedRoom?._id === room._id) ? "#fff7ed" : "#ffffff",
-                                      color: (bookingData.adults === 1 && selectedRoom?._id === room._id) ? "#c2410c" : "#475569",
-                                    }}
-                                  >
-                                    👤 1 Adult {Number(room.priceSingle) > 0 ? `(₹${Number(room.priceSingle).toLocaleString()})` : ''}
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      setOccupancy("double");
-                                      setBookingData((prev) => ({ ...prev, adults: 2 }));
-                                      setSelectedRoom(room);
-                                      setSelectedRoomsMap({ [room._id]: 1 });
-                                    }}
-                                    style={{
-                                      padding: "3px 8px",
-                                      borderRadius: 6,
-                                      fontSize: "0.72rem",
-                                      fontWeight: 700,
-                                      cursor: "pointer",
-                                      border: ((bookingData.adults === 2 || !bookingData.adults) && selectedRoom?._id === room._id) ? "1.5px solid #ea580c" : "1px solid #cbd5e1",
-                                      background: ((bookingData.adults === 2 || !bookingData.adults) && selectedRoom?._id === room._id) ? "#fff7ed" : "#ffffff",
-                                      color: ((bookingData.adults === 2 || !bookingData.adults) && selectedRoom?._id === room._id) ? "#c2410c" : "#475569",
-                                    }}
-                                  >
-                                    👥 2 Adults {Number(room.priceDouble) > 0 ? `(₹${Number(room.priceDouble).toLocaleString()})` : ''}
-                                  </button>
-                                  {Number(room.priceTriple) > 0 && (
-                                    <button
-                                      type="button"
-                                      onClick={() => {
-                                        setOccupancy("triple");
-                                        setBookingData((prev) => ({ ...prev, adults: 3 }));
-                                        setSelectedRoom(room);
-                                        setSelectedRoomsMap({ [room._id]: 1 });
-                                      }}
-                                      style={{
-                                        padding: "3px 8px",
-                                        borderRadius: 6,
-                                        fontSize: "0.72rem",
-                                        fontWeight: 700,
-                                        cursor: "pointer",
-                                        border: (bookingData.adults === 3 && selectedRoom?._id === room._id) ? "1.5px solid #ea580c" : "1px solid #cbd5e1",
-                                        background: (bookingData.adults === 3 && selectedRoom?._id === room._id) ? "#fff7ed" : "#ffffff",
-                                        color: (bookingData.adults === 3 && selectedRoom?._id === room._id) ? "#c2410c" : "#475569",
-                                      }}
-                                    >
-                                      👨‍👩‍👦 3 Adults (₹{Number(room.priceTriple).toLocaleString()})
-                                    </button>
-                                  )}
-                                </div>
-
                                 {Boolean(bookingData.adults === 3 && !(Number(room.priceTriple) > 0)) ? (
                                   <button
                                     type="button"
                                     disabled={true}
                                     className="btn btn-sm"
-                                    style={{ marginTop: 4, background: '#e2e8f0', color: '#64748b', cursor: 'not-allowed', border: 'none', fontWeight: 700 }}
+                                    style={{ marginTop: 8, background: '#e2e8f0', color: '#64748b', cursor: 'not-allowed', border: 'none', fontWeight: 700 }}
                                     title="3-occupancy is not offered for this room. Max 2 guests allowed."
                                     onClick={(e) => e.stopPropagation()}
                                   >
@@ -2030,7 +1989,7 @@ export default function HotelDetailPage() {
                                 ) : (
                                   <button
                                     className="btn btn-primary btn-sm"
-                                    style={{ marginTop: 4 }}
+                                    style={{ marginTop: 8 }}
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       setSelectedRoom(room);
@@ -2667,6 +2626,7 @@ export default function HotelDetailPage() {
                                   setOccupancy(occ as any);
                                   const adultCount = occ === "single" ? 1 : occ === "triple" ? 3 : 2;
                                   setBookingData((prev) => ({ ...prev, adults: adultCount }));
+                                  updateUrlParams({ adults: adultCount });
                                 }}
                                 style={{
                                   border: isAct ? "2px solid #ea580c" : "1px solid #e2e8f0",
@@ -3437,6 +3397,7 @@ export default function HotelDetailPage() {
                             onClick={() => {
                               setOccupancy("single");
                               setBookingData(prev => ({ ...prev, adults: 1 }));
+                              updateUrlParams({ adults: 1 });
                             }}
                             style={{
                               padding: "4px 10px",
@@ -3457,6 +3418,7 @@ export default function HotelDetailPage() {
                             onClick={() => {
                               setOccupancy("double");
                               setBookingData(prev => ({ ...prev, adults: 2 }));
+                              updateUrlParams({ adults: 2 });
                             }}
                             style={{
                               padding: "4px 10px",
@@ -3478,6 +3440,7 @@ export default function HotelDetailPage() {
                               onClick={() => {
                                 setOccupancy("triple");
                                 setBookingData(prev => ({ ...prev, adults: 3 }));
+                                updateUrlParams({ adults: 3 });
                               }}
                               style={{
                                 padding: "4px 10px",
