@@ -6,6 +6,7 @@ import Link from 'next/link';
 import Logo from '@/components/Logo';
 import DateRangePicker from '@/components/DateRangePicker';
 import { compressImage } from '@/lib/imageUtils';
+import { parseCoordinates } from '@/lib/coordinates';
 import PartnerExtranetIntroModal from '@/components/PartnerExtranetIntroModal';
 
 const NAV_ITEMS = [
@@ -221,6 +222,9 @@ export default function PartnerDashboard() {
     );
   }
 
+  const [coordsInput, setCoordsInput] = useState('');
+  const [showDetailedCoords, setShowDetailedCoords] = useState(false);
+
   const [hotelForm, setHotelForm] = useState({
     name: '', description: '', location: '', city: '', area: '', country: 'India', address: '', lat: '', lng: '', propertyType: 'Hotel',
     category: 'standard', starRating: '3', checkInTime: '14:00', checkOutTime: '11:00',
@@ -232,6 +236,48 @@ export default function PartnerDashboard() {
       { id: Date.now().toString(), type: 'Standard Room', priceSingle: '', priceDouble: '', priceTriple: '', b2bPrice: '', amenities: [] as string[], images: [] as string[], size: '', bedType: 'Double', maxGuests: 3, totalRooms: 0, ratePlan: 'EP', description: '' }
     ]
   });
+
+  // Keep single-line coordinates input synced with form state
+  useEffect(() => {
+    if (hotelForm.lat && hotelForm.lng) {
+      setCoordsInput(`${hotelForm.lat}, ${hotelForm.lng}`);
+    } else if (!hotelForm.lat && !hotelForm.lng) {
+      setCoordsInput('');
+    }
+  }, [hotelForm.lat, hotelForm.lng]);
+
+  function handleCoordinateInput(val: string) {
+    const parsed = parseCoordinates(val);
+    if (parsed) {
+      setHotelForm(p => ({ ...p, lat: parsed.lat, lng: parsed.lng }));
+    } else {
+      const trimmed = val.trim();
+      if (!trimmed) {
+        setHotelForm(p => ({ ...p, lat: '', lng: '' }));
+      } else {
+        const parts = trimmed.split(/[,\s;/|]+/).map(s => s.trim()).filter(Boolean);
+        if (parts.length >= 2) {
+          setHotelForm(p => ({ ...p, lat: parts[0], lng: parts[1] }));
+        } else if (parts.length === 1) {
+          setHotelForm(p => ({ ...p, lat: parts[0] }));
+        }
+      }
+    }
+  }
+
+  async function handleQuickPasteCoordinates() {
+    try {
+      if (typeof navigator !== 'undefined' && navigator.clipboard && navigator.clipboard.readText) {
+        const text = await navigator.clipboard.readText();
+        if (text) {
+          setCoordsInput(text);
+          handleCoordinateInput(text);
+        }
+      }
+    } catch (e) {
+      console.warn('Clipboard read failed:', e);
+    }
+  }
 
   useEffect(() => {
     if (status === 'unauthenticated') { router.push('/partner/login'); return; }
@@ -1857,28 +1903,145 @@ export default function PartnerDashboard() {
                         </div>
                       </div>
                       
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: 'var(--space-4)' }}>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-4)', flex: 1 }}>
-                          <div className="form-group">
-                            <label className="form-label">Latitude</label>
-                            <input className="form-input" type="number" step="any" placeholder="19.0760" value={hotelForm.lat} onChange={e => setHotelForm(p => ({ ...p, lat: e.target.value }))} />
-                          </div>
-                          <div className="form-group">
-                            <label className="form-label">Longitude</label>
-                            <input className="form-input" type="number" step="any" placeholder="72.8777" value={hotelForm.lng} onChange={e => setHotelForm(p => ({ ...p, lng: e.target.value }))} />
-                          </div>
+                      {/* One-Line Coordinates Input with Direct Google Maps Paste & GPS Button */}
+                      <div className="form-group" style={{ marginBottom: 'var(--space-4)' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6, flexWrap: 'wrap', gap: 6 }}>
+                          <label className="form-label" style={{ margin: 0, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <span>📍 Coordinates (Latitude & Longitude)</span>
+                            <span style={{ fontSize: '0.74rem', fontWeight: 500, color: '#64748b' }}>
+                              (Paste directly from Google Maps in 1 line)
+                            </span>
+                          </label>
+                          {hotelForm.lat && hotelForm.lng && (
+                            <span style={{ fontSize: '0.76rem', fontWeight: 700, color: '#059669', background: '#ecfdf5', padding: '2px 8px', borderRadius: 6, border: '1px solid #a7f3d0', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                              <span>✓</span> Lat: {hotelForm.lat} • Lng: {hotelForm.lng}
+                            </span>
+                          )}
                         </div>
-                        <div style={{ paddingBottom: '2px' }}>
+
+                        <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                          <div style={{ position: 'relative', flex: 1 }}>
+                            <input 
+                              className="form-input" 
+                              type="text" 
+                              placeholder="e.g. 19.0760, 72.8777 (Paste from Google Maps)" 
+                              value={coordsInput} 
+                              onChange={e => {
+                                setCoordsInput(e.target.value);
+                                handleCoordinateInput(e.target.value);
+                              }}
+                              onPaste={e => {
+                                const pasted = e.clipboardData.getData('text');
+                                if (pasted) {
+                                  setTimeout(() => handleCoordinateInput(pasted), 10);
+                                }
+                              }}
+                              style={{ 
+                                width: '100%', 
+                                paddingLeft: '38px', 
+                                paddingRight: '80px',
+                                fontFamily: 'monospace',
+                                fontSize: '0.92rem',
+                                fontWeight: 600,
+                                height: '42px'
+                              }} 
+                            />
+                            <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', fontSize: '1rem', pointerEvents: 'none', opacity: 0.7 }}>
+                              🗺️
+                            </span>
+                            <button
+                              type="button"
+                              onClick={handleQuickPasteCoordinates}
+                              title="Paste coordinates from clipboard"
+                              style={{
+                                position: 'absolute',
+                                right: 8,
+                                top: '50%',
+                                transform: 'translateY(-50%)',
+                                background: '#f1f5f9',
+                                border: '1px solid #cbd5e1',
+                                borderRadius: 6,
+                                padding: '4px 10px',
+                                fontSize: '0.75rem',
+                                fontWeight: 700,
+                                color: '#334155',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 4
+                              }}
+                            >
+                              <span>📋</span>
+                              <span>Paste</span>
+                            </button>
+                          </div>
+
                           <button 
                             type="button" 
                             className="btn btn-secondary" 
-                            style={{ padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 8, height: '42px', whiteSpace: 'nowrap' }}
+                            style={{ padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 8, height: '42px', whiteSpace: 'nowrap', flexShrink: 0 }}
                             onClick={getCurrentLocation}
                             disabled={isLocating}
                           >
                             {isLocating ? '⏳ Locating...' : '📍 Use Current Location'}
                           </button>
                         </div>
+
+                        <div style={{ marginTop: 6, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 6 }}>
+                          <span style={{ fontSize: '0.72rem', color: '#64748b' }}>
+                            💡 Copy coordinates from Google Maps (e.g. <strong>19.0760, 72.8777</strong>) and paste here.
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => setShowDetailedCoords(!showDetailedCoords)}
+                            style={{ background: 'none', border: 'none', color: 'var(--brand-600)', fontSize: '0.74rem', fontWeight: 600, cursor: 'pointer', textDecoration: 'underline' }}
+                          >
+                            {showDetailedCoords ? 'Hide separate Lat & Lng' : 'Edit Lat & Lng separately'}
+                          </button>
+                        </div>
+
+                        {showDetailedCoords && (
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-4)', marginTop: 8, padding: '10px 12px', background: '#f8fafc', borderRadius: 8, border: '1px dashed #cbd5e1' }}>
+                            <div>
+                              <label style={{ fontSize: '0.72rem', fontWeight: 700, color: '#64748b', display: 'block', marginBottom: 2 }}>Latitude</label>
+                              <input 
+                                className="form-input" 
+                                type="text" 
+                                placeholder="19.0760" 
+                                value={hotelForm.lat} 
+                                onChange={e => {
+                                  const val = e.target.value;
+                                  const parsed = parseCoordinates(val);
+                                  if (parsed) {
+                                    setHotelForm(p => ({ ...p, lat: parsed.lat, lng: parsed.lng }));
+                                  } else {
+                                    setHotelForm(p => ({ ...p, lat: val }));
+                                  }
+                                }} 
+                                style={{ height: '36px', fontSize: '0.85rem' }}
+                              />
+                            </div>
+                            <div>
+                              <label style={{ fontSize: '0.72rem', fontWeight: 700, color: '#64748b', display: 'block', marginBottom: 2 }}>Longitude</label>
+                              <input 
+                                className="form-input" 
+                                type="text" 
+                                placeholder="72.8777" 
+                                value={hotelForm.lng} 
+                                onChange={e => {
+                                  const val = e.target.value;
+                                  const parsed = parseCoordinates(val);
+                                  if (parsed) {
+                                    setHotelForm(p => ({ ...p, lat: parsed.lat, lng: parsed.lng }));
+                                  } else {
+                                    setHotelForm(p => ({ ...p, lng: val }));
+                                  }
+                                }} 
+                                style={{ height: '36px', fontSize: '0.85rem' }}
+                              />
+                            </div>
+                          </div>
+                        )}
                       </div>
 
                       <div className="form-group">
@@ -3616,13 +3779,60 @@ export default function PartnerDashboard() {
                           <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#64748b', marginBottom: 4 }}>Area / Locality</label>
                           <input type="text" value={extranetModal.area || ''} onChange={e => setExtranetModal({...extranetModal, area: e.target.value})} placeholder="e.g. Shamshabad / Hitec City" style={{ width: '100%', padding: '9px 12px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '0.9rem' }} />
                         </div>
-                        <div>
-                          <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#64748b', marginBottom: 4 }}>Latitude</label>
-                          <input type="text" value={extranetModal.lat || ''} onChange={e => setExtranetModal({...extranetModal, lat: e.target.value})} placeholder="17.385044" style={{ width: '100%', padding: '9px 12px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '0.9rem' }} />
-                        </div>
-                        <div>
-                          <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#64748b', marginBottom: 4 }}>Longitude</label>
-                          <input type="text" value={extranetModal.lng || ''} onChange={e => setExtranetModal({...extranetModal, lng: e.target.value})} placeholder="78.486671" style={{ width: '100%', padding: '9px 12px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '0.9rem' }} />
+                        <div style={{ gridColumn: '1 / -1' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4, flexWrap: 'wrap', gap: 6 }}>
+                            <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.78rem', fontWeight: 700, color: '#64748b', margin: 0 }}>
+                              <span>📍 Coordinates (Latitude & Longitude in 1 line)</span>
+                              <span style={{ fontSize: '0.72rem', fontWeight: 500, color: '#94a3b8' }}>(Paste from Google Maps)</span>
+                            </label>
+                            {extranetModal.lat && extranetModal.lng && (
+                              <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#059669', background: '#ecfdf5', padding: '1px 6px', borderRadius: 4, border: '1px solid #a7f3d0' }}>
+                                ✓ {extranetModal.lat}, {extranetModal.lng}
+                              </span>
+                            )}
+                          </div>
+                          <div style={{ position: 'relative' }}>
+                            <input 
+                              type="text" 
+                              value={extranetModal.lat && extranetModal.lng ? `${extranetModal.lat}, ${extranetModal.lng}` : (extranetModal.lat || extranetModal.lng || '')} 
+                              onChange={e => {
+                                const val = e.target.value;
+                                const parsed = parseCoordinates(val);
+                                if (parsed) {
+                                  setExtranetModal((p: any) => ({ ...p, lat: parsed.lat, lng: parsed.lng }));
+                                } else {
+                                  const parts = val.split(/[,\s;/|]+/).map(s => s.trim()).filter(Boolean);
+                                  if (parts.length >= 2) {
+                                    setExtranetModal((p: any) => ({ ...p, lat: parts[0], lng: parts[1] }));
+                                  } else if (parts.length === 1) {
+                                    setExtranetModal((p: any) => ({ ...p, lat: parts[0] }));
+                                  } else {
+                                    setExtranetModal((p: any) => ({ ...p, lat: '', lng: '' }));
+                                  }
+                                }
+                              }} 
+                              placeholder="e.g. 17.385044, 78.486671 (Paste from Google Maps)" 
+                              style={{ width: '100%', padding: '9px 12px', paddingRight: '75px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '0.9rem', fontFamily: 'monospace', fontWeight: 600 }} 
+                            />
+                            <button
+                              type="button"
+                              onClick={async () => {
+                                try {
+                                  if (typeof navigator !== 'undefined' && navigator.clipboard && navigator.clipboard.readText) {
+                                    const text = await navigator.clipboard.readText();
+                                    if (text) {
+                                      const parsed = parseCoordinates(text);
+                                      if (parsed) setExtranetModal((p: any) => ({ ...p, lat: parsed.lat, lng: parsed.lng }));
+                                    }
+                                  }
+                                } catch (e) {}
+                              }}
+                              style={{ position: 'absolute', right: 6, top: '50%', transform: 'translateY(-50%)', background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: 4, padding: '3px 8px', fontSize: '0.72rem', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}
+                            >
+                              <span>📋</span>
+                              <span>Paste</span>
+                            </button>
+                          </div>
                         </div>
                         <div style={{ gridColumn: '1 / -1' }}>
                           <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#64748b', marginBottom: 4 }}>Full Property Address</label>
