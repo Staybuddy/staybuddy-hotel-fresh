@@ -297,12 +297,33 @@ export default function MyBookingsPage() {
                     {booking.status === 'pending' && (
                       <button className="btn btn-outline btn-sm" onClick={() => cancelBooking(booking._id)} style={{width: '100%', color: 'var(--danger)', borderColor: 'var(--danger)'}}>Cancel Booking</button>
                     )}
-                    {(booking.status === 'completed' || booking.status === 'confirmed') && booking.paymentStatus === 'paid' && !booking.isReviewed && (
-                      <button className="btn btn-sm" style={{ background: '#f59e0b', color: 'white', width: '100%', border: 'none', cursor: 'pointer' }} onClick={() => { setReviewBooking(booking); setReviewModalOpen(true); }}>⭐ Write Review</button>
-                    )}
-                    {booking.isReviewed && (
-                      <div style={{ textAlign: 'center', fontSize: '0.75rem', color: 'var(--success)', fontWeight: 600 }}>✓ Reviewed</div>
-                    )}
+                    {(() => {
+                      const checkOutMs = booking.checkOut ? new Date(booking.checkOut).getTime() : 0;
+                      const hasCheckedOut = checkOutMs > 0 && checkOutMs <= Date.now();
+                      const isConfirmedAndPaid = (booking.status === 'completed' || booking.status === 'confirmed') && booking.paymentStatus === 'paid';
+
+                      if (!isConfirmedAndPaid) return null;
+                      if (booking.isReviewed) {
+                        return <div style={{ textAlign: 'center', fontSize: '0.75rem', color: 'var(--success)', fontWeight: 600, padding: '4px 0' }}>✓ Reviewed</div>;
+                      }
+                      if (hasCheckedOut) {
+                        return (
+                          <button 
+                            className="btn btn-sm" 
+                            style={{ background: '#f59e0b', color: 'white', width: '100%', border: 'none', cursor: 'pointer', fontWeight: 700 }} 
+                            onClick={() => { setReviewBooking(booking); setReviewModalOpen(true); }}
+                          >
+                            ⭐ Write Review
+                          </button>
+                        );
+                      } else {
+                        return (
+                          <div style={{ textAlign: 'center', fontSize: '0.72rem', color: '#0369a1', background: '#f0f9ff', border: '1px solid #bae6fd', padding: '4px 8px', borderRadius: 6, fontWeight: 600 }}>
+                            Review available after check-out
+                          </div>
+                        );
+                      }
+                    })()}
                   </div>
                 </div>
               </div>

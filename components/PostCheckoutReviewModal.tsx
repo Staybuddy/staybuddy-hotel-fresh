@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
+import { usePathname } from 'next/navigation';
 import Image from 'next/image';
 
 interface BookingInfo {
@@ -45,6 +46,7 @@ const RATING_LABELS: Record<number, { text: string; color: string }> = {
 
 export default function PostCheckoutReviewModal() {
   const { data: session } = useSession();
+  const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
   const [booking, setBooking] = useState<BookingInfo | null>(null);
   const [hotel, setHotel] = useState<HotelInfo | null>(null);
@@ -60,6 +62,9 @@ export default function PostCheckoutReviewModal() {
   const [errorMessage, setErrorMessage] = useState('');
 
   useEffect(() => {
+    // Strictly restrict review modal checking to /my-bookings page only
+    if (pathname !== '/my-bookings') return;
+
     let isMounted = true;
 
     async function checkUnreviewedStay() {
@@ -203,7 +208,7 @@ export default function PostCheckoutReviewModal() {
     }
   };
 
-  if (!isOpen || !booking || !hotel) {
+  if (!isOpen || !booking || !hotel || !hotel.name || hotel.name === 'StayBuddy Partner Hotel') {
     return null;
   }
 

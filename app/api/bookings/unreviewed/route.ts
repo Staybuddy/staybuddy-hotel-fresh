@@ -80,8 +80,18 @@ export async function GET(request: NextRequest) {
       const checkOutMs = new Date(b.checkOut).getTime();
       if (isNaN(checkOutMs)) return false;
 
-      // Eligible if marked 'completed' OR checkout time has passed
-      return b.status === 'completed' || checkOutMs <= now;
+      // STRICT: ONLY AFTER CHECK-OUT! If checkout time is in the future, never prompt review!
+      if (checkOutMs > now) {
+        return false;
+      }
+
+      // Skip ancient bookings older than 14 days to prevent stale popups
+      const fourteenDaysAgo = now - (14 * 24 * 60 * 60 * 1000);
+      if (checkOutMs < fourteenDaysAgo) {
+        return false;
+      }
+
+      return true;
     });
 
     if (eligibleBookings.length === 0) {
@@ -97,6 +107,11 @@ export async function GET(request: NextRequest) {
 
     const targetBooking = eligibleBookings[0];
 
+    // Must have a valid hotelId
+    if (!targetBooking.hotelId) {
+      return NextResponse.json({ hasUnreviewedStay: false });
+    }
+
     // Auto-update status to 'completed' in Firestore if still marked 'confirmed'
     if (targetBooking.status === 'confirmed') {
       try {
@@ -110,38 +125,30 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // 4. Fetch hotel details for rich display
-    let hotelInfo = {
-      _id: targetBooking.hotelId,
-      name: 'StayBuddy Partner Hotel',
-      city: '',
-      address: '',
-      image: '',
-      avgRating: 4.5
-    };
-
-    if (targetBooking.hotelId) {
-      try {
-        let hDoc = await db.collection('hotels').doc(targetBooking.hotelId).get();
-        if (!hDoc.exists) {
-          const hSnap = await db.collection('hotels').where('_id', '==', targetBooking.hotelId).limit(1).get();
-          if (!hSnap.empty) hDoc = hSnap.docs[0];
-        }
-        if (hDoc && hDoc.exists) {
-          const hData = hDoc.data();
-          hotelInfo = {
-            _id: hDoc.id,
-            name: hData?.name || 'StayBuddy Partner Hotel',
-            city: hData?.city || '',
-            address: hData?.address || '',
-            image: Array.isArray(hData?.images) && hData.images.length > 0 ? hData.images[0] : '',
-            avgRating: typeof hData?.avgRating === 'number' ? hData.avgRating : 4.5
-          };
-        }
-      } catch (hErr) {
-        console.warn('Error fetching hotel details for unreviewed stay:', hErr);
-      }
+    // 4. Fetch hotel details - STRICT: Hotel MUST exist in database
+    let hDoc = await db.collection('hotels').doc(targetBooking.hotelId).get();
+    if (!hDoc.exists) {
+      const hSnap = await db.collection('hotels').where('_id', '==', targetBooking.hotelId).limit(1).get();
+      if (!hSnap.empty) hDoc = hSnap.docs[0];
     }
+    if (!hDoc || !hDoc.exists) {
+      // Hotel was deleted or does not exist - NEVER prompt review for ghost hotels!
+      return NextResponse.json({ hasUnreviewedStay: false });
+    }
+
+    const hData = hDoc.data();
+    if (!hData?.name) {
+      return NextResponse.json({ hasUnreviewedStay: false });
+    }
+
+    const hotelInfo = {
+      _id: hDoc.id,
+      name: hData.name,
+      city: hData?.city || '',
+      address: hData?.address || '',
+      image: Array.isArray(hData?.images) && hData.images.length > 0 ? hData.images[0] : '',
+      avgRating: typeof hData?.avgRating === 'number' ? hData.avgRating : 4.5
+    };
 
     return NextResponse.json({
       hasUnreviewedStay: true,
