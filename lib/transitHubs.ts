@@ -254,3 +254,4 @@ export function getTransitDistancesForHotel(hotel: any): TransitItem[] {
 
   return [railway, bus, airport, metroOrLandmark];
 }
+

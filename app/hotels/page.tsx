@@ -562,8 +562,15 @@ function HotelSearch() {
           ) : (
             <>
               <div className="hotels-results-list" style={{ display: 'flex', flexDirection: 'column', gap: '16px', width: '100%' }}>
-                {hotels.map((hotel, index) => (
-                  <Link key={hotel._id} href={`/hotels/${hotel._id}${getQueryString()}`} style={{ textDecoration: 'none', color: 'inherit', width: '100%' }}>
+                {hotels.map((hotel, index) => {
+                  const starNum = Math.min(5, Math.max(1, Number(hotel.starRating) || (hotel.category === 'Luxury' ? 5 : hotel.category === 'Premium' ? 4 : 3)));
+                  return (
+                  <Link 
+                    key={hotel._id} 
+                    href={`/hotels/${hotel._id}${getQueryString()}`} 
+                    prefetch={true}
+                    style={{ textDecoration: 'none', color: 'inherit', width: '100%', WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation' }}
+                  >
                     <div className="hotel-horizontal-card">
                       {/* Image / Gallery */}
                       <div className="hotel-horizontal-img">
@@ -592,8 +599,31 @@ function HotelSearch() {
                       {/* Hotel Details */}
                       <div className="hotel-horizontal-details">
                         <div>
-                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 4 }}>
-                            <h3 style={{ fontSize: '1.22rem', fontWeight: 800, color: '#0f172a', margin: 0, lineHeight: 1.3 }}>{hotel.name}</h3>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 4, flexWrap: 'wrap' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                              <h3 style={{ fontSize: '1.22rem', fontWeight: 800, color: '#0f172a', margin: 0, lineHeight: 1.3 }}>{hotel.name}</h3>
+                              <span
+                                style={{
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: 4,
+                                  background: 'linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)',
+                                  border: '1px solid #fde68a',
+                                  color: '#b45309',
+                                  fontSize: '0.74rem',
+                                  fontWeight: 800,
+                                  padding: '2px 8px',
+                                  borderRadius: '6px',
+                                  whiteSpace: 'nowrap',
+                                  boxShadow: '0 1px 2px rgba(180, 83, 9, 0.08)'
+                                }}
+                              >
+                                <span style={{ color: '#f59e0b', fontSize: '0.8rem', letterSpacing: '-0.5px' }}>
+                                  {'★'.repeat(starNum)}
+                                </span>
+                                <span>{starNum}-Star Hotel</span>
+                              </span>
+                            </div>
                           </div>
                           
                           <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', margin: '4px 0 10px', display: 'flex', alignItems: 'center', gap: 4 }}>
@@ -644,14 +674,14 @@ function HotelSearch() {
 
                       {/* Right: Pricing & CTA */}
                       <div className="hotel-horizontal-pricing">
-                        <div>
+                        <div className="hotel-pricing-block">
                           <div style={{ fontSize: '0.72rem', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em', fontWeight: 700 }}>
                             Best Rate Guaranteed
                           </div>
                           {hotel.startingPrice && Number(hotel.startingPrice) > 0 ? (
                             <>
-                              <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, justifyContent: 'flex-end', marginTop: 4 }}>
-                                <span style={{ fontSize: '1.65rem', fontWeight: 900, color: 'var(--brand-700, #c2410c)', lineHeight: 1 }}>
+                              <div className="hotel-price-num-row" style={{ display: 'flex', alignItems: 'baseline', gap: 4, justifyContent: 'flex-end', marginTop: 4 }}>
+                                <span className="hotel-price-amount" style={{ fontSize: '1.65rem', fontWeight: 900, color: 'var(--brand-700, #c2410c)', lineHeight: 1 }}>
                                   ₹{Number(hotel.startingPrice).toLocaleString('en-IN')}
                                 </span>
                                 <span style={{ fontSize: '0.82rem', color: '#64748b' }}>/night</span>
@@ -673,9 +703,9 @@ function HotelSearch() {
                           )}
                         </div>
 
-                        <div style={{ width: '100%', marginTop: 16 }}>
+                        <div className="hotel-view-btn-wrap" style={{ width: '100%', marginTop: 16 }}>
                           <div
-                            className="btn btn-primary"
+                            className="btn btn-primary hotel-view-btn"
                             style={{
                               width: '100%',
                               padding: '12px 18px',
@@ -696,7 +726,8 @@ function HotelSearch() {
                       </div>
                     </div>
                   </Link>
-                ))}
+                );
+              })}
               </div>
 
               {/* Pagination */}

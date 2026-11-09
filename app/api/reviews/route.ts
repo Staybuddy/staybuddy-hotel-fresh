@@ -19,24 +19,35 @@ export async function POST(request: NextRequest) {
     let authorName = guestName || session?.user?.name || 'Verified Guest';
     let authorImage = session?.user?.image || '';
 
-    // If no active session, verify via valid booking in Firestore
-    if (!session || !session.user) {
-      if (bookingId) {
-        let bDoc = await db.collection('bookings').doc(bookingId).get();
-        if (!bDoc.exists) {
-          const bSnap = await db.collection('bookings').where('_id', '==', bookingId).limit(1).get();
-          if (!bSnap.empty) bDoc = bSnap.docs[0];
+    // Verify booking status if bookingId is provided
+    if (bookingId) {
+      let bDoc = await db.collection('bookings').doc(bookingId).get();
+      if (!bDoc.exists) {
+        const bSnap = await db.collection('bookings').where('_id', '==', bookingId).limit(1).get();
+        if (!bSnap.empty) bDoc = bSnap.docs[0];
+      }
+      if (bDoc && bDoc.exists) {
+        const bData = bDoc.data();
+        const isPaid = bData?.paymentStatus === 'paid' || bData?.paid === true;
+        if (!isPaid || bData?.status === 'cancelled' || bData?.status === 'failed' || bData?.status === 'refunded') {
+          return NextResponse.json({ 
+            error: 'Reviews are only permitted for paid, confirmed bookings. This booking was not completed or paid.' 
+          }, { status: 400 });
         }
-        if (bDoc && bDoc.exists) {
-          const bData = bDoc.data();
+        if (!customerId) {
           customerId = bData?.customerId || bData?.guestEmail || `guest_${bookingId}`;
-          if (!guestName && bData?.guestName) {
-            authorName = bData.guestName;
-          }
-        } else {
-          return NextResponse.json({ error: 'Unauthorized or booking not found' }, { status: 401 });
         }
-      } else {
+        if (!guestName && bData?.guestName) {
+          authorName = bData.guestName;
+        }
+      } else if (!session || !session.user) {
+        return NextResponse.json({ error: 'Unauthorized or booking not found' }, { status: 401 });
+      }
+    }
+
+    // If no active session and no verified booking
+    if (!session || !session.user) {
+      if (!bookingId) {
         return NextResponse.json({ error: 'Unauthorized. Sign in or provide a verified booking ID.' }, { status: 401 });
       }
     } else {

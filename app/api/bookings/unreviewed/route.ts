@@ -55,15 +55,26 @@ export async function GET(request: NextRequest) {
     const allBookings = Array.from(bookingsMap.values());
     const now = Date.now();
 
-    // 3. Filter for checked-out, unreviewed stays
+    // 3. Filter for paid, confirmed/completed, checked-out, unreviewed stays
     const eligibleBookings = allBookings.filter(b => {
       // Skip if already reviewed
       if (b.isReviewed === true) return false;
 
-      // Skip cancelled or failed bookings
-      if (b.status === 'cancelled' || b.status === 'failed') return false;
+      // STRICT REQUIREMENT: Payment MUST be successful / paid
+      const isPaid = b.paymentStatus === 'paid' || b.paid === true;
+      if (!isPaid) return false;
 
-      // Must have a checkout date
+      // STRICT REQUIREMENT: Never show review for cancelled, failed, pending, or refunded bookings
+      if (b.status === 'cancelled' || b.status === 'failed' || b.status === 'pending' || b.status === 'refunded') {
+        return false;
+      }
+
+      // Must be confirmed or completed
+      if (b.status !== 'confirmed' && b.status !== 'completed') {
+        return false;
+      }
+
+      // Must have a valid checkout date
       if (!b.checkOut) return false;
 
       const checkOutMs = new Date(b.checkOut).getTime();
