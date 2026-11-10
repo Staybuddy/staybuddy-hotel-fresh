@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import OnboardingTrainingVideoModal from './OnboardingTrainingVideoModal';
 
 interface OnboardingExecutiveCardProps {
   user: {
@@ -23,13 +24,19 @@ export default function OnboardingExecutiveCard({
 }: OnboardingExecutiveCardProps) {
   const [isOpen, setIsOpen] = useState(true);
   const [isMinimized, setIsMinimized] = useState(false);
+  const [isTrainingVideoOpen, setIsTrainingVideoOpen] = useState(false);
+  const [hasCompletedTraining, setHasCompletedTraining] = useState(false);
 
-  // Auto-check if user previously minimized in current session
+  // Auto-check if user previously minimized or completed training
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const savedState = sessionStorage.getItem('staybuddy_onboarding_card_minimized');
       if (savedState === 'true') {
         setIsMinimized(true);
+      }
+      const trained = localStorage.getItem('staybuddy_onboarding_training_completed');
+      if (trained === 'true') {
+        setHasCompletedTraining(true);
       }
     }
   }, []);
@@ -42,6 +49,24 @@ export default function OnboardingExecutiveCard({
       }
       return next;
     });
+  };
+
+  const handleStartOnboardingClick = () => {
+    if (!hasCompletedTraining) {
+      // First-time onboarding: Must watch the 4-step video tutorial!
+      setIsTrainingVideoOpen(true);
+    } else {
+      onStartOnboarding();
+    }
+  };
+
+  const handleFinishTraining = () => {
+    setHasCompletedTraining(true);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('staybuddy_onboarding_training_completed', 'true');
+    }
+    setIsTrainingVideoOpen(false);
+    onStartOnboarding();
   };
 
   const staffName = user?.name || 'Onboarding Executive';
@@ -243,7 +268,27 @@ export default function OnboardingExecutiveCard({
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <button 
               type="button" 
-              onClick={(e) => { e.stopPropagation(); onStartOnboarding(); }}
+              onClick={(e) => { e.stopPropagation(); setIsTrainingVideoOpen(true); }}
+              style={{
+                background: '#ffedd5',
+                color: '#c2410c',
+                border: '1px solid #fed7aa',
+                borderRadius: '8px',
+                padding: '6px 12px',
+                fontSize: '0.82rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 5
+              }}
+            >
+              <span>🎬</span>
+              <span>4-Step Video Tutorial</span>
+            </button>
+            <button 
+              type="button" 
+              onClick={(e) => { e.stopPropagation(); handleStartOnboardingClick(); }}
               className="btn btn-primary"
               style={{ padding: '6px 14px', fontSize: '0.82rem', fontWeight: 700 }}
             >
@@ -372,11 +417,92 @@ export default function OnboardingExecutiveCard({
               </div>
             </div>
 
+            {/* ANIMATED 4-STEP CARTOON TRAINING VIDEO BANNER */}
+            <div style={{
+              background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
+              border: '2px solid #ea580c',
+              borderRadius: 16,
+              padding: '16px 20px',
+              marginBottom: 20,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: 16,
+              boxShadow: '0 8px 24px -4px rgba(234, 88, 12, 0.25)',
+              position: 'relative',
+              overflow: 'hidden'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                <div style={{
+                  width: 52,
+                  height: 52,
+                  borderRadius: '50%',
+                  background: 'linear-gradient(135deg, #ea580c 0%, #f97316 100%)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '1.8rem',
+                  boxShadow: '0 4px 14px rgba(234, 88, 12, 0.45)',
+                  flexShrink: 0
+                }}>
+                  🎬
+                </div>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 4 }}>
+                    <strong style={{ color: '#ffffff', fontSize: '1rem', fontWeight: 800 }}>
+                      StayBuddy Onboarding Video Masterclass (4 Steps)
+                    </strong>
+                    <span style={{
+                      background: hasCompletedTraining ? '#16a34a' : '#ea580c',
+                      color: '#ffffff',
+                      fontSize: '0.68rem',
+                      fontWeight: 800,
+                      padding: '2px 8px',
+                      borderRadius: 9999,
+                      textTransform: 'uppercase'
+                    }}>
+                      {hasCompletedTraining ? '✓ Completed' : 'Required First'}
+                    </span>
+                    <span style={{ color: '#fed7aa', fontSize: '0.75rem', fontWeight: 700 }}>
+                      ⏱️ 2 to 3 Mins Each Step
+                    </span>
+                  </div>
+                  <div style={{ color: '#94a3b8', fontSize: '0.82rem', lineHeight: 1.4 }}>
+                    Step 1: Property Name & Extranet • Step 2: Precise Latitude/Longitude GPS • Step 3: Real Photos • Step 4: Single, Double & Triple Pricing
+                  </div>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setIsTrainingVideoOpen(true)}
+                style={{
+                  background: 'linear-gradient(135deg, #ea580c 0%, #f97316 100%)',
+                  color: '#ffffff',
+                  border: 'none',
+                  borderRadius: 10,
+                  padding: '10px 18px',
+                  fontWeight: 800,
+                  fontSize: '0.85rem',
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  boxShadow: '0 4px 14px rgba(234, 88, 12, 0.4)',
+                  whiteSpace: 'nowrap'
+                }}
+              >
+                <span>▶️</span>
+                <span>{hasCompletedTraining ? 'Replay 4-Step Training Video' : 'Watch 4-Step Animated Video'}</span>
+              </button>
+            </div>
+
             {/* Action Buttons Row */}
             <div className="onboarding-actions-row" style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
               <button 
                 type="button" 
-                onClick={onStartOnboarding}
+                onClick={handleStartOnboardingClick}
                 className="onboarding-btn-primary"
               >
                 <span>➕</span>
@@ -392,6 +518,15 @@ export default function OnboardingExecutiveCard({
                 <span>Manage Onboarded Hotels ({hotelsCount})</span>
               </button>
 
+              <button
+                type="button"
+                onClick={() => setIsTrainingVideoOpen(true)}
+                className="onboarding-btn-secondary"
+              >
+                <span>🎬</span>
+                <span>Watch Training Tutorial</span>
+              </button>
+
               <Link 
                 href="/partner-agreement" 
                 target="_blank" 
@@ -405,6 +540,14 @@ export default function OnboardingExecutiveCard({
           </div>
         </div>
       )}
+
+      {/* 4-STEP INTERACTIVE ANIMATED TRAINING VIDEO MODAL */}
+      <OnboardingTrainingVideoModal
+        isOpen={isTrainingVideoOpen}
+        onClose={() => setIsTrainingVideoOpen(false)}
+        onCompleteAndProceed={handleFinishTraining}
+        userEmail={staffEmail}
+      />
     </>
   );
 }

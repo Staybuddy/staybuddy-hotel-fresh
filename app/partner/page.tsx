@@ -9,6 +9,7 @@ import { compressImage } from '@/lib/imageUtils';
 import { parseCoordinates } from '@/lib/coordinates';
 import PartnerExtranetIntroModal from '@/components/PartnerExtranetIntroModal';
 import OnboardingExecutiveCard from '@/components/OnboardingExecutiveCard';
+import OnboardingTrainingVideoModal from '@/components/OnboardingTrainingVideoModal';
 
 const NAV_ITEMS = [
   { id: 'hotels', label: 'My Properties', icon: '🏨' },
@@ -47,6 +48,7 @@ export default function PartnerDashboard() {
   const [addError, setAddError] = useState('');
   const [addSuccess, setAddSuccess] = useState('');
   const [addRoomModal, setAddRoomModal] = useState<string | null>(null);
+  const [isTrainingVideoOpen, setIsTrainingVideoOpen] = useState(false);
   const [inventoryModal, setInventoryModal] = useState<any>(null);
   const [hotelRooms, setHotelRooms] = useState<any[]>([]);
   const [loadingRooms, setLoadingRooms] = useState(false);
@@ -1652,9 +1654,31 @@ export default function PartnerDashboard() {
                     }</div>
                   </div>
                 </div>
-                <button onClick={() => setActiveTab('overview')} style={{ background: 'rgba(255,255,255,0.2)', border: 'none', color: 'white', width: 36, height: 36, borderRadius: 'var(--radius-md)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'background 0.2s' }} onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.3)'} onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.2)'}>
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
-                </button>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <button 
+                    type="button"
+                    onClick={() => setIsTrainingVideoOpen(true)}
+                    style={{
+                      background: 'rgba(255,255,255,0.22)',
+                      border: '1px solid rgba(255,255,255,0.4)',
+                      color: 'white',
+                      padding: '6px 14px',
+                      borderRadius: 'var(--radius-md)',
+                      cursor: 'pointer',
+                      fontSize: '0.8rem',
+                      fontWeight: 700,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 6
+                    }}
+                  >
+                    <span>🎬</span>
+                    <span>4-Step Video Guide</span>
+                  </button>
+                  <button onClick={() => setActiveTab('overview')} style={{ background: 'rgba(255,255,255,0.2)', border: 'none', color: 'white', width: 36, height: 36, borderRadius: 'var(--radius-md)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'background 0.2s' }} onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.3)'} onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.2)'}>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                  </button>
+                </div>
               </div>
 
               {/* Progress Bar Segmented - Responsive with scroll protection */}
@@ -5347,6 +5371,16 @@ export default function PartnerDashboard() {
           </div>
         </div>
       )}
+      {/* 4-STEP ONBOARDING TRAINING VIDEO MODAL */}
+      <OnboardingTrainingVideoModal
+        isOpen={isTrainingVideoOpen}
+        onClose={() => setIsTrainingVideoOpen(false)}
+        onCompleteAndProceed={() => {
+          setIsTrainingVideoOpen(false);
+          setActiveTab('add-hotel');
+        }}
+        userEmail={session?.user?.email || null}
+      />
     </div>
   );
 }
