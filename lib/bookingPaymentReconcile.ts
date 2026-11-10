@@ -157,6 +157,18 @@ export async function reconcileBookingPayment(bookingId: string, options: Paymen
         }
       }
 
+      // Strict Isolation: Strip onboarding executive email & staybuddy admin email
+      // Hotel partner notifications must ONLY go to the actual hotel partner's email.
+      if (hotel.onboardedBy) {
+        const staffEmail = typeof hotel.onboardedBy === 'string' 
+          ? hotel.onboardedBy.trim().toLowerCase() 
+          : (hotel.onboardedBy.email ? hotel.onboardedBy.email.trim().toLowerCase() : null);
+        if (staffEmail) {
+          notificationEmails.delete(staffEmail);
+        }
+      }
+      notificationEmails.delete('staybuddyhotels@gmail.com');
+
       console.log(`[Reconcile] Dispatching hotel partner notification to ${notificationEmails.size} email(s):`, Array.from(notificationEmails));
 
       notificationEmails.forEach(email => {

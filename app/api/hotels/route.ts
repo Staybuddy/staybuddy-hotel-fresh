@@ -43,20 +43,29 @@ export async function GET(request: NextRequest) {
     const snapshot = await hotelsRef.get();
     let hotels = snapshot.docs.map((doc: any) => ({ _id: doc.id, ...doc.data() }));
 
-    // Memory filter for partnerId (handles both string and object {_id, name, email} formats)
+    // Memory filter for partnerId (handles string, object, partnerEmail, and onboardedBy formats)
     if (partnerId) {
+      const pIdLower = partnerId.toLowerCase();
       hotels = hotels.filter((h: any) => {
-        if (!h.partnerId) return false;
-        if (typeof h.partnerId === 'string') {
-          return h.partnerId === partnerId;
+        // Direct string partnerId match
+        if (typeof h.partnerId === 'string' && h.partnerId.toLowerCase() === pIdLower) return true;
+        // Object partnerId match
+        if (typeof h.partnerId === 'object' && h.partnerId) {
+          if (h.partnerId._id && String(h.partnerId._id).toLowerCase() === pIdLower) return true;
+          if (h.partnerId.id && String(h.partnerId.id).toLowerCase() === pIdLower) return true;
+          if (h.partnerId.email && String(h.partnerId.email).toLowerCase() === pIdLower) return true;
         }
-        if (typeof h.partnerId === 'object') {
-          return (
-            h.partnerId._id === partnerId ||
-            h.partnerId.id === partnerId ||
-            (h.partnerId.email && h.partnerId.email.toLowerCase() === partnerId.toLowerCase())
-          );
+        // Match onboardedBy (so staff who onboarded the property can see & manage it!)
+        if (h.onboardedBy) {
+          if (typeof h.onboardedBy === 'string' && h.onboardedBy.toLowerCase() === pIdLower) return true;
+          if (typeof h.onboardedBy === 'object' && h.onboardedBy) {
+            if (h.onboardedBy.id && String(h.onboardedBy.id).toLowerCase() === pIdLower) return true;
+            if (h.onboardedBy.email && String(h.onboardedBy.email).toLowerCase() === pIdLower) return true;
+          }
         }
+        // Match partnerEmail or contactEmail
+        if (h.partnerEmail && String(h.partnerEmail).toLowerCase() === pIdLower) return true;
+        if (h.contactEmail && String(h.contactEmail).toLowerCase() === pIdLower) return true;
         return false;
       });
     }
@@ -232,26 +241,65 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { partnerId, name, description, location, city, area, country, address, images, amenities, extraAmenities, propertyType, category, starRating, checkInTime, checkOutTime, policies, lat, lng, rooms, totalPropertyRooms, staybuddyAllocation, totalFloors, contactName, contactDesignation, contactPhone, contactEmail, transitHubs } = body;
 
+    let sessionUser: any = null;
+    try {
+      const session = await getServerSession(authOptions);
+      if (session?.user) {
+        sessionUser = session.user;
+      }
+    } catch (e) {
+      console.warn('Could not resolve server session:', e);
+    }
+
+    const cleanedContactEmail = (contactEmail || '').trim().toLowerCase();
+    const cleanedContactPhone = (contactPhone || '').trim();
+    const cleanedContactName = (contactName || '').trim();
+
     let finalPartnerId = partnerId;
-    if (!finalPartnerId) {
+
+    // Strict Partner Account Isolation:
+    // When an onboarding specialist or admin adds the hotel, if contactEmail is provided,
+    // ensure the hotel's partnerId links to the Hotel Partner's user account (not the onboarding staff's account).
+    if (cleanedContactEmail) {
       try {
-        const session = await getServerSession(authOptions);
-        finalPartnerId = (session?.user as any)?.id;
-        if (!finalPartnerId && session?.user?.email) {
-          const userSnap = await db.collection('users').where('email', '==', session.user.email).limit(1).get();
-          if (!userSnap.empty) finalPartnerId = userSnap.docs[0].id;
+        const partnerUserSnap = await db.collection('users').where('email', '==', cleanedContactEmail).limit(1).get();
+        if (!partnerUserSnap.empty) {
+          finalPartnerId = partnerUserSnap.docs[0].id;
+        } else {
+          // Auto-provision an official partner record for this hotel's official email
+          const newPartnerDoc = await db.collection('users').add({
+            name: cleanedContactName || `${name} Partner`,
+            email: cleanedContactEmail,
+            phone: cleanedContactPhone || '',
+            role: 'partner',
+            partnerStatus: 'approved',
+            isActive: true,
+            onboardedBy: sessionUser?.email || 'StayBuddy Onboarding Specialist',
+            createdAt: new Date(),
+          });
+          finalPartnerId = newPartnerDoc.id;
         }
       } catch (e) {
-        console.warn('Could not resolve server session:', e);
+        console.warn('Error auto-resolving partner user for contactEmail:', e);
       }
     }
 
-    if (!finalPartnerId && contactEmail) {
-      try {
-        const userSnap = await db.collection('users').where('email', '==', contactEmail).limit(1).get();
-        if (!userSnap.empty) finalPartnerId = userSnap.docs[0].id;
-      } catch (e) {}
+    if (!finalPartnerId && sessionUser) {
+      finalPartnerId = sessionUser.id || (sessionUser as any)._id;
+      if (!finalPartnerId && sessionUser.email) {
+        try {
+          const userSnap = await db.collection('users').where('email', '==', sessionUser.email).limit(1).get();
+          if (!userSnap.empty) finalPartnerId = userSnap.docs[0].id;
+        } catch (_) {}
+      }
     }
+
+    const onboardedBy = sessionUser ? {
+      id: sessionUser.id || (sessionUser as any)._id || null,
+      email: sessionUser.email ? sessionUser.email.toLowerCase().trim() : null,
+      name: sessionUser.name || 'Onboarding Executive',
+      at: new Date().toISOString()
+    } : null;
 
     const missing = [];
     if (!finalPartnerId) missing.push('partnerId (user session ID)');
@@ -344,13 +392,14 @@ export async function POST(request: NextRequest) {
       totalPropertyRooms, 
       staybuddyAllocation: staybuddyAllocation ? parseInt(staybuddyAllocation) : undefined, 
       totalFloors, 
-      contactName, 
-      contactDesignation, 
-      contactPhone, 
-      contactEmail, 
-      partnerEmail: contactEmail || undefined,
-      partnerPhone: contactPhone || undefined,
-      partnerName: contactName || undefined, 
+      contactName: cleanedContactName || undefined, 
+      contactDesignation: contactDesignation || undefined, 
+      contactPhone: cleanedContactPhone || undefined, 
+      contactEmail: cleanedContactEmail || undefined, 
+      partnerEmail: cleanedContactEmail || undefined,
+      partnerPhone: cleanedContactPhone || undefined,
+      partnerName: cleanedContactName || undefined, 
+      onboardedBy: onboardedBy || undefined,
       transitHubs: transitHubs || undefined,
       avgRating: 0,
       totalReviews: 0,

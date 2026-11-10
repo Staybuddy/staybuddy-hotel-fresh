@@ -96,9 +96,13 @@ export default async function PartnerAgreementPage({
   const totalStayBuddyAlloc = rooms.reduce((sum, r) => sum + (Number(r.staybuddyAllocation ?? r.totalRooms) || 0), 0);
 
   // Strict Partner Contact Isolation:
-  // When an admin adds or manages the property, the agreement must strictly display that hotel's
-  // designated contact person, phone number, and email—never the StayBuddy admin's personal details.
-  const isPartnerAdmin = partner?.role === 'admin' || (typeof partner?.email === 'string' && partner.email.toLowerCase().includes('staybuddy'));
+  // When an admin or onboarding staff member adds or manages the property, the agreement must strictly display that hotel's
+  // designated contact person, phone number, and email—never the StayBuddy onboarding staff's personal details.
+  const isOnboarder = Boolean(
+    (hotel?.onboardedBy?.email && partner?.email && partner.email.toLowerCase() === hotel.onboardedBy.email.toLowerCase()) ||
+    (typeof partner?.email === 'string' && partner.email.toLowerCase().includes('staybuddy'))
+  );
+  const isPartnerAdmin = partner?.role === 'admin' || isOnboarder;
   const partnerContactName = hotel?.contactName || (!isPartnerAdmin ? partner?.name : '') || hotel?.partnerName || 'Authorized Hotel Partner';
   const partnerContactEmail = hotel?.contactEmail || hotel?.partnerEmail || (!isPartnerAdmin ? partner?.email : '') || hotel?.email || 'N/A';
   const partnerContactPhone = hotel?.contactPhone || hotel?.phone || (!isPartnerAdmin ? partner?.phone : '') || hotel?.partnerPhone || 'N/A';

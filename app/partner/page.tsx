@@ -8,6 +8,7 @@ import DateRangePicker from '@/components/DateRangePicker';
 import { compressImage } from '@/lib/imageUtils';
 import { parseCoordinates } from '@/lib/coordinates';
 import PartnerExtranetIntroModal from '@/components/PartnerExtranetIntroModal';
+import OnboardingExecutiveCard from '@/components/OnboardingExecutiveCard';
 
 const NAV_ITEMS = [
   { id: 'hotels', label: 'My Properties', icon: '🏨' },
@@ -283,7 +284,7 @@ export default function PartnerDashboard() {
     if (status === 'unauthenticated') { router.push('/partner/login'); return; }
     if (status === 'authenticated') {
       const role = (session.user as any)?.role;
-      if (role !== 'partner' && role !== 'admin') { router.push('/'); return; }
+      if (role !== 'partner' && role !== 'admin' && role !== 'onboarder' && role !== 'agent') { router.push('/'); return; }
       fetchData();
     }
   }, [status, session]);
@@ -1012,7 +1013,13 @@ export default function PartnerDashboard() {
         </div>
         <div style={{ padding: '20px 28px 48px' }}>
 
-
+          {/* ===== STAYBUDDY HOTEL ONBOARDING SPECIALIST ANIMATED CARD ===== */}
+          <OnboardingExecutiveCard
+            user={session?.user || null}
+            hotelsCount={hotels.length}
+            onStartOnboarding={() => setActiveTab('add-hotel')}
+            onViewHotels={() => setActiveTab('hotels')}
+          />
 
           {/* ===== MY HOTELS ===== */}
           {activeTab === 'hotels' && (
@@ -1854,8 +1861,29 @@ export default function PartnerDashboard() {
                     </div>
                   </div>
                   <div className="card fade-in" style={{ marginTop: 'var(--space-4)' }}>
-                    <div className="card-header"><h3 style={{ fontSize: '1rem' }}>📞 Contact Person</h3></div>
+                    <div className="card-header"><h3 style={{ fontSize: '1rem' }}>📞 Hotel Partner Contact Info</h3></div>
                     <div className="card-body">
+                      {/* STRICT PARTNER ISOLATION NOTICE */}
+                      <div style={{
+                        background: '#f0fdf4',
+                        border: '1px solid #bbf7d0',
+                        borderRadius: 10,
+                        padding: '10px 14px',
+                        marginBottom: 16,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 10,
+                        fontSize: '0.82rem',
+                        color: '#166534',
+                        lineHeight: 1.45
+                      }}>
+                        <span style={{ fontSize: '1.2rem' }}>🔒</span>
+                        <div>
+                          <strong>Partner Credential Isolation:</strong> Enter the official hotel owner/general manager's mobile and email.
+                          All reservation alerts, booking vouchers, and the Partner Agreement will be sent <strong>strictly to this partner email only</strong> — never to the onboarding staff's email.
+                        </div>
+                      </div>
+
                       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-4)' }}>
                         <div className="form-group">
                           <label className="form-label" style={{ textTransform: 'uppercase', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Name</label>

@@ -194,6 +194,22 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     delete updateData.totalReviews;
     updateData.updatedAt = new Date().toISOString();
 
+    if (updateData.contactEmail || updateData.partnerEmail) {
+      const emailVal = (updateData.contactEmail || updateData.partnerEmail).trim().toLowerCase();
+      updateData.contactEmail = emailVal;
+      updateData.partnerEmail = emailVal;
+    }
+    if (updateData.contactPhone || updateData.partnerPhone) {
+      const phoneVal = (updateData.contactPhone || updateData.partnerPhone).trim();
+      updateData.contactPhone = phoneVal;
+      updateData.partnerPhone = phoneVal;
+    }
+    if (updateData.contactName || updateData.partnerName) {
+      const nameVal = (updateData.contactName || updateData.partnerName).trim();
+      updateData.contactName = nameVal;
+      updateData.partnerName = nameVal;
+    }
+
     // If rooms are sent in the update, sync them with the rooms collection
     if (updateData.rooms && Array.isArray(updateData.rooms)) {
       const roomPhotos = updateData.rooms.flatMap((r: any) => Array.isArray(r.images) ? r.images : []).filter(Boolean);

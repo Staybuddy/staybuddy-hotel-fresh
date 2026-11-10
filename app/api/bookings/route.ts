@@ -18,11 +18,33 @@ export async function GET(request: NextRequest) {
     if (status) query = query.where('status', '==', status);
     
     if (partnerId) {
-      // Need to find all hotels for this partner
-      const hotelsSnap = await db.collection('hotels').where('partnerId', '==', partnerId).get();
-      const hotelIds = hotelsSnap.docs.map(d => d.id);
+      // Find all hotels belonging to this partner or onboarded by this staff member
+      const pIdLower = partnerId.toLowerCase();
+      const allHotelsSnap = await db.collection('hotels').get();
+      const hotelIds = allHotelsSnap.docs
+        .filter(d => {
+          const h = d.data();
+          if (typeof h.partnerId === 'string' && h.partnerId.toLowerCase() === pIdLower) return true;
+          if (typeof h.partnerId === 'object' && h.partnerId) {
+            if (h.partnerId._id && String(h.partnerId._id).toLowerCase() === pIdLower) return true;
+            if (h.partnerId.id && String(h.partnerId.id).toLowerCase() === pIdLower) return true;
+            if (h.partnerId.email && String(h.partnerId.email).toLowerCase() === pIdLower) return true;
+          }
+          if (h.partnerEmail && String(h.partnerEmail).toLowerCase() === pIdLower) return true;
+          if (h.contactEmail && String(h.contactEmail).toLowerCase() === pIdLower) return true;
+          if (h.onboardedBy) {
+            if (typeof h.onboardedBy === 'string' && h.onboardedBy.toLowerCase() === pIdLower) return true;
+            if (typeof h.onboardedBy === 'object' && h.onboardedBy) {
+              if (h.onboardedBy.id && String(h.onboardedBy.id).toLowerCase() === pIdLower) return true;
+              if (h.onboardedBy.email && String(h.onboardedBy.email).toLowerCase() === pIdLower) return true;
+            }
+          }
+          return false;
+        })
+        .map(d => d.id);
+
       if (hotelIds.length > 0) {
-        query = query.where('hotelId', 'in', hotelIds);
+        query = query.where('hotelId', 'in', hotelIds.slice(0, 30));
       } else {
         return NextResponse.json({ bookings: [], total: 0, page: 1, pages: 1 });
       }
