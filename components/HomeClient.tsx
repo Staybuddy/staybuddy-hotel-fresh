@@ -70,10 +70,28 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
 
   useEffect(() => {
     if (newlyAddedSlides.length <= 1) return;
-    const interval = setInterval(() => {
-      setActiveNewHotelIndex(prev => (prev + 1) % newlyAddedSlides.length);
-    }, 3800); // Smooth auto-slide transition every 3.8s
-    return () => clearInterval(interval);
+    let timer: any = null;
+    const startTimer = () => {
+      if (timer) clearInterval(timer);
+      timer = setInterval(() => {
+        if (typeof document !== 'undefined' && !document.hidden) {
+          setActiveNewHotelIndex(prev => (prev + 1) % newlyAddedSlides.length);
+        }
+      }, 3400); // Smooth, lightweight auto-slide transition
+    };
+    startTimer();
+    const handleVisibility = () => {
+      if (document.hidden) {
+        if (timer) clearInterval(timer);
+      } else {
+        startTimer();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => {
+      if (timer) clearInterval(timer);
+      document.removeEventListener('visibilitychange', handleVisibility);
+    };
   }, [newlyAddedSlides.length]);
 
   const corporateRealPhoto = useMemo(() => {
@@ -863,7 +881,7 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
           .spotlight-duo-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
-            gap: 20px;
+            gap: 18px;
           }
           @media (max-width: 768px) {
             .spotlight-duo-grid {
@@ -872,8 +890,8 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
               flex-wrap: nowrap !important;
               overflow-x: auto !important;
               scroll-snap-type: x mandatory;
-              gap: 14px;
-              padding: 4px 16px 14px !important;
+              gap: 12px;
+              padding: 2px 16px 12px !important;
               margin-left: -16px;
               margin-right: -16px;
               scrollbar-width: none;
@@ -884,85 +902,83 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
               display: none;
             }
             .spotlight-duo-card {
-              flex: 0 0 310px !important;
-              width: 310px !important;
-              min-width: 310px !important;
+              flex: 0 0 295px !important;
+              width: 295px !important;
+              min-width: 295px !important;
               scroll-snap-align: start;
             }
           }
 
           @keyframes liveRadarPulse {
-            0% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(234, 88, 12, 0.7); }
-            70% { transform: scale(1.1); box-shadow: 0 0 0 7px rgba(234, 88, 12, 0); }
+            0% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(234, 88, 12, 0.65); }
+            70% { transform: scale(1.1); box-shadow: 0 0 0 5px rgba(234, 88, 12, 0); }
             100% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(234, 88, 12, 0); }
           }
           @keyframes liveCorporatePulse {
-            0% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(14, 165, 233, 0.7); }
-            70% { transform: scale(1.1); box-shadow: 0 0 0 7px rgba(14, 165, 233, 0); }
+            0% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(14, 165, 233, 0.65); }
+            70% { transform: scale(1.1); box-shadow: 0 0 0 5px rgba(14, 165, 233, 0); }
             100% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(14, 165, 233, 0); }
           }
           @keyframes ambientOrangeBreath {
-            0% {
-              box-shadow: 0 10px 28px -4px rgba(234, 88, 12, 0.25), 0 0 0 2px rgba(251, 146, 60, 0.75);
+            0%, 100% {
+              box-shadow: 0 4px 18px -2px rgba(234, 88, 12, 0.16), 0 0 0 1px rgba(249, 115, 22, 0.32);
             }
             50% {
-              box-shadow: 0 18px 40px -4px rgba(234, 88, 12, 0.45), 0 0 0 3px rgba(234, 88, 12, 0.95);
-            }
-            100% {
-              box-shadow: 0 10px 28px -4px rgba(234, 88, 12, 0.25), 0 0 0 2px rgba(251, 146, 60, 0.75);
+              box-shadow: 0 8px 24px -2px rgba(234, 88, 12, 0.32), 0 0 0 1px rgba(249, 115, 22, 0.55);
             }
           }
           @keyframes ambientCorporateBreath {
-            0% {
-              box-shadow: 0 10px 28px -4px rgba(14, 165, 233, 0.16), 0 0 0 1px rgba(186, 230, 253, 0.6);
+            0%, 100% {
+              box-shadow: 0 4px 18px -2px rgba(14, 165, 233, 0.14), 0 0 0 1px rgba(56, 189, 248, 0.28);
             }
             50% {
-              box-shadow: 0 16px 36px -4px rgba(14, 165, 233, 0.28), 0 0 0 2px rgba(56, 189, 248, 0.85);
-            }
-            100% {
-              box-shadow: 0 10px 28px -4px rgba(14, 165, 233, 0.16), 0 0 0 1px rgba(186, 230, 253, 0.6);
+              box-shadow: 0 8px 22px -2px rgba(14, 165, 233, 0.28), 0 0 0 1px rgba(56, 189, 248, 0.52);
             }
           }
           @keyframes shineRaySweep {
             0% { transform: translateX(-160%) skewX(-20deg); }
-            28%, 100% { transform: translateX(260%) skewX(-20deg); }
+            25%, 100% { transform: translateX(260%) skewX(-20deg); }
           }
           @keyframes kenBurnsPhotoZoom {
             0% { transform: scale(1) translate(0, 0); }
-            50% { transform: scale(1.08) translate(-1%, -1%); }
+            50% { transform: scale(1.06) translate(-0.8%, -0.8%); }
             100% { transform: scale(1) translate(0, 0); }
           }
           .spotlight-card-inner {
-            border-radius: 22px;
-            padding: 24px;
+            border-radius: 18px;
+            padding: 14px 18px;
             position: relative;
             overflow: hidden;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
             width: 100%;
-            height: 330px;
-            min-height: 330px;
+            height: 220px;
+            min-height: 220px;
             cursor: pointer;
-            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease, filter 0.25s ease;
+            transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.22s ease, filter 0.2s ease;
             user-select: none;
             -webkit-tap-highlight-color: transparent;
             touch-action: manipulation;
+            will-change: transform, box-shadow;
+            transform: translateZ(0);
+            backface-visibility: hidden;
           }
           @media (max-width: 768px) {
             .spotlight-card-inner {
-              height: 290px;
-              min-height: 290px;
-              padding: 18px;
+              height: 198px;
+              min-height: 198px;
+              padding: 12px 14px;
+              border-radius: 16px;
             }
           }
           .spotlight-card-inner:hover {
-            transform: translateY(-8px) scale(1.02);
-            filter: brightness(1.04);
+            transform: translateY(-4px);
+            filter: brightness(1.03);
           }
           .spotlight-card-inner:active {
-            transform: translateY(2px) scale(0.97) !important;
-            transition: transform 0.08s ease-out, box-shadow 0.08s ease-out !important;
+            transform: translateY(1px) scale(0.985) !important;
+            transition: transform 0.06s ease-out !important;
           }
           .spotlight-full-photo {
             position: absolute;
@@ -971,24 +987,23 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
             height: 100%;
             object-fit: cover;
             animation: kenBurnsPhotoZoom 12s ease-in-out infinite alternate;
-            transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+            transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1);
             display: block;
             z-index: 1;
-          }
-          .spotlight-card-inner:hover .spotlight-full-photo {
-            transform: scale(1.12);
+            will-change: opacity, transform;
+            transform: translateZ(0);
           }
           .spotlight-photo-overlay-new {
             position: absolute;
             inset: 0;
-            background: linear-gradient(180deg, rgba(15, 23, 42, 0.2) 0%, rgba(30, 27, 75, 0.45) 35%, rgba(15, 23, 42, 0.94) 100%);
+            background: linear-gradient(180deg, rgba(15, 23, 42, 0.15) 0%, rgba(30, 27, 75, 0.4) 30%, rgba(15, 23, 42, 0.92) 100%);
             z-index: 2;
             pointer-events: none;
           }
           .spotlight-photo-overlay-corp {
             position: absolute;
             inset: 0;
-            background: linear-gradient(180deg, rgba(15, 23, 42, 0.2) 0%, rgba(8, 47, 73, 0.45) 35%, rgba(15, 23, 42, 0.94) 100%);
+            background: linear-gradient(180deg, rgba(15, 23, 42, 0.15) 0%, rgba(8, 47, 73, 0.4) 30%, rgba(15, 23, 42, 0.92) 100%);
             z-index: 2;
             pointer-events: none;
           }
@@ -996,27 +1011,28 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
             position: absolute;
             top: 0;
             left: 0;
-            width: 60%;
+            width: 50%;
             height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.45), transparent);
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.35), transparent);
             pointer-events: none;
-            animation: shineRaySweep 5s infinite ease-in-out;
+            animation: shineRaySweep 4.5s infinite ease-in-out;
             z-index: 4;
+            will-change: transform;
           }
           .spotlight-card-inner:hover .shine-ray {
-            animation: shineRaySweep 1.8s infinite ease-in-out;
+            animation: shineRaySweep 1.5s infinite ease-in-out;
           }
           .spotlight-card-inner .cta-arrow {
-            transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+            transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
             display: inline-block;
           }
           .spotlight-card-inner:hover .cta-arrow {
-            transform: translateX(6px) scale(1.2);
+            transform: translateX(4px);
           }
         `}</style>
         <div className="spotlight-duo-grid">
           
-          {/* Card 1 - Newly Added Hotels (Edge-to-Edge Real Hotel Photos Auto-Slideshow with Orange Border) */}
+          {/* Card 1 - Newly Added Hotels (Edge-to-Edge Real Hotel Photos Auto-Slideshow with Crisp Light Orange Border) */}
           <Link 
             href="/hotels?sort=newest" 
             prefetch={true} 
@@ -1026,7 +1042,7 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
             <div 
               className="spotlight-card-inner" 
               style={{
-                border: '2px solid #ea580c',
+                border: '1px solid rgba(249, 115, 22, 0.45)',
                 animation: 'ambientOrangeBreath 4.5s ease-in-out infinite'
               }}
             >
@@ -1038,11 +1054,11 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
                     key={slide.id || idx}
                     src={slide.photo} 
                     alt={slide.name} 
+                    decoding="async"
+                    loading={idx === 0 ? "eager" : "lazy"}
                     className="spotlight-full-photo" 
                     style={{
                       opacity: isActive ? 1 : 0,
-                      transform: isActive ? 'scale(1.05)' : 'scale(1)',
-                      transition: 'opacity 1s cubic-bezier(0.4, 0, 0.2, 1), transform 5s ease-out',
                       zIndex: 1
                     }}
                   />
@@ -1059,59 +1075,65 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
                 justifyContent: 'space-between',
                 alignItems: 'center',
                 width: '100%',
-                gap: 8,
-                flexWrap: 'wrap'
+                gap: 6
               }}>
                 <div style={{
                   display: 'inline-flex',
                   alignItems: 'center',
-                  gap: 7,
-                  background: 'rgba(255, 255, 255, 0.96)',
+                  gap: 6,
+                  background: 'rgba(255, 255, 255, 0.94)',
                   backdropFilter: 'blur(8px)',
                   color: '#c2410c',
-                  padding: '5px 12px',
-                  borderRadius: 'var(--radius-full)',
-                  fontSize: '0.76rem',
+                  padding: '3px 10px',
+                  borderRadius: 9999,
+                  fontSize: '0.7rem',
                   fontWeight: 800,
                   textTransform: 'uppercase',
-                  border: '1px solid #fed7aa',
-                  boxShadow: '0 4px 14px rgba(234, 88, 12, 0.25)'
+                  border: '1px solid rgba(254, 215, 170, 0.8)',
+                  boxShadow: '0 2px 8px rgba(234, 88, 12, 0.2)'
                 }}>
-                  <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#ea580c', display: 'inline-block', animation: 'liveRadarPulse 1.8s infinite' }} />
-                  <span>Newly Added Hotels</span>
+                  <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#ea580c', display: 'inline-block', animation: 'liveRadarPulse 1.8s infinite' }} />
+                  <span>Newly Added</span>
                 </div>
 
                 <div style={{
-                  background: 'rgba(15, 23, 42, 0.85)',
+                  background: 'rgba(15, 23, 42, 0.8)',
                   backdropFilter: 'blur(6px)',
                   color: '#ffedd5',
-                  padding: '4px 12px',
+                  padding: '3px 10px',
                   borderRadius: 20,
-                  fontSize: '0.74rem',
+                  fontSize: '0.68rem',
                   fontWeight: 700,
-                  border: '1px solid rgba(251, 146, 60, 0.4)',
-                  boxShadow: '0 2px 10px rgba(0,0,0,0.25)',
+                  border: '1px solid rgba(251, 146, 60, 0.3)',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: 6
+                  gap: 5,
+                  maxWidth: '58%',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap'
                 }}>
                   <span style={{ color: '#fb923c' }}>🏨</span>
-                  <span>{newlyAddedSlides[activeNewHotelIndex]?.name || 'Featured Stays'}{newlyAddedSlides[activeNewHotelIndex]?.city ? ` • ${newlyAddedSlides[activeNewHotelIndex].city}` : ''}</span>
+                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {newlyAddedSlides[activeNewHotelIndex]?.name || 'Fresh Stays'}
+                    {newlyAddedSlides[activeNewHotelIndex]?.city ? ` • ${newlyAddedSlides[activeNewHotelIndex].city}` : ''}
+                  </span>
                 </div>
               </div>
 
               {/* Bottom Transparent Overlay Content */}
               <div style={{ position: 'relative', zIndex: 3 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 6 }}>
                   {newlyAddedSlides.map((_, dotIdx) => (
                     <span 
                       key={dotIdx}
                       style={{
-                        height: 4,
-                        width: dotIdx === activeNewHotelIndex ? 22 : 6,
+                        height: 3,
+                        width: dotIdx === activeNewHotelIndex ? 18 : 5,
                         borderRadius: 3,
                         background: dotIdx === activeNewHotelIndex ? '#ea580c' : 'rgba(255, 255, 255, 0.45)',
-                        transition: 'all 0.35s ease'
+                        transition: 'all 0.3s ease'
                       }}
                     />
                   ))}
@@ -1119,23 +1141,28 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
 
                 <h3 style={{ 
                   color: '#ffffff', 
-                  marginBottom: 6, 
-                  fontSize: '1.55rem', 
+                  marginBottom: 3, 
+                  fontSize: '1.24rem', 
                   fontWeight: 800,
                   display: 'flex',
                   alignItems: 'center',
-                  gap: 8,
-                  textShadow: '0 2px 10px rgba(0,0,0,0.7)'
+                  gap: 6,
+                  textShadow: '0 2px 8px rgba(0,0,0,0.7)'
                 }}>
                   <span>Newly Added Hotels</span>
-                  <span style={{ color: '#fb923c', fontSize: '1.25rem' }}>✨</span>
+                  <span style={{ color: '#fb923c', fontSize: '1rem' }}>✨</span>
                 </h3>
                 <p style={{ 
-                  color: 'rgba(255, 255, 255, 0.92)', 
-                  fontSize: '0.92rem', 
-                  margin: '0 0 14px 0', 
-                  lineHeight: 1.45,
-                  textShadow: '0 1px 6px rgba(0,0,0,0.7)'
+                  color: 'rgba(255, 255, 255, 0.9)', 
+                  fontSize: '0.8rem', 
+                  margin: '0 0 8px 0', 
+                  lineHeight: 1.35,
+                  textShadow: '0 1px 4px rgba(0,0,0,0.7)',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  display: '-webkit-box',
+                  WebkitLineClamp: 1,
+                  WebkitBoxOrient: 'vertical'
                 }}>
                   Discover freshly onboarded boutique stays & verified hotels with special launch offers.
                 </p>
@@ -1143,14 +1170,14 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
                 <div style={{
                   display: 'inline-flex',
                   alignItems: 'center',
-                  gap: 8,
+                  gap: 6,
                   background: 'linear-gradient(135deg, #ea580c 0%, #f97316 100%)',
                   color: '#ffffff',
-                  padding: '8px 18px',
-                  borderRadius: 24,
-                  fontSize: '0.88rem',
+                  padding: '5px 14px',
+                  borderRadius: 20,
+                  fontSize: '0.78rem',
                   fontWeight: 700,
-                  boxShadow: '0 4px 16px rgba(234, 88, 12, 0.5)',
+                  boxShadow: '0 3px 12px rgba(234, 88, 12, 0.4)',
                   border: '1px solid rgba(255, 255, 255, 0.25)'
                 }}>
                   <span>Explore Newly Added</span>
@@ -1160,7 +1187,7 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
             </div>
           </Link>
 
-          {/* Card 2 - Hotels for Corporate (Edge-to-Edge Corporate Photo with Transparent Theme Overlay) */}
+          {/* Card 2 - Hotels for Corporate (Edge-to-Edge Corporate Photo with Crisp Light Blue Border) */}
           <Link 
             href="/hotels?category=business" 
             prefetch={true} 
@@ -1170,7 +1197,7 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
             <div 
               className="spotlight-card-inner" 
               style={{
-                border: '1.5px solid rgba(125, 211, 252, 0.75)',
+                border: '1px solid rgba(56, 189, 248, 0.4)',
                 animation: 'ambientCorporateBreath 4.5s ease-in-out infinite 1s'
               }}
             >
@@ -1178,6 +1205,8 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
               <img 
                 src={corporateRealPhoto} 
                 alt="Hotels for Corporate" 
+                decoding="async"
+                loading="lazy"
                 className="spotlight-full-photo" 
                 style={{ animationDelay: '1.5s' }}
               />
@@ -1192,40 +1221,39 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
                 justifyContent: 'space-between',
                 alignItems: 'center',
                 width: '100%',
-                gap: 8,
-                flexWrap: 'wrap'
+                gap: 6
               }}>
                 <div style={{
                   display: 'inline-flex',
                   alignItems: 'center',
-                  gap: 7,
-                  background: 'rgba(255, 255, 255, 0.96)',
+                  gap: 6,
+                  background: 'rgba(255, 255, 255, 0.94)',
                   backdropFilter: 'blur(8px)',
                   color: '#0284c7',
-                  padding: '5px 12px',
-                  borderRadius: 'var(--radius-full)',
-                  fontSize: '0.76rem',
+                  padding: '3px 10px',
+                  borderRadius: 9999,
+                  fontSize: '0.7rem',
                   fontWeight: 800,
                   textTransform: 'uppercase',
-                  border: '1px solid rgba(186, 230, 253, 0.9)',
-                  boxShadow: '0 4px 14px rgba(0,0,0,0.2)'
+                  border: '1px solid rgba(186, 230, 253, 0.8)',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
                 }}>
-                  <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#0284c7', display: 'inline-block', animation: 'liveCorporatePulse 1.8s infinite' }} />
+                  <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#0284c7', display: 'inline-block', animation: 'liveCorporatePulse 1.8s infinite' }} />
                   <span>Corporate & B2B</span>
                 </div>
 
                 <div style={{
-                  background: 'rgba(15, 23, 42, 0.82)',
+                  background: 'rgba(15, 23, 42, 0.8)',
                   backdropFilter: 'blur(6px)',
                   color: '#38bdf8',
-                  padding: '4px 12px',
+                  padding: '3px 10px',
                   borderRadius: 20,
-                  fontSize: '0.74rem',
+                  fontSize: '0.68rem',
                   fontWeight: 700,
                   border: '1px solid rgba(56, 189, 248, 0.3)',
-                  boxShadow: '0 2px 10px rgba(0,0,0,0.25)'
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
                 }}>
-                  🧾 GST Invoices Guaranteed
+                  🧾 GST Invoices Ready
                 </div>
               </div>
 
@@ -1233,41 +1261,46 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
               <div style={{ position: 'relative', zIndex: 3 }}>
                 <h3 style={{ 
                   color: '#ffffff', 
-                  marginBottom: 6, 
-                  fontSize: '1.55rem', 
+                  marginBottom: 3, 
+                  fontSize: '1.24rem', 
                   fontWeight: 800,
                   display: 'flex',
                   alignItems: 'center',
-                  gap: 8,
-                  textShadow: '0 2px 10px rgba(0,0,0,0.7)'
+                  gap: 6,
+                  textShadow: '0 2px 8px rgba(0,0,0,0.7)'
                 }}>
                   <span>Hotels for Corporate</span>
-                  <span style={{ fontSize: '1.25rem' }}>🏢</span>
+                  <span style={{ fontSize: '1rem' }}>🏢</span>
                 </h3>
                 <p style={{ 
-                  color: 'rgba(255, 255, 255, 0.92)', 
-                  fontSize: '0.92rem', 
-                  margin: '0 0 14px 0', 
-                  lineHeight: 1.45,
-                  textShadow: '0 1px 6px rgba(0,0,0,0.7)'
+                  color: 'rgba(255, 255, 255, 0.9)', 
+                  fontSize: '0.8rem', 
+                  margin: '0 0 8px 0', 
+                  lineHeight: 1.35,
+                  textShadow: '0 1px 4px rgba(0,0,0,0.7)',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  display: '-webkit-box',
+                  WebkitLineClamp: 1,
+                  WebkitBoxOrient: 'vertical'
                 }}>
-                  Seamless corporate bookings with express check-in, high-speed WiFi, work desks & automated GST billing.
+                  Seamless corporate stays with express check-in, high-speed WiFi, work desks & GST invoices.
                 </p>
 
                 <div style={{
                   display: 'inline-flex',
                   alignItems: 'center',
-                  gap: 8,
+                  gap: 6,
                   background: 'linear-gradient(135deg, #0284c7 0%, #0ea5e9 100%)',
                   color: '#ffffff',
-                  padding: '8px 18px',
-                  borderRadius: 24,
-                  fontSize: '0.88rem',
+                  padding: '5px 14px',
+                  borderRadius: 20,
+                  fontSize: '0.78rem',
                   fontWeight: 700,
-                  boxShadow: '0 4px 16px rgba(2, 132, 199, 0.5)',
+                  boxShadow: '0 3px 12px rgba(2, 132, 199, 0.4)',
                   border: '1px solid rgba(255, 255, 255, 0.25)'
                 }}>
-                  <span>Explore Corporate Hotels</span>
+                  <span>Explore Corporate</span>
                   <span className="cta-arrow">→</span>
                 </div>
               </div>
