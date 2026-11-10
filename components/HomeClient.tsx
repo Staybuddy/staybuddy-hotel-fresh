@@ -43,11 +43,38 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
   const [validationErrorField, setValidationErrorField] = useState<'location' | 'dates' | 'adults' | null>(null);
   const [userWishlistIds, setUserWishlistIds] = useState<string[]>([]);
   
-  // Dynamic Real Photos for Spotlight Duo Cards
-  const newlyAddedRealPhoto = useMemo(() => {
-    const found = hotels?.find((h: any) => h.images && h.images.length > 0 && typeof h.images[0] === 'string' && (h.images[0].startsWith('http') || h.images[0].startsWith('/api/images')));
-    return found?.images?.[0] || "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?ixlib=rb-4.0.3&auto=format&fit=crop&w=1400&q=85";
+  // Dynamic Real Property First Photos for Newly Added Hotels Slideshow
+  const newlyAddedSlides = useMemo(() => {
+    const list = (hotels || [])
+      .map((h: any) => ({
+        id: h._id || h.hotelId,
+        name: h.name,
+        city: h.city || h.area || '',
+        photo: (Array.isArray(h.images) && h.images.length > 0 && typeof h.images[0] === 'string' && (h.images[0].startsWith('http') || h.images[0].startsWith('/api/images')))
+          ? h.images[0]
+          : null
+      }))
+      .filter((item: any) => Boolean(item.photo));
+
+    if (list.length === 0) {
+      list.push(
+        { id: 'f1', name: 'Luxury Palace & Suites', city: 'Goa', photo: 'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?ixlib=rb-4.0.3&auto=format&fit=crop&w=1400&q=85' },
+        { id: 'f2', name: 'Grand Horizon Resort', city: 'Udaipur', photo: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?ixlib=rb-4.0.3&auto=format&fit=crop&w=1400&q=85' },
+        { id: 'f3', name: 'Elite Skyline Suites', city: 'Hyderabad', photo: 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?ixlib=rb-4.0.3&auto=format&fit=crop&w=1400&q=85' }
+      );
+    }
+    return list;
   }, [hotels]);
+
+  const [activeNewHotelIndex, setActiveNewHotelIndex] = useState(0);
+
+  useEffect(() => {
+    if (newlyAddedSlides.length <= 1) return;
+    const interval = setInterval(() => {
+      setActiveNewHotelIndex(prev => (prev + 1) % newlyAddedSlides.length);
+    }, 3800); // Smooth auto-slide transition every 3.8s
+    return () => clearInterval(interval);
+  }, [newlyAddedSlides.length]);
 
   const corporateRealPhoto = useMemo(() => {
     const found = hotels?.find((h: any) => (h.category === 'business' || h.propertyType === 'Hotel') && h.images && h.images.length > 1 && typeof h.images[1] === 'string');
@@ -865,24 +892,24 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
           }
 
           @keyframes liveRadarPulse {
-            0% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(147, 51, 234, 0.7); }
-            70% { transform: scale(1.1); box-shadow: 0 0 0 7px rgba(147, 51, 234, 0); }
-            100% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(147, 51, 234, 0); }
+            0% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(234, 88, 12, 0.7); }
+            70% { transform: scale(1.1); box-shadow: 0 0 0 7px rgba(234, 88, 12, 0); }
+            100% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(234, 88, 12, 0); }
           }
           @keyframes liveCorporatePulse {
             0% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(14, 165, 233, 0.7); }
             70% { transform: scale(1.1); box-shadow: 0 0 0 7px rgba(14, 165, 233, 0); }
             100% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(14, 165, 233, 0); }
           }
-          @keyframes ambientCardBreath {
+          @keyframes ambientOrangeBreath {
             0% {
-              box-shadow: 0 10px 28px -4px rgba(147, 51, 234, 0.16), 0 0 0 1px rgba(196, 181, 253, 0.6);
+              box-shadow: 0 10px 28px -4px rgba(234, 88, 12, 0.25), 0 0 0 2px rgba(251, 146, 60, 0.75);
             }
             50% {
-              box-shadow: 0 16px 36px -4px rgba(147, 51, 234, 0.28), 0 0 0 2px rgba(168, 85, 247, 0.85);
+              box-shadow: 0 18px 40px -4px rgba(234, 88, 12, 0.45), 0 0 0 3px rgba(234, 88, 12, 0.95);
             }
             100% {
-              box-shadow: 0 10px 28px -4px rgba(147, 51, 234, 0.16), 0 0 0 1px rgba(196, 181, 253, 0.6);
+              box-shadow: 0 10px 28px -4px rgba(234, 88, 12, 0.25), 0 0 0 2px rgba(251, 146, 60, 0.75);
             }
           }
           @keyframes ambientCorporateBreath {
@@ -989,7 +1016,7 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
         `}</style>
         <div className="spotlight-duo-grid">
           
-          {/* Card 1 - Newly Added Hotels (Edge-to-Edge Real Hotel Photo with Transparent Theme Overlay) */}
+          {/* Card 1 - Newly Added Hotels (Edge-to-Edge Real Hotel Photos Auto-Slideshow with Orange Border) */}
           <Link 
             href="/hotels?sort=newest" 
             prefetch={true} 
@@ -999,16 +1026,28 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
             <div 
               className="spotlight-card-inner" 
               style={{
-                border: '1.5px solid rgba(216, 180, 254, 0.75)',
-                animation: 'ambientCardBreath 4.5s ease-in-out infinite'
+                border: '2px solid #ea580c',
+                animation: 'ambientOrangeBreath 4.5s ease-in-out infinite'
               }}
             >
-              {/* Full Background Real Photo */}
-              <img 
-                src={newlyAddedRealPhoto} 
-                alt="Newly Added Hotels" 
-                className="spotlight-full-photo" 
-              />
+              {/* Full Background Real Photos Auto-Slideshow: First photo of each property */}
+              {newlyAddedSlides.map((slide: any, idx: number) => {
+                const isActive = idx === activeNewHotelIndex;
+                return (
+                  <img 
+                    key={slide.id || idx}
+                    src={slide.photo} 
+                    alt={slide.name} 
+                    className="spotlight-full-photo" 
+                    style={{
+                      opacity: isActive ? 1 : 0,
+                      transform: isActive ? 'scale(1.05)' : 'scale(1)',
+                      transition: 'opacity 1s cubic-bezier(0.4, 0, 0.2, 1), transform 5s ease-out',
+                      zIndex: 1
+                    }}
+                  />
+                );
+              })}
               <div className="spotlight-photo-overlay-new" />
               <div className="shine-ray" />
               
@@ -1029,36 +1068,55 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
                   gap: 7,
                   background: 'rgba(255, 255, 255, 0.96)',
                   backdropFilter: 'blur(8px)',
-                  color: '#7c3aed',
+                  color: '#c2410c',
                   padding: '5px 12px',
                   borderRadius: 'var(--radius-full)',
                   fontSize: '0.76rem',
                   fontWeight: 800,
                   textTransform: 'uppercase',
-                  border: '1px solid rgba(221, 214, 254, 0.9)',
-                  boxShadow: '0 4px 14px rgba(0,0,0,0.2)'
+                  border: '1px solid #fed7aa',
+                  boxShadow: '0 4px 14px rgba(234, 88, 12, 0.25)'
                 }}>
-                  <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#9333ea', display: 'inline-block', animation: 'liveRadarPulse 1.8s infinite' }} />
+                  <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#ea580c', display: 'inline-block', animation: 'liveRadarPulse 1.8s infinite' }} />
                   <span>Newly Added Hotels</span>
                 </div>
 
                 <div style={{
-                  background: 'rgba(15, 23, 42, 0.82)',
+                  background: 'rgba(15, 23, 42, 0.85)',
                   backdropFilter: 'blur(6px)',
-                  color: '#fef08a',
+                  color: '#ffedd5',
                   padding: '4px 12px',
                   borderRadius: 20,
                   fontSize: '0.74rem',
                   fontWeight: 700,
-                  border: '1px solid rgba(254, 240, 138, 0.3)',
-                  boxShadow: '0 2px 10px rgba(0,0,0,0.25)'
+                  border: '1px solid rgba(251, 146, 60, 0.4)',
+                  boxShadow: '0 2px 10px rgba(0,0,0,0.25)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6
                 }}>
-                  ✨ Exclusive Launch Rates
+                  <span style={{ color: '#fb923c' }}>🏨</span>
+                  <span>{newlyAddedSlides[activeNewHotelIndex]?.name || 'Featured Stays'}{newlyAddedSlides[activeNewHotelIndex]?.city ? ` • ${newlyAddedSlides[activeNewHotelIndex].city}` : ''}</span>
                 </div>
               </div>
 
               {/* Bottom Transparent Overlay Content */}
               <div style={{ position: 'relative', zIndex: 3 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+                  {newlyAddedSlides.map((_, dotIdx) => (
+                    <span 
+                      key={dotIdx}
+                      style={{
+                        height: 4,
+                        width: dotIdx === activeNewHotelIndex ? 22 : 6,
+                        borderRadius: 3,
+                        background: dotIdx === activeNewHotelIndex ? '#ea580c' : 'rgba(255, 255, 255, 0.45)',
+                        transition: 'all 0.35s ease'
+                      }}
+                    />
+                  ))}
+                </div>
+
                 <h3 style={{ 
                   color: '#ffffff', 
                   marginBottom: 6, 
@@ -1070,7 +1128,7 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
                   textShadow: '0 2px 10px rgba(0,0,0,0.7)'
                 }}>
                   <span>Newly Added Hotels</span>
-                  <span style={{ color: '#fbbf24', fontSize: '1.25rem' }}>✨</span>
+                  <span style={{ color: '#fb923c', fontSize: '1.25rem' }}>✨</span>
                 </h3>
                 <p style={{ 
                   color: 'rgba(255, 255, 255, 0.92)', 
