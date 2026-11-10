@@ -46,8 +46,8 @@ export default function FlagshipHotelStores({ dbHotels = [] }: { dbHotels?: any[
           propertyType: h.propertyType || 'Hotel'
         };
       })
-      // Only include properties that have real photos and are approved 4-star, 5-star, or premier category
-      .filter((h: any) => h.photo && (h.starRating >= 4 || h.category === 'premium' || h.category === 'luxury' || h.starRating >= 3));
+      // Only include properties that have real photos and are strictly approved 4-star or 5-star hotels
+      .filter((h: any) => h.photo && (h.starRating >= 4 || h.category === 'luxury' || (h.category === 'premium' && h.starRating >= 4)));
 
     // Sort with 5-star and 4-star first
     list.sort((a, b) => b.starRating - a.starRating);

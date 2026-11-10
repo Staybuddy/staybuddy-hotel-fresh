@@ -582,7 +582,7 @@ function HotelSearch() {
               <div className="hotels-results-list" style={{ display: 'flex', flexDirection: 'column', gap: '16px', width: '100%' }}>
                 {sortedHotels.map((hotel, index) => {
                   const starNum = Math.min(5, Math.max(1, Number(hotel.starRating) || (hotel.category === 'Luxury' ? 5 : hotel.category === 'Premium' ? 4 : 3)));
-                  const isPremier = starNum >= 3 || hotel.category === 'Luxury' || hotel.category === 'Premium' || hotel.category === 'premium' || hotel.category === 'luxury';
+                  const isPremier = starNum >= 4 || (hotel.category && ['luxury', 'premium'].includes(hotel.category.toLowerCase()) && starNum >= 4);
                   return (
                   <Link 
                     key={hotel._id} 
@@ -602,24 +602,6 @@ function HotelSearch() {
                           <span className="badge badge-gray" style={{ backdropFilter: 'blur(4px)', background: 'rgba(0,0,0,0.65)', color: 'white', fontWeight: 700 }}>
                             {hotel.propertyType || 'Hotel'}
                           </span>
-                        </div>
-                        <div style={{ position: 'absolute', top: 12, right: 12, zIndex: 2 }}>
-                          {isPremier ? (
-                            <span className="badge" style={{ 
-                              backdropFilter: 'blur(6px)', 
-                              background: 'linear-gradient(135deg, #d97706 0%, #b45309 100%)', 
-                              color: '#ffffff', 
-                              fontWeight: 800,
-                              border: '1px solid #fde68a',
-                              boxShadow: '0 2px 8px rgba(217, 119, 6, 0.4)'
-                            }}>
-                              👑 Premier Hotel ({starNum}★)
-                            </span>
-                          ) : (
-                            <span className="badge badge-primary" style={{ backdropFilter: 'blur(4px)', background: 'rgba(59, 130, 246, 0.85)', color: 'white', fontWeight: 700 }}>
-                              {hotel.category || 'Standard'}
-                            </span>
-                          )}
                         </div>
                         {hotel.avgRating >= 4.5 && (
                           <div style={{ position: 'absolute', bottom: 12, left: 12, zIndex: 2 }}>

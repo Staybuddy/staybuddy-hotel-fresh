@@ -91,7 +91,11 @@ export async function GET(request: NextRequest) {
       hotels = hotels.filter((h: any) => {
         const star = Number(h.starRating) || 0;
         const cat = (h.category || '').toLowerCase();
-        return star >= 3 || star === 3 || star === 4 || star === 5 || cat === 'premium' || cat === 'luxury' || (h.avgRating && h.avgRating >= 4.0);
+        if (category === 'luxury') {
+          return star >= 5 || cat === 'luxury';
+        }
+        // Premium Hotel Groups: strictly 4-star and 5-star category hotels
+        return star >= 4 || cat === 'luxury' || (cat === 'premium' && (star === 0 || star >= 4));
       });
     }
 

@@ -946,6 +946,7 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
             100% { transform: scale(1) translate(0, 0); }
           }
           .spotlight-card-inner {
+            border: 1.5px solid transparent;
             border-radius: 18px;
             padding: 14px 18px;
             position: relative;
@@ -957,13 +958,14 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
             height: 220px;
             min-height: 220px;
             cursor: pointer;
-            transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.22s ease, filter 0.2s ease;
+            transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.22s ease, border-color 0.2s ease, filter 0.2s ease;
             user-select: none;
             -webkit-tap-highlight-color: transparent;
             touch-action: manipulation;
-            will-change: transform, box-shadow;
+            will-change: transform, box-shadow, border-color;
             transform: translateZ(0);
             backface-visibility: hidden;
+            box-shadow: 0 4px 16px rgba(15, 23, 42, 0.08);
           }
           @media (max-width: 768px) {
             .spotlight-card-inner {
@@ -973,12 +975,18 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
               border-radius: 16px;
             }
           }
+          .spotlight-duo-card:hover .spotlight-card-inner,
           .spotlight-card-inner:hover {
             transform: translateY(-4px);
             filter: brightness(1.03);
+            border: 1.5px solid #ea580c !important;
+            box-shadow: 0 12px 28px rgba(234, 88, 12, 0.3) !important;
           }
+          .spotlight-duo-card:active .spotlight-card-inner,
           .spotlight-card-inner:active {
             transform: translateY(1px) scale(0.985) !important;
+            border: 1.5px solid #ea580c !important;
+            box-shadow: 0 6px 18px rgba(234, 88, 12, 0.25) !important;
             transition: transform 0.06s ease-out !important;
           }
           .spotlight-full-photo {
@@ -1041,11 +1049,7 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
             style={{ textDecoration: 'none', color: 'inherit', display: 'flex' }}
           >
             <div 
-              className="spotlight-card-inner" 
-              style={{
-                border: '1px solid rgba(249, 115, 22, 0.45)',
-                animation: 'ambientOrangeBreath 4.5s ease-in-out infinite'
-              }}
+              className="spotlight-card-inner"
             >
               {/* Full Background Real Photos Auto-Slideshow: First photo of each property */}
               {newlyAddedSlides.map((slide: any, idx: number) => {
@@ -1196,11 +1200,7 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
             style={{ textDecoration: 'none', color: 'inherit', display: 'flex' }}
           >
             <div 
-              className="spotlight-card-inner" 
-              style={{
-                border: '1px solid rgba(56, 189, 248, 0.4)',
-                animation: 'ambientCorporateBreath 4.5s ease-in-out infinite 1s'
-              }}
+              className="spotlight-card-inner"
             >
               {/* Full Background Real Corporate Photo */}
               <img 
