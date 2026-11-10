@@ -824,13 +824,19 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
         <style>{`
           .home-collections-grid {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 20px;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 16px;
           }
-          @media (max-width: 1100px) {
+          @media (max-width: 1280px) {
+            .home-collections-grid {
+              grid-template-columns: repeat(3, 1fr);
+              gap: 16px;
+            }
+          }
+          @media (max-width: 900px) {
             .home-collections-grid {
               grid-template-columns: repeat(2, 1fr);
-              gap: 16px;
+              gap: 14px;
             }
           }
           @media (max-width: 768px) {
@@ -864,6 +870,11 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
             70% { transform: scale(1.1); box-shadow: 0 0 0 7px rgba(147, 51, 234, 0); }
             100% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(147, 51, 234, 0); }
           }
+          @keyframes liveCorporatePulse {
+            0% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(14, 165, 233, 0.7); }
+            70% { transform: scale(1.1); box-shadow: 0 0 0 7px rgba(14, 165, 233, 0); }
+            100% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(14, 165, 233, 0); }
+          }
           @keyframes ambientCardBreath {
             0% {
               box-shadow: 0 8px 24px -4px rgba(147, 51, 234, 0.16), 0 0 0 1px rgba(196, 181, 253, 0.6);
@@ -875,19 +886,29 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
               box-shadow: 0 8px 24px -4px rgba(147, 51, 234, 0.16), 0 0 0 1px rgba(196, 181, 253, 0.6);
             }
           }
+          @keyframes ambientCorporateBreath {
+            0% {
+              box-shadow: 0 8px 24px -4px rgba(14, 165, 233, 0.16), 0 0 0 1px rgba(186, 230, 253, 0.6);
+            }
+            50% {
+              box-shadow: 0 14px 32px -4px rgba(14, 165, 233, 0.28), 0 0 0 2px rgba(56, 189, 248, 0.85);
+            }
+            100% {
+              box-shadow: 0 8px 24px -4px rgba(14, 165, 233, 0.16), 0 0 0 1px rgba(186, 230, 253, 0.6);
+            }
+          }
           @keyframes shineRaySweep {
             0% { transform: translateX(-160%) skewX(-20deg); }
             28%, 100% { transform: translateX(260%) skewX(-20deg); }
           }
-          @keyframes floatBadgeIcon {
-            0%, 100% { transform: translateY(0px) rotate(0deg); }
-            50% { transform: translateY(-7px) rotate(5deg); }
+          @keyframes kenBurnsPhotoZoom {
+            0% { transform: scale(1) translate(0, 0); }
+            50% { transform: scale(1.08) translate(-1%, -1%); }
+            100% { transform: scale(1) translate(0, 0); }
           }
-          .newly-added-hotel-card {
-            background: linear-gradient(135deg, #fdf4ff 0%, #fae8ff 45%, #eff6ff 100%);
+          .collection-card-inner {
             border-radius: var(--radius-xl);
-            padding: var(--space-6);
-            border: 1.5px solid #d8b4fe;
+            padding: 16px;
             position: relative;
             overflow: hidden;
             display: flex;
@@ -895,23 +916,46 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
             justify-content: space-between;
             width: 100%;
             cursor: pointer;
-            animation: ambientCardBreath 4.5s ease-in-out infinite;
             transition: transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.28s ease, filter 0.2s ease;
             user-select: none;
             -webkit-tap-highlight-color: transparent;
             touch-action: manipulation;
           }
-          .newly-added-hotel-card:hover {
+          .collection-card-inner:hover {
             transform: translateY(-8px) scale(1.02);
-            box-shadow: 0 24px 48px -10px rgba(147, 51, 234, 0.38), 0 0 22px rgba(249, 115, 22, 0.2) !important;
             filter: brightness(1.02);
           }
-          .newly-added-hotel-card:active {
+          .collection-card-inner:active {
             transform: translateY(2px) scale(0.97) !important;
-            box-shadow: 0 4px 14px rgba(147, 51, 234, 0.28) !important;
             transition: transform 0.08s ease-out, box-shadow 0.08s ease-out !important;
           }
-          .newly-added-hotel-card .shine-ray {
+          .card-photo-header {
+            position: relative;
+            width: 100%;
+            height: 145px;
+            border-radius: 14px;
+            overflow: hidden;
+            margin-bottom: 14px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+          }
+          .card-photo-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            animation: kenBurnsPhotoZoom 9s ease-in-out infinite alternate;
+            transition: transform 0.4s ease;
+            display: block;
+          }
+          .collection-card-inner:hover .card-photo-img {
+            transform: scale(1.12);
+          }
+          .card-photo-gradient {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(to top, rgba(15, 23, 42, 0.65) 0%, rgba(15, 23, 42, 0.15) 50%, transparent 100%);
+            pointer-events: none;
+          }
+          .collection-card-inner .shine-ray {
             position: absolute;
             top: 0;
             left: 0;
@@ -920,107 +964,90 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
             background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.65), transparent);
             pointer-events: none;
             animation: shineRaySweep 5s infinite ease-in-out;
-            z-index: 1;
+            z-index: 5;
           }
-          .newly-added-hotel-card:hover .shine-ray {
+          .collection-card-inner:hover .shine-ray {
             animation: shineRaySweep 1.8s infinite ease-in-out;
           }
-          .newly-added-hotel-card .floating-icon {
-            position: absolute;
-            right: 5%;
-            bottom: -8%;
-            font-size: 5.5rem;
-            opacity: 0.16;
-            pointer-events: none;
-            animation: floatBadgeIcon 3.5s ease-in-out infinite;
-            transition: transform 0.3s ease, opacity 0.3s ease;
-          }
-          .newly-added-hotel-card:hover .floating-icon {
-            opacity: 0.32;
-            transform: scale(1.18) rotate(10deg);
-          }
-          .newly-added-hotel-card .cta-arrow {
+          .collection-card-inner .cta-arrow {
             transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
             display: inline-block;
           }
-          .newly-added-hotel-card:hover .cta-arrow {
+          .collection-card-inner:hover .cta-arrow {
             transform: translateX(8px) scale(1.2);
-          }
-          .live-radar-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: #9333ea;
-            display: inline-block;
-            animation: liveRadarPulse 1.8s infinite;
           }
         `}</style>
         <div className="home-collections-grid">
           
-          {/* Card 1 */}
-          <Link href="/hotels?category=luxury" className="home-collections-card" style={{ textDecoration: 'none', color: 'inherit', display: 'flex' }}>
-            <div style={{
-              background: 'linear-gradient(135deg, var(--brand-50), var(--brand-100))',
-              borderRadius: 'var(--radius-xl)', padding: 'var(--space-6)',
-              border: '1px solid var(--brand-200)', position: 'relative', overflow: 'hidden',
-              display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
-              width: '100%', cursor: 'pointer',
-              transition: 'transform 0.25s ease, box-shadow 0.25s ease'
-            }}
-            onMouseEnter={e => {
-              (e.currentTarget as HTMLElement).style.transform = 'translateY(-4px)';
-              (e.currentTarget as HTMLElement).style.boxShadow = '0 16px 32px rgba(234, 88, 12, 0.15)';
-            }}
-            onMouseLeave={e => {
-              (e.currentTarget as HTMLElement).style.transform = 'translateY(0)';
-              (e.currentTarget as HTMLElement).style.boxShadow = 'none';
-            }}>
-              <div style={{ position: 'absolute', right: '5%', bottom: '-10%', fontSize: '6rem', opacity: 0.1, pointerEvents: 'none' }}>🏨</div>
-              <div style={{ position: 'relative', zIndex: 1, marginBottom: 24 }}>
-                <div style={{ display: 'inline-block', background: 'white', color: 'var(--brand-700)', padding: '4px 10px', borderRadius: 'var(--radius-full)', fontSize: '0.75rem', fontWeight: 700, marginBottom: 12, textTransform: 'uppercase', border: '1px solid var(--brand-200)' }}>Curated Collections</div>
-                <h3 style={{ color: 'var(--brand-900)', marginBottom: 8, fontSize: '1.4rem' }}>Premium Hotel Groups</h3>
-                <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', margin: 0 }}>Discover luxury heritage chains and exclusive beachfront resorts.</p>
-              </div>
-              <div style={{ color: 'var(--brand-600)', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4, position: 'relative', zIndex: 1 }}>
-                View Collection →
-              </div>
-            </div>
-          </Link>
-
-          {/* Card 2 - Newly Added Hotels (Fully Animated) */}
+          {/* Card 1 - Newly Added Hotels (With Animated Hotel Photo Above Column) */}
           <Link 
             href="/hotels?sort=newest" 
             prefetch={true} 
             className="home-collections-card" 
             style={{ textDecoration: 'none', color: 'inherit', display: 'flex' }}
           >
-            <div className="newly-added-hotel-card">
+            <div 
+              className="collection-card-inner" 
+              style={{
+                background: 'linear-gradient(135deg, #fdf4ff 0%, #fae8ff 45%, #eff6ff 100%)',
+                border: '1.5px solid #d8b4fe',
+                animation: 'ambientCardBreath 4.5s ease-in-out infinite'
+              }}
+            >
               <div className="shine-ray" />
-              <div className="floating-icon">🛎️</div>
               
-              <div style={{ position: 'relative', zIndex: 2, marginBottom: 24 }}>
+              {/* Animated Hotel Photo Above Column */}
+              <div className="card-photo-header">
+                <img 
+                  src="https://images.unsplash.com/photo-1566073771259-6a8506099945?ixlib=rb-4.0.3&auto=format&fit=crop&w=700&q=80" 
+                  alt="New on StayBuddy" 
+                  className="card-photo-img" 
+                />
+                <div className="card-photo-gradient" />
                 <div style={{
+                  position: 'absolute',
+                  top: 10,
+                  left: 10,
+                  zIndex: 2,
                   display: 'inline-flex',
                   alignItems: 'center',
                   gap: 6,
-                  background: 'white',
+                  background: 'rgba(255, 255, 255, 0.95)',
+                  backdropFilter: 'blur(4px)',
                   color: '#7c3aed',
-                  padding: '4px 10px',
+                  padding: '3px 8px',
                   borderRadius: 'var(--radius-full)',
-                  fontSize: '0.75rem',
+                  fontSize: '0.7rem',
                   fontWeight: 800,
-                  marginBottom: 12,
                   textTransform: 'uppercase',
                   border: '1px solid #ddd6fe',
-                  boxShadow: '0 2px 8px rgba(124, 58, 237, 0.14)'
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
                 }}>
-                  <span className="live-radar-dot" />
+                  <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#9333ea', display: 'inline-block', animation: 'liveRadarPulse 1.8s infinite' }} />
                   <span>Newly Added</span>
                 </div>
+                <div style={{
+                  position: 'absolute',
+                  bottom: 8,
+                  right: 8,
+                  zIndex: 2,
+                  background: 'rgba(15, 23, 42, 0.75)',
+                  backdropFilter: 'blur(4px)',
+                  color: '#fef08a',
+                  padding: '2px 8px',
+                  borderRadius: 6,
+                  fontSize: '0.68rem',
+                  fontWeight: 700
+                }}>
+                  ✨ Launch Offers
+                </div>
+              </div>
+
+              <div style={{ position: 'relative', zIndex: 2, marginBottom: 16 }}>
                 <h3 style={{ 
                   color: '#4c1d95', 
-                  marginBottom: 8, 
-                  fontSize: '1.4rem', 
+                  marginBottom: 6, 
+                  fontSize: '1.25rem', 
                   fontWeight: 800,
                   display: 'flex',
                   alignItems: 'center',
@@ -1029,74 +1056,320 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
                   <span>New on StayBuddy</span>
                   <span style={{ fontSize: '1rem' }}>✨</span>
                 </h3>
-                <p style={{ color: '#6b21a8', fontSize: '0.95rem', margin: 0, opacity: 0.85, lineHeight: 1.45 }}>
-                  Discover freshly onboarded properties & verified stays with special launch offers.
+                <p style={{ color: '#6b21a8', fontSize: '0.88rem', margin: 0, opacity: 0.9, lineHeight: 1.4 }}>
+                  Freshly onboarded boutique stays & verified hotels with special launch discounts.
                 </p>
               </div>
 
-              <div style={{ color: '#7c3aed', fontWeight: 800, display: 'flex', alignItems: 'center', gap: 6, position: 'relative', zIndex: 2, fontSize: '0.95rem' }}>
+              <div style={{ color: '#7c3aed', fontWeight: 800, display: 'flex', alignItems: 'center', gap: 6, position: 'relative', zIndex: 2, fontSize: '0.9rem' }}>
                 <span>Explore New Stays</span>
                 <span className="cta-arrow">→</span>
               </div>
             </div>
           </Link>
 
-          {/* Card 3 */}
-          <Link href="/hotels?propertyType=Resort" className="home-collections-card" style={{ textDecoration: 'none', color: 'inherit', display: 'flex' }}>
-            <div style={{
-              background: 'linear-gradient(135deg, #f0fdfa, #ccfbf1)',
-              borderRadius: 'var(--radius-xl)', padding: 'var(--space-6)',
-              border: '1px solid #99f6e4', position: 'relative', overflow: 'hidden',
-              display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
-              width: '100%', cursor: 'pointer',
-              transition: 'transform 0.25s ease, box-shadow 0.25s ease'
-            }}
-            onMouseEnter={e => {
-              (e.currentTarget as HTMLElement).style.transform = 'translateY(-4px)';
-              (e.currentTarget as HTMLElement).style.boxShadow = '0 16px 32px rgba(15, 118, 110, 0.15)';
-            }}
-            onMouseLeave={e => {
-              (e.currentTarget as HTMLElement).style.transform = 'translateY(0)';
-              (e.currentTarget as HTMLElement).style.boxShadow = 'none';
-            }}>
-              <div style={{ position: 'absolute', right: '5%', bottom: '-10%', fontSize: '6rem', opacity: 0.1, pointerEvents: 'none' }}>🌴</div>
-              <div style={{ position: 'relative', zIndex: 1, marginBottom: 24 }}>
-                <div style={{ display: 'inline-block', background: 'white', color: '#0f766e', padding: '4px 10px', borderRadius: 'var(--radius-full)', fontSize: '0.75rem', fontWeight: 700, marginBottom: 12, textTransform: 'uppercase', border: '1px solid #99f6e4' }}>Trending</div>
-                <h3 style={{ color: '#134e4a', marginBottom: 8, fontSize: '1.4rem' }}>Beachfront Resorts</h3>
-                <p style={{ color: '#0f766e', fontSize: '0.95rem', margin: 0, opacity: 0.8 }}>Escape to top-rated seaside getaways with private beaches.</p>
+          {/* Card 2 - Hotels for Corporate (Beside the First Card) */}
+          <Link 
+            href="/hotels?category=business" 
+            prefetch={true} 
+            className="home-collections-card" 
+            style={{ textDecoration: 'none', color: 'inherit', display: 'flex' }}
+          >
+            <div 
+              className="collection-card-inner" 
+              style={{
+                background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 45%, #f8fafc 100%)',
+                border: '1.5px solid #7dd3fc',
+                animation: 'ambientCorporateBreath 4.5s ease-in-out infinite 1s'
+              }}
+            >
+              <div className="shine-ray" />
+              
+              {/* Animated Corporate Hotel Photo Above Column */}
+              <div className="card-photo-header">
+                <img 
+                  src="https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?ixlib=rb-4.0.3&auto=format&fit=crop&w=700&q=80" 
+                  alt="Hotels for Corporate" 
+                  className="card-photo-img" 
+                  style={{ animationDelay: '1.5s' }}
+                />
+                <div className="card-photo-gradient" />
+                <div style={{
+                  position: 'absolute',
+                  top: 10,
+                  left: 10,
+                  zIndex: 2,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  background: 'rgba(255, 255, 255, 0.95)',
+                  backdropFilter: 'blur(4px)',
+                  color: '#0284c7',
+                  padding: '3px 8px',
+                  borderRadius: 'var(--radius-full)',
+                  fontSize: '0.7rem',
+                  fontWeight: 800,
+                  textTransform: 'uppercase',
+                  border: '1px solid #bae6fd',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                }}>
+                  <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#0284c7', display: 'inline-block', animation: 'liveCorporatePulse 1.8s infinite' }} />
+                  <span>Corporate & B2B</span>
+                </div>
+                <div style={{
+                  position: 'absolute',
+                  bottom: 8,
+                  right: 8,
+                  zIndex: 2,
+                  background: 'rgba(15, 23, 42, 0.75)',
+                  backdropFilter: 'blur(4px)',
+                  color: '#38bdf8',
+                  padding: '2px 8px',
+                  borderRadius: 6,
+                  fontSize: '0.68rem',
+                  fontWeight: 700
+                }}>
+                  🧾 GST Invoice Ready
+                </div>
               </div>
-              <div style={{ color: '#0d9488', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4, position: 'relative', zIndex: 1 }}>
-                Explore Resorts →
+
+              <div style={{ position: 'relative', zIndex: 2, marginBottom: 16 }}>
+                <h3 style={{ 
+                  color: '#0c4a6e', 
+                  marginBottom: 6, 
+                  fontSize: '1.25rem', 
+                  fontWeight: 800,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6
+                }}>
+                  <span>Hotels for Corporate</span>
+                  <span style={{ fontSize: '1rem' }}>🏢</span>
+                </h3>
+                <p style={{ color: '#0369a1', fontSize: '0.88rem', margin: 0, opacity: 0.9, lineHeight: 1.4 }}>
+                  Seamless business travel with express check-in, high-speed WiFi, work desks & automated GST invoices.
+                </p>
+              </div>
+
+              <div style={{ color: '#0284c7', fontWeight: 800, display: 'flex', alignItems: 'center', gap: 6, position: 'relative', zIndex: 2, fontSize: '0.9rem' }}>
+                <span>Explore Corporate Hotels</span>
+                <span className="cta-arrow">→</span>
               </div>
             </div>
           </Link>
 
-          {/* Card 4 */}
-          <Link href="/hotels?minRating=5" className="home-collections-card" style={{ textDecoration: 'none', color: 'inherit', display: 'flex' }}>
-            <div style={{
-              background: 'linear-gradient(135deg, #fef3c7, #fde68a)',
-              borderRadius: 'var(--radius-xl)', padding: 'var(--space-6)',
-              border: '1px solid #fcd34d', position: 'relative', overflow: 'hidden',
-              display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
-              width: '100%', cursor: 'pointer',
-              transition: 'transform 0.25s ease, box-shadow 0.25s ease'
-            }}
-            onMouseEnter={e => {
-              (e.currentTarget as HTMLElement).style.transform = 'translateY(-4px)';
-              (e.currentTarget as HTMLElement).style.boxShadow = '0 16px 32px rgba(180, 83, 9, 0.15)';
-            }}
-            onMouseLeave={e => {
-              (e.currentTarget as HTMLElement).style.transform = 'translateY(0)';
-              (e.currentTarget as HTMLElement).style.boxShadow = 'none';
-            }}>
-              <div style={{ position: 'absolute', right: '5%', bottom: '-10%', fontSize: '6rem', opacity: 0.1, pointerEvents: 'none' }}>🏰</div>
-              <div style={{ position: 'relative', zIndex: 1, marginBottom: 24 }}>
-                <div style={{ display: 'inline-block', background: 'white', color: '#b45309', padding: '4px 10px', borderRadius: 'var(--radius-full)', fontSize: '0.75rem', fontWeight: 700, marginBottom: 12, textTransform: 'uppercase', border: '1px solid #fcd34d' }}>Experiences</div>
-                <h3 style={{ color: '#78350f', marginBottom: 8, fontSize: '1.4rem' }}>Heritage Stays</h3>
-                <p style={{ color: '#b45309', fontSize: '0.95rem', margin: 0, opacity: 0.8 }}>Experience royal treatment at historical palaces and forts.</p>
+          {/* Card 3 - Premium Hotel Groups */}
+          <Link href="/hotels?category=luxury" className="home-collections-card" style={{ textDecoration: 'none', color: 'inherit', display: 'flex' }}>
+            <div 
+              className="collection-card-inner" 
+              style={{
+                background: 'linear-gradient(135deg, var(--brand-50), var(--brand-100))',
+                border: '1px solid var(--brand-200)'
+              }}
+              onMouseEnter={e => {
+                (e.currentTarget as HTMLElement).style.boxShadow = '0 16px 32px rgba(234, 88, 12, 0.18)';
+              }}
+              onMouseLeave={e => {
+                (e.currentTarget as HTMLElement).style.boxShadow = 'none';
+              }}
+            >
+              <div className="card-photo-header">
+                <img 
+                  src="https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?ixlib=rb-4.0.3&auto=format&fit=crop&w=700&q=80" 
+                  alt="Premium Hotel Groups" 
+                  className="card-photo-img" 
+                  style={{ animationDelay: '3s' }}
+                />
+                <div className="card-photo-gradient" />
+                <div style={{
+                  position: 'absolute',
+                  top: 10,
+                  left: 10,
+                  zIndex: 2,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  background: 'rgba(255, 255, 255, 0.95)',
+                  backdropFilter: 'blur(4px)',
+                  color: 'var(--brand-700)',
+                  padding: '3px 8px',
+                  borderRadius: 'var(--radius-full)',
+                  fontSize: '0.7rem',
+                  fontWeight: 800,
+                  textTransform: 'uppercase',
+                  border: '1px solid var(--brand-200)',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                }}>
+                  🏨 Curated
+                </div>
+                <div style={{
+                  position: 'absolute',
+                  bottom: 8,
+                  right: 8,
+                  zIndex: 2,
+                  background: 'rgba(15, 23, 42, 0.75)',
+                  backdropFilter: 'blur(4px)',
+                  color: '#fdba74',
+                  padding: '2px 8px',
+                  borderRadius: 6,
+                  fontSize: '0.68rem',
+                  fontWeight: 700
+                }}>
+                  Luxury Chains
+                </div>
               </div>
-              <div style={{ color: '#d97706', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4, position: 'relative', zIndex: 1 }}>
-                See Heritage Stays →
+
+              <div style={{ position: 'relative', zIndex: 1, marginBottom: 16 }}>
+                <h3 style={{ color: 'var(--brand-900)', marginBottom: 6, fontSize: '1.25rem', fontWeight: 800 }}>Premium Groups</h3>
+                <p style={{ color: 'var(--text-secondary)', fontSize: '0.88rem', margin: 0, lineHeight: 1.4 }}>Discover luxury heritage chains and exclusive top-rated properties.</p>
+              </div>
+              <div style={{ color: 'var(--brand-600)', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6, position: 'relative', zIndex: 1, fontSize: '0.9rem' }}>
+                <span>View Collection</span>
+                <span className="cta-arrow">→</span>
+              </div>
+            </div>
+          </Link>
+
+          {/* Card 4 - Beachfront Resorts */}
+          <Link href="/hotels?propertyType=Resort" className="home-collections-card" style={{ textDecoration: 'none', color: 'inherit', display: 'flex' }}>
+            <div 
+              className="collection-card-inner" 
+              style={{
+                background: 'linear-gradient(135deg, #f0fdfa, #ccfbf1)',
+                border: '1px solid #99f6e4'
+              }}
+              onMouseEnter={e => {
+                (e.currentTarget as HTMLElement).style.boxShadow = '0 16px 32px rgba(15, 118, 110, 0.18)';
+              }}
+              onMouseLeave={e => {
+                (e.currentTarget as HTMLElement).style.boxShadow = 'none';
+              }}
+            >
+              <div className="card-photo-header">
+                <img 
+                  src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?ixlib=rb-4.0.3&auto=format&fit=crop&w=700&q=80" 
+                  alt="Beachfront Resorts" 
+                  className="card-photo-img" 
+                  style={{ animationDelay: '4.5s' }}
+                />
+                <div className="card-photo-gradient" />
+                <div style={{
+                  position: 'absolute',
+                  top: 10,
+                  left: 10,
+                  zIndex: 2,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  background: 'rgba(255, 255, 255, 0.95)',
+                  backdropFilter: 'blur(4px)',
+                  color: '#0f766e',
+                  padding: '3px 8px',
+                  borderRadius: 'var(--radius-full)',
+                  fontSize: '0.7rem',
+                  fontWeight: 800,
+                  textTransform: 'uppercase',
+                  border: '1px solid #99f6e4',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                }}>
+                  🌴 Trending
+                </div>
+                <div style={{
+                  position: 'absolute',
+                  bottom: 8,
+                  right: 8,
+                  zIndex: 2,
+                  background: 'rgba(15, 23, 42, 0.75)',
+                  backdropFilter: 'blur(4px)',
+                  color: '#5eead4',
+                  padding: '2px 8px',
+                  borderRadius: 6,
+                  fontSize: '0.68rem',
+                  fontWeight: 700
+                }}>
+                  Private Beach
+                </div>
+              </div>
+
+              <div style={{ position: 'relative', zIndex: 1, marginBottom: 16 }}>
+                <h3 style={{ color: '#134e4a', marginBottom: 6, fontSize: '1.25rem', fontWeight: 800 }}>Beachfront Resorts</h3>
+                <p style={{ color: '#0f766e', fontSize: '0.88rem', margin: 0, opacity: 0.9, lineHeight: 1.4 }}>Escape to top-rated seaside getaways with private beach access.</p>
+              </div>
+              <div style={{ color: '#0d9488', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6, position: 'relative', zIndex: 1, fontSize: '0.9rem' }}>
+                <span>Explore Resorts</span>
+                <span className="cta-arrow">→</span>
+              </div>
+            </div>
+          </Link>
+
+          {/* Card 5 - Heritage Stays */}
+          <Link href="/hotels?minRating=5" className="home-collections-card" style={{ textDecoration: 'none', color: 'inherit', display: 'flex' }}>
+            <div 
+              className="collection-card-inner" 
+              style={{
+                background: 'linear-gradient(135deg, #fef3c7, #fde68a)',
+                border: '1px solid #fcd34d'
+              }}
+              onMouseEnter={e => {
+                (e.currentTarget as HTMLElement).style.boxShadow = '0 16px 32px rgba(180, 83, 9, 0.18)';
+              }}
+              onMouseLeave={e => {
+                (e.currentTarget as HTMLElement).style.boxShadow = 'none';
+              }}
+            >
+              <div className="card-photo-header">
+                <img 
+                  src="https://images.unsplash.com/photo-1590073844006-33379778ae09?ixlib=rb-4.0.3&auto=format&fit=crop&w=700&q=80" 
+                  alt="Heritage Stays" 
+                  className="card-photo-img" 
+                  style={{ animationDelay: '6s' }}
+                />
+                <div className="card-photo-gradient" />
+                <div style={{
+                  position: 'absolute',
+                  top: 10,
+                  left: 10,
+                  zIndex: 2,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  background: 'rgba(255, 255, 255, 0.95)',
+                  backdropFilter: 'blur(4px)',
+                  color: '#b45309',
+                  padding: '3px 8px',
+                  borderRadius: 'var(--radius-full)',
+                  fontSize: '0.7rem',
+                  fontWeight: 800,
+                  textTransform: 'uppercase',
+                  border: '1px solid #fcd34d',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                }}>
+                  🏰 Experiences
+                </div>
+                <div style={{
+                  position: 'absolute',
+                  bottom: 8,
+                  right: 8,
+                  zIndex: 2,
+                  background: 'rgba(15, 23, 42, 0.75)',
+                  backdropFilter: 'blur(4px)',
+                  color: '#fef08a',
+                  padding: '2px 8px',
+                  borderRadius: 6,
+                  fontSize: '0.68rem',
+                  fontWeight: 700
+                }}>
+                  Royal Forts
+                </div>
+              </div>
+
+              <div style={{ position: 'relative', zIndex: 1, marginBottom: 16 }}>
+                <h3 style={{ color: '#78350f', marginBottom: 6, fontSize: '1.25rem', fontWeight: 800 }}>Heritage Stays</h3>
+                <p style={{ color: '#b45309', fontSize: '0.88rem', margin: 0, opacity: 0.9, lineHeight: 1.4 }}>Experience royal treatment at historical palaces and heritage forts.</p>
+              </div>
+              <div style={{ color: '#d97706', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6, position: 'relative', zIndex: 1, fontSize: '0.9rem' }}>
+                <span>See Heritage Stays</span>
+                <span className="cta-arrow">→</span>
               </div>
             </div>
           </Link>

@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
     if (status && status !== 'all') {
       hotelsRef = hotelsRef.where('status', '==', status);
     }
-    if (category) hotelsRef = hotelsRef.where('category', '==', category);
+    if (category && category !== 'business') hotelsRef = hotelsRef.where('category', '==', category);
     if (propertyType) hotelsRef = hotelsRef.where('propertyType', '==', propertyType);
     
     const snapshot = await hotelsRef.get();
@@ -65,6 +65,13 @@ export async function GET(request: NextRequest) {
     if (city) {
       const cityLower = city.toLowerCase();
       hotels = hotels.filter((h: any) => h.city?.toLowerCase().includes(cityLower) || h.area?.toLowerCase().includes(cityLower));
+    }
+
+    if (category === 'business') {
+      hotels = hotels.filter((h: any) => 
+        !h.category || h.category === 'business' || h.category === 'premium' || h.category === 'standard' ||
+        (Array.isArray(h.amenities) && (h.amenities.includes('Free WiFi') || h.amenities.includes('Business Center') || h.amenities.includes('24-hour Front Desk')))
+      );
     }
 
     if (status !== 'all') {
