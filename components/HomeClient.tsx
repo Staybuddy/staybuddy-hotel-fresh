@@ -1593,7 +1593,7 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
               <p style={{ fontSize: '0.875rem', lineHeight: 1.7, color: '#64748b' }}>India&apos;s trusted OTA platform for hotel bookings — from budget to luxury.</p>
             </div>
             {[
-              { title: 'Explore', links: ['Hotels', 'Destinations', 'Deals', 'Visiting Card', 'Official Logo'] },
+              { title: 'Explore', links: ['Hotels', 'Destinations', 'Deals', 'Hotel Onboarding'] },
               { title: 'Partners', links: ['List Your Hotel', 'Partner Login', 'Partner Resources', 'Success Stories'] },
               { title: 'Support', links: ['Help Center', 'Contact Us', 'Privacy Policy', 'Terms of Service'] },
             ].map(col => (
@@ -1641,12 +1641,12 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
                     return (
                       <Link
                         key={link}
-                        href={link === 'Hotels' ? '/hotels' : link === 'Visiting Card' ? '/visiting-card' : link === 'Official Logo' ? '/logo' : '#'}
-                        style={{ fontSize: '0.875rem', color: '#64748b', transition: 'color var(--transition-fast)', textDecoration: 'none' }}
+                        href={link === 'Hotels' ? '/hotels' : link === 'Destinations' ? '/hotels' : link === 'Deals' ? '/hotels?sort=price_asc' : link === 'Hotel Onboarding' ? '/partner' : '#'}
+                        style={{ fontSize: '0.875rem', color: link === 'Hotel Onboarding' ? '#f97316' : '#64748b', fontWeight: link === 'Hotel Onboarding' ? 700 : 500, transition: 'color var(--transition-fast)', textDecoration: 'none' }}
                         onMouseEnter={e => (e.currentTarget.style.color = 'var(--brand-400)')}
-                        onMouseLeave={e => (e.currentTarget.style.color = '#64748b')}
+                        onMouseLeave={e => (e.currentTarget.style.color = link === 'Hotel Onboarding' ? '#f97316' : '#64748b')}
                       >
-                        {link}
+                        {link === 'Hotel Onboarding' ? '🚀 Hotel Onboarding' : link}
                       </Link>
                     );
                   })}
