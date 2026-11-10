@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, useMemo, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Navbar from '@/components/Navbar';
@@ -37,10 +37,12 @@ function HotelSearch() {
     checkIn: searchParams.get('checkIn') || '',
     checkOut: searchParams.get('checkOut') || '',
     guests: searchParams.get('guests') || '1',
-    category: '',
-    propertyType: '',
-    minRating: '',
-    sortBy: 'rating',
+    category: searchParams.get('category') || '',
+    propertyType: searchParams.get('propertyType') || '',
+    minRating: searchParams.get('minRating') || '',
+    sortBy: searchParams.get('sortBy') || 'rating',
+    corporate: searchParams.get('corporate') === 'true',
+    filter: searchParams.get('filter') || '',
     rooms: parseInt(searchParams.get('rooms') || '1', 10),
     adults: parseInt(searchParams.get('adults') || '2', 10),
     children: parseInt(searchParams.get('children') || '0', 10),
@@ -88,6 +90,12 @@ function HotelSearch() {
       city: searchParams.has('city') ? (searchParams.get('city') || '') : p.city,
       checkIn: searchParams.has('checkIn') ? (searchParams.get('checkIn') || '') : p.checkIn,
       checkOut: searchParams.has('checkOut') ? (searchParams.get('checkOut') || '') : p.checkOut,
+      category: searchParams.has('category') ? (searchParams.get('category') || '') : p.category,
+      propertyType: searchParams.has('propertyType') ? (searchParams.get('propertyType') || '') : p.propertyType,
+      minRating: searchParams.has('minRating') ? (searchParams.get('minRating') || '') : p.minRating,
+      sortBy: searchParams.has('sortBy') ? (searchParams.get('sortBy') || 'rating') : p.sortBy,
+      corporate: searchParams.has('corporate') ? searchParams.get('corporate') === 'true' : p.corporate,
+      filter: searchParams.has('filter') ? (searchParams.get('filter') || '') : p.filter,
       rooms: searchParams.has('rooms') ? parseInt(searchParams.get('rooms') as string, 10) : p.rooms,
       adults: searchParams.has('adults') ? parseInt(searchParams.get('adults') as string, 10) : p.adults,
       children: searchParams.has('children') ? parseInt(searchParams.get('children') as string, 10) : p.children,
@@ -142,6 +150,30 @@ function HotelSearch() {
     }
   }
 
+
+  const displayedHotels = useMemo(() => {
+    let list = [...hotels];
+    if (filters.corporate) {
+      list = list.filter((h: any) => {
+        const cat = (h.category || '').toLowerCase();
+        return cat === 'standard' || cat === 'premium' || cat === 'luxury' || (h.amenities || []).some((a: string) => /wifi|desk|business|front desk/i.test(a));
+      });
+    }
+    if (filters.sortBy === 'price_low') {
+      list.sort((a, b) => (a.startingPrice || 0) - (b.startingPrice || 0));
+    } else if (filters.sortBy === 'price_high') {
+      list.sort((a, b) => (b.startingPrice || 0) - (a.startingPrice || 0));
+    } else if (filters.sortBy === 'newest') {
+      list.sort((a, b) => {
+        const aTime = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const bTime = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        return bTime - aTime;
+      });
+    } else {
+      list.sort((a, b) => (b.avgRating || 0) - (a.avgRating || 0));
+    }
+    return list;
+  }, [hotels, filters.sortBy, filters.corporate]);
 
   const getQueryString = () => {
     const p = new URLSearchParams();
@@ -512,12 +544,12 @@ function HotelSearch() {
         {/* Hotel Grid */}
         <div className="hotels-content-wrapper" style={{ flex: 1, minWidth: 0, width: '100%' }}>
           {/* Results header */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-5)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-4)' }}>
             <div>
               <h2 style={{ fontSize: '1.25rem', marginBottom: 2 }}>
-                {filters.city ? `Hotels in ${filters.city}` : 'All Hotels'}
+                {filters.city ? `Hotels in ${filters.city}` : filters.corporate ? 'Corporate & Business Stays' : (filters.sortBy === 'newest' || filters.filter === 'new') ? 'Newly Added Hotels' : 'All Hotels'}
               </h2>
-              <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>{loading ? 'Searching...' : `${total} properties found`}</p>
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>{loading ? 'Searching...' : `${displayedHotels.length} properties found`}</p>
             </div>
             <select className="form-input form-select" style={{ width: 'auto', padding: '8px 36px 8px 12px', fontSize: '0.875rem' }} value={filters.sortBy} onChange={e => setFilters(p => ({ ...p, sortBy: e.target.value }))}>
               <option value="rating">Top Rated</option>
@@ -526,6 +558,62 @@ function HotelSearch() {
               <option value="newest">Newest First</option>
             </select>
           </div>
+
+          {/* Spotlight banner for Newly Added or Corporate stays */}
+          {(filters.sortBy === 'newest' || filters.filter === 'new') && (
+            <div style={{
+              background: 'linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%)',
+              border: '1.5px solid #fdba74',
+              borderRadius: 14,
+              padding: '12px 16px',
+              marginBottom: 16,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 12,
+              boxShadow: '0 4px 15px rgba(234, 88, 12, 0.08)'
+            }}>
+              <span style={{ fontSize: '1.5rem' }}>✨</span>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontWeight: 800, color: '#7c2d12', fontSize: '0.94rem' }}>
+                  Fresh Hotels & New Arrivals
+                </div>
+                <div style={{ fontSize: '0.82rem', color: '#9a3412', marginTop: 1 }}>
+                  Showing newly onboarded stays with verified live availability & introductory launch rates.
+                </div>
+              </div>
+              <span style={{ fontSize: '0.74rem', background: '#ea580c', color: 'white', padding: '4px 10px', borderRadius: 999, fontWeight: 700, whiteSpace: 'nowrap' }}>
+                ⚡ Newest First
+              </span>
+            </div>
+          )}
+
+          {filters.corporate && (
+            <div style={{
+              background: 'linear-gradient(135deg, #0b1120 0%, #1e293b 100%)',
+              border: '1.5px solid rgba(245, 158, 11, 0.45)',
+              borderRadius: 14,
+              padding: '12px 16px',
+              marginBottom: 16,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 12,
+              color: 'white',
+              boxShadow: '0 4px 18px rgba(15, 23, 42, 0.4)'
+            }}>
+              <span style={{ fontSize: '1.5rem' }}>💼</span>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontWeight: 800, color: '#fbbf24', fontSize: '0.94rem' }}>
+                  StayBuddy Corporate & Business Stays
+                </div>
+                <div style={{ fontSize: '0.82rem', color: '#cbd5e1', marginTop: 1 }}>
+                  Verified business travel hotels with 100% GST tax invoicing, high-speed WiFi & express check-in.
+                </div>
+              </div>
+              <span style={{ fontSize: '0.74rem', background: 'rgba(245, 158, 11, 0.2)', border: '1px solid #f59e0b', color: '#fde047', padding: '4px 10px', borderRadius: 999, fontWeight: 700, whiteSpace: 'nowrap' }}>
+                📄 100% GST Invoiced
+              </span>
+            </div>
+          )}
 
           {loading ? (
             <div className="hotels-results-list" style={{ display: 'flex', flexDirection: 'column', gap: '16px', width: '100%' }}>
@@ -552,17 +640,17 @@ function HotelSearch() {
                 </div>
               ))}
             </div>
-          ) : hotels.length === 0 ? (
+          ) : displayedHotels.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '80px 20px', color: 'var(--text-muted)' }}>
               <div style={{ fontSize: '3rem', marginBottom: 16 }}>🔍</div>
               <h3>No hotels found</h3>
               <p style={{ marginTop: 8 }}>Try adjusting your search or filters</p>
-              <button className="btn btn-primary" style={{ marginTop: 16 }} onClick={() => setFilters(p => ({ ...p, city: '', category: '', minRating: '' }))}>Clear Filters</button>
+              <button className="btn btn-primary" style={{ marginTop: 16 }} onClick={() => setFilters(p => ({ ...p, city: '', category: '', minRating: '', corporate: false, filter: '' }))}>Clear Filters</button>
             </div>
           ) : (
             <>
               <div className="hotels-results-list" style={{ display: 'flex', flexDirection: 'column', gap: '16px', width: '100%' }}>
-                {hotels.map((hotel, index) => {
+                {displayedHotels.map((hotel, index) => {
                   const starNum = Math.min(5, Math.max(1, Number(hotel.starRating) || (hotel.category === 'Luxury' ? 5 : hotel.category === 'Premium' ? 4 : 3)));
                   return (
                   <Link 
@@ -579,13 +667,23 @@ function HotelSearch() {
                         ) : (
                           <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg, var(--brand-100), var(--brand-200))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '3rem' }}>🏨</div>
                         )}
-                        <div style={{ position: 'absolute', top: 12, left: 12, display: 'flex', gap: 6, zIndex: 2 }}>
+                        <div style={{ position: 'absolute', top: 12, left: 12, display: 'flex', gap: 6, zIndex: 2, flexWrap: 'wrap' }}>
                           <span className="badge badge-gray" style={{ backdropFilter: 'blur(4px)', background: 'rgba(0,0,0,0.65)', color: 'white', fontWeight: 700 }}>
                             {hotel.propertyType || 'Hotel'}
                           </span>
                           <span className="badge badge-primary" style={{ backdropFilter: 'blur(4px)', background: 'rgba(59, 130, 246, 0.85)', color: 'white', fontWeight: 700 }}>
                             {hotel.category || 'Standard'}
                           </span>
+                          {filters.corporate && (
+                            <span className="badge" style={{ backdropFilter: 'blur(4px)', background: 'linear-gradient(135deg, #f59e0b, #d97706)', color: 'white', fontWeight: 800 }}>
+                              💼 Corporate
+                            </span>
+                          )}
+                          {(filters.sortBy === 'newest' || filters.filter === 'new') && (
+                            <span className="badge" style={{ backdropFilter: 'blur(4px)', background: 'linear-gradient(135deg, #ea580c, #f97316)', color: 'white', fontWeight: 800 }}>
+                              ✨ Fresh
+                            </span>
+                          )}
                         </div>
                         {hotel.avgRating >= 4.5 && (
                           <div style={{ position: 'absolute', bottom: 12, left: 12, zIndex: 2 }}>

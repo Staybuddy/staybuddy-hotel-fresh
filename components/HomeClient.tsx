@@ -8,6 +8,7 @@ import Logo from '@/components/Logo';
 import DateRangePicker from '@/components/DateRangePicker';
 import LocationSearch from '@/components/LocationSearch';
 import PartnerGraphicCard from '@/components/PartnerGraphicCard';
+import HomeSpotlightCards from '@/components/HomeSpotlightCards';
 import HomeReferralSection from '@/components/HomeReferralSection';
 import HomeStatsSection from '@/components/HomeStatsSection';
 import CityDestinationCard from '@/components/CityDestinationCard';
@@ -818,6 +819,8 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
         </Link>
       </section>
 
+      {/* ===== SPOTLIGHT DUO: NEWLY ADDED HOTELS & CORPORATE STAYS ===== */}
+      <HomeSpotlightCards />
 
       {/* ===== HOTEL COLLECTIONS CARDS ===== */}
       <section className="container" style={{ marginBottom: '22px' }}>

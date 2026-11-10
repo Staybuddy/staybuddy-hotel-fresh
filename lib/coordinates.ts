@@ -39,3 +39,4 @@ export function parseCoordinates(raw: string): { lat: string; lng: string } | nu
 
   return null;
 }
+
