@@ -15,6 +15,7 @@ const NAV = [
   { id: 'partner_approvals', label: 'Partner Approvals', icon: '🧑‍💼' },
   { id: 'requests', label: 'Property Requests', icon: '📝' },
   { id: 'hotels', label: 'Properties & Margins', icon: '🏨' },
+  { id: 'onboarding_team', label: 'Hotel Onboarding Team', icon: '🚀' },
   { id: 'performance', label: 'Performance & Invoices', icon: '📈' },
   { id: 'users', label: 'User Analytics', icon: '👥' },
   { id: 'agreements', label: 'Partner Agreements', icon: '📜' },
@@ -55,6 +56,15 @@ export default function AdminDashboard() {
   const [adminRecheckingId, setAdminRecheckingId] = useState<string | null>(null);
   const [bookingTab, setBookingTab] = useState<'live' | 'pending'>('live');
   const [hotelTabFilter, setHotelTabFilter] = useState<'all' | 'approved' | 'pending'>('all');
+
+  // Hotel Onboarding Specialist Staff States
+  const [onboardingStaff, setOnboardingStaff] = useState<any[]>([]);
+  const [staffLoading, setStaffLoading] = useState(false);
+  const [newStaffEmail, setNewStaffEmail] = useState('');
+  const [newStaffName, setNewStaffName] = useState('');
+  const [newStaffPhone, setNewStaffPhone] = useState('');
+  const [newStaffNotes, setNewStaffNotes] = useState('');
+  const [staffActionMsg, setStaffActionMsg] = useState<{ type: string; text: string }>({ type: '', text: '' });
 
   async function adminRecheckBookingPayment(bookingId: string) {
     setAdminRecheckingId(bookingId);
@@ -187,7 +197,14 @@ export default function AdminDashboard() {
     if (status === 'unauthenticated') { router.push('/login'); return; }
     if (status === 'authenticated') {
       const role = (session?.user as any)?.role;
-      if (role !== 'admin') { router.push('/'); return; }
+      if (role !== 'admin') { 
+        if (role === 'onboarder') {
+          router.push('/partner'); // Direct onboarding executives straight to Partner Extranet!
+          return;
+        }
+        router.push('/'); 
+        return; 
+      }
       fetchAll();
 
       // Avoid rapid polling to prevent exhausting Firebase free quota
@@ -212,26 +229,29 @@ export default function AdminDashboard() {
   async function fetchAll(showLoadingIndicator = true) {
     if (showLoadingIndicator) setLoading(true);
     try {
-      const [hotelRes, bookingRes, userRes, partnerRes, invoiceRes] = await Promise.all([
+      const [hotelRes, bookingRes, userRes, partnerRes, invoiceRes, staffRes] = await Promise.all([
         fetch('/api/admin/hotels'),
         fetch('/api/admin/bookings'),
         fetch('/api/admin/users'),
         fetch('/api/admin/partners'),
         fetch('/api/admin/tax-invoices'),
+        fetch('/api/admin/onboarding-staff'),
       ]);
-      const [hData, bData, uData, pData, iData] = await Promise.all([hotelRes.json(), bookingRes.json(), userRes.json(), partnerRes.json(), invoiceRes.json()]);
+      const [hData, bData, uData, pData, iData, sData] = await Promise.all([hotelRes.json(), bookingRes.json(), userRes.json(), partnerRes.json(), invoiceRes.json(), staffRes.json()]);
 
       const h = hData.hotels || [];
       const b = bData.bookings || [];
       const u = uData.users || [];
       const p = pData.partners || [];
       const inv = iData.invoices || [];
+      const s = sData.staff || [];
 
       setHotels(h);
       setBookings(b);
       setUsers(u);
       setPartners(p);
       setTaxInvoices(inv);
+      setOnboardingStaff(s);
 
       const revenue = b.filter((bk: any) => bk.paymentStatus === 'paid').reduce((s: number, bk: any) => s + bk.totalPrice, 0);
       
@@ -291,6 +311,68 @@ export default function AdminDashboard() {
     } finally {
       setApproveLoading(null);
       fetchAll(false);
+    }
+  }
+
+  async function handleAddStaff(e: React.FormEvent) {
+    e.preventDefault();
+    if (!newStaffEmail || !newStaffEmail.includes('@')) {
+      setStaffActionMsg({ type: 'error', text: 'Please enter a valid Gmail / Email address.' });
+      return;
+    }
+    setStaffLoading(true);
+    setStaffActionMsg({ type: '', text: '' });
+    try {
+      const res = await fetch('/api/admin/onboarding-staff', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: newStaffEmail,
+          name: newStaffName,
+          phone: newStaffPhone,
+          notes: newStaffNotes
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setStaffActionMsg({ type: 'error', text: data.error || 'Failed to add staff member.' });
+      } else {
+        setStaffActionMsg({ type: 'success', text: `🎉 ${newStaffEmail} assigned to Onboarding Team! They can now access Partner Extranet and B2C site.` });
+        setNewStaffEmail('');
+        setNewStaffName('');
+        setNewStaffPhone('');
+        setNewStaffNotes('');
+        const sRes = await fetch('/api/admin/onboarding-staff');
+        const sData = await sRes.json();
+        if (sData.staff) setOnboardingStaff(sData.staff);
+      }
+    } catch (err: any) {
+      setStaffActionMsg({ type: 'error', text: err.message || 'Network error adding staff.' });
+    } finally {
+      setStaffLoading(false);
+    }
+  }
+
+  async function handleDeleteStaff(id: string, email: string) {
+    if (!confirm(`Are you sure you want to revoke onboarding access for ${email}? They will no longer be able to onboard properties.`)) {
+      return;
+    }
+    try {
+      const res = await fetch('/api/admin/onboarding-staff', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, email })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setOnboardingStaff(prev => prev.filter(s => s._id !== id && s.email !== email));
+        setStaffActionMsg({ type: 'success', text: `Access revoked for ${email}.` });
+        setTimeout(() => setStaffActionMsg({ type: '', text: '' }), 4000);
+      } else {
+        alert(data.error || 'Failed to remove staff.');
+      }
+    } catch (err: any) {
+      alert(err.message || 'Error deleting staff.');
     }
   }
 
@@ -1023,6 +1105,413 @@ export default function AdminDashboard() {
                     ))}
                   </tbody>
                 </table>
+              </div>
+            </div>
+          )}
+
+          {/* ===== HOTEL ONBOARDING SPECIALIST TEAM ===== */}
+          {activeTab === 'onboarding_team' && (
+            <div className="fade-in">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 16, marginBottom: 24 }}>
+                <div>
+                  <h1 style={{ fontSize: '2rem', color: '#0f172a', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <span>Hotel Onboarding Team</span>
+                    <span style={{ fontSize: '1rem', background: '#ffedd5', color: '#ea580c', padding: '4px 12px', borderRadius: 9999, fontWeight: 700 }}>
+                      🚀 Ground & Remote Specialists
+                    </span>
+                  </h1>
+                  <p style={{ color: '#64748b', maxWidth: 760, lineHeight: 1.5 }}>
+                    Assign Gmail IDs to executives hired to onboard hotels for StayBuddy. Assigned staff get instant, seamless access to the 
+                    <strong> Partner Extranet</strong> and the <strong>B2C website</strong> to onboard properties. Their accounts are strictly 
+                    <strong> blocked from all Admin features</strong> and all partner communications go exclusively to the hotel partner.
+                  </p>
+                </div>
+
+                <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+                  <div style={{ background: 'white', padding: '12px 20px', borderRadius: 12, border: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', textAlign: 'center' }}>
+                    <div style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 600, textTransform: 'uppercase' }}>Active Executives</div>
+                    <div style={{ fontSize: '1.4rem', fontWeight: 800, color: '#0f172a' }}>{onboardingStaff.length}</div>
+                  </div>
+                  <div style={{ background: 'white', padding: '12px 20px', borderRadius: 12, border: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', textAlign: 'center' }}>
+                    <div style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 600, textTransform: 'uppercase' }}>Total Properties Onboarded</div>
+                    <div style={{ fontSize: '1.4rem', fontWeight: 800, color: '#ea580c' }}>
+                      {onboardingStaff.reduce((sum, s) => sum + (s.hotelsOnboarded || 0), 0)}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Security & Access Isolation Rule Banner */}
+              <div style={{ 
+                background: 'linear-gradient(135deg, #f8fafc 0%, #eff6ff 100%)', 
+                border: '1px solid #bfdbfe', 
+                borderRadius: 16, 
+                padding: '20px 24px', 
+                marginBottom: 28,
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+                gap: 20
+              }}>
+                <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                  <div style={{ fontSize: '1.5rem', background: '#dbeafe', width: 40, height: 40, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    🔒
+                  </div>
+                  <div>
+                    <div style={{ fontWeight: 700, color: '#1e3a8a', fontSize: '0.95rem', marginBottom: 2 }}>Strict Extranet & B2C Access Only</div>
+                    <div style={{ color: '#475569', fontSize: '0.85rem', lineHeight: 1.4 }}>
+                      Assigned staff sign in via Google. They can access <code style={{ background: '#e2e8f0', padding: '2px 6px', borderRadius: 4 }}>/partner</code> and the live booking portal, but are 100% blocked from <code style={{ background: '#e2e8f0', padding: '2px 6px', borderRadius: 4 }}>/admin</code>.
+                    </div>
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                  <div style={{ fontSize: '1.5rem', background: '#ffedd5', width: 40, height: 40, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    ✉️
+                  </div>
+                  <div>
+                    <div style={{ fontWeight: 700, color: '#9a3412', fontSize: '0.95rem', marginBottom: 2 }}>Isolated Partner Communications</div>
+                    <div style={{ color: '#475569', fontSize: '0.85rem', lineHeight: 1.4 }}>
+                      Partner contact details (phone, email) entered during onboarding receive agreements, credentials, and guest alerts. The onboarding staff's email receives zero partner alerts.
+                    </div>
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                  <div style={{ fontSize: '1.5rem', background: '#dcfce7', width: 40, height: 40, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    📊
+                  </div>
+                  <div>
+                    <div style={{ fontWeight: 700, color: '#166534', fontSize: '0.95rem', marginBottom: 2 }}>Real-Time Staff Attribution</div>
+                    <div style={{ color: '#475569', fontSize: '0.85rem', lineHeight: 1.4 }}>
+                      Every property registered tracks which executive submitted it (<code style={{ background: '#e2e8f0', padding: '2px 6px', borderRadius: 4 }}>onboardedBy</code>) for commission and productivity reporting.
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Add New Executive Form */}
+              <div style={{ background: 'white', borderRadius: 16, border: '1px solid #e2e8f0', padding: 24, marginBottom: 32, boxShadow: '0 4px 6px -1px rgba(0,0,0,0.03)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, flexWrap: 'wrap', gap: 8 }}>
+                  <div>
+                    <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#0f172a' }}>➕ Assign New Onboarding Specialist</h3>
+                    <p style={{ color: '#64748b', fontSize: '0.85rem' }}>Enter the Google / Gmail address of the person you hired. They will be granted instant onboarding privileges.</p>
+                  </div>
+                  <div style={{ fontSize: '0.85rem', fontWeight: 700, background: '#f1f5f9', color: '#475569', padding: '6px 14px', borderRadius: 9999 }}>
+                    Slot Capacity: {onboardingStaff.length} / 4 Initial Slots Active
+                  </div>
+                </div>
+
+                {staffActionMsg.text && (
+                  <div style={{
+                    padding: '12px 16px',
+                    borderRadius: 10,
+                    marginBottom: 20,
+                    fontWeight: 600,
+                    fontSize: '0.9rem',
+                    background: staffActionMsg.type === 'error' ? '#fef2f2' : '#f0fdf4',
+                    color: staffActionMsg.type === 'error' ? '#991b1b' : '#166534',
+                    border: `1px solid ${staffActionMsg.type === 'error' ? '#fecaca' : '#bbf7d0'}`,
+                  }}>
+                    {staffActionMsg.text}
+                  </div>
+                )}
+
+                <form onSubmit={handleAddStaff} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 16, alignItems: 'end' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#475569', marginBottom: 6, textTransform: 'uppercase' }}>
+                      Executive Gmail ID *
+                    </label>
+                    <input 
+                      type="email"
+                      required
+                      placeholder="e.g. rahul.staybuddy@gmail.com"
+                      value={newStaffEmail}
+                      onChange={e => setNewStaffEmail(e.target.value)}
+                      style={{
+                        width: '100%',
+                        padding: '10px 14px',
+                        borderRadius: 8,
+                        border: '1px solid #cbd5e1',
+                        fontSize: '0.9rem',
+                        outline: 'none',
+                        color: '#0f172a'
+                      }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#475569', marginBottom: 6, textTransform: 'uppercase' }}>
+                      Full Name
+                    </label>
+                    <input 
+                      type="text"
+                      placeholder="e.g. Rahul Sharma"
+                      value={newStaffName}
+                      onChange={e => setNewStaffName(e.target.value)}
+                      style={{
+                        width: '100%',
+                        padding: '10px 14px',
+                        borderRadius: 8,
+                        border: '1px solid #cbd5e1',
+                        fontSize: '0.9rem',
+                        outline: 'none',
+                        color: '#0f172a'
+                      }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#475569', marginBottom: 6, textTransform: 'uppercase' }}>
+                      Mobile / WhatsApp
+                    </label>
+                    <input 
+                      type="tel"
+                      placeholder="e.g. +91 98765 43210"
+                      value={newStaffPhone}
+                      onChange={e => setNewStaffPhone(e.target.value)}
+                      style={{
+                        width: '100%',
+                        padding: '10px 14px',
+                        borderRadius: 8,
+                        border: '1px solid #cbd5e1',
+                        fontSize: '0.9rem',
+                        outline: 'none',
+                        color: '#0f172a'
+                      }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#475569', marginBottom: 6, textTransform: 'uppercase' }}>
+                      Assigned Region / Territory
+                    </label>
+                    <input 
+                      type="text"
+                      placeholder="e.g. Hyderabad & Secunderabad"
+                      value={newStaffNotes}
+                      onChange={e => setNewStaffNotes(e.target.value)}
+                      style={{
+                        width: '100%',
+                        padding: '10px 14px',
+                        borderRadius: 8,
+                        border: '1px solid #cbd5e1',
+                        fontSize: '0.9rem',
+                        outline: 'none',
+                        color: '#0f172a'
+                      }}
+                    />
+                  </div>
+
+                  <div>
+                    <button
+                      type="submit"
+                      disabled={staffLoading}
+                      style={{
+                        width: '100%',
+                        padding: '12px 18px',
+                        background: '#ea580c',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: 8,
+                        fontWeight: 700,
+                        fontSize: '0.9rem',
+                        cursor: staffLoading ? 'not-allowed' : 'pointer',
+                        boxShadow: '0 2px 4px rgba(234, 88, 12, 0.3)',
+                        transition: 'background 0.2s'
+                      }}
+                    >
+                      {staffLoading ? 'Assigning...' : '🚀 Assign Specialist'}
+                    </button>
+                  </div>
+                </form>
+              </div>
+
+              {/* 4 Slots Visual Tracker */}
+              <div style={{ marginBottom: 32 }}>
+                <div style={{ fontSize: '0.9rem', fontWeight: 800, color: '#0f172a', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span>Executive Slots Status (Initial 4 Allocation)</span>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 16 }}>
+                  {[0, 1, 2, 3].map(slotIndex => {
+                    const member = onboardingStaff[slotIndex];
+                    if (member) {
+                      return (
+                        <div key={member._id} style={{ 
+                          background: 'white', 
+                          border: '2px solid #fdba74', 
+                          borderRadius: 14, 
+                          padding: 16,
+                          boxShadow: '0 2px 8px rgba(234, 88, 12, 0.08)',
+                          position: 'relative'
+                        }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+                            <div style={{ width: 36, height: 36, borderRadius: '50%', background: '#ffedd5', color: '#c2410c', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.9rem' }}>
+                              {slotIndex + 1}
+                            </div>
+                            <div style={{ overflow: 'hidden' }}>
+                              <div style={{ fontWeight: 700, color: '#0f172a', fontSize: '0.9rem', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
+                                {member.name || 'Executive'}
+                              </div>
+                              <div style={{ fontSize: '0.75rem', color: '#16a34a', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4 }}>
+                                <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#16a34a' }}></span>
+                                Active Onboarder
+                              </div>
+                            </div>
+                          </div>
+                          <div style={{ fontSize: '0.8rem', color: '#475569', marginBottom: 6, wordBreak: 'break-all' }}>
+                            ✉️ {member.email}
+                          </div>
+                          {member.phone && (
+                            <div style={{ fontSize: '0.78rem', color: '#64748b', marginBottom: 6 }}>
+                              📞 {member.phone}
+                            </div>
+                          )}
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 12, paddingTop: 10, borderTop: '1px solid #f1f5f9' }}>
+                            <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#ea580c', background: '#fff7ed', padding: '3px 8px', borderRadius: 6 }}>
+                              🏨 {member.hotelsOnboarded || 0} Hotels
+                            </span>
+                            <button
+                              onClick={() => handleDeleteStaff(member._id, member.email)}
+                              style={{
+                                background: '#fee2e2',
+                                color: '#b91c1c',
+                                border: 'none',
+                                borderRadius: 6,
+                                padding: '4px 10px',
+                                fontSize: '0.75rem',
+                                fontWeight: 700,
+                                cursor: 'pointer'
+                              }}
+                            >
+                              Revoke
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    } else {
+                      return (
+                        <div key={slotIndex} style={{ 
+                          background: '#f8fafc', 
+                          border: '2px dashed #cbd5e1', 
+                          borderRadius: 14, 
+                          padding: 16,
+                          display: 'flex',
+                          flexDirection: 'column',
+                          justifyContent: 'center',
+                          alignItems: 'center',
+                          textAlign: 'center',
+                          minHeight: 140
+                        }}>
+                          <div style={{ width: 36, height: 36, borderRadius: '50%', background: '#e2e8f0', color: '#64748b', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.9rem', marginBottom: 8 }}>
+                            {slotIndex + 1}
+                          </div>
+                          <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#64748b' }}>Slot {slotIndex + 1} Available</div>
+                          <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: 2 }}>Assign Gmail ID in the form above</div>
+                        </div>
+                      );
+                    }
+                  })}
+                </div>
+              </div>
+
+              {/* Comprehensive Staff Table */}
+              <div style={{ background: 'white', borderRadius: 16, border: '1px solid #e2e8f0', overflow: 'hidden', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.03)' }}>
+                <div style={{ padding: '20px 24px', borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#0f172a' }}>All Assigned Onboarding Executives ({onboardingStaff.length})</h3>
+                  <span style={{ fontSize: '0.8rem', color: '#64748b' }}>Includes initial 4 slots and any additional team members</span>
+                </div>
+
+                {onboardingStaff.length === 0 ? (
+                  <div style={{ padding: 60, textAlign: 'center', color: '#64748b' }}>
+                    <div style={{ fontSize: '2.5rem', marginBottom: 12 }}>🚀</div>
+                    <h4 style={{ fontSize: '1.1rem', color: '#0f172a', marginBottom: 6 }}>No Onboarding Executives Assigned Yet</h4>
+                    <p style={{ fontSize: '0.85rem', maxWidth: 450, margin: '0 auto' }}>
+                      Add your first executive using the form above to grant them Extranet & B2C onboarding privileges.
+                    </p>
+                  </div>
+                ) : (
+                  <div style={{ overflowX: 'auto' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.9rem' }}>
+                      <thead>
+                        <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0', color: '#475569', fontSize: '0.8rem', textTransform: 'uppercase' }}>
+                          <th style={{ padding: '14px 20px', fontWeight: 700 }}>Executive & Gmail</th>
+                          <th style={{ padding: '14px 20px', fontWeight: 700 }}>Contact Phone</th>
+                          <th style={{ padding: '14px 20px', fontWeight: 700 }}>Territory / Region</th>
+                          <th style={{ padding: '14px 20px', fontWeight: 700 }}>Access Scope</th>
+                          <th style={{ padding: '14px 20px', fontWeight: 700 }}>Properties Onboarded</th>
+                          <th style={{ padding: '14px 20px', fontWeight: 700 }}>Assigned Date</th>
+                          <th style={{ padding: '14px 20px', fontWeight: 700, textAlign: 'right' }}>Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody style={{ divideY: '1px solid #f1f5f9' }}>
+                        {onboardingStaff.map((staff: any) => (
+                          <tr key={staff._id} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                            <td style={{ padding: '16px 20px' }}>
+                              <div style={{ fontWeight: 700, color: '#0f172a' }}>{staff.name || 'Onboarding Specialist'}</div>
+                              <div style={{ fontSize: '0.82rem', color: '#2563eb', fontWeight: 600 }}>{staff.email}</div>
+                            </td>
+                            <td style={{ padding: '16px 20px', color: '#475569' }}>
+                              {staff.phone || '—'}
+                            </td>
+                            <td style={{ padding: '16px 20px', color: '#475569' }}>
+                              {staff.notes || 'General'}
+                            </td>
+                            <td style={{ padding: '16px 20px' }}>
+                              <span style={{ 
+                                display: 'inline-flex', 
+                                alignItems: 'center', 
+                                gap: 6, 
+                                fontSize: '0.78rem', 
+                                fontWeight: 700, 
+                                background: '#f0fdf4', 
+                                color: '#15803d', 
+                                padding: '4px 10px', 
+                                borderRadius: 9999,
+                                border: '1px solid #bbf7d0'
+                              }}>
+                                <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#22c55e' }}></span>
+                                Extranet + B2C (No Admin)
+                              </span>
+                            </td>
+                            <td style={{ padding: '16px 20px' }}>
+                              <span style={{ 
+                                fontSize: '0.85rem', 
+                                fontWeight: 800, 
+                                color: staff.hotelsOnboarded > 0 ? '#ea580c' : '#64748b',
+                                background: staff.hotelsOnboarded > 0 ? '#fff7ed' : '#f1f5f9',
+                                padding: '4px 10px',
+                                borderRadius: 8
+                              }}>
+                                🏨 {staff.hotelsOnboarded || 0} Hotels
+                              </span>
+                            </td>
+                            <td style={{ padding: '16px 20px', color: '#64748b', fontSize: '0.8rem' }}>
+                              {staff.addedAt ? new Date(staff.addedAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}
+                            </td>
+                            <td style={{ padding: '16px 20px', textAlign: 'right' }}>
+                              <button
+                                onClick={() => handleDeleteStaff(staff._id, staff.email)}
+                                style={{
+                                  background: '#fee2e2',
+                                  color: '#b91c1c',
+                                  border: '1px solid #fecaca',
+                                  borderRadius: 8,
+                                  padding: '6px 14px',
+                                  fontSize: '0.8rem',
+                                  fontWeight: 700,
+                                  cursor: 'pointer',
+                                  transition: 'background 0.2s'
+                                }}
+                              >
+                                🗑️ Revoke Access
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </div>
             </div>
           )}

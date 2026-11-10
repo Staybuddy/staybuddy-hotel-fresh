@@ -109,6 +109,19 @@ export const authOptions: NextAuthOptions = {
         const cookieStore = await cookies();
         const intendedRole = cookieStore.get('intended_role')?.value;
         const isPartnerLogin = intendedRole === 'partner';
+
+        // Check if this Gmail belongs to an assigned StayBuddy Onboarding Staff
+        let isOnboarderStaff = false;
+        if (user.email) {
+          try {
+            const staffSnap = await db.collection('onboarding_staff')
+              .where('email', '==', user.email.toLowerCase().trim())
+              .where('status', '==', 'active')
+              .limit(1)
+              .get();
+            isOnboarderStaff = !staffSnap.empty;
+          } catch (_) {}
+        }
         
         const usersRef = db.collection('users');
         const byGoogleId = await usersRef.where('googleId', '==', account.providerAccountId).limit(1).get();
@@ -119,14 +132,18 @@ export const authOptions: NextAuthOptions = {
           if (!byEmail.empty) existingUserDoc = byEmail.docs[0];
         }
 
+        const resolvedRole = isOnboarderStaff ? 'onboarder' : (isPartnerLogin ? 'partner' : 'customer');
+        const resolvedPartnerStatus = (isOnboarderStaff || isPartnerLogin) ? (isOnboarderStaff ? 'approved' : 'pending') : 'none';
+
         if (!existingUserDoc) {
           const newUserData = {
             name: user.name,
             email: user.email,
             googleId: account.providerAccountId,
             avatar: user.image,
-            role: isPartnerLogin ? 'partner' : 'customer',
-            partnerStatus: isPartnerLogin ? 'pending' : 'none',
+            role: resolvedRole,
+            partnerStatus: resolvedPartnerStatus,
+            isOnboarder: isOnboarderStaff,
             isActive: true,
             referralCode: await generateReferralCode(user.name || 'USER'),
             referralCount: 0,
@@ -145,7 +162,11 @@ export const authOptions: NextAuthOptions = {
           
           if (!existingData.googleId) updates.googleId = account.providerAccountId;
           
-          if (isPartnerLogin && existingData.role === 'customer') {
+          if (isOnboarderStaff && existingData.role !== 'admin') {
+            updates.role = 'onboarder';
+            updates.partnerStatus = 'approved';
+            updates.isOnboarder = true;
+          } else if (isPartnerLogin && existingData.role === 'customer') {
             updates.role = 'partner';
             updates.partnerStatus = 'pending';
           }
