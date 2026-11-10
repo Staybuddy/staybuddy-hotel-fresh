@@ -15,6 +15,7 @@ import { resolveParentCity } from '@/lib/cityPhotos';
 import Image from 'next/image';
 import WishlistButton from '@/components/WishlistButton';
 import { adjustRoomsAndAdults, MAX_ADULTS_PER_ROOM } from '@/lib/occupancyPricing';
+import FlagshipHotelStores from '@/components/FlagshipHotelStores';
 
 const DESTINATIONS = [
   { city: 'Mumbai', country: 'India', hotels: 342 },
@@ -1309,6 +1310,9 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
 
         </div>
       </section>
+
+      {/* ===== FLAGSHIP HOTEL STORES (4★ & 5★ Premier Luxury Brands with Interactive Stays Showcase) ===== */}
+      <FlagshipHotelStores dbHotels={hotels} />
 
 
       {/* ===== HOTEL COLLECTIONS CARDS (Original 3 Categories - Clean & Separate) ===== */}

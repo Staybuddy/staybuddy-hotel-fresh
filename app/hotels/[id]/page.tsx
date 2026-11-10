@@ -584,6 +584,9 @@ export default function HotelDetailPage() {
         gstRegistrationNo: (bookingData as any).gstRegistrationNo,
         gstCompanyName: (bookingData as any).gstCompanyName,
         gstCompanyAddress: (bookingData as any).gstCompanyAddress,
+        referralCode: typeof window !== 'undefined'
+          ? (localStorage.getItem('staybuddy_ref') || document.cookie.split('; ').find(r => r.startsWith('staybuddy_ref='))?.split('=')[1] || '')
+          : '',
       }),
     });
 

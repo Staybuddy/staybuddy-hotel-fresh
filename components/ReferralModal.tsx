@@ -341,51 +341,52 @@ export default function ReferralModal({
             </div>
           )}
 
-          {/* How It Works & Margin Funding Policy */}
+          {/* How It Works & Reward Policy */}
           <div style={{
             background: '#f8fafc',
-            border: '1px solid #e2e8f0',
+            border: '1.5px solid #e2e8f0',
             borderRadius: 16,
             padding: '16px 18px'
           }}>
-            <div style={{ fontSize: '0.8rem', fontWeight: 800, color: '#0f172a', textTransform: 'uppercase', marginBottom: 10 }}>
-              💡 How the ₹20 Margin Reward Works:
+            <div style={{ fontSize: '0.82rem', fontWeight: 800, color: '#0f172a', textTransform: 'uppercase', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span>💡</span>
+              <span>How Refer & Earn Works:</span>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, fontSize: '0.82rem', color: '#475569' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, fontSize: '0.84rem', color: '#475569' }}>
               <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
-                <span style={{ width: 20, height: 20, borderRadius: '50%', background: '#ffedd5', color: '#ea580c', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '0.72rem', flexShrink: 0 }}>
+                <span style={{ width: 22, height: 22, borderRadius: '50%', background: '#ffedd5', color: '#ea580c', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '0.74rem', flexShrink: 0 }}>
                   1
                 </span>
                 <div>
-                  <strong>Share Your ID:</strong> Send your referral code or booking link to friends planning their trip.
+                  <strong>Share Your Code:</strong> Send your personal referral code or booking link to friends and family.
                 </div>
               </div>
 
               <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
-                <span style={{ width: 20, height: 20, borderRadius: '50%', background: '#ffedd5', color: '#ea580c', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '0.72rem', flexShrink: 0 }}>
+                <span style={{ width: 22, height: 22, borderRadius: '50%', background: '#ffedd5', color: '#ea580c', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '0.74rem', flexShrink: 0 }}>
                   2
                 </span>
                 <div>
-                  <strong>Funded from StayBuddy Margin:</strong> StayBuddy pays ₹20 per referral directly out of our platform margin to reward you.
+                  <strong>Friend Books & Stays:</strong> Your friend uses your referral code to book a verified hotel stay on StayBuddy.
                 </div>
               </div>
 
               <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
-                <span style={{ width: 20, height: 20, borderRadius: '50%', background: '#dcfce7', color: '#16a34a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '0.72rem', flexShrink: 0 }}>
+                <span style={{ width: 22, height: 22, borderRadius: '50%', background: '#dcfce7', color: '#16a34a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '0.74rem', flexShrink: 0 }}>
                   3
                 </span>
                 <div>
-                  <strong>Stay Completion Credit:</strong> Your ₹20 reward is deposited into your StayBuddy Wallet <strong>after the guest completes their stay</strong> (checkout completed).
+                  <strong>Reward Credited on Checkout:</strong> Your ₹20 cash reward is deposited directly into your StayBuddy Wallet <strong>after the guest completes their stay</strong>.
                 </div>
               </div>
 
               <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
-                <span style={{ width: 20, height: 20, borderRadius: '50%', background: '#ffedd5', color: '#ea580c', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '0.72rem', flexShrink: 0 }}>
+                <span style={{ width: 22, height: 22, borderRadius: '50%', background: '#ffedd5', color: '#ea580c', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '0.74rem', flexShrink: 0 }}>
                   4
                 </span>
                 <div>
-                  <strong>100% Usable:</strong> Use your wallet balance on any upcoming hotel booking on StayBuddy!
+                  <strong>100% Usable Cash:</strong> Use your wallet balance on any hotel booking or earn up to ₹100 across 5 referrals!
                 </div>
               </div>
             </div>
@@ -397,3 +398,4 @@ export default function ReferralModal({
     </div>
   );
 }
+

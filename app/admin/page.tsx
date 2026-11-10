@@ -12,6 +12,7 @@ const NAV = [
   { id: 'trade_shows', label: 'Trade Shows Extractor', icon: '🎯' },
   { id: 'overview', label: 'Dashboard', icon: '📊' },
   { id: 'bookings', label: 'Live Bookings', icon: '🛎️' },
+  { id: 'referrals', label: 'Referral Bookings', icon: '🎁' },
   { id: 'partner_approvals', label: 'Partner Approvals', icon: '🧑‍💼' },
   { id: 'requests', label: 'Property Requests', icon: '📝' },
   { id: 'hotels', label: 'Properties & Margins', icon: '🏨' },
@@ -30,6 +31,7 @@ export default function AdminDashboard() {
   const [bookings, setBookings] = useState<any[]>([]);
   const [users, setUsers] = useState<any[]>([]);
   const [partners, setPartners] = useState<any[]>([]);
+  const [referralSearch, setReferralSearch] = useState('');
   const [extranetModal, setExtranetModal] = useState<any>(null); // Hotel data for extranet edit
   const [extranetModalTab, setExtranetModalTab] = useState<'property' | 'location' | 'amenities' | 'rooms' | 'photos' | 'policies'>('property');
   const [extranetAiLoading, setExtranetAiLoading] = useState(false);
@@ -649,14 +651,36 @@ export default function AdminDashboard() {
               <h1 style={{ fontSize: '2rem', color: '#0f172a', marginBottom: 8 }}>Dashboard Overview</h1>
               <p style={{ color: '#64748b', marginBottom: 32 }}>Welcome back! Here&apos;s what&apos;s happening across StayBuddy today.</p>
 
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 24, marginBottom: 40 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 20, marginBottom: 40 }}>
                 {[
                   { label: 'Total Revenue (GMV)', value: `₹${stats.totalRevenue.toLocaleString()}`, icon: '💰', color: '#f59e0b', bg: '#fffbeb' },
                   { label: 'StayBuddy Profit', value: `₹${stats.totalProfit.toLocaleString()}`, icon: '📈', color: '#10b981', bg: '#ecfdf5' },
                   { label: 'Active Properties', value: stats.totalHotels, icon: '🏨', color: '#3b82f6', bg: '#eff6ff' },
                   { label: 'Total Bookings', value: stats.totalBookings, icon: '📋', color: '#8b5cf6', bg: '#f5f3ff' },
+                  { 
+                    label: 'Referral Bookings', 
+                    value: bookings.filter(b => b.isReferralBooking || b.referralCode || b.referredByUserId).length, 
+                    icon: '🎁', 
+                    color: '#ea580c', 
+                    bg: '#fff7ed',
+                    onClick: () => setActiveTab('referrals')
+                  },
                 ].map(s => (
-                  <div key={s.label} style={{ background: 'white', padding: 24, borderRadius: 16, boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03)', display: 'flex', alignItems: 'center', gap: 20 }}>
+                  <div 
+                    key={s.label} 
+                    onClick={s.onClick}
+                    style={{ 
+                      background: 'white', 
+                      padding: 24, 
+                      borderRadius: 16, 
+                      boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03)', 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      gap: 20,
+                      cursor: s.onClick ? 'pointer' : 'default',
+                      transition: 'transform 0.15s ease'
+                    }}
+                  >
                     <div style={{ width: 64, height: 64, borderRadius: 16, background: s.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2rem' }}>{s.icon}</div>
                     <div>
                       <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>{s.label}</div>
@@ -842,6 +866,13 @@ export default function AdminDashboard() {
                               <div style={{ fontWeight: 700, color: '#0f172a' }}>{b.guestName}</div>
                               <div style={{ fontSize: '0.8rem', color: '#64748b' }}>{b.guestPhone}</div>
                               <div style={{ fontSize: '0.75rem', color: '#3b82f6', fontWeight: 600, marginTop: 4 }}>Booking ID: {b.bookingId || b._id.slice(-8)}</div>
+                              {b.isReferralBooking && (
+                                <div style={{ marginTop: 4 }}>
+                                  <span style={{ fontSize: '0.7rem', background: '#fff7ed', color: '#ea580c', border: '1px solid #fed7aa', padding: '2px 8px', borderRadius: 6, fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                                    🎁 Referral: {b.referralCode || 'Used'} ({b.referrerName || 'Member'})
+                                  </span>
+                                </div>
+                              )}
                             </td>
                             <td style={{ padding: '16px 24px', color: '#475569', fontWeight: 500 }}>
                               <div>{b.hotelId?.name || 'Unknown Property'}</div>
@@ -900,6 +931,204 @@ export default function AdminDashboard() {
                     </tbody>
                   </table>
                 </div>
+              </div>
+            );
+          })()}
+
+          {/* ===== REFERRAL BOOKINGS TAB ===== */}
+          {activeTab === 'referrals' && (() => {
+            const allReferralBookings = bookings.filter(b => b.isReferralBooking || b.referralCode || b.referredByUserId);
+            const filteredReferrals = allReferralBookings.filter(b => {
+              if (!referralSearch.trim()) return true;
+              const q = referralSearch.toLowerCase();
+              return (
+                (b.bookingId && b.bookingId.toLowerCase().includes(q)) ||
+                (b.guestName && b.guestName.toLowerCase().includes(q)) ||
+                (b.guestPhone && b.guestPhone.toLowerCase().includes(q)) ||
+                (b.referralCode && b.referralCode.toLowerCase().includes(q)) ||
+                (b.referrerName && b.referrerName.toLowerCase().includes(q)) ||
+                (b.hotelId?.name && b.hotelId.name.toLowerCase().includes(q))
+              );
+            });
+
+            const completedReferrals = allReferralBookings.filter(b => (b.status === 'confirmed' || b.status === 'completed') && b.paymentStatus === 'paid');
+            const totalRewardsCredited = completedReferrals.length * 20;
+            const uniqueReferrers = new Set(allReferralBookings.map(b => b.referralCode || b.referredByUserId).filter(Boolean)).size;
+
+            return (
+              <div className="fade-in">
+                {/* Header */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24, flexWrap: 'wrap', gap: 16 }}>
+                  <div>
+                    <h1 style={{ fontSize: '2rem', color: '#0f172a', margin: '0 0 4px', display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <span>🎁 Referral Bookings & Rewards</span>
+                      <span style={{ fontSize: '0.8rem', background: '#fff7ed', color: '#ea580c', border: '1px solid #fed7aa', padding: '2px 10px', borderRadius: 12, fontWeight: 800 }}>
+                        ₹20 Per Stay Cap (Max 5)
+                      </span>
+                    </h1>
+                    <p style={{ color: '#64748b', margin: 0, fontSize: '0.9rem' }}>
+                      Track guest bookings acquired through member referral codes, unique referral IDs, and wallet payout statuses.
+                    </p>
+                  </div>
+
+                  {/* Search Bar */}
+                  <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                    <input
+                      type="text"
+                      placeholder="Search code, guest, or referrer..."
+                      value={referralSearch}
+                      onChange={(e) => setReferralSearch(e.target.value)}
+                      style={{
+                        padding: '10px 16px',
+                        border: '1.5px solid #cbd5e1',
+                        borderRadius: 10,
+                        fontSize: '0.88rem',
+                        width: 260
+                      }}
+                    />
+                  </div>
+                </div>
+
+                {/* Stat Cards */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 16, marginBottom: 28 }}>
+                  <div style={{ background: 'white', padding: '20px', borderRadius: 16, border: '1px solid #fed7aa', boxShadow: '0 4px 12px rgba(234, 88, 12, 0.06)' }}>
+                    <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Total Referral Bookings</div>
+                    <div style={{ fontSize: '1.8rem', fontWeight: 900, color: '#ea580c', marginTop: 4 }}>{allReferralBookings.length}</div>
+                    <div style={{ fontSize: '0.78rem', color: '#94a3b8', marginTop: 2 }}>All-time bookings via referral links</div>
+                  </div>
+
+                  <div style={{ background: 'white', padding: '20px', borderRadius: 16, border: '1px solid #bbf7d0', boxShadow: '0 4px 12px rgba(22, 163, 74, 0.06)' }}>
+                    <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Completed Stays (Paid)</div>
+                    <div style={{ fontSize: '1.8rem', fontWeight: 900, color: '#16a34a', marginTop: 4 }}>{completedReferrals.length}</div>
+                    <div style={{ fontSize: '0.78rem', color: '#94a3b8', marginTop: 2 }}>Guest checked-in / checkout completed</div>
+                  </div>
+
+                  <div style={{ background: 'white', padding: '20px', borderRadius: 16, border: '1px solid #bfdbfe', boxShadow: '0 4px 12px rgba(37, 99, 235, 0.06)' }}>
+                    <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Wallet Rewards Generated</div>
+                    <div style={{ fontSize: '1.8rem', fontWeight: 900, color: '#2563eb', marginTop: 4 }}>₹{totalRewardsCredited}</div>
+                    <div style={{ fontSize: '0.78rem', color: '#94a3b8', marginTop: 2 }}>₹20 credited per completed stay</div>
+                  </div>
+
+                  <div style={{ background: 'white', padding: '20px', borderRadius: 16, border: '1px solid #e2e8f0', boxShadow: '0 4px 12px rgba(15, 23, 42, 0.04)' }}>
+                    <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Active Referrers</div>
+                    <div style={{ fontSize: '1.8rem', fontWeight: 900, color: '#0f172a', marginTop: 4 }}>{uniqueReferrers}</div>
+                    <div style={{ fontSize: '0.78rem', color: '#94a3b8', marginTop: 2 }}>Members with successful referrals</div>
+                  </div>
+                </div>
+
+                {/* Referral Bookings Table */}
+                <div style={{ background: 'white', borderRadius: 16, border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)', overflowX: 'auto' }}>
+                  <div style={{ padding: '20px 24px', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <h3 style={{ fontSize: '1.15rem', color: '#0f172a', fontWeight: 800, margin: 0 }}>
+                      Referral Bookings Log ({filteredReferrals.length})
+                    </h3>
+                  </div>
+
+                  <table className="admin-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
+                    <thead>
+                      <tr style={{ background: '#f8fafc', textAlign: 'left', borderBottom: '1px solid #e2e8f0' }}>
+                        <th style={{ padding: '14px 20px', fontSize: '0.75rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Booking Details</th>
+                        <th style={{ padding: '14px 20px', fontSize: '0.75rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Referral ID / Code</th>
+                        <th style={{ padding: '14px 20px', fontSize: '0.75rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Referrer Client</th>
+                        <th style={{ padding: '14px 20px', fontSize: '0.75rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Referred Guest</th>
+                        <th style={{ padding: '14px 20px', fontSize: '0.75rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Property Booked</th>
+                        <th style={{ padding: '14px 20px', fontSize: '0.75rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Reward Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredReferrals.length === 0 ? (
+                        <tr>
+                          <td colSpan={6} style={{ padding: '48px 20px', textAlign: 'center', color: '#94a3b8' }}>
+                            <div style={{ fontSize: '2.5rem', marginBottom: 8 }}>🎁</div>
+                            <div style={{ fontWeight: 700, color: '#475569', fontSize: '1rem' }}>No referral bookings recorded yet</div>
+                            <div style={{ fontSize: '0.84rem', marginTop: 4 }}>When users share their referral codes and guests book, bookings will be automatically tracked here.</div>
+                          </td>
+                        </tr>
+                      ) : (
+                        filteredReferrals.map((b) => {
+                          const isRewarded = (b.status === 'completed' || b.paymentStatus === 'paid');
+                          return (
+                            <tr key={b._id} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                              <td style={{ padding: '14px 20px' }}>
+                                <div style={{ fontWeight: 800, color: '#0f172a', fontSize: '0.92rem' }}>
+                                  {b.bookingId || b._id?.slice(-8)}
+                                </div>
+                                <div style={{ fontSize: '0.76rem', color: '#64748b', marginTop: 2 }}>
+                                  {b.createdAt ? new Date(b.createdAt).toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Recent'}
+                                </div>
+                                <div style={{ fontSize: '0.78rem', color: '#059669', fontWeight: 700, marginTop: 2 }}>
+                                  ₹{b.totalPrice?.toLocaleString()}
+                                </div>
+                              </td>
+
+                              <td style={{ padding: '14px 20px' }}>
+                                <span style={{
+                                  background: '#fff7ed',
+                                  color: '#c2410c',
+                                  border: '1px solid #fed7aa',
+                                  padding: '4px 10px',
+                                  borderRadius: 8,
+                                  fontWeight: 900,
+                                  fontSize: '0.84rem',
+                                  letterSpacing: '0.04em'
+                                }}>
+                                  {b.referralCode || 'SBSTAY20'}
+                                </span>
+                              </td>
+
+                              <td style={{ padding: '14px 20px' }}>
+                                <div style={{ fontWeight: 700, color: '#0f172a', fontSize: '0.88rem' }}>
+                                  {b.referrerName || 'StayBuddy Member'}
+                                </div>
+                                <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: 2 }}>
+                                  {b.referredByUserId ? `UID: ${b.referredByUserId.slice(-6)}` : 'Client Account'}
+                                </div>
+                              </td>
+
+                              <td style={{ padding: '14px 20px' }}>
+                                <div style={{ fontWeight: 700, color: '#0f172a', fontSize: '0.88rem' }}>
+                                  {b.guestName || b.customerId?.name || 'Guest'}
+                                </div>
+                                <div style={{ fontSize: '0.78rem', color: '#64748b', marginTop: 2 }}>
+                                  📞 {b.guestPhone || b.customerId?.phone || 'N/A'}
+                                </div>
+                              </td>
+
+                              <td style={{ padding: '14px 20px' }}>
+                                <div style={{ fontWeight: 700, color: '#0f172a', fontSize: '0.88rem' }}>
+                                  {b.hotelId?.name || 'Hotel'}
+                                </div>
+                                <div style={{ fontSize: '0.78rem', color: '#64748b', marginTop: 2 }}>
+                                  📍 {b.hotelId?.city || 'India'}
+                                </div>
+                              </td>
+
+                              <td style={{ padding: '14px 20px' }}>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'flex-start' }}>
+                                  <span style={{
+                                    padding: '4px 10px',
+                                    borderRadius: 14,
+                                    fontSize: '0.74rem',
+                                    fontWeight: 800,
+                                    background: isRewarded ? '#dcfce7' : '#fef3c7',
+                                    color: isRewarded ? '#15803d' : '#92400e',
+                                    border: isRewarded ? '1px solid #86efac' : '1px solid #fde68a'
+                                  }}>
+                                    {isRewarded ? '✅ ₹20 Credited to Wallet' : '⏳ Pending Stay Completion'}
+                                  </span>
+                                  <span style={{ fontSize: '0.72rem', color: '#64748b' }}>
+                                    {b.status} • {b.paymentStatus === 'paid' ? 'Paid' : 'Unpaid'}
+                                  </span>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+
               </div>
             );
           })()}

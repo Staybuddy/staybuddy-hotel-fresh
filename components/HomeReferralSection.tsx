@@ -97,63 +97,16 @@ export default function HomeReferralSection() {
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                 <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 800, color: '#0f172a' }}>Refer & Earn ₹20</h3>
                 <span style={{ fontSize: '0.72rem', background: '#dcfce7', color: '#15803d', border: '1px solid #86efac', padding: '2px 8px', borderRadius: 12, fontWeight: 800 }}>
-                  ACTIVE REWARD • MAX 5 FRIENDS
+                  ACTIVE REWARD • UP TO 5 FRIENDS
                 </span>
               </div>
               <p style={{ margin: '4px 0 0', fontSize: '0.9rem', color: '#64748b', lineHeight: 1.5 }}>
-                Share your referral code <strong style={{ color: '#ea580c', background: '#ffedd5', padding: '2px 8px', borderRadius: 6, fontWeight: 900, letterSpacing: '0.04em' }}>{activeCode}</strong> and earn ₹20 into your wallet on every stay!
+                Invite your friends to StayBuddy and earn ₹20 into your wallet on every completed stay!
               </p>
             </div>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-            <button
-              type="button"
-              onClick={handleCopy}
-              style={{
-                background: '#f8fafc',
-                border: '1.5px solid #cbd5e1',
-                color: '#0f172a',
-                padding: '11px 18px',
-                borderRadius: 12,
-                fontWeight: 700,
-                fontSize: '0.88rem',
-                cursor: 'pointer',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 6,
-                transition: 'all 0.2s ease',
-              }}
-            >
-              <span>{copied ? '✓ Copied!' : '📋 Copy Code'}</span>
-            </button>
-
-            <a
-              href={whatsappLink}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={(e) => e.stopPropagation()}
-              style={{
-                background: '#25D366',
-                color: 'white',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '8px',
-                padding: '11px 22px',
-                borderRadius: 12,
-                fontWeight: 800,
-                fontSize: '0.92rem',
-                boxShadow: '0 4px 14px rgba(37, 211, 102, 0.35)',
-                textDecoration: 'none',
-                transition: 'all 0.2s ease',
-              }}
-            >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
-                <path d="M3 21l1.65-3.8a9 9 0 1 1 3.4 3.4L3 21" />
-              </svg>
-              Share on WhatsApp
-            </a>
-
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <button
               type="button"
               onClick={(e) => {
@@ -161,18 +114,23 @@ export default function HomeReferralSection() {
                 handleOpenModal();
               }}
               style={{
-                background: 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)',
-                color: 'white',
+                background: 'linear-gradient(135deg, #ea580c 0%, #f97316 100%)',
+                color: '#ffffff',
                 border: 'none',
-                padding: '11px 18px',
-                borderRadius: 12,
+                padding: '13px 26px',
+                borderRadius: 14,
                 fontWeight: 800,
-                fontSize: '0.88rem',
+                fontSize: '0.95rem',
                 cursor: 'pointer',
-                boxShadow: '0 4px 12px rgba(234, 88, 12, 0.25)',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 8,
+                boxShadow: '0 4px 16px rgba(234, 88, 12, 0.35)',
+                transition: 'all 0.2s ease',
               }}
             >
-              View Slots & Earn ₹100 →
+              <span>Refer a Friend</span>
+              <span style={{ fontSize: '1.1rem' }}>→</span>
             </button>
           </div>
         </div>

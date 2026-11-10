@@ -306,6 +306,47 @@ export async function POST(request: NextRequest) {
       console.error('Counter transaction failed, falling back to random ID', e);
       bookingIdString = `SB-${Math.floor(Math.random() * 900) + 100}`;
     }
+
+    // Resolve Referral Information if guest booked using a friend's referral link / code
+    let referralCode = body.referralCode ? String(body.referralCode).trim().toUpperCase() : null;
+    let referrerUserId: string | null = null;
+    let referrerName: string | null = null;
+
+    try {
+      const customerDocSnap = await db.collection('users').doc(customerId).get();
+      const customerUser = customerDocSnap.exists ? customerDocSnap.data() : null;
+
+      if (!referralCode && customerUser?.referralCodeUsed) {
+        referralCode = customerUser.referralCodeUsed;
+      }
+      if (customerUser?.referredBy) {
+        referrerUserId = customerUser.referredBy;
+      }
+
+      if (referralCode && !referrerUserId) {
+        const refQuerySnap = await db.collection('users').where('referralCode', '==', referralCode).limit(1).get();
+        if (!refQuerySnap.empty) {
+          const refUserDoc = refQuerySnap.docs[0];
+          referrerUserId = refUserDoc.id;
+          referrerName = refUserDoc.data()?.name || refUserDoc.data()?.email || 'StayBuddy Referrer';
+          
+          if (customerDocSnap.exists && !customerUser?.referredBy && referrerUserId !== customerId) {
+            await customerDocSnap.ref.update({
+              referredBy: referrerUserId,
+              referralCodeUsed: referralCode
+            }).catch(console.error);
+          }
+        }
+      } else if (referrerUserId) {
+        const refUserSnap = await db.collection('users').doc(referrerUserId).get();
+        if (refUserSnap.exists) {
+          referrerName = refUserSnap.data()?.name || refUserSnap.data()?.email || 'StayBuddy Referrer';
+          if (!referralCode) referralCode = refUserSnap.data()?.referralCode || null;
+        }
+      }
+    } catch (refCheckErr) {
+      console.warn('Error resolving booking referral:', refCheckErr);
+    }
     
     const newBooking = {
       _id: bookingRef.id, // For backwards compatibility with frontend
@@ -325,6 +366,12 @@ export async function POST(request: NextRequest) {
       guestName, guestEmail, guestPhone, specialRequests,
       status, paymentStatus,
       gstRegistrationNo, gstCompanyName, gstCompanyAddress,
+      isReferralBooking: Boolean(referralCode || referrerUserId),
+      referralCode: referralCode || null,
+      referredByUserId: referrerUserId || null,
+      referrerName: referrerName || null,
+      referralRewardStatus: 'pending_checkout',
+      referralRewardAmount: 20,
       createdAt: new Date().toISOString()
     };
 

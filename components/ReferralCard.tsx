@@ -45,7 +45,7 @@ export default function ReferralCard({ referralCode }: { referralCode: string })
             </div>
             <div>
               <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '4px' }}>Refer & Earn ₹20</h3>
-              <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Get ₹20 real money funded from StayBuddy margin when your friend completes their stay.</p>
+              <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Get ₹20 real money in your StayBuddy wallet when your friend completes their stay.</p>
             </div>
           </div>
 
@@ -109,7 +109,7 @@ export default function ReferralCard({ referralCode }: { referralCode: string })
             </div>
           </div>
           <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', textAlign: 'center', marginTop: '4px' }}>
-            Valid for up to 5 successful referrals (Max ₹100 from StayBuddy platform margin).
+            Valid for up to 5 successful referrals (Earn up to ₹100 wallet cash).
           </p>
         </div>
       </div>

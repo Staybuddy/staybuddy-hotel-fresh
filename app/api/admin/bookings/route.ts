@@ -18,13 +18,25 @@ export async function GET(request: NextRequest) {
     const bookings = bookingsSnap.docs.map(doc => {
       const data = doc.data();
       const hotelData = (data.hotelId && hotelsMap[data.hotelId]) || { name: 'Unknown', city: 'Unknown' };
-      const customerData = (data.customerId && usersMap[data.customerId]) || { name: 'Unknown', email: 'Unknown' };
+      const customerData = (data.customerId && usersMap[data.customerId]) || { name: 'Unknown', email: 'Unknown', phone: '' };
+
+      const referrerId = data.referredByUserId || customerData.referredBy;
+      const referrerUser = referrerId && usersMap[referrerId];
+      const isReferral = Boolean(data.isReferralBooking || data.referralCode || referrerId);
+      const referralCode = data.referralCode || referrerUser?.referralCode || customerData.referralCodeUsed || null;
+      const referrerName = data.referrerName || referrerUser?.name || referrerUser?.email || (referralCode ? `Referrer (${referralCode})` : null);
 
       return { 
         _id: doc.id, 
         ...data,
+        isReferralBooking: isReferral,
+        referralCode,
+        referrerName,
+        referredByUserId: referrerId || null,
+        referralRewardAmount: data.referralRewardAmount || 20,
+        referralRewardStatus: data.referralRewardStatus || (data.status === 'completed' ? 'rewarded' : 'pending_checkout'),
         hotelId: { _id: data.hotelId, name: hotelData.name, city: hotelData.city },
-        customerId: { _id: data.customerId, name: customerData.name, email: customerData.email }
+        customerId: { _id: data.customerId, name: customerData.name, email: customerData.email, phone: customerData.phone || data.guestPhone || '' }
       };
     });
     
