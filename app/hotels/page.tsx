@@ -39,7 +39,8 @@ function HotelSearch() {
     guests: searchParams.get('guests') || '1',
     category: searchParams.get('category') || (searchParams.get('collection') === 'premium' ? 'premium' : ''),
     propertyType: searchParams.get('propertyType') || '',
-    minRating: searchParams.get('minRating') || '',
+    minRating: searchParams.get('starRating') || searchParams.get('minRating') || '',
+    starRating: searchParams.get('starRating') || searchParams.get('minRating') || '',
     sortBy: 'rating',
     rooms: parseInt(searchParams.get('rooms') || '1', 10),
     adults: parseInt(searchParams.get('adults') || '2', 10),
@@ -88,6 +89,10 @@ function HotelSearch() {
       city: searchParams.has('city') ? (searchParams.get('city') || '') : p.city,
       checkIn: searchParams.has('checkIn') ? (searchParams.get('checkIn') || '') : p.checkIn,
       checkOut: searchParams.has('checkOut') ? (searchParams.get('checkOut') || '') : p.checkOut,
+      category: searchParams.has('category') ? (searchParams.get('category') || '') : (searchParams.get('collection') === 'premium' ? 'premium' : p.category),
+      propertyType: searchParams.has('propertyType') ? (searchParams.get('propertyType') || '') : p.propertyType,
+      minRating: searchParams.has('starRating') ? (searchParams.get('starRating') || '') : (searchParams.has('minRating') ? (searchParams.get('minRating') || '') : p.minRating),
+      starRating: searchParams.has('starRating') ? (searchParams.get('starRating') || '') : (searchParams.has('minRating') ? (searchParams.get('minRating') || '') : p.starRating),
       rooms: searchParams.has('rooms') ? parseInt(searchParams.get('rooms') as string, 10) : p.rooms,
       adults: searchParams.has('adults') ? parseInt(searchParams.get('adults') as string, 10) : p.adults,
       children: searchParams.has('children') ? parseInt(searchParams.get('children') as string, 10) : p.children,
@@ -102,7 +107,11 @@ function HotelSearch() {
     if (filters.city) params.set('city', filters.city);
     if (filters.category) params.set('category', filters.category);
     if (filters.propertyType) params.set('propertyType', filters.propertyType);
-    if (filters.minRating) params.set('minRating', filters.minRating);
+    const activeRating = filters.starRating || filters.minRating;
+    if (activeRating) {
+      params.set('starRating', activeRating);
+      params.set('minRating', activeRating);
+    }
     if (filters.adults) params.set('adults', filters.adults.toString());
     if (filters.rooms) params.set('rooms', filters.rooms.toString());
     if (filters.checkIn) params.set('checkIn', filters.checkIn);
@@ -143,7 +152,6 @@ function HotelSearch() {
     }
   }
 
-
   const getQueryString = () => {
     const p = new URLSearchParams();
     if (filters.checkIn) p.set('checkIn', filters.checkIn);
@@ -158,7 +166,39 @@ function HotelSearch() {
   const today = new Date().toISOString().split('T')[0];
 
   const sortedHotels = useMemo(() => {
-    const list = [...hotels];
+    let list = [...hotels];
+
+    // Client-side exact star rating filter
+    const activeRating = filters.starRating || filters.minRating;
+    if (activeRating && activeRating !== 'all') {
+      const targetStar = parseInt(activeRating, 10);
+      if (!isNaN(targetStar)) {
+        list = list.filter((h: any) => {
+          const parsed = Number(h.starRating);
+          let star = 3;
+          if (!isNaN(parsed) && parsed > 0) {
+            star = Math.min(5, Math.max(1, parsed));
+          } else {
+            const cat = (h.category || '').toLowerCase();
+            if (cat === 'luxury' || cat.includes('5 star')) star = 5;
+            else if (cat === 'premium' || cat.includes('4 star')) star = 4;
+            else if (cat === 'standard' || cat.includes('3 star')) star = 3;
+            else if (cat === 'budget' || cat.includes('2 star')) star = 2;
+          }
+          return star === targetStar;
+        });
+      }
+    }
+
+    // Client-side property type filter
+    if (filters.propertyType && filters.propertyType.toLowerCase() !== 'all') {
+      const ptLower = filters.propertyType.toLowerCase().trim();
+      list = list.filter((h: any) => {
+        const hPt = (h.propertyType || 'Hotel').toLowerCase().trim();
+        return hPt === ptLower;
+      });
+    }
+
     if (filters.sortBy === 'newest') {
       return list.sort((a, b) => {
         const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
@@ -172,7 +212,7 @@ function HotelSearch() {
     } else {
       return list.sort((a, b) => (b.avgRating || 0) - (a.avgRating || 0));
     }
-  }, [hotels, filters.sortBy]);
+  }, [hotels, filters.sortBy, filters.starRating, filters.minRating, filters.propertyType]);
 
   return (
     <div>
@@ -479,15 +519,69 @@ function HotelSearch() {
                 </div>
               </div>
 
-              {/* Star Category */}
+              {/* Star Rating (Exact Star Filter) */}
               <div>
-                <div style={{ fontWeight: 800, fontSize: '0.9rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-primary)', marginBottom: 12 }}>STAR CATEGORY</div>
-                {['5-Star', '7-Star', 'Heritage'].map(item => (
-                  <label key={item} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10, cursor: 'pointer', fontSize: '0.95rem' }}>
-                    <input type="checkbox" style={{ width: 18, height: 18, accentColor: 'var(--brand-500)', cursor: 'pointer' }} />
-                    {item}
-                  </label>
-                ))}
+                <div style={{ fontWeight: 800, fontSize: '0.9rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-primary)', marginBottom: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span>STAR RATING</span>
+                  {(filters.starRating || filters.minRating) && (
+                    <button
+                      type="button"
+                      onClick={() => setFilters(p => ({ ...p, starRating: '', minRating: '' }))}
+                      style={{ background: 'none', border: 'none', color: 'var(--brand-600)', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer', padding: 0 }}
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
+                {[
+                  { value: '5', stars: 5, label: '5-Star Hotel' },
+                  { value: '4', stars: 4, label: '4-Star Hotel' },
+                  { value: '3', stars: 3, label: '3-Star Hotel' },
+                  { value: '2', stars: 2, label: '2-Star Hotel' },
+                  { value: '1', stars: 1, label: '1-Star Hotel' },
+                ].map(r => {
+                  const isChecked = (filters.starRating === r.value || filters.minRating === r.value);
+                  return (
+                    <label 
+                      key={r.value} 
+                      style={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        gap: 10, 
+                        marginBottom: 10, 
+                        cursor: 'pointer', 
+                        fontSize: '0.95rem',
+                        padding: '4px 8px',
+                        borderRadius: 8,
+                        background: isChecked ? 'rgba(234, 88, 12, 0.08)' : 'transparent',
+                        transition: 'background 0.15s ease'
+                      }}
+                    >
+                      <input 
+                        type="radio" 
+                        name="starRating" 
+                        checked={isChecked} 
+                        onChange={() => setFilters(p => ({ 
+                          ...p, 
+                          starRating: (p.starRating === r.value || p.minRating === r.value) ? '' : r.value,
+                          minRating: (p.starRating === r.value || p.minRating === r.value) ? '' : r.value,
+                        }))}
+                        onClick={() => {
+                          if (filters.starRating === r.value || filters.minRating === r.value) {
+                            setFilters(p => ({ ...p, starRating: '', minRating: '' }));
+                          }
+                        }} 
+                        style={{ width: 18, height: 18, accentColor: 'var(--brand-500)', cursor: 'pointer' }} 
+                      />
+                      <span style={{ color: '#FBBF24', letterSpacing: '2px', fontSize: '1.05rem', whiteSpace: 'nowrap' }}>
+                        {'★'.repeat(r.stars)}
+                      </span>
+                      <span style={{ fontWeight: isChecked ? 700 : 500, color: isChecked ? 'var(--brand-700)' : 'var(--text-primary)', whiteSpace: 'nowrap' }}>
+                        {r.label}
+                      </span>
+                    </label>
+                  );
+                })}
               </div>
 
               {/* Category */}
@@ -503,24 +597,49 @@ function HotelSearch() {
 
               {/* Property Type */}
               <div>
-                <div style={{ fontWeight: 800, fontSize: '0.9rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-primary)', marginBottom: 12 }}>PROPERTY TYPE</div>
-                {['Hotel', 'Resort', 'Villa', 'Homestay', 'Apartment'].map(pt => (
-                  <label key={pt} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10, cursor: 'pointer', fontSize: '0.95rem' }}>
-                    <input type="radio" name="propertyType" checked={filters.propertyType === pt} onChange={() => setFilters(p => ({ ...p, propertyType: pt }))} style={{ width: 18, height: 18, accentColor: 'var(--brand-500)', cursor: 'pointer' }} />
-                    {pt}
-                  </label>
-                ))}
-              </div>
-
-              {/* Min Rating */}
-              <div>
-                <div style={{ fontWeight: 800, fontSize: '0.9rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-primary)', marginBottom: 12 }}>MIN. RATING</div>
-                {['4', '3', '2'].map(r => (
-                  <label key={r} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10, cursor: 'pointer', fontSize: '0.95rem' }}>
-                    <input type="radio" name="rating" checked={filters.minRating === r} onChange={() => setFilters(p => ({ ...p, minRating: r }))} style={{ width: 18, height: 18, accentColor: 'var(--brand-500)', cursor: 'pointer' }} />
-                    <span style={{ color: '#FBBF24', letterSpacing: '2px', fontSize: '1.2rem' }}>{'★'.repeat(parseInt(r))}</span> & above
-                  </label>
-                ))}
+                <div style={{ fontWeight: 800, fontSize: '0.9rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-primary)', marginBottom: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span>PROPERTY TYPE</span>
+                  {filters.propertyType && (
+                    <button
+                      type="button"
+                      onClick={() => setFilters(p => ({ ...p, propertyType: '' }))}
+                      style={{ background: 'none', border: 'none', color: 'var(--brand-600)', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer', padding: 0 }}
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
+                {['Hotel', 'Resort', 'Villa', 'Homestay', 'Apartment'].map(pt => {
+                  const isChecked = filters.propertyType.toLowerCase() === pt.toLowerCase();
+                  return (
+                    <label key={pt} style={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      gap: 10, 
+                      marginBottom: 10, 
+                      cursor: 'pointer', 
+                      fontSize: '0.95rem',
+                      padding: '4px 8px',
+                      borderRadius: 8,
+                      background: isChecked ? 'rgba(234, 88, 12, 0.08)' : 'transparent',
+                      transition: 'background 0.15s ease'
+                    }}>
+                      <input 
+                        type="radio" 
+                        name="propertyType" 
+                        checked={isChecked} 
+                        onChange={() => setFilters(p => ({ ...p, propertyType: isChecked ? '' : pt }))}
+                        onClick={() => {
+                          if (isChecked) {
+                            setFilters(p => ({ ...p, propertyType: '' }));
+                          }
+                        }} 
+                        style={{ width: 18, height: 18, accentColor: 'var(--brand-500)', cursor: 'pointer' }} 
+                      />
+                      <span style={{ fontWeight: isChecked ? 700 : 500, color: isChecked ? 'var(--brand-700)' : 'var(--text-primary)' }}>{pt}</span>
+                    </label>
+                  );
+                })}
               </div>
 
             </div>
@@ -535,7 +654,9 @@ function HotelSearch() {
               <h2 style={{ fontSize: '1.25rem', marginBottom: 2 }}>
                 {filters.city ? `Hotels in ${filters.city}` : 'All Hotels'}
               </h2>
-              <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>{loading ? 'Searching...' : `${total} properties found`}</p>
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>
+                {loading ? 'Searching...' : `${sortedHotels.length} ${sortedHotels.length === 1 ? 'property' : 'properties'} found`}
+              </p>
             </div>
             <select className="form-input form-select" style={{ width: 'auto', padding: '8px 36px 8px 12px', fontSize: '0.875rem' }} value={filters.sortBy} onChange={e => setFilters(p => ({ ...p, sortBy: e.target.value }))}>
               <option value="rating">Top Rated</option>
@@ -570,12 +691,12 @@ function HotelSearch() {
                 </div>
               ))}
             </div>
-          ) : hotels.length === 0 ? (
+          ) : sortedHotels.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '80px 20px', color: 'var(--text-muted)' }}>
               <div style={{ fontSize: '3rem', marginBottom: 16 }}>🔍</div>
               <h3>No hotels found</h3>
               <p style={{ marginTop: 8 }}>Try adjusting your search or filters</p>
-              <button className="btn btn-primary" style={{ marginTop: 16 }} onClick={() => setFilters(p => ({ ...p, city: '', category: '', minRating: '' }))}>Clear Filters</button>
+              <button className="btn btn-primary" style={{ marginTop: 16 }} onClick={() => setFilters(p => ({ ...p, city: '', category: '', minRating: '', starRating: '', propertyType: '' }))}>Clear Filters</button>
             </div>
           ) : (
             <>

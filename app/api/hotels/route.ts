@@ -27,6 +27,7 @@ export async function GET(request: NextRequest) {
     const collection = searchParams.get('collection');
     const isPremiumFilter = category === 'premium' || category === 'luxury' || collection === 'premium';
     const propertyType = searchParams.get('propertyType');
+    const starRatingParam = searchParams.get('starRating') || searchParams.get('minRating');
     const limitParam = parseInt(searchParams.get('limit') || '12');
     const searchCheckIn = searchParams.get('checkIn');
     const searchCheckOut = searchParams.get('checkOut');
@@ -39,13 +40,23 @@ export async function GET(request: NextRequest) {
     if (status && status !== 'all') {
       hotelsRef = hotelsRef.where('status', '==', status);
     }
-    if (category && category !== 'business' && !isPremiumFilter) {
-      hotelsRef = hotelsRef.where('category', '==', category);
-    }
-    if (propertyType) hotelsRef = hotelsRef.where('propertyType', '==', propertyType);
     
     const snapshot = await hotelsRef.get();
     let hotels = snapshot.docs.map((doc: any) => ({ _id: doc.id, ...doc.data() }));
+
+    // Helper: compute accurate star rating (1-5) for any property
+    const getHotelStar = (h: any): number => {
+      const parsed = Number(h.starRating);
+      if (!isNaN(parsed) && parsed > 0) {
+        return Math.min(5, Math.max(1, parsed));
+      }
+      const cat = (h.category || '').toLowerCase();
+      if (cat === 'luxury' || cat.includes('5 star')) return 5;
+      if (cat === 'premium' || cat.includes('4 star')) return 4;
+      if (cat === 'standard' || cat.includes('3 star')) return 3;
+      if (cat === 'budget' || cat.includes('2 star')) return 2;
+      return 3;
+    };
 
     // Memory filter for partnerId (handles string, object, partnerEmail, and onboardedBy formats)
     if (partnerId) {
@@ -74,29 +85,50 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // Apply memory filters for things Firestore can't do natively like regex
+    // Apply memory filters for things Firestore can't do natively like regex & case-insensitivity
     if (city) {
       const cityLower = city.toLowerCase();
       hotels = hotels.filter((h: any) => h.city?.toLowerCase().includes(cityLower) || h.area?.toLowerCase().includes(cityLower));
     }
 
-    if (category === 'business') {
-      hotels = hotels.filter((h: any) => 
-        !h.category || h.category === 'business' || h.category === 'premium' || h.category === 'standard' ||
-        (Array.isArray(h.amenities) && (h.amenities.includes('Free WiFi') || h.amenities.includes('Business Center') || h.amenities.includes('24-hour Front Desk')))
-      );
+    // Property Type filter (case-insensitive, default to Hotel)
+    if (propertyType && propertyType.toLowerCase() !== 'all') {
+      const ptLower = propertyType.toLowerCase().trim();
+      hotels = hotels.filter((h: any) => {
+        const hPt = (h.propertyType || 'Hotel').toLowerCase().trim();
+        return hPt === ptLower;
+      });
     }
 
-    if (isPremiumFilter) {
-      hotels = hotels.filter((h: any) => {
-        const star = Number(h.starRating) || 0;
-        const cat = (h.category || '').toLowerCase();
-        if (category === 'luxury') {
-          return star >= 5 || cat === 'luxury';
-        }
-        // Premium Hotel Groups: strictly 4-star and 5-star category hotels
-        return star >= 4 || cat === 'luxury' || (cat === 'premium' && (star === 0 || star >= 4));
-      });
+    // Exact Star Rating filter (e.g. user selects 2-Star -> strictly only 2-star hotels show)
+    if (starRatingParam && starRatingParam !== 'all') {
+      const targetStar = parseInt(starRatingParam, 10);
+      if (!isNaN(targetStar)) {
+        hotels = hotels.filter((h: any) => getHotelStar(h) === targetStar);
+      }
+    }
+
+    // Category filter
+    if (category && category !== 'all') {
+      const catLower = category.toLowerCase().trim();
+      if (catLower === 'business') {
+        hotels = hotels.filter((h: any) => 
+          !h.category || h.category === 'business' || h.category === 'premium' || h.category === 'standard' ||
+          (Array.isArray(h.amenities) && (h.amenities.includes('Free WiFi') || h.amenities.includes('Business Center') || h.amenities.includes('24-hour Front Desk')))
+        );
+      } else if (catLower === 'premium') {
+        hotels = hotels.filter((h: any) => getHotelStar(h) >= 4);
+      } else if (catLower === 'luxury') {
+        hotels = hotels.filter((h: any) => getHotelStar(h) >= 5);
+      } else if (catLower === 'standard') {
+        hotels = hotels.filter((h: any) => getHotelStar(h) === 3);
+      } else if (catLower === 'budget') {
+        hotels = hotels.filter((h: any) => getHotelStar(h) <= 2);
+      } else {
+        hotels = hotels.filter((h: any) => (h.category || '').toLowerCase() === catLower);
+      }
+    } else if (isPremiumFilter) {
+      hotels = hotels.filter((h: any) => getHotelStar(h) >= 4);
     }
 
     if (status !== 'all') {
