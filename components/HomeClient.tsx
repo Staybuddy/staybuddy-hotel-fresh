@@ -43,6 +43,17 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
   const [validationErrorField, setValidationErrorField] = useState<'location' | 'dates' | 'adults' | null>(null);
   const [userWishlistIds, setUserWishlistIds] = useState<string[]>([]);
   
+  // Dynamic Real Photos for Spotlight Duo Cards
+  const newlyAddedRealPhoto = useMemo(() => {
+    const found = hotels?.find((h: any) => h.images && h.images.length > 0 && typeof h.images[0] === 'string' && (h.images[0].startsWith('http') || h.images[0].startsWith('/api/images')));
+    return found?.images?.[0] || "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?ixlib=rb-4.0.3&auto=format&fit=crop&w=1400&q=85";
+  }, [hotels]);
+
+  const corporateRealPhoto = useMemo(() => {
+    const found = hotels?.find((h: any) => (h.category === 'business' || h.propertyType === 'Hotel') && h.images && h.images.length > 1 && typeof h.images[1] === 'string');
+    return found?.images?.[1] || "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?ixlib=rb-4.0.3&auto=format&fit=crop&w=1400&q=85";
+  }, [hotels]);
+  
   // Smart Dynamic Destinations: Consolidates localities (e.g. Shamshabad -> Hyderabad) without duplicate cards
   const allDestinations = useMemo(() => {
     const map = new Map<string, { city: string; country: string; hotels: number }>();
@@ -895,52 +906,63 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
             100% { transform: scale(1) translate(0, 0); }
           }
           .spotlight-card-inner {
-            border-radius: var(--radius-xl);
-            padding: 18px;
+            border-radius: 22px;
+            padding: 24px;
             position: relative;
             overflow: hidden;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
             width: 100%;
+            height: 330px;
+            min-height: 330px;
             cursor: pointer;
-            transition: transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.28s ease, filter 0.2s ease;
+            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease, filter 0.25s ease;
             user-select: none;
             -webkit-tap-highlight-color: transparent;
             touch-action: manipulation;
           }
+          @media (max-width: 768px) {
+            .spotlight-card-inner {
+              height: 290px;
+              min-height: 290px;
+              padding: 18px;
+            }
+          }
           .spotlight-card-inner:hover {
-            transform: translateY(-8px) scale(1.015);
-            filter: brightness(1.02);
+            transform: translateY(-8px) scale(1.02);
+            filter: brightness(1.04);
           }
           .spotlight-card-inner:active {
             transform: translateY(2px) scale(0.97) !important;
             transition: transform 0.08s ease-out, box-shadow 0.08s ease-out !important;
           }
-          .spotlight-photo-header {
-            position: relative;
-            width: 100%;
-            height: 180px;
-            border-radius: 16px;
-            overflow: hidden;
-            margin-bottom: 16px;
-            box-shadow: 0 6px 16px rgba(0,0,0,0.12);
-          }
-          .spotlight-photo-img {
+          .spotlight-full-photo {
+            position: absolute;
+            inset: 0;
             width: 100%;
             height: 100%;
             object-fit: cover;
-            animation: kenBurnsPhotoZoom 10s ease-in-out infinite alternate;
-            transition: transform 0.4s ease;
+            animation: kenBurnsPhotoZoom 12s ease-in-out infinite alternate;
+            transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
             display: block;
+            z-index: 1;
           }
-          .spotlight-card-inner:hover .spotlight-photo-img {
-            transform: scale(1.1);
+          .spotlight-card-inner:hover .spotlight-full-photo {
+            transform: scale(1.12);
           }
-          .spotlight-photo-gradient {
+          .spotlight-photo-overlay-new {
             position: absolute;
             inset: 0;
-            background: linear-gradient(to top, rgba(15, 23, 42, 0.7) 0%, rgba(15, 23, 42, 0.15) 50%, transparent 100%);
+            background: linear-gradient(180deg, rgba(15, 23, 42, 0.2) 0%, rgba(30, 27, 75, 0.45) 35%, rgba(15, 23, 42, 0.94) 100%);
+            z-index: 2;
+            pointer-events: none;
+          }
+          .spotlight-photo-overlay-corp {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(180deg, rgba(15, 23, 42, 0.2) 0%, rgba(8, 47, 73, 0.45) 35%, rgba(15, 23, 42, 0.94) 100%);
+            z-index: 2;
             pointer-events: none;
           }
           .spotlight-card-inner .shine-ray {
@@ -949,10 +971,10 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
             left: 0;
             width: 60%;
             height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.65), transparent);
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.45), transparent);
             pointer-events: none;
             animation: shineRaySweep 5s infinite ease-in-out;
-            z-index: 5;
+            z-index: 4;
           }
           .spotlight-card-inner:hover .shine-ray {
             animation: shineRaySweep 1.8s infinite ease-in-out;
@@ -962,12 +984,12 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
             display: inline-block;
           }
           .spotlight-card-inner:hover .cta-arrow {
-            transform: translateX(8px) scale(1.2);
+            transform: translateX(6px) scale(1.2);
           }
         `}</style>
         <div className="spotlight-duo-grid">
           
-          {/* Card 1 - Newly Added Hotels (Professional 5-Star Boutique Architecture Photo) */}
+          {/* Card 1 - Newly Added Hotels (Edge-to-Edge Real Hotel Photo with Transparent Theme Overlay) */}
           <Link 
             href="/hotels?sort=newest" 
             prefetch={true} 
@@ -977,86 +999,110 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
             <div 
               className="spotlight-card-inner" 
               style={{
-                background: 'linear-gradient(135deg, #fdf4ff 0%, #fae8ff 45%, #eff6ff 100%)',
-                border: '1.5px solid #d8b4fe',
+                border: '1.5px solid rgba(216, 180, 254, 0.75)',
                 animation: 'ambientCardBreath 4.5s ease-in-out infinite'
               }}
             >
+              {/* Full Background Real Photo */}
+              <img 
+                src={newlyAddedRealPhoto} 
+                alt="Newly Added Hotels" 
+                className="spotlight-full-photo" 
+              />
+              <div className="spotlight-photo-overlay-new" />
               <div className="shine-ray" />
               
-              {/* Professional Hotel Architecture Photo Header */}
-              <div className="spotlight-photo-header">
-                <img 
-                  src="https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80" 
-                  alt="New on StayBuddy" 
-                  className="spotlight-photo-img" 
-                />
-                <div className="spotlight-photo-gradient" />
+              {/* Top Row: Floating Glass Badges */}
+              <div style={{
+                position: 'relative',
+                zIndex: 3,
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                width: '100%',
+                gap: 8,
+                flexWrap: 'wrap'
+              }}>
                 <div style={{
-                  position: 'absolute',
-                  top: 12,
-                  left: 12,
-                  zIndex: 2,
                   display: 'inline-flex',
                   alignItems: 'center',
-                  gap: 6,
+                  gap: 7,
                   background: 'rgba(255, 255, 255, 0.96)',
-                  backdropFilter: 'blur(6px)',
+                  backdropFilter: 'blur(8px)',
                   color: '#7c3aed',
-                  padding: '4px 10px',
+                  padding: '5px 12px',
                   borderRadius: 'var(--radius-full)',
-                  fontSize: '0.74rem',
+                  fontSize: '0.76rem',
                   fontWeight: 800,
                   textTransform: 'uppercase',
-                  border: '1px solid #ddd6fe',
-                  boxShadow: '0 2px 10px rgba(0,0,0,0.12)'
+                  border: '1px solid rgba(221, 214, 254, 0.9)',
+                  boxShadow: '0 4px 14px rgba(0,0,0,0.2)'
                 }}>
-                  <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#9333ea', display: 'inline-block', animation: 'liveRadarPulse 1.8s infinite' }} />
-                  <span>Newly Added</span>
+                  <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#9333ea', display: 'inline-block', animation: 'liveRadarPulse 1.8s infinite' }} />
+                  <span>Newly Added Hotels</span>
                 </div>
+
                 <div style={{
-                  position: 'absolute',
-                  bottom: 10,
-                  right: 12,
-                  zIndex: 2,
-                  background: 'rgba(15, 23, 42, 0.8)',
-                  backdropFilter: 'blur(4px)',
+                  background: 'rgba(15, 23, 42, 0.82)',
+                  backdropFilter: 'blur(6px)',
                   color: '#fef08a',
-                  padding: '3px 10px',
-                  borderRadius: 6,
+                  padding: '4px 12px',
+                  borderRadius: 20,
                   fontSize: '0.74rem',
-                  fontWeight: 700
+                  fontWeight: 700,
+                  border: '1px solid rgba(254, 240, 138, 0.3)',
+                  boxShadow: '0 2px 10px rgba(0,0,0,0.25)'
                 }}>
                   ✨ Exclusive Launch Rates
                 </div>
               </div>
 
-              <div style={{ position: 'relative', zIndex: 2, marginBottom: 16 }}>
+              {/* Bottom Transparent Overlay Content */}
+              <div style={{ position: 'relative', zIndex: 3 }}>
                 <h3 style={{ 
-                  color: '#4c1d95', 
+                  color: '#ffffff', 
                   marginBottom: 6, 
-                  fontSize: '1.4rem', 
+                  fontSize: '1.55rem', 
                   fontWeight: 800,
                   display: 'flex',
                   alignItems: 'center',
-                  gap: 8
+                  gap: 8,
+                  textShadow: '0 2px 10px rgba(0,0,0,0.7)'
                 }}>
-                  <span>New on StayBuddy</span>
-                  <span style={{ fontSize: '1.1rem' }}>✨</span>
+                  <span>Newly Added Hotels</span>
+                  <span style={{ color: '#fbbf24', fontSize: '1.25rem' }}>✨</span>
                 </h3>
-                <p style={{ color: '#6b21a8', fontSize: '0.94rem', margin: 0, opacity: 0.9, lineHeight: 1.5 }}>
-                  Discover freshly onboarded boutique stays & verified hotels with special introductory offers and verified amenities.
+                <p style={{ 
+                  color: 'rgba(255, 255, 255, 0.92)', 
+                  fontSize: '0.92rem', 
+                  margin: '0 0 14px 0', 
+                  lineHeight: 1.45,
+                  textShadow: '0 1px 6px rgba(0,0,0,0.7)'
+                }}>
+                  Discover freshly onboarded boutique stays & verified hotels with special launch offers.
                 </p>
-              </div>
 
-              <div style={{ color: '#7c3aed', fontWeight: 800, display: 'flex', alignItems: 'center', gap: 6, position: 'relative', zIndex: 2, fontSize: '0.96rem' }}>
-                <span>Explore New Stays</span>
-                <span className="cta-arrow">→</span>
+                <div style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  background: 'linear-gradient(135deg, #ea580c 0%, #f97316 100%)',
+                  color: '#ffffff',
+                  padding: '8px 18px',
+                  borderRadius: 24,
+                  fontSize: '0.88rem',
+                  fontWeight: 700,
+                  boxShadow: '0 4px 16px rgba(234, 88, 12, 0.5)',
+                  border: '1px solid rgba(255, 255, 255, 0.25)'
+                }}>
+                  <span>Explore Newly Added</span>
+                  <span className="cta-arrow">→</span>
+                </div>
               </div>
             </div>
           </Link>
 
-          {/* Card 2 - Hotels for Corporate (Professional Business Skyline & Corporate Tower Photo) */}
+          {/* Card 2 - Hotels for Corporate (Edge-to-Edge Corporate Photo with Transparent Theme Overlay) */}
           <Link 
             href="/hotels?category=business" 
             prefetch={true} 
@@ -1066,82 +1112,106 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
             <div 
               className="spotlight-card-inner" 
               style={{
-                background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 45%, #f8fafc 100%)',
-                border: '1.5px solid #7dd3fc',
+                border: '1.5px solid rgba(125, 211, 252, 0.75)',
                 animation: 'ambientCorporateBreath 4.5s ease-in-out infinite 1s'
               }}
             >
+              {/* Full Background Real Corporate Photo */}
+              <img 
+                src={corporateRealPhoto} 
+                alt="Hotels for Corporate" 
+                className="spotlight-full-photo" 
+                style={{ animationDelay: '1.5s' }}
+              />
+              <div className="spotlight-photo-overlay-corp" />
               <div className="shine-ray" />
               
-              {/* Professional Corporate Hotel Tower Photo Header */}
-              <div className="spotlight-photo-header">
-                <img 
-                  src="https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80" 
-                  alt="Hotels for Corporate" 
-                  className="spotlight-photo-img" 
-                  style={{ animationDelay: '1.5s' }}
-                />
-                <div className="spotlight-photo-gradient" />
+              {/* Top Row: Floating Glass Badges */}
+              <div style={{
+                position: 'relative',
+                zIndex: 3,
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                width: '100%',
+                gap: 8,
+                flexWrap: 'wrap'
+              }}>
                 <div style={{
-                  position: 'absolute',
-                  top: 12,
-                  left: 12,
-                  zIndex: 2,
                   display: 'inline-flex',
                   alignItems: 'center',
-                  gap: 6,
+                  gap: 7,
                   background: 'rgba(255, 255, 255, 0.96)',
-                  backdropFilter: 'blur(6px)',
+                  backdropFilter: 'blur(8px)',
                   color: '#0284c7',
-                  padding: '4px 10px',
+                  padding: '5px 12px',
                   borderRadius: 'var(--radius-full)',
-                  fontSize: '0.74rem',
+                  fontSize: '0.76rem',
                   fontWeight: 800,
                   textTransform: 'uppercase',
-                  border: '1px solid #bae6fd',
-                  boxShadow: '0 2px 10px rgba(0,0,0,0.12)'
+                  border: '1px solid rgba(186, 230, 253, 0.9)',
+                  boxShadow: '0 4px 14px rgba(0,0,0,0.2)'
                 }}>
-                  <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#0284c7', display: 'inline-block', animation: 'liveCorporatePulse 1.8s infinite' }} />
+                  <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#0284c7', display: 'inline-block', animation: 'liveCorporatePulse 1.8s infinite' }} />
                   <span>Corporate & B2B</span>
                 </div>
+
                 <div style={{
-                  position: 'absolute',
-                  bottom: 10,
-                  right: 12,
-                  zIndex: 2,
-                  background: 'rgba(15, 23, 42, 0.8)',
-                  backdropFilter: 'blur(4px)',
+                  background: 'rgba(15, 23, 42, 0.82)',
+                  backdropFilter: 'blur(6px)',
                   color: '#38bdf8',
-                  padding: '3px 10px',
-                  borderRadius: 6,
+                  padding: '4px 12px',
+                  borderRadius: 20,
                   fontSize: '0.74rem',
-                  fontWeight: 700
+                  fontWeight: 700,
+                  border: '1px solid rgba(56, 189, 248, 0.3)',
+                  boxShadow: '0 2px 10px rgba(0,0,0,0.25)'
                 }}>
                   🧾 GST Invoices Guaranteed
                 </div>
               </div>
 
-              <div style={{ position: 'relative', zIndex: 2, marginBottom: 16 }}>
+              {/* Bottom Transparent Overlay Content */}
+              <div style={{ position: 'relative', zIndex: 3 }}>
                 <h3 style={{ 
-                  color: '#0c4a6e', 
+                  color: '#ffffff', 
                   marginBottom: 6, 
-                  fontSize: '1.4rem', 
+                  fontSize: '1.55rem', 
                   fontWeight: 800,
                   display: 'flex',
                   alignItems: 'center',
-                  gap: 8
+                  gap: 8,
+                  textShadow: '0 2px 10px rgba(0,0,0,0.7)'
                 }}>
                   <span>Hotels for Corporate</span>
-                  <span style={{ fontSize: '1.1rem' }}>🏢</span>
+                  <span style={{ fontSize: '1.25rem' }}>🏢</span>
                 </h3>
-                <p style={{ color: '#0369a1', fontSize: '0.94rem', margin: 0, opacity: 0.9, lineHeight: 1.5 }}>
-                  Seamless corporate bookings with express check-in, high-speed WiFi, dedicated work desks & automated GST input tax credit.
+                <p style={{ 
+                  color: 'rgba(255, 255, 255, 0.92)', 
+                  fontSize: '0.92rem', 
+                  margin: '0 0 14px 0', 
+                  lineHeight: 1.45,
+                  textShadow: '0 1px 6px rgba(0,0,0,0.7)'
+                }}>
+                  Seamless corporate bookings with express check-in, high-speed WiFi, work desks & automated GST billing.
                 </p>
-              </div>
 
-              <div style={{ color: '#0284c7', fontWeight: 800, display: 'flex', alignItems: 'center', gap: 6, position: 'relative', zIndex: 2, fontSize: '0.96rem' }}>
-                <span>Explore Corporate Hotels</span>
-                <span className="cta-arrow">→</span>
+                <div style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  background: 'linear-gradient(135deg, #0284c7 0%, #0ea5e9 100%)',
+                  color: '#ffffff',
+                  padding: '8px 18px',
+                  borderRadius: 24,
+                  fontSize: '0.88rem',
+                  fontWeight: 700,
+                  boxShadow: '0 4px 16px rgba(2, 132, 199, 0.5)',
+                  border: '1px solid rgba(255, 255, 255, 0.25)'
+                }}>
+                  <span>Explore Corporate Hotels</span>
+                  <span className="cta-arrow">→</span>
+                </div>
               </div>
             </div>
           </Link>
