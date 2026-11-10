@@ -598,10 +598,12 @@ function HotelSearch() {
                         ) : (
                           <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg, var(--brand-100), var(--brand-200))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '3rem' }}>🏨</div>
                         )}
-                        <div style={{ position: 'absolute', top: 12, left: 12, display: 'flex', gap: 6, zIndex: 2, flexWrap: 'wrap' }}>
+                        <div style={{ position: 'absolute', top: 12, left: 12, zIndex: 2 }}>
                           <span className="badge badge-gray" style={{ backdropFilter: 'blur(4px)', background: 'rgba(0,0,0,0.65)', color: 'white', fontWeight: 700 }}>
                             {hotel.propertyType || 'Hotel'}
                           </span>
+                        </div>
+                        <div style={{ position: 'absolute', top: 12, right: 12, zIndex: 2 }}>
                           {isPremier ? (
                             <span className="badge" style={{ 
                               backdropFilter: 'blur(6px)', 
