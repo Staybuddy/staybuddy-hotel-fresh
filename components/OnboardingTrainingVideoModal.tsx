@@ -181,6 +181,36 @@ export default function OnboardingTrainingVideoModal({
   const activeStepData = STEPS[currentStep];
   const allCompleted = completedSteps.length >= 4;
 
+  const togglePlayPause = () => {
+    setIsPlaying(prev => {
+      const next = !prev;
+      if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+        if (!next) {
+          // Pause speech
+          try {
+            window.speechSynthesis.pause();
+          } catch (_) {
+            window.speechSynthesis.cancel();
+          }
+          setIsSpeaking(false);
+        } else {
+          // Resume speech
+          try {
+            if (window.speechSynthesis.paused) {
+              window.speechSynthesis.resume();
+              setIsSpeaking(true);
+            } else if (isVoiceEnabled) {
+              speakText(activeStepData.voiceText);
+            }
+          } catch (_) {
+            if (isVoiceEnabled) speakText(activeStepData.voiceText);
+          }
+        }
+      }
+      return next;
+    });
+  };
+
   const toggleVoice = () => {
     if (isVoiceEnabled) {
       if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
@@ -507,47 +537,66 @@ export default function OnboardingTrainingVideoModal({
           }}>
             
             {/* The Video Screen Frame */}
-            <div style={{
-              background: '#0f172a',
-              borderRadius: 14,
-              border: '1.5px solid #334155',
-              overflow: 'hidden',
-              position: 'relative',
-              aspectRatio: '16/9',
-              minHeight: 220,
-              display: 'flex',
-              flexDirection: 'column',
-              boxShadow: '0 8px 24px rgba(0,0,0,0.5)'
-            }}>
+            <div 
+              onClick={togglePlayPause}
+              title={isPlaying ? "Click to Pause Video" : "Click to Play Video"}
+              style={{
+                background: '#0f172a',
+                borderRadius: 14,
+                border: isPlaying ? '1.5px solid #334155' : '1.5px solid #ea580c',
+                overflow: 'hidden',
+                position: 'relative',
+                aspectRatio: '16/9',
+                minHeight: 220,
+                display: 'flex',
+                flexDirection: 'column',
+                boxShadow: isPlaying ? '0 8px 24px rgba(0,0,0,0.5)' : '0 8px 28px rgba(234, 88, 12, 0.35)',
+                cursor: 'pointer',
+                transition: 'border-color 0.2s, box-shadow 0.2s'
+              }}
+            >
 
               {/* Video Player Header Overlay */}
-              <div style={{
-                padding: '8px 12px',
-                background: 'linear-gradient(180deg, rgba(0,0,0,0.85) 0%, transparent 100%)',
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                right: 0,
-                zIndex: 10,
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center'
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <span style={{
-                    background: '#dc2626',
-                    color: 'white',
-                    fontSize: '0.62rem',
-                    fontWeight: 800,
-                    padding: '2px 5px',
-                    borderRadius: 4,
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 3
-                  }}>
-                    <span style={{ width: 4, height: 4, borderRadius: '50%', background: 'white' }} />
-                    AUTOPLAYING
-                  </span>
+              <div 
+                onClick={(e) => e.stopPropagation()}
+                style={{
+                  padding: '8px 12px',
+                  background: 'linear-gradient(180deg, rgba(0,0,0,0.9) 0%, transparent 100%)',
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  zIndex: 20,
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center'
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); togglePlayPause(); }}
+                    style={{
+                      background: isPlaying ? '#ea580c' : '#16a34a',
+                      color: 'white',
+                      border: 'none',
+                      padding: '3px 9px',
+                      borderRadius: 6,
+                      fontSize: '0.68rem',
+                      fontWeight: 800,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 4,
+                      boxShadow: '0 2px 6px rgba(0,0,0,0.4)',
+                      transition: 'transform 0.15s'
+                    }}
+                    title={isPlaying ? "Pause video" : "Play video"}
+                  >
+                    <span>{isPlaying ? '⏸' : '▶'}</span>
+                    <span>{isPlaying ? 'PAUSE' : 'PLAY'}</span>
+                  </button>
+
                   <span style={{ color: '#e2e8f0', fontSize: '0.74rem', fontWeight: 700 }}>
                     Step {activeStepData.stepNumber}: {activeStepData.shortTitle}
                   </span>
@@ -556,7 +605,7 @@ export default function OnboardingTrainingVideoModal({
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                   {isSpeaking && (
                     <span style={{
-                      background: 'rgba(234, 88, 12, 0.3)',
+                      background: 'rgba(234, 88, 12, 0.35)',
                       border: '1px solid #ea580c',
                       color: '#fdba74',
                       fontSize: '0.65rem',
@@ -571,7 +620,7 @@ export default function OnboardingTrainingVideoModal({
                     </span>
                   )}
                   <span style={{
-                    background: 'rgba(255,255,255,0.15)',
+                    background: 'rgba(255,255,255,0.18)',
                     color: '#f8fafc',
                     fontSize: '0.68rem',
                     padding: '2px 6px',
@@ -581,6 +630,57 @@ export default function OnboardingTrainingVideoModal({
                   </span>
                 </div>
               </div>
+
+              {/* CENTER PLAY/PAUSE OVERLAY: Pops up prominently when paused */}
+              {!isPlaying && (
+                <div 
+                  onClick={(e) => { e.stopPropagation(); togglePlayPause(); }}
+                  style={{
+                    position: 'absolute',
+                    inset: 0,
+                    zIndex: 25,
+                    background: 'rgba(15, 23, 42, 0.65)',
+                    backdropFilter: 'blur(3px)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 10,
+                    cursor: 'pointer',
+                    animation: 'sceneFadeIn 0.2s ease-out'
+                  }}
+                >
+                  <div style={{
+                    width: 64,
+                    height: 64,
+                    borderRadius: '50%',
+                    background: 'linear-gradient(135deg, #ea580c 0%, #f97316 100%)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '1.8rem',
+                    color: 'white',
+                    boxShadow: '0 8px 28px rgba(234, 88, 12, 0.65)',
+                    border: '3px solid #ffffff',
+                    paddingLeft: '4px'
+                  }}>
+                    ▶
+                  </div>
+                  <div style={{
+                    background: 'rgba(0, 0, 0, 0.85)',
+                    color: '#ffffff',
+                    padding: '4px 14px',
+                    borderRadius: 20,
+                    fontSize: '0.76rem',
+                    fontWeight: 800,
+                    letterSpacing: '0.02em',
+                    border: '1px solid rgba(255, 255, 255, 0.3)',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.4)'
+                  }}>
+                    ⏸ VIDEO PAUSED • TAP TO PLAY
+                  </div>
+                </div>
+              )}
 
               {/* SCENE DISPLAY: Dynamic Animated Real Extranet Simulation for Current Step */}
               <div style={{
@@ -881,42 +981,56 @@ export default function OnboardingTrainingVideoModal({
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <button
-                      onClick={() => setIsPlaying(!isPlaying)}
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); togglePlayPause(); }}
                       style={{
-                        background: '#ea580c',
+                        background: isPlaying ? 'linear-gradient(135deg, #ea580c 0%, #f97316 100%)' : '#16a34a',
                         border: 'none',
                         color: 'white',
-                        width: 24,
-                        height: 24,
-                        borderRadius: '50%',
-                        fontSize: '0.72rem',
+                        padding: '4px 10px',
+                        borderRadius: 6,
+                        fontSize: '0.74rem',
+                        fontWeight: 800,
                         cursor: 'pointer',
                         display: 'flex',
                         alignItems: 'center',
-                        justifyContent: 'center'
+                        gap: 5,
+                        boxShadow: '0 2px 6px rgba(0,0,0,0.3)',
+                        transition: 'transform 0.15s'
                       }}
+                      title={isPlaying ? "Pause video" : "Play video"}
                     >
-                      {isPlaying ? '⏸' : '▶'}
+                      <span>{isPlaying ? '⏸' : '▶'}</span>
+                      <span>{isPlaying ? 'Pause Video' : 'Play Video'}</span>
                     </button>
                     <button
-                      onClick={() => {
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
                         setProgressSec(0);
                         if (isVoiceEnabled) speakText(activeStepData.voiceText);
                       }}
                       style={{
-                        background: 'transparent',
-                        border: 'none',
-                        color: '#94a3b8',
+                        background: 'rgba(255,255,255,0.08)',
+                        border: '1px solid rgba(255,255,255,0.15)',
+                        color: '#cbd5e1',
+                        padding: '4px 8px',
+                        borderRadius: 6,
                         fontSize: '0.7rem',
-                        cursor: 'pointer'
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 4
                       }}
                     >
-                      ↺ Replay Chapter
+                      ↺ Replay
                     </button>
                   </div>
 
-                  <div style={{ color: '#94a3b8', fontSize: '0.68rem' }}>
-                    Auto-advancing step by step (1 → 2 → 3 → 4)
+                  <div style={{ color: '#94a3b8', fontSize: '0.68rem', display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <span style={{ width: 6, height: 6, borderRadius: '50%', background: isPlaying ? '#22c55e' : '#f59e0b' }} />
+                    <span>{isPlaying ? 'Playing • Click video to pause' : 'Paused • Click to resume'}</span>
                   </div>
                 </div>
               </div>
