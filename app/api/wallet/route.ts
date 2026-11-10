@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
       const base = (user.name || 'USER').replace(/[^a-zA-Z]/g, '').toUpperCase().substring(0, 4) || 'USER';
       const randomSuffix = Math.random().toString(36).substring(2, 6).toUpperCase();
       referralCode = `SB${base}${randomSuffix}`;
-      await userRef.update({ 
+      await userDoc.ref.update({ 
         referralCode,
         walletBalance: user.walletBalance || 0,
         referralCount: user.referralCount || 0
@@ -37,6 +37,8 @@ export async function GET(request: NextRequest) {
       walletBalance: user.walletBalance || 0,
       referralCode,
       referralCount: user.referralCount || 0,
+      maxReferrals: 5,
+      rewardAmount: 20,
       transactions 
     });
   } catch (error) {

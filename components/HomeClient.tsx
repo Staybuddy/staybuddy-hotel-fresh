@@ -1352,8 +1352,8 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
         `}</style>
         <div className="home-collections-grid">
           
-          {/* Card 1 - Curated Collections: Premium Hotel Groups */}
-          <Link href="/hotels?category=luxury" className="home-collections-card" style={{ textDecoration: 'none', color: 'inherit', display: 'flex' }}>
+          {/* Card 1 - Curated Collections: Premium Hotel Groups (3, 4 & 5 Star Premier Properties) */}
+          <Link href="/hotels?category=premium" className="home-collections-card" style={{ textDecoration: 'none', color: 'inherit', display: 'flex' }}>
             <div style={{
               background: 'linear-gradient(135deg, var(--brand-50), var(--brand-100))',
               borderRadius: 'var(--radius-xl)', padding: 'var(--space-6)',

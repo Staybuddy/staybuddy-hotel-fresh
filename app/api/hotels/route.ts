@@ -24,6 +24,8 @@ export async function GET(request: NextRequest) {
     const partnerId = searchParams.get('partnerId');
     const city = searchParams.get('city');
     const category = searchParams.get('category');
+    const collection = searchParams.get('collection');
+    const isPremiumFilter = category === 'premium' || category === 'luxury' || collection === 'premium';
     const propertyType = searchParams.get('propertyType');
     const limitParam = parseInt(searchParams.get('limit') || '12');
     const searchCheckIn = searchParams.get('checkIn');
@@ -37,7 +39,9 @@ export async function GET(request: NextRequest) {
     if (status && status !== 'all') {
       hotelsRef = hotelsRef.where('status', '==', status);
     }
-    if (category && category !== 'business') hotelsRef = hotelsRef.where('category', '==', category);
+    if (category && category !== 'business' && !isPremiumFilter) {
+      hotelsRef = hotelsRef.where('category', '==', category);
+    }
     if (propertyType) hotelsRef = hotelsRef.where('propertyType', '==', propertyType);
     
     const snapshot = await hotelsRef.get();
@@ -81,6 +85,14 @@ export async function GET(request: NextRequest) {
         !h.category || h.category === 'business' || h.category === 'premium' || h.category === 'standard' ||
         (Array.isArray(h.amenities) && (h.amenities.includes('Free WiFi') || h.amenities.includes('Business Center') || h.amenities.includes('24-hour Front Desk')))
       );
+    }
+
+    if (isPremiumFilter) {
+      hotels = hotels.filter((h: any) => {
+        const star = Number(h.starRating) || 0;
+        const cat = (h.category || '').toLowerCase();
+        return star >= 3 || star === 3 || star === 4 || star === 5 || cat === 'premium' || cat === 'luxury' || (h.avgRating && h.avgRating >= 4.0);
+      });
     }
 
     if (status !== 'all') {

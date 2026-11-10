@@ -37,9 +37,9 @@ function HotelSearch() {
     checkIn: searchParams.get('checkIn') || '',
     checkOut: searchParams.get('checkOut') || '',
     guests: searchParams.get('guests') || '1',
-    category: '',
-    propertyType: '',
-    minRating: '',
+    category: searchParams.get('category') || (searchParams.get('collection') === 'premium' ? 'premium' : ''),
+    propertyType: searchParams.get('propertyType') || '',
+    minRating: searchParams.get('minRating') || '',
     sortBy: 'rating',
     rooms: parseInt(searchParams.get('rooms') || '1', 10),
     adults: parseInt(searchParams.get('adults') || '2', 10),
@@ -582,6 +582,7 @@ function HotelSearch() {
               <div className="hotels-results-list" style={{ display: 'flex', flexDirection: 'column', gap: '16px', width: '100%' }}>
                 {sortedHotels.map((hotel, index) => {
                   const starNum = Math.min(5, Math.max(1, Number(hotel.starRating) || (hotel.category === 'Luxury' ? 5 : hotel.category === 'Premium' ? 4 : 3)));
+                  const isPremier = starNum >= 3 || hotel.category === 'Luxury' || hotel.category === 'Premium' || hotel.category === 'premium' || hotel.category === 'luxury';
                   return (
                   <Link 
                     key={hotel._id} 
@@ -597,13 +598,26 @@ function HotelSearch() {
                         ) : (
                           <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg, var(--brand-100), var(--brand-200))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '3rem' }}>🏨</div>
                         )}
-                        <div style={{ position: 'absolute', top: 12, left: 12, display: 'flex', gap: 6, zIndex: 2 }}>
+                        <div style={{ position: 'absolute', top: 12, left: 12, display: 'flex', gap: 6, zIndex: 2, flexWrap: 'wrap' }}>
                           <span className="badge badge-gray" style={{ backdropFilter: 'blur(4px)', background: 'rgba(0,0,0,0.65)', color: 'white', fontWeight: 700 }}>
                             {hotel.propertyType || 'Hotel'}
                           </span>
-                          <span className="badge badge-primary" style={{ backdropFilter: 'blur(4px)', background: 'rgba(59, 130, 246, 0.85)', color: 'white', fontWeight: 700 }}>
-                            {hotel.category || 'Standard'}
-                          </span>
+                          {isPremier ? (
+                            <span className="badge" style={{ 
+                              backdropFilter: 'blur(6px)', 
+                              background: 'linear-gradient(135deg, #d97706 0%, #b45309 100%)', 
+                              color: '#ffffff', 
+                              fontWeight: 800,
+                              border: '1px solid #fde68a',
+                              boxShadow: '0 2px 8px rgba(217, 119, 6, 0.4)'
+                            }}>
+                              👑 Premier Hotel ({starNum}★)
+                            </span>
+                          ) : (
+                            <span className="badge badge-primary" style={{ backdropFilter: 'blur(4px)', background: 'rgba(59, 130, 246, 0.85)', color: 'white', fontWeight: 700 }}>
+                              {hotel.category || 'Standard'}
+                            </span>
+                          )}
                         </div>
                         {hotel.avgRating >= 4.5 && (
                           <div style={{ position: 'absolute', bottom: 12, left: 12, zIndex: 2 }}>
