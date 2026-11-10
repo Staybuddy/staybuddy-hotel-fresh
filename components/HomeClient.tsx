@@ -8,7 +8,6 @@ import Logo from '@/components/Logo';
 import DateRangePicker from '@/components/DateRangePicker';
 import LocationSearch from '@/components/LocationSearch';
 import PartnerGraphicCard from '@/components/PartnerGraphicCard';
-import HomeSpotlightCards from '@/components/HomeSpotlightCards';
 import HomeReferralSection from '@/components/HomeReferralSection';
 import HomeStatsSection from '@/components/HomeStatsSection';
 import CityDestinationCard from '@/components/CityDestinationCard';
@@ -819,20 +818,19 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
         </Link>
       </section>
 
-      {/* ===== SPOTLIGHT DUO: NEWLY ADDED HOTELS & CORPORATE STAYS ===== */}
-      <HomeSpotlightCards />
 
       {/* ===== HOTEL COLLECTIONS CARDS ===== */}
       <section className="container" style={{ marginBottom: '22px' }}>
         <style>{`
           .home-collections-grid {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
+            grid-template-columns: repeat(4, 1fr);
             gap: 20px;
           }
-          @media (max-width: 900px) {
+          @media (max-width: 1100px) {
             .home-collections-grid {
               grid-template-columns: repeat(2, 1fr);
+              gap: 16px;
             }
           }
           @media (max-width: 768px) {
@@ -859,6 +857,102 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
               min-width: 280px !important;
               scroll-snap-align: start;
             }
+          }
+
+          @keyframes liveRadarPulse {
+            0% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(147, 51, 234, 0.7); }
+            70% { transform: scale(1.1); box-shadow: 0 0 0 7px rgba(147, 51, 234, 0); }
+            100% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(147, 51, 234, 0); }
+          }
+          @keyframes ambientCardBreath {
+            0% {
+              box-shadow: 0 8px 24px -4px rgba(147, 51, 234, 0.16), 0 0 0 1px rgba(196, 181, 253, 0.6);
+            }
+            50% {
+              box-shadow: 0 14px 32px -4px rgba(147, 51, 234, 0.28), 0 0 0 2px rgba(168, 85, 247, 0.85);
+            }
+            100% {
+              box-shadow: 0 8px 24px -4px rgba(147, 51, 234, 0.16), 0 0 0 1px rgba(196, 181, 253, 0.6);
+            }
+          }
+          @keyframes shineRaySweep {
+            0% { transform: translateX(-160%) skewX(-20deg); }
+            28%, 100% { transform: translateX(260%) skewX(-20deg); }
+          }
+          @keyframes floatBadgeIcon {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-7px) rotate(5deg); }
+          }
+          .newly-added-hotel-card {
+            background: linear-gradient(135deg, #fdf4ff 0%, #fae8ff 45%, #eff6ff 100%);
+            border-radius: var(--radius-xl);
+            padding: var(--space-6);
+            border: 1.5px solid #d8b4fe;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            width: 100%;
+            cursor: pointer;
+            animation: ambientCardBreath 4.5s ease-in-out infinite;
+            transition: transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.28s ease, filter 0.2s ease;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+          }
+          .newly-added-hotel-card:hover {
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 0 24px 48px -10px rgba(147, 51, 234, 0.38), 0 0 22px rgba(249, 115, 22, 0.2) !important;
+            filter: brightness(1.02);
+          }
+          .newly-added-hotel-card:active {
+            transform: translateY(2px) scale(0.97) !important;
+            box-shadow: 0 4px 14px rgba(147, 51, 234, 0.28) !important;
+            transition: transform 0.08s ease-out, box-shadow 0.08s ease-out !important;
+          }
+          .newly-added-hotel-card .shine-ray {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 60%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.65), transparent);
+            pointer-events: none;
+            animation: shineRaySweep 5s infinite ease-in-out;
+            z-index: 1;
+          }
+          .newly-added-hotel-card:hover .shine-ray {
+            animation: shineRaySweep 1.8s infinite ease-in-out;
+          }
+          .newly-added-hotel-card .floating-icon {
+            position: absolute;
+            right: 5%;
+            bottom: -8%;
+            font-size: 5.5rem;
+            opacity: 0.16;
+            pointer-events: none;
+            animation: floatBadgeIcon 3.5s ease-in-out infinite;
+            transition: transform 0.3s ease, opacity 0.3s ease;
+          }
+          .newly-added-hotel-card:hover .floating-icon {
+            opacity: 0.32;
+            transform: scale(1.18) rotate(10deg);
+          }
+          .newly-added-hotel-card .cta-arrow {
+            transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+            display: inline-block;
+          }
+          .newly-added-hotel-card:hover .cta-arrow {
+            transform: translateX(8px) scale(1.2);
+          }
+          .live-radar-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #9333ea;
+            display: inline-block;
+            animation: liveRadarPulse 1.8s infinite;
           }
         `}</style>
         <div className="home-collections-grid">
@@ -893,7 +987,61 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
             </div>
           </Link>
 
-          {/* Card 2 */}
+          {/* Card 2 - Newly Added Hotels (Fully Animated) */}
+          <Link 
+            href="/hotels?sort=newest" 
+            prefetch={true} 
+            className="home-collections-card" 
+            style={{ textDecoration: 'none', color: 'inherit', display: 'flex' }}
+          >
+            <div className="newly-added-hotel-card">
+              <div className="shine-ray" />
+              <div className="floating-icon">🛎️</div>
+              
+              <div style={{ position: 'relative', zIndex: 2, marginBottom: 24 }}>
+                <div style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  background: 'white',
+                  color: '#7c3aed',
+                  padding: '4px 10px',
+                  borderRadius: 'var(--radius-full)',
+                  fontSize: '0.75rem',
+                  fontWeight: 800,
+                  marginBottom: 12,
+                  textTransform: 'uppercase',
+                  border: '1px solid #ddd6fe',
+                  boxShadow: '0 2px 8px rgba(124, 58, 237, 0.14)'
+                }}>
+                  <span className="live-radar-dot" />
+                  <span>Newly Added</span>
+                </div>
+                <h3 style={{ 
+                  color: '#4c1d95', 
+                  marginBottom: 8, 
+                  fontSize: '1.4rem', 
+                  fontWeight: 800,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6
+                }}>
+                  <span>New on StayBuddy</span>
+                  <span style={{ fontSize: '1rem' }}>✨</span>
+                </h3>
+                <p style={{ color: '#6b21a8', fontSize: '0.95rem', margin: 0, opacity: 0.85, lineHeight: 1.45 }}>
+                  Discover freshly onboarded properties & verified stays with special launch offers.
+                </p>
+              </div>
+
+              <div style={{ color: '#7c3aed', fontWeight: 800, display: 'flex', alignItems: 'center', gap: 6, position: 'relative', zIndex: 2, fontSize: '0.95rem' }}>
+                <span>Explore New Stays</span>
+                <span className="cta-arrow">→</span>
+              </div>
+            </div>
+          </Link>
+
+          {/* Card 3 */}
           <Link href="/hotels?propertyType=Resort" className="home-collections-card" style={{ textDecoration: 'none', color: 'inherit', display: 'flex' }}>
             <div style={{
               background: 'linear-gradient(135deg, #f0fdfa, #ccfbf1)',
@@ -923,7 +1071,7 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
             </div>
           </Link>
 
-          {/* Card 3 */}
+          {/* Card 4 */}
           <Link href="/hotels?minRating=5" className="home-collections-card" style={{ textDecoration: 'none', color: 'inherit', display: 'flex' }}>
             <div style={{
               background: 'linear-gradient(135deg, #fef3c7, #fde68a)',
