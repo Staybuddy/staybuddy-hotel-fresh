@@ -242,31 +242,31 @@ export default function ReferralModal({
                 background: '#fff7ed',
                 border: '1px solid #fed7aa',
                 borderRadius: 12,
-                padding: '10px 14px',
-                marginBottom: 12
+                padding: '12px 16px',
+                marginBottom: 14
               }}>
-                <span style={{ fontSize: '1.25rem', fontWeight: 900, color: '#ea580c', letterSpacing: '0.05em' }}>
-                  {activeCode}
+                <div>
+                  <div style={{ fontSize: '0.7rem', fontWeight: 700, color: '#9a3412', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    YOUR PERMANENT REFERRAL ID
+                  </div>
+                  <div style={{ fontSize: '1.45rem', fontWeight: 900, color: '#ea580c', letterSpacing: '0.06em', marginTop: 2 }}>
+                    {activeCode}
+                  </div>
+                </div>
+                <span style={{
+                  fontSize: '0.72rem',
+                  background: '#ffedd5',
+                  color: '#c2410c',
+                  border: '1px solid #fed7aa',
+                  padding: '3px 10px',
+                  borderRadius: 12,
+                  fontWeight: 800
+                }}>
+                  Active ID
                 </span>
-                <button
-                  onClick={handleCopyCode}
-                  style={{
-                    background: copiedCode ? '#16a34a' : '#ffffff',
-                    color: copiedCode ? '#ffffff' : '#ea580c',
-                    border: copiedCode ? 'none' : '1px solid #fed7aa',
-                    borderRadius: 8,
-                    padding: '6px 12px',
-                    fontSize: '0.78rem',
-                    fontWeight: 700,
-                    cursor: 'pointer',
-                    transition: 'all 0.15s ease'
-                  }}
-                >
-                  {copiedCode ? '✓ Copied' : '📋 Copy Code'}
-                </button>
               </div>
 
-              {/* Action Buttons: WhatsApp & Direct Link */}
+              {/* Action Buttons: WhatsApp & Direct Booking Link (Shares Direct Link with Referral ID) */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                 <a
                   href={whatsappLink}
@@ -276,9 +276,9 @@ export default function ReferralModal({
                     background: '#25d366',
                     color: '#ffffff',
                     border: 'none',
-                    borderRadius: 10,
-                    padding: '12px',
-                    fontSize: '0.85rem',
+                    borderRadius: 12,
+                    padding: '13px',
+                    fontSize: '0.88rem',
                     fontWeight: 800,
                     textDecoration: 'none',
                     display: 'flex',
@@ -298,20 +298,21 @@ export default function ReferralModal({
                   style={{
                     background: copiedLink ? '#16a34a' : '#f8fafc',
                     color: copiedLink ? '#ffffff' : '#0f172a',
-                    border: '1px solid #cbd5e1',
-                    borderRadius: 10,
-                    padding: '12px',
-                    fontSize: '0.85rem',
+                    border: copiedLink ? '1.5px solid #16a34a' : '1.5px solid #cbd5e1',
+                    borderRadius: 12,
+                    padding: '13px',
+                    fontSize: '0.88rem',
                     fontWeight: 700,
                     cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    gap: 6
+                    gap: 6,
+                    transition: 'all 0.15s ease'
                   }}
                 >
                   <span>🔗</span>
-                  <span>{copiedLink ? '✓ Link Copied' : 'Copy Booking Link'}</span>
+                  <span>{copiedLink ? '✓ Link Copied!' : 'Copy Booking Link'}</span>
                 </button>
               </div>
             </div>
