@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
 interface OnboardingTrainingVideoModalProps {
   isOpen: boolean;
@@ -13,63 +13,66 @@ const STEPS = [
   {
     stepNumber: 1,
     title: 'Extranet Overview & Property Basics',
+    shortTitle: '1. Basics',
     duration: '2:30 min',
     icon: '🏨',
     badge: 'Step 1 of 4',
+    voiceText: 'Welcome to StayBuddy Hotel Onboarding. Step 1: Extranet Overview and Property Basics. Always enter the hotel\'s official trade name and star rating. Most importantly, enter the hotel owner or general manager\'s official email and mobile phone number. All customer bookings, payments, and legal agreements go strictly to the owner, keeping your staff account completely private.',
     summary: 'Mastering the Extranet layout, entering the official Hotel Name, star rating, property type, and strictly entering partner contact details.',
     points: [
-      'Navigate to Partner Extranet: Clean dashboard designed for zero-commission partner management.',
-      'Property Name & Star Rating: Enter the exact trade name as visible on the physical property signage.',
-      'Partner Email & Mobile: Enter the Hotel Owner or GM credentials ONLY. Booking alerts & agreements go strictly to the owner.',
-      'Property Type: Classify accurately as Hotel, Resort, Boutique Stay, or Homestay for algorithm matchmaking.'
-    ],
-    demoScene: 'basics'
+      'Official Property Trade Name: Enter the exact name displayed on the physical hotel building signage.',
+      'Partner Contact Isolation: Enter the HOTEL OWNER or GM credentials ONLY. Booking alerts & legal contracts go strictly to the partner.',
+      'Staff Privacy: Your staff email never receives hotel guest messages or partner agreements.',
+      'Property Category: Classify accurately as Hotel, Boutique Stay, Resort, or Homestay for search discovery.'
+    ]
   },
   {
     stepNumber: 2,
-    title: 'Location, Address & Precise GPS Lat/Long',
+    title: 'Location, Address & GPS Lat/Long',
+    shortTitle: '2. GPS Map',
     duration: '2:45 min',
     icon: '📍',
     badge: 'Step 2 of 4',
+    voiceText: 'Step 2: Location and Precise GPS Tagging. Enter the physical street address, landmark, and pincode. Make sure to capture the exact Latitude and Longitude coordinates of the hotel entrance gate so guests can navigate directly to the door without phone calls.',
     summary: 'Exact physical address tagging, landmark orientation, and capturing high-precision Latitude & Longitude for turn-by-turn guest navigation.',
     points: [
       'Physical Street Address: Include door number, main road, area, landmark, city, state, and 6-digit Pincode.',
       'Latitude & Longitude Tagging: Pinpoint the exact entrance gate on Google Maps (e.g. Lat: 17.4435, Long: 78.3772).',
-      'Why Coordinates Matter: Guests tap "Navigate" on StayBuddy app to reach the hotel gate without phone calls.',
-      'Landmark Clarity: Add notable nearby transit spots (e.g. "Opposite Metro Pillar 1142, 500m from Railway Station").'
-    ],
-    demoScene: 'location'
+      'Why Coordinates Matter: Guests tap "Navigate" on StayBuddy app to reach the hotel gate without calling reception.',
+      'Landmark Orientation: Add notable nearby transit spots (e.g. "Opposite Metro Pillar 1142, 500m from Railway Station").'
+    ]
   },
   {
     stepNumber: 3,
     title: 'High-Resolution Real Photos Uploading',
+    shortTitle: '3. Photos',
     duration: '2:15 min',
     icon: '📸',
     badge: 'Step 3 of 4',
+    voiceText: 'Step 3: High-Resolution Real Photos. The very first photo must be the wide exterior building facade with property name signage. Capture bright daylight landscape photos of the reception, bedrooms, and spotless clean washrooms.',
     summary: 'Guidelines for capturing and uploading authentic, high-converting property photos with the exterior facade as first photo.',
     points: [
       'First Photo Golden Rule: The 1st photo MUST be the wide exterior building facade with property name signage.',
       'Essential Photo Checklist: 1 Exterior Facade + 1 Lobby/Reception + 2 Bedroom Angles + 1 Attached Clean Washroom.',
       'Quality Standards: Always shoot in horizontal/landscape mode during bright daylight. Never upload blurry or watermarked shots.',
-      'Bathroom Hygiene Standard: Clean mirror, sanitized toilet seat, fresh towels. Washroom photos increase booking conversion by 42%!'
-    ],
-    demoScene: 'photos'
+      'Washroom Hygiene: Clean mirror, sanitized toilet seat, fresh towels. Clean washroom photos boost bookings by over 40%!'
+    ]
   },
   {
     stepNumber: 4,
-    title: 'Room Pricing Architecture (Single, Double & Triple) & AI Description',
+    title: 'Room Pricing (Single, Double, Triple) & AI Description',
+    shortTitle: '4. Pricing & AI',
     duration: '3:00 min',
     icon: '💰',
     badge: 'Step 4 of 4',
+    voiceText: 'Step 4: Room Pricing and AI Descriptions. Configure your base inventory and set Single Occupancy for solo business travelers, Double Occupancy for couples, and Triple Occupancy with extra bed charges. Then tap AI Description to generate high-converting room highlights.',
     summary: 'Configuring room types, base inventory, occupancy pricing (Single, Double, Triple), meal plans, and generating AI descriptions.',
     points: [
-      'Single Occupancy (1 Guest): Discounted base rate for solo business and corporate corporate travelers.',
+      'Single Occupancy (1 Guest): Discounted base rate for solo business and corporate travelers.',
       'Double Occupancy (2 Guests): Standard base price for couples or two adults sharing one room.',
       'Triple Occupancy (3 Guests): Base rate + extra bed/mattress charge for three adults in one room.',
-      'Inventory & Taxes: Set total available rooms. All prices in StayBuddy show net base rates with automated GST breakdown.',
       'StayBuddy AI Writer: Click "Generate Description" to auto-create high-converting promotional room highlights.'
-    ],
-    demoScene: 'pricing'
+    ]
   }
 ];
 
@@ -83,25 +86,86 @@ export default function OnboardingTrainingVideoModal({
   const [isPlaying, setIsPlaying] = useState(true);
   const [progressSec, setProgressSec] = useState(0);
   const [completedSteps, setCompletedSteps] = useState<number[]>([]);
-  const [characterMood, setCharacterMood] = useState<'explaining' | 'happy' | 'pointing'>('explaining');
+  const [isVoiceEnabled, setIsVoiceEnabled] = useState(true);
+  const [isSpeaking, setIsSpeaking] = useState(false);
 
-  const maxSec = 16; // Simulated video loop length for each interactive cartoon chapter
+  const maxSec = 14; // Simulated video duration for auto-play per step
+  const speechRef = useRef<SpeechSynthesisUtterance | null>(null);
 
+  // Stop speech when modal closes
+  useEffect(() => {
+    if (!isOpen && typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+      setIsSpeaking(false);
+    }
+  }, [isOpen]);
+
+  // Voice narration function
+  const speakText = (text: string) => {
+    if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
+    window.speechSynthesis.cancel(); // Stop any previous utterance
+
+    if (!isVoiceEnabled) {
+      setIsSpeaking(false);
+      return;
+    }
+
+    try {
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.rate = 1.0;
+      utterance.pitch = 1.05;
+      utterance.lang = 'en-US';
+
+      // Pick a natural english voice if available
+      const voices = window.speechSynthesis.getVoices();
+      const preferredVoice = voices.find(v => (v.name.includes('Natural') || v.name.includes('Google') || v.name.includes('Samantha') || v.lang.startsWith('en')));
+      if (preferredVoice) utterance.voice = preferredVoice;
+
+      utterance.onstart = () => setIsSpeaking(true);
+      utterance.onend = () => setIsSpeaking(false);
+      utterance.onerror = () => setIsSpeaking(false);
+
+      speechRef.current = utterance;
+      window.speechSynthesis.speak(utterance);
+    } catch (_) {
+      setIsSpeaking(false);
+    }
+  };
+
+  // Play voice when step changes or video starts
   useEffect(() => {
     if (!isOpen) return;
     setProgressSec(0);
     setIsPlaying(true);
-  }, [isOpen, currentStep]);
 
+    if (isVoiceEnabled) {
+      // Small timeout to allow browser voice synthesis initialization
+      const voiceTimer = setTimeout(() => {
+        speakText(STEPS[currentStep].voiceText);
+      }, 400);
+      return () => clearTimeout(voiceTimer);
+    }
+  }, [isOpen, currentStep, isVoiceEnabled]);
+
+  // Auto-play timer and AUTO-ADVANCE to next step when finished
   useEffect(() => {
     let timer: any = null;
     if (isOpen && isPlaying) {
       timer = setInterval(() => {
         setProgressSec(prev => {
           if (prev >= maxSec) {
-            // Step video finished playing
+            // Mark current step as completed
             setCompletedSteps(old => old.includes(currentStep) ? old : [...old, currentStep]);
-            return maxSec;
+
+            // AUTO ADVANCE TO NEXT STEP ONE BY ONE!
+            if (currentStep < STEPS.length - 1) {
+              setCurrentStep(curr => curr + 1);
+              return 0;
+            } else {
+              // Final step reached
+              setCompletedSteps([0, 1, 2, 3]);
+              return maxSec;
+            }
           }
           return prev + 1;
         });
@@ -112,21 +176,23 @@ export default function OnboardingTrainingVideoModal({
     };
   }, [isOpen, isPlaying, currentStep]);
 
-  useEffect(() => {
-    // Dynamic avatar mood switching based on playback phase
-    if (progressSec > 12) {
-      setCharacterMood('happy');
-    } else if (progressSec > 5) {
-      setCharacterMood('pointing');
-    } else {
-      setCharacterMood('explaining');
-    }
-  }, [progressSec]);
-
   if (!isOpen) return null;
 
   const activeStepData = STEPS[currentStep];
   const allCompleted = completedSteps.length >= 4;
+
+  const toggleVoice = () => {
+    if (isVoiceEnabled) {
+      if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+      }
+      setIsSpeaking(false);
+      setIsVoiceEnabled(false);
+    } else {
+      setIsVoiceEnabled(true);
+      speakText(activeStepData.voiceText);
+    }
+  };
 
   const handleNextStep = () => {
     if (!completedSteps.includes(currentStep)) {
@@ -150,143 +216,219 @@ export default function OnboardingTrainingVideoModal({
   };
 
   return (
-    <div style={{
-      position: 'fixed',
-      inset: 0,
-      zIndex: 99999,
-      background: 'rgba(15, 23, 42, 0.85)',
-      backdropFilter: 'blur(8px)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: '16px',
-      overflowY: 'auto'
-    }}>
+    <div className="onboarding-modal-overlay">
       <style>{`
+        .onboarding-modal-overlay {
+          position: fixed;
+          inset: 0;
+          z-index: 99999;
+          background: rgba(15, 23, 42, 0.88);
+          backdrop-filter: blur(8px);
+          display: flex;
+          alignItems: center;
+          justify-content: center;
+          padding: 16px;
+          overflow-y: auto;
+          -webkit-tap-highlight-color: transparent;
+        }
+
+        .onboarding-modal-dialog {
+          background: #ffffff;
+          border-radius: 20px;
+          max-width: 1040px;
+          width: 100%;
+          max-height: 94vh;
+          display: flex;
+          flex-direction: column;
+          box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.5);
+          overflow: hidden;
+          border: 1px solid #fed7aa;
+          position: relative;
+        }
+
+        .modal-body-layout {
+          display: grid;
+          grid-template-columns: minmax(0, 1.35fr) minmax(300px, 1fr);
+          flex: 1;
+          overflow-y: auto;
+        }
+
+        .step-tabs-strip {
+          display: grid;
+          grid-template-columns: repeat(4, 1fr);
+          background: #f8fafc;
+          border-bottom: 1px solid #e2e8f0;
+          width: 100%;
+        }
+
+        @media (max-width: 768px) {
+          .onboarding-modal-overlay {
+            padding: 0 !important;
+            align-items: flex-start !important;
+          }
+          .onboarding-modal-dialog {
+            border-radius: 0 !important;
+            max-height: 100vh !important;
+            height: 100vh !important;
+            border: none !important;
+          }
+          .modal-body-layout {
+            display: flex !important;
+            flex-direction: column !important;
+            overflow-y: auto !important;
+          }
+          .modal-header-responsive {
+            padding: 12px 14px !important;
+          }
+          .step-tabs-strip button {
+            padding: 8px 4px !important;
+            gap: 4px !important;
+            justify-content: center !important;
+            text-align: center !important;
+          }
+          .step-tab-text-full {
+            display: none !important;
+          }
+          .step-tab-text-mobile {
+            display: block !important;
+            font-size: 0.68rem !important;
+            font-weight: 700 !important;
+          }
+          .video-stage-padding {
+            padding: 12px !important;
+          }
+          .checklist-padding {
+            padding: 14px !important;
+          }
+        }
+
         @keyframes floatBuddy {
           0%, 100% { transform: translateY(0px) rotate(0deg); }
-          50% { transform: translateY(-6px) rotate(1.5deg); }
+          50% { transform: translateY(-5px) rotate(1.5deg); }
         }
-        @keyframes handWave {
-          0%, 100% { transform: rotate(0deg); }
-          50% { transform: rotate(18deg); }
-        }
-        @keyframes pulseGlow {
-          0%, 100% { box-shadow: 0 0 0 0 rgba(234, 88, 12, 0.4); }
-          50% { box-shadow: 0 0 0 10px rgba(234, 88, 12, 0); }
+        @keyframes soundWave {
+          0%, 100% { height: 6px; }
+          50% { height: 16px; }
         }
         @keyframes mapPinBounce {
           0%, 100% { transform: translateY(0) scale(1); }
-          50% { transform: translateY(-10px) scale(1.1); }
+          50% { transform: translateY(-8px) scale(1.1); }
         }
-        @keyframes rippleRing {
-          0% { transform: scale(0.6); opacity: 1; }
-          100% { transform: scale(2.4); opacity: 0; }
+        @keyframes radarRipple {
+          0% { transform: scale(0.6); opacity: 0.9; }
+          100% { transform: scale(2.2); opacity: 0; }
         }
-        @keyframes typingSim {
-          0% { width: 0; }
-          100% { width: 100%; }
-        }
-        @keyframes photoSlideIn {
-          0% { opacity: 0; transform: translateY(14px) scale(0.95); }
-          100% { opacity: 1; transform: translateY(0) scale(1); }
-        }
-        @keyframes priceCardHighlight {
-          0%, 100% { transform: translateY(0); border-color: rgba(234,88,12,0.3); }
-          50% { transform: translateY(-4px); border-color: rgba(234,88,12,0.9); }
+        @keyframes sceneFadeIn {
+          0% { opacity: 0; transform: scale(0.96); }
+          100% { opacity: 1; transform: scale(1); }
         }
       `}</style>
 
-      <div style={{
-        background: '#ffffff',
-        borderRadius: 24,
-        maxWidth: 1080,
-        width: '100%',
-        maxHeight: '94vh',
-        display: 'flex',
-        flexDirection: 'column',
-        boxShadow: '0 25px 60px -15px rgba(0, 0, 0, 0.5)',
-        overflow: 'hidden',
-        border: '1px solid #fed7aa',
-        position: 'relative'
-      }}>
+      <div className="onboarding-modal-dialog">
 
         {/* Modal Top Header */}
-        <div style={{
+        <div className="modal-header-responsive" style={{
           background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
-          padding: '16px 24px',
+          padding: '14px 20px',
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
           borderBottom: '2px solid #ea580c',
           color: 'white'
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
             <div style={{
-              width: 44,
-              height: 44,
-              borderRadius: 12,
+              width: 38,
+              height: 38,
+              borderRadius: 10,
               background: 'linear-gradient(135deg, #ea580c 0%, #f97316 100%)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              fontSize: '1.5rem',
-              boxShadow: '0 4px 12px rgba(234, 88, 12, 0.4)'
+              fontSize: '1.3rem',
+              boxShadow: '0 4px 10px rgba(234, 88, 12, 0.4)',
+              flexShrink: 0
             }}>
               🎬
             </div>
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 800, color: '#ffffff' }}>
-                  StayBuddy Hotel Onboarding Masterclass
+            <div style={{ minWidth: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 800, color: '#ffffff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  Onboarding Video Masterclass
                 </h3>
                 <span style={{
                   background: '#ea580c',
                   color: 'white',
-                  fontSize: '0.68rem',
+                  fontSize: '0.65rem',
                   fontWeight: 800,
-                  padding: '2px 8px',
+                  padding: '2px 7px',
                   borderRadius: 9999,
                   textTransform: 'uppercase'
                 }}>
-                  Interactive 4-Step Video
+                  4 Steps • Voice-Over
                 </span>
               </div>
-              <p style={{ margin: '2px 0 0 0', fontSize: '0.8rem', color: '#94a3b8' }}>
-                Required animated training before onboarding properties • Learn Extranet, GPS Tagging, Photos & Pricing
+              <p style={{ margin: '1px 0 0 0', fontSize: '0.74rem', color: '#94a3b8', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                Automated 4-Step Training with Voiceover & Real Extranet Simulation
               </p>
             </div>
           </div>
 
-          <button
-            onClick={onClose}
-            style={{
-              background: 'rgba(255, 255, 255, 0.1)',
-              border: 'none',
-              color: '#ffffff',
-              width: 34,
-              height: 34,
-              borderRadius: '50%',
-              fontSize: '1.2rem',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              transition: 'background 0.2s'
-            }}
-            title="Close video"
-          >
-            ✕
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+            {/* Real Voiceover Audio Toggle */}
+            <button
+              onClick={toggleVoice}
+              style={{
+                background: isVoiceEnabled ? '#ea580c' : 'rgba(255, 255, 255, 0.15)',
+                border: 'none',
+                color: 'white',
+                padding: '5px 10px',
+                borderRadius: 20,
+                fontSize: '0.74rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 5,
+                transition: 'all 0.2s'
+              }}
+              title={isVoiceEnabled ? 'Voiceover Active — Click to Mute' : 'Click to Enable Voiceover'}
+            >
+              <span>{isVoiceEnabled ? '🔊' : '🔇'}</span>
+              <span>{isVoiceEnabled ? 'Voice ON' : 'Muted'}</span>
+              {isSpeaking && (
+                <span style={{ display: 'flex', alignItems: 'center', gap: 2, marginLeft: 2 }}>
+                  <span style={{ width: 2, background: 'white', animation: 'soundWave 0.8s infinite 0.1s' }} />
+                  <span style={{ width: 2, background: 'white', animation: 'soundWave 0.8s infinite 0.3s' }} />
+                  <span style={{ width: 2, background: 'white', animation: 'soundWave 0.8s infinite 0.2s' }} />
+                </span>
+              )}
+            </button>
+
+            <button
+              onClick={onClose}
+              style={{
+                background: 'rgba(255, 255, 255, 0.15)',
+                border: 'none',
+                color: '#ffffff',
+                width: 32,
+                height: 32,
+                borderRadius: '50%',
+                fontSize: '1.1rem',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
+              title="Close training video"
+            >
+              ✕
+            </button>
+          </div>
         </div>
 
-        {/* 4 Steps Horizontal Progress Bar */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(4, 1fr)',
-          background: '#f8fafc',
-          borderBottom: '1px solid #e2e8f0'
-        }}>
+        {/* 4 Steps Horizontal Progress Bar (Responsive Mobile Optimized) */}
+        <div className="step-tabs-strip">
           {STEPS.map((step, idx) => {
             const isActive = idx === currentStep;
             const isDone = completedSteps.includes(idx);
@@ -298,23 +440,23 @@ export default function OnboardingTrainingVideoModal({
                   background: isActive ? '#ffffff' : '#f8fafc',
                   border: 'none',
                   borderBottom: isActive ? '3px solid #ea580c' : '3px solid transparent',
-                  padding: '12px 14px',
+                  padding: '10px 12px',
                   cursor: 'pointer',
                   textAlign: 'left',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: 10,
+                  gap: 8,
                   transition: 'all 0.2s',
                   position: 'relative'
                 }}
               >
                 <div style={{
-                  width: 28,
-                  height: 28,
+                  width: 24,
+                  height: 24,
                   borderRadius: '50%',
                   background: isDone ? '#16a34a' : (isActive ? '#ea580c' : '#cbd5e1'),
                   color: 'white',
-                  fontSize: '0.8rem',
+                  fontSize: '0.75rem',
                   fontWeight: 800,
                   display: 'flex',
                   alignItems: 'center',
@@ -324,16 +466,16 @@ export default function OnboardingTrainingVideoModal({
                   {isDone ? '✓' : step.stepNumber}
                 </div>
                 <div style={{ overflow: 'hidden' }}>
-                  <div style={{
-                    fontSize: '0.68rem',
+                  <div className="step-tab-text-full" style={{
+                    fontSize: '0.65rem',
                     fontWeight: 700,
                     textTransform: 'uppercase',
                     color: isActive ? '#ea580c' : '#64748b'
                   }}>
                     {step.duration}
                   </div>
-                  <div style={{
-                    fontSize: '0.82rem',
+                  <div className="step-tab-text-full" style={{
+                    fontSize: '0.78rem',
                     fontWeight: isActive ? 800 : 600,
                     color: isActive ? '#0f172a' : '#475569',
                     whiteSpace: 'nowrap',
@@ -342,24 +484,22 @@ export default function OnboardingTrainingVideoModal({
                   }}>
                     {step.title}
                   </div>
+                  <div className="step-tab-text-mobile" style={{ display: 'none', color: isActive ? '#ea580c' : '#64748b' }}>
+                    {step.shortTitle}
+                  </div>
                 </div>
               </button>
             );
           })}
         </div>
 
-        {/* Modal Main Body: Video Player & Learning Checklist */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'minmax(0, 1.4fr) minmax(320px, 1fr)',
-          flex: 1,
-          overflowY: 'auto'
-        }}>
+        {/* Modal Main Body: Video Player + Checklist */}
+        <div className="modal-body-layout">
 
-          {/* LEFT: Animated Cartoon Video Screen Container */}
-          <div style={{
+          {/* LEFT: Video Player Stage */}
+          <div className="video-stage-padding" style={{
             background: '#090d16',
-            padding: '20px',
+            padding: '18px',
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'space-between',
@@ -369,19 +509,20 @@ export default function OnboardingTrainingVideoModal({
             {/* The Video Screen Frame */}
             <div style={{
               background: '#0f172a',
-              borderRadius: 16,
-              border: '2px solid #334155',
+              borderRadius: 14,
+              border: '1.5px solid #334155',
               overflow: 'hidden',
               position: 'relative',
               aspectRatio: '16/9',
+              minHeight: 220,
               display: 'flex',
               flexDirection: 'column',
-              boxShadow: '0 10px 30px rgba(0,0,0,0.6)'
+              boxShadow: '0 8px 24px rgba(0,0,0,0.5)'
             }}>
 
               {/* Video Player Header Overlay */}
               <div style={{
-                padding: '10px 14px',
+                padding: '8px 12px',
                 background: 'linear-gradient(180deg, rgba(0,0,0,0.85) 0%, transparent 100%)',
                 position: 'absolute',
                 top: 0,
@@ -392,86 +533,106 @@ export default function OnboardingTrainingVideoModal({
                 justifyContent: 'space-between',
                 alignItems: 'center'
               }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                   <span style={{
                     background: '#dc2626',
                     color: 'white',
-                    fontSize: '0.65rem',
+                    fontSize: '0.62rem',
                     fontWeight: 800,
-                    padding: '2px 6px',
+                    padding: '2px 5px',
                     borderRadius: 4,
                     display: 'flex',
                     alignItems: 'center',
-                    gap: 4
+                    gap: 3
                   }}>
-                    <span style={{ width: 5, height: 5, borderRadius: '50%', background: 'white', animation: 'pulseGlow 1.5s infinite' }} />
-                    TRAINING VIDEO
+                    <span style={{ width: 4, height: 4, borderRadius: '50%', background: 'white' }} />
+                    AUTOPLAYING
                   </span>
-                  <span style={{ color: '#e2e8f0', fontSize: '0.78rem', fontWeight: 700 }}>
-                    Chapter {activeStepData.stepNumber}: {activeStepData.title}
+                  <span style={{ color: '#e2e8f0', fontSize: '0.74rem', fontWeight: 700 }}>
+                    Step {activeStepData.stepNumber}: {activeStepData.shortTitle}
                   </span>
                 </div>
 
-                <span style={{
-                  background: 'rgba(255,255,255,0.15)',
-                  backdropFilter: 'blur(4px)',
-                  color: '#f8fafc',
-                  fontSize: '0.7rem',
-                  padding: '2px 8px',
-                  borderRadius: 10
-                }}>
-                  {formatSec(progressSec)} / {formatSec(maxSec)}
-                </span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  {isSpeaking && (
+                    <span style={{
+                      background: 'rgba(234, 88, 12, 0.3)',
+                      border: '1px solid #ea580c',
+                      color: '#fdba74',
+                      fontSize: '0.65rem',
+                      fontWeight: 700,
+                      padding: '1px 6px',
+                      borderRadius: 10,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 4
+                    }}>
+                      🗣️ Voiceover Speaking
+                    </span>
+                  )}
+                  <span style={{
+                    background: 'rgba(255,255,255,0.15)',
+                    color: '#f8fafc',
+                    fontSize: '0.68rem',
+                    padding: '2px 6px',
+                    borderRadius: 8
+                  }}>
+                    {formatSec(progressSec)} / {formatSec(maxSec)}
+                  </span>
+                </div>
               </div>
 
-              {/* SCENE DISPLAY: Dynamic Animated Cartoon Simulation for Current Step */}
+              {/* SCENE DISPLAY: Dynamic Animated Real Extranet Simulation for Current Step */}
               <div style={{
                 flex: 1,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                padding: '20px',
+                padding: '14px',
                 position: 'relative',
-                background: 'radial-gradient(circle at center, #1e293b 0%, #090d16 100%)'
+                background: 'radial-gradient(circle at center, #1e293b 0%, #090d16 100%)',
+                overflow: 'hidden'
               }}>
 
-                {/* Animated Cartoon Character: Captain Buddy 🦊 / 👨‍💼 */}
+                {/* Animated Cartoon Character Guide: Captain Buddy 👨‍💼 / 🦊 */}
                 <div style={{
                   position: 'absolute',
-                  left: 20,
-                  bottom: 20,
+                  left: 12,
+                  bottom: 12,
                   zIndex: 8,
-                  animation: 'floatBuddy 4s ease-in-out infinite',
+                  animation: 'floatBuddy 3.5s ease-in-out infinite',
                   display: 'flex',
                   alignItems: 'flex-end',
-                  gap: 10
+                  gap: 8
                 }}>
                   <div style={{
-                    width: 72,
-                    height: 72,
+                    width: 54,
+                    height: 54,
                     borderRadius: '50%',
                     background: 'linear-gradient(135deg, #ea580c 0%, #fb923c 100%)',
-                    border: '3px solid #ffffff',
-                    boxShadow: '0 8px 24px rgba(234, 88, 12, 0.5)',
+                    border: '2px solid #ffffff',
+                    boxShadow: '0 6px 18px rgba(234, 88, 12, 0.45)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    fontSize: '2.5rem',
-                    position: 'relative'
+                    fontSize: '1.8rem',
+                    position: 'relative',
+                    flexShrink: 0
                   }}>
-                    {characterMood === 'explaining' && '👨‍💼'}
-                    {characterMood === 'pointing' && '🦊'}
-                    {characterMood === 'happy' && '🎉'}
+                    {currentStep === 0 && '👨‍💼'}
+                    {currentStep === 1 && '📍'}
+                    {currentStep === 2 && '📸'}
+                    {currentStep === 3 && '💰'}
                     <span style={{
                       position: 'absolute',
                       bottom: -2,
                       right: -2,
                       background: '#16a34a',
                       color: 'white',
-                      fontSize: '0.6rem',
+                      fontSize: '0.55rem',
                       fontWeight: 800,
-                      padding: '2px 5px',
-                      borderRadius: 10,
+                      padding: '1px 4px',
+                      borderRadius: 8,
                       border: '1px solid white'
                     }}>
                       GUIDE
@@ -482,53 +643,53 @@ export default function OnboardingTrainingVideoModal({
                   <div style={{
                     background: '#ffffff',
                     color: '#0f172a',
-                    padding: '8px 14px',
-                    borderRadius: 14,
-                    fontSize: '0.78rem',
+                    padding: '6px 10px',
+                    borderRadius: 12,
+                    fontSize: '0.72rem',
                     fontWeight: 700,
-                    maxWidth: 220,
-                    boxShadow: '0 6px 16px rgba(0,0,0,0.3)',
-                    position: 'relative',
-                    marginBottom: 10
+                    maxWidth: 190,
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+                    lineHeight: 1.3
                   }}>
-                    {currentStep === 0 && (progressSec < 8 ? 'Hello! Enter the Hotel Name & Star Rating carefully.' : 'Never enter your email! Enter the Hotel Partner\'s email.')}
-                    {currentStep === 1 && (progressSec < 8 ? 'Pinpoint the exact main entrance gate coordinates!' : 'Latitude & Longitude ensure turn-by-turn guest arrival.')}
-                    {currentStep === 2 && (progressSec < 8 ? 'Rule #1: First photo MUST be the building facade!' : 'Clean bathroom shots boost bookings by over 40%!')}
-                    {currentStep === 3 && (progressSec < 8 ? 'Setup Single, Double & Triple Occupancy rates!' : 'Click AI Writer to create irresistible room highlights!')}
+                    {currentStep === 0 && 'Fill hotel name & official owner contact details! Never personal email.'}
+                    {currentStep === 1 && 'Pin the exact front gate latitude and longitude for guest arrival!'}
+                    {currentStep === 2 && 'Rule #1: First photo MUST be the wide exterior facade!'}
+                    {currentStep === 3 && 'Set Single, Double & Triple occupancy rates + AI highlights!'}
                   </div>
                 </div>
 
-                {/* ANIMATED UI MOCKUP BASED ON CURRENT STEP */}
+                {/* ANIMATED UI MOCKUPS BASED ON CURRENT STEP */}
+
                 {/* Scene 1: Basics & Extranet */}
                 {currentStep === 0 && (
                   <div style={{
                     background: '#ffffff',
-                    borderRadius: 12,
-                    padding: '14px 18px',
+                    borderRadius: 10,
+                    padding: '10px 14px',
                     width: '75%',
-                    marginLeft: '80px',
-                    boxShadow: '0 8px 25px rgba(0,0,0,0.5)',
-                    animation: 'photoSlideIn 0.5s ease-out'
+                    marginLeft: '65px',
+                    boxShadow: '0 8px 20px rgba(0,0,0,0.5)',
+                    animation: 'sceneFadeIn 0.4s ease-out'
                   }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10, borderBottom: '1px solid #f1f5f9', paddingBottom: 6 }}>
-                      <span style={{ fontSize: '1rem' }}>🏨</span>
-                      <strong style={{ fontSize: '0.85rem', color: '#0f172a' }}>Step 1: Property Details</strong>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8, borderBottom: '1px solid #f1f5f9', paddingBottom: 4 }}>
+                      <strong style={{ fontSize: '0.78rem', color: '#0f172a' }}>🏨 Property Info (Extranet)</strong>
+                      <span style={{ fontSize: '0.62rem', background: '#ecfdf5', color: '#059669', padding: '1px 5px', borderRadius: 4, fontWeight: 700 }}>Step 1</span>
                     </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, fontSize: '0.75rem' }}>
-                      <div style={{ background: '#f8fafc', padding: '6px 8px', borderRadius: 6, border: '1px solid #e2e8f0' }}>
-                        <div style={{ color: '#64748b', fontSize: '0.65rem' }}>Hotel Name</div>
-                        <div style={{ color: '#0f172a', fontWeight: 700 }}>Hotel Elite Grand & Suites</div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, fontSize: '0.7rem' }}>
+                      <div style={{ background: '#f8fafc', padding: '4px 6px', borderRadius: 5, border: '1px solid #e2e8f0' }}>
+                        <div style={{ color: '#64748b', fontSize: '0.58rem' }}>Property Name</div>
+                        <div style={{ color: '#0f172a', fontWeight: 700 }}>Hotel Elite Grand</div>
                       </div>
-                      <div style={{ background: '#f8fafc', padding: '6px 8px', borderRadius: 6, border: '1px solid #e2e8f0' }}>
-                        <div style={{ color: '#64748b', fontSize: '0.65rem' }}>Star Rating</div>
-                        <div style={{ color: '#d97706', fontWeight: 700 }}>⭐⭐⭐⭐ (4-Star)</div>
+                      <div style={{ background: '#f8fafc', padding: '4px 6px', borderRadius: 5, border: '1px solid #e2e8f0' }}>
+                        <div style={{ color: '#64748b', fontSize: '0.58rem' }}>Star Category</div>
+                        <div style={{ color: '#d97706', fontWeight: 700 }}>⭐⭐⭐⭐ 4-Star</div>
                       </div>
-                      <div style={{ background: '#eff6ff', padding: '6px 8px', borderRadius: 6, border: '1px solid #bfdbfe' }}>
-                        <div style={{ color: '#1e40af', fontSize: '0.65rem' }}>Partner Email (Official)</div>
-                        <div style={{ color: '#1d4ed8', fontWeight: 700 }}>reservations@hotelelite.com</div>
+                      <div style={{ background: '#eff6ff', padding: '4px 6px', borderRadius: 5, border: '1px solid #bfdbfe' }}>
+                        <div style={{ color: '#1e40af', fontSize: '0.58rem' }}>Partner Official Email</div>
+                        <div style={{ color: '#1d4ed8', fontWeight: 700 }}>owner@hotelelite.com</div>
                       </div>
-                      <div style={{ background: '#ecfdf5', padding: '6px 8px', borderRadius: 6, border: '1px solid #a7f3d0' }}>
-                        <div style={{ color: '#065f46', fontSize: '0.65rem' }}>Owner Phone</div>
+                      <div style={{ background: '#ecfdf5', padding: '4px 6px', borderRadius: 5, border: '1px solid #a7f3d0' }}>
+                        <div style={{ color: '#065f46', fontSize: '0.58rem' }}>Partner Phone</div>
                         <div style={{ color: '#059669', fontWeight: 700 }}>+91 98765 43210</div>
                       </div>
                     </div>
@@ -539,17 +700,16 @@ export default function OnboardingTrainingVideoModal({
                 {currentStep === 1 && (
                   <div style={{
                     background: '#1e293b',
-                    borderRadius: 12,
-                    padding: '14px 18px',
+                    borderRadius: 10,
+                    padding: '10px 14px',
                     width: '75%',
-                    marginLeft: '80px',
-                    boxShadow: '0 8px 25px rgba(0,0,0,0.5)',
+                    marginLeft: '65px',
+                    boxShadow: '0 8px 20px rgba(0,0,0,0.5)',
                     position: 'relative',
-                    overflow: 'hidden'
+                    animation: 'sceneFadeIn 0.4s ease-out'
                   }}>
-                    {/* Simulated Map Grid */}
                     <div style={{
-                      height: 120,
+                      height: 100,
                       background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
                       borderRadius: 8,
                       position: 'relative',
@@ -560,31 +720,30 @@ export default function OnboardingTrainingVideoModal({
                     }}>
                       <div style={{
                         position: 'absolute',
-                        width: 40,
-                        height: 40,
+                        width: 32,
+                        height: 32,
                         borderRadius: '50%',
                         border: '2px solid #ea580c',
-                        animation: 'rippleRing 2s infinite ease-out'
+                        animation: 'radarRipple 1.8s infinite ease-out'
                       }} />
                       <div style={{
-                        fontSize: '2rem',
-                        animation: 'mapPinBounce 2s infinite ease-in-out',
-                        filter: 'drop-shadow(0 4px 10px rgba(234, 88, 12, 0.8))'
+                        fontSize: '1.8rem',
+                        animation: 'mapPinBounce 1.8s infinite ease-in-out'
                       }}>
                         📍
                       </div>
                       <div style={{
                         position: 'absolute',
-                        bottom: 6,
-                        left: 8,
-                        background: 'rgba(15,23,42,0.85)',
+                        bottom: 4,
+                        left: 6,
+                        background: 'rgba(15,23,42,0.9)',
                         color: '#38bdf8',
-                        padding: '3px 8px',
-                        borderRadius: 6,
-                        fontSize: '0.7rem',
+                        padding: '2px 6px',
+                        borderRadius: 4,
+                        fontSize: '0.62rem',
                         fontWeight: 700
                       }}>
-                        Lat: 17.4435 • Long: 78.3772
+                        Lat: 17.4435 • Long: 78.3772 (Gate Pin)
                       </div>
                     </div>
                   </div>
@@ -594,45 +753,44 @@ export default function OnboardingTrainingVideoModal({
                 {currentStep === 2 && (
                   <div style={{
                     display: 'flex',
-                    gap: 8,
-                    marginLeft: '80px',
-                    animation: 'photoSlideIn 0.5s ease-out'
+                    gap: 6,
+                    marginLeft: '65px',
+                    animation: 'sceneFadeIn 0.4s ease-out'
                   }}>
-                    <div style={{
-                      width: 110,
-                      background: '#1e293b',
-                      borderRadius: 8,
-                      overflow: 'hidden',
-                      border: '2px solid #ea580c',
-                      boxShadow: '0 6px 16px rgba(234, 88, 12, 0.3)'
-                    }}>
-                      <div style={{ height: 65, background: 'url(https://images.unsplash.com/photo-1566073771259-6a8506099945?w=200) center/cover' }} />
-                      <div style={{ padding: '4px 6px', fontSize: '0.62rem', color: '#ffedd5', background: '#9a3412', fontWeight: 800 }}>
-                        #1 Facade (Exterior)
-                      </div>
-                    </div>
                     <div style={{
                       width: 95,
                       background: '#1e293b',
-                      borderRadius: 8,
+                      borderRadius: 6,
+                      overflow: 'hidden',
+                      border: '2px solid #ea580c'
+                    }}>
+                      <div style={{ height: 55, background: 'url(https://images.unsplash.com/photo-1566073771259-6a8506099945?w=200) center/cover' }} />
+                      <div style={{ padding: '3px 4px', fontSize: '0.58rem', color: '#ffedd5', background: '#9a3412', fontWeight: 800, textAlign: 'center' }}>
+                        #1 Facade
+                      </div>
+                    </div>
+                    <div style={{
+                      width: 80,
+                      background: '#1e293b',
+                      borderRadius: 6,
                       overflow: 'hidden',
                       border: '1px solid #334155'
                     }}>
-                      <div style={{ height: 65, background: 'url(https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=200) center/cover' }} />
-                      <div style={{ padding: '4px 6px', fontSize: '0.62rem', color: '#cbd5e1', textAlign: 'center' }}>
+                      <div style={{ height: 55, background: 'url(https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=200) center/cover' }} />
+                      <div style={{ padding: '3px 4px', fontSize: '0.58rem', color: '#cbd5e1', textAlign: 'center' }}>
                         #2 Bedroom
                       </div>
                     </div>
                     <div style={{
-                      width: 95,
+                      width: 80,
                       background: '#1e293b',
-                      borderRadius: 8,
+                      borderRadius: 6,
                       overflow: 'hidden',
                       border: '1px solid #334155'
                     }}>
-                      <div style={{ height: 65, background: 'url(https://images.unsplash.com/photo-1584622650111-993a426fbf0a?w=200) center/cover' }} />
-                      <div style={{ padding: '4px 6px', fontSize: '0.62rem', color: '#cbd5e1', textAlign: 'center' }}>
-                        #3 Clean Bath
+                      <div style={{ height: 55, background: 'url(https://images.unsplash.com/photo-1584622650111-993a426fbf0a?w=200) center/cover' }} />
+                      <div style={{ padding: '3px 4px', fontSize: '0.58rem', color: '#cbd5e1', textAlign: 'center' }}>
+                        #3 Washroom
                       </div>
                     </div>
                   </div>
@@ -643,62 +801,59 @@ export default function OnboardingTrainingVideoModal({
                   <div style={{
                     display: 'grid',
                     gridTemplateColumns: 'repeat(3, 1fr)',
-                    gap: 8,
-                    marginLeft: '80px',
-                    width: '75%'
+                    gap: 6,
+                    marginLeft: '65px',
+                    width: '75%',
+                    animation: 'sceneFadeIn 0.4s ease-out'
                   }}>
                     <div style={{
                       background: '#1e293b',
-                      borderRadius: 8,
-                      padding: '8px',
+                      borderRadius: 6,
+                      padding: '6px',
                       border: '1px solid #334155',
-                      textAlign: 'center',
-                      animation: 'priceCardHighlight 3s infinite ease-in-out'
+                      textAlign: 'center'
                     }}>
-                      <div style={{ fontSize: '0.65rem', color: '#94a3b8' }}>👤 Single (1 Person)</div>
-                      <div style={{ fontSize: '1rem', fontWeight: 800, color: '#f8fafc', margin: '4px 0' }}>₹1,299</div>
-                      <div style={{ fontSize: '0.6rem', color: '#16a34a', fontWeight: 700 }}>Base Tariff</div>
+                      <div style={{ fontSize: '0.58rem', color: '#94a3b8' }}>👤 Single (1p)</div>
+                      <div style={{ fontSize: '0.85rem', fontWeight: 800, color: '#f8fafc', margin: '2px 0' }}>₹1,299</div>
+                      <div style={{ fontSize: '0.55rem', color: '#16a34a', fontWeight: 700 }}>Solo Tariff</div>
                     </div>
                     <div style={{
                       background: '#1e293b',
-                      borderRadius: 8,
-                      padding: '8px',
-                      border: '2px solid #ea580c',
+                      borderRadius: 6,
+                      padding: '6px',
+                      border: '1.5px solid #ea580c',
                       textAlign: 'center',
-                      boxShadow: '0 4px 14px rgba(234,88,12,0.3)',
-                      animation: 'priceCardHighlight 3s infinite ease-in-out 1s'
+                      boxShadow: '0 3px 10px rgba(234,88,12,0.3)'
                     }}>
-                      <div style={{ fontSize: '0.65rem', color: '#fdba74' }}>👥 Double (2 Persons)</div>
-                      <div style={{ fontSize: '1rem', fontWeight: 800, color: '#ffedd5', margin: '4px 0' }}>₹1,599</div>
-                      <div style={{ fontSize: '0.6rem', color: '#ea580c', fontWeight: 700 }}>Standard Rate</div>
+                      <div style={{ fontSize: '0.58rem', color: '#fdba74' }}>👥 Double (2p)</div>
+                      <div style={{ fontSize: '0.85rem', fontWeight: 800, color: '#ffedd5', margin: '2px 0' }}>₹1,599</div>
+                      <div style={{ fontSize: '0.55rem', color: '#ea580c', fontWeight: 700 }}>Standard</div>
                     </div>
                     <div style={{
                       background: '#1e293b',
-                      borderRadius: 8,
-                      padding: '8px',
+                      borderRadius: 6,
+                      padding: '6px',
                       border: '1px solid #334155',
-                      textAlign: 'center',
-                      animation: 'priceCardHighlight 3s infinite ease-in-out 2s'
+                      textAlign: 'center'
                     }}>
-                      <div style={{ fontSize: '0.65rem', color: '#94a3b8' }}>👥+👤 Triple (3 Persons)</div>
-                      <div style={{ fontSize: '1rem', fontWeight: 800, color: '#f8fafc', margin: '4px 0' }}>₹1,999</div>
-                      <div style={{ fontSize: '0.6rem', color: '#38bdf8', fontWeight: 700 }}>Extra Mattress</div>
+                      <div style={{ fontSize: '0.58rem', color: '#94a3b8' }}>👥+👤 Triple (3p)</div>
+                      <div style={{ fontSize: '0.85rem', fontWeight: 800, color: '#f8fafc', margin: '2px 0' }}>₹1,999</div>
+                      <div style={{ fontSize: '0.55rem', color: '#38bdf8', fontWeight: 700 }}>Extra Bed</div>
                     </div>
                   </div>
                 )}
 
               </div>
 
-              {/* Video Player Scrubber & Controls */}
+              {/* Scrubber & Controls */}
               <div style={{
                 background: '#090d16',
-                padding: '8px 14px',
+                padding: '6px 12px',
                 borderTop: '1px solid #1e293b',
                 display: 'flex',
                 flexDirection: 'column',
-                gap: 6
+                gap: 5
               }}>
-                {/* Scrubber Progress Bar */}
                 <div 
                   onClick={(e) => {
                     const rect = e.currentTarget.getBoundingClientRect();
@@ -707,9 +862,9 @@ export default function OnboardingTrainingVideoModal({
                     setProgressSec(Math.round(pct * maxSec));
                   }}
                   style={{
-                    height: 5,
+                    height: 4,
                     background: '#334155',
-                    borderRadius: 3,
+                    borderRadius: 2,
                     cursor: 'pointer',
                     position: 'relative'
                   }}
@@ -718,23 +873,23 @@ export default function OnboardingTrainingVideoModal({
                     height: '100%',
                     width: `${(progressSec / maxSec) * 100}%`,
                     background: 'linear-gradient(90deg, #ea580c, #f97316)',
-                    borderRadius: 3,
+                    borderRadius: 2,
                     transition: 'width 0.2s linear'
                   }} />
                 </div>
 
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <button
                       onClick={() => setIsPlaying(!isPlaying)}
                       style={{
                         background: '#ea580c',
                         border: 'none',
                         color: 'white',
-                        width: 28,
-                        height: 28,
+                        width: 24,
+                        height: 24,
                         borderRadius: '50%',
-                        fontSize: '0.8rem',
+                        fontSize: '0.72rem',
                         cursor: 'pointer',
                         display: 'flex',
                         alignItems: 'center',
@@ -744,28 +899,31 @@ export default function OnboardingTrainingVideoModal({
                       {isPlaying ? '⏸' : '▶'}
                     </button>
                     <button
-                      onClick={() => setProgressSec(0)}
+                      onClick={() => {
+                        setProgressSec(0);
+                        if (isVoiceEnabled) speakText(activeStepData.voiceText);
+                      }}
                       style={{
                         background: 'transparent',
                         border: 'none',
                         color: '#94a3b8',
-                        fontSize: '0.75rem',
+                        fontSize: '0.7rem',
                         cursor: 'pointer'
                       }}
                     >
-                      ↺ Replay Step
+                      ↺ Replay Chapter
                     </button>
                   </div>
 
-                  <div style={{ color: '#94a3b8', fontSize: '0.72rem' }}>
-                    {progressSec >= maxSec ? '✅ Step Video Finished' : '▶ Video Playing'}
+                  <div style={{ color: '#94a3b8', fontSize: '0.68rem' }}>
+                    Auto-advancing step by step (1 → 2 → 3 → 4)
                   </div>
                 </div>
               </div>
             </div>
 
             {/* Step Controls (Prev / Next) */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 14 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 10 }}>
               <button
                 onClick={handlePrevStep}
                 disabled={currentStep === 0}
@@ -773,17 +931,17 @@ export default function OnboardingTrainingVideoModal({
                   background: currentStep === 0 ? 'transparent' : '#1e293b',
                   color: currentStep === 0 ? '#475569' : '#f8fafc',
                   border: '1px solid #334155',
-                  padding: '8px 16px',
-                  borderRadius: 8,
-                  fontSize: '0.82rem',
+                  padding: '6px 12px',
+                  borderRadius: 6,
+                  fontSize: '0.78rem',
                   fontWeight: 700,
                   cursor: currentStep === 0 ? 'not-allowed' : 'pointer'
                 }}
               >
-                ← Previous Step
+                ← Prev Step
               </button>
 
-              <div style={{ color: '#94a3b8', fontSize: '0.78rem' }}>
+              <div style={{ color: '#94a3b8', fontSize: '0.74rem' }}>
                 Step {currentStep + 1} of {STEPS.length}
               </div>
 
@@ -794,14 +952,14 @@ export default function OnboardingTrainingVideoModal({
                     background: '#ea580c',
                     color: '#ffffff',
                     border: 'none',
-                    padding: '8px 18px',
-                    borderRadius: 8,
-                    fontSize: '0.82rem',
+                    padding: '6px 14px',
+                    borderRadius: 6,
+                    fontSize: '0.78rem',
                     fontWeight: 700,
                     cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: 6
+                    gap: 5
                   }}
                 >
                   <span>Next Step</span>
@@ -816,65 +974,65 @@ export default function OnboardingTrainingVideoModal({
                     background: '#16a34a',
                     color: '#ffffff',
                     border: 'none',
-                    padding: '8px 18px',
-                    borderRadius: 8,
-                    fontSize: '0.82rem',
+                    padding: '6px 14px',
+                    borderRadius: 6,
+                    fontSize: '0.78rem',
                     fontWeight: 700,
                     cursor: 'pointer'
                   }}
                 >
-                  ✓ Mark 4 Steps Complete
+                  ✓ Complete All Steps
                 </button>
               )}
             </div>
           </div>
 
           {/* RIGHT: Learning Checklist & Guidelines */}
-          <div style={{
+          <div className="checklist-padding" style={{
             background: '#ffffff',
-            padding: '24px',
+            padding: '20px',
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'space-between'
           }}>
             <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
                 <span style={{
                   background: '#ffedd5',
                   color: '#c2410c',
-                  fontSize: '0.75rem',
+                  fontSize: '0.72rem',
                   fontWeight: 800,
-                  padding: '3px 10px',
+                  padding: '2px 8px',
                   borderRadius: 9999
                 }}>
                   {activeStepData.badge} • {activeStepData.duration}
                 </span>
-                <span style={{ fontSize: '0.8rem', color: '#64748b' }}>
+                <span style={{ fontSize: '0.75rem', color: '#64748b' }}>
                   {completedSteps.length} / 4 Completed
                 </span>
               </div>
 
-              <h2 style={{ fontSize: '1.28rem', fontWeight: 800, color: '#0f172a', margin: '0 0 8px 0', lineHeight: 1.3 }}>
+              <h2 style={{ fontSize: '1.18rem', fontWeight: 800, color: '#0f172a', margin: '0 0 6px 0', lineHeight: 1.3 }}>
                 {activeStepData.icon} {activeStepData.title}
               </h2>
-              <p style={{ fontSize: '0.85rem', color: '#475569', margin: '0 0 16px 0', lineHeight: 1.45 }}>
+              <p style={{ fontSize: '0.8rem', color: '#475569', margin: '0 0 12px 0', lineHeight: 1.4 }}>
                 {activeStepData.summary}
               </p>
 
               {/* Key Takeaways Checklist */}
               <div style={{
                 background: '#f8fafc',
-                borderRadius: 14,
+                borderRadius: 12,
                 border: '1px solid #e2e8f0',
-                padding: '16px',
-                marginBottom: 20
+                padding: '12px 14px',
+                marginBottom: 16
               }}>
-                <div style={{ fontSize: '0.8rem', fontWeight: 800, color: '#0f172a', textTransform: 'uppercase', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
+                <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#0f172a', textTransform: 'uppercase', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 5 }}>
                   <span>📌 Mandatory Step Checklist:</span>
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                   {activeStepData.points.map((pt, pIdx) => (
-                    <div key={pIdx} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: '0.82rem', color: '#334155', lineHeight: 1.4 }}>
+                    <div key={pIdx} style={{ display: 'flex', alignItems: 'flex-start', gap: 6, fontSize: '0.78rem', color: '#334155', lineHeight: 1.35 }}>
                       <span style={{ color: '#16a34a', fontWeight: 800, flexShrink: 0 }}>✓</span>
                       <span>{pt}</span>
                     </div>
@@ -882,16 +1040,16 @@ export default function OnboardingTrainingVideoModal({
                 </div>
               </div>
 
-              {/* Important Privacy/Strict Isolation Callout */}
+              {/* Step Context Callout */}
               {currentStep === 0 && (
                 <div style={{
                   background: '#fef2f2',
                   border: '1px solid #fecaca',
-                  borderRadius: 10,
-                  padding: '10px 14px',
-                  fontSize: '0.78rem',
+                  borderRadius: 8,
+                  padding: '8px 12px',
+                  fontSize: '0.75rem',
                   color: '#991b1b',
-                  lineHeight: 1.4
+                  lineHeight: 1.35
                 }}>
                   <strong>🔒 Critical Protocol:</strong> Hotel Owner/Partner contact information must be entered for all property notifications. Your staff email ({userEmail || 'staff email'}) remains 100% private.
                 </div>
@@ -901,11 +1059,11 @@ export default function OnboardingTrainingVideoModal({
                 <div style={{
                   background: '#f0fdf4',
                   border: '1px solid #bbf7d0',
-                  borderRadius: 10,
-                  padding: '10px 14px',
-                  fontSize: '0.78rem',
+                  borderRadius: 8,
+                  padding: '8px 12px',
+                  fontSize: '0.75rem',
                   color: '#166534',
-                  lineHeight: 1.4
+                  lineHeight: 1.35
                 }}>
                   <strong>📍 Navigation Tip:</strong> Use Google Maps on mobile to drop a pin at the hotel front gate. Copy the two decimal numbers (Latitude & Longitude) and paste them into the coordinate inputs.
                 </div>
@@ -915,11 +1073,11 @@ export default function OnboardingTrainingVideoModal({
                 <div style={{
                   background: '#fff7ed',
                   border: '1px solid #fed7aa',
-                  borderRadius: 10,
-                  padding: '10px 14px',
-                  fontSize: '0.78rem',
+                  borderRadius: 8,
+                  padding: '8px 12px',
+                  fontSize: '0.75rem',
                   color: '#9a3412',
-                  lineHeight: 1.4
+                  lineHeight: 1.35
                 }}>
                   <strong>📸 Photography Tip:</strong> Always shoot in landscape mode (horizontal). The first photo is automatically used in the B2C App and Spotlight Card!
                 </div>
@@ -929,11 +1087,11 @@ export default function OnboardingTrainingVideoModal({
                 <div style={{
                   background: '#eff6ff',
                   border: '1px solid #bfdbfe',
-                  borderRadius: 10,
-                  padding: '10px 14px',
-                  fontSize: '0.78rem',
+                  borderRadius: 8,
+                  padding: '8px 12px',
+                  fontSize: '0.75rem',
                   color: '#1e40af',
-                  lineHeight: 1.4
+                  lineHeight: 1.35
                 }}>
                   <strong>💰 Occupancy Pricing Rule:</strong> Single (1 guest) is lowest rate, Double (2 guests) is standard, Triple (3 guests) includes extra bed.
                 </div>
@@ -941,34 +1099,37 @@ export default function OnboardingTrainingVideoModal({
             </div>
 
             {/* UNLOCK / COMPLETE ONBOARDING CTA */}
-            <div style={{ paddingTop: 20, borderTop: '1px solid #f1f5f9' }}>
+            <div style={{ paddingTop: 14, borderTop: '1px solid #f1f5f9', marginTop: 10 }}>
               <button
                 type="button"
                 onClick={() => {
+                  if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+                    window.speechSynthesis.cancel();
+                  }
                   onCompleteAndProceed();
                 }}
                 style={{
                   width: '100%',
-                  padding: '14px 20px',
+                  padding: '12px 18px',
                   background: 'linear-gradient(135deg, #ea580c 0%, #f97316 100%)',
                   color: '#ffffff',
                   border: 'none',
-                  borderRadius: 12,
-                  fontSize: '0.95rem',
+                  borderRadius: 10,
+                  fontSize: '0.88rem',
                   fontWeight: 800,
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  gap: 10,
-                  boxShadow: '0 4px 16px rgba(234, 88, 12, 0.4)',
+                  gap: 8,
+                  boxShadow: '0 4px 14px rgba(234, 88, 12, 0.4)',
                   transition: 'transform 0.15s ease'
                 }}
               >
                 <span>🚀</span>
-                <span>{allCompleted ? 'I Have Completed Training — Start Onboarding Now' : 'Complete 4-Step Video & Start Onboarding'}</span>
+                <span>{allCompleted ? 'Training Complete — Start Onboarding Property' : 'Complete 4-Step Video & Start Onboarding'}</span>
               </button>
-              <div style={{ textAlign: 'center', marginTop: 8, fontSize: '0.75rem', color: '#64748b' }}>
+              <div style={{ textAlign: 'center', marginTop: 6, fontSize: '0.72rem', color: '#64748b' }}>
                 You can re-open this training video at any time from your Onboarding Portal.
               </div>
             </div>
