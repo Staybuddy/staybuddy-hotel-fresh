@@ -4,6 +4,7 @@ import React, { useState, useMemo, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
+import { getStayNights, isHotelBlockedForDates } from '@/lib/inventoryBlocks';
 
 export interface RealPremierHotel {
   id: string;
@@ -19,14 +20,29 @@ export interface RealPremierHotel {
   propertyType: string;
 }
 
-export default function FlagshipHotelStores({ dbHotels = [] }: { dbHotels?: any[] }) {
+export default function FlagshipHotelStores({
+  dbHotels = [],
+  checkIn = '',
+  checkOut = '',
+}: {
+  dbHotels?: any[];
+  checkIn?: string;
+  checkOut?: string;
+}) {
   const router = useRouter();
   const [selectedHotel, setSelectedHotel] = useState<RealPremierHotel | null>(null);
   const [activePhotoIndex, setActivePhotoIndex] = useState(0);
 
   // Extract ONLY real 4-Star & 5-Star onboarded hotels from StayBuddy database (with real uploaded photos)
   const realPremierHotels: RealPremierHotel[] = useMemo(() => {
+    const hasDates = Boolean(checkIn && checkOut);
+    const stayNights = hasDates ? getStayNights(checkIn, checkOut) : [];
+
     const list = (dbHotels || [])
+      .filter((h: any) => {
+        if (!hasDates) return !h.isBlocked;
+        return !isHotelBlockedForDates(h, h.inventoryBlocks || [], stayNights, true).blocked;
+      })
       .map((h: any) => {
         const rawStar = Number(h.starRating) || (h.category === 'luxury' || h.category === 'Luxury' ? 5 : h.category === 'premium' || h.category === 'Premium' ? 4 : 3);
         const images: string[] = Array.isArray(h.images) ? h.images.filter((img: any) => typeof img === 'string' && img.trim()) : [];
@@ -52,7 +68,7 @@ export default function FlagshipHotelStores({ dbHotels = [] }: { dbHotels?: any[
     // Sort with 5-star and 4-star first
     list.sort((a, b) => b.starRating - a.starRating);
     return list;
-  }, [dbHotels]);
+  }, [dbHotels, checkIn, checkOut]);
 
   // If no hotels have been onboarded yet, do not render empty block
   if (!realPremierHotels || realPremierHotels.length === 0) {
@@ -543,7 +559,11 @@ export default function FlagshipHotelStores({ dbHotels = [] }: { dbHotels?: any[
               {/* Action Buttons */}
               <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 12, marginTop: 20 }}>
                 <Link
-                  href={`/hotels/${selectedHotel.id}`}
+                  href={
+                    checkIn && checkOut
+                      ? `/hotels/${selectedHotel.id}?checkIn=${encodeURIComponent(checkIn)}&checkOut=${encodeURIComponent(checkOut)}`
+                      : `/hotels/${selectedHotel.id}`
+                  }
                   style={{ textDecoration: 'none' }}
                 >
                   <button

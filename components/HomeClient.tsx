@@ -1312,7 +1312,7 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
       </section>
 
       {/* ===== FLAGSHIP HOTEL STORES (4★ & 5★ Premier Luxury Brands with Interactive Stays Showcase) ===== */}
-      <FlagshipHotelStores dbHotels={hotels} />
+      <FlagshipHotelStores dbHotels={hotels} checkIn={searchData.checkIn} checkOut={searchData.checkOut} />
 
 
       {/* ===== HOTEL COLLECTIONS CARDS (Original 3 Categories - Clean & Separate) ===== */}

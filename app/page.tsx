@@ -111,11 +111,20 @@ async function getFeaturedHotels() {
       });
       roomsLeft = Math.max(0, roomsLeft - activeBookingsCount);
 
+      const hotelBlocks = (blocksByHotelId[hotel._id] || []).map((blk: any) => ({
+        startDate: blk.startDate || '',
+        endDate: blk.endDate || '',
+        roomId: blk.roomId || 'all',
+        blockType: blk.blockType || '',
+        reason: blk.reason || '',
+      }));
+
       return {
         ...hotel,
         images: hotelImages,
         startingPrice,
-        roomsLeft
+        roomsLeft,
+        inventoryBlocks: hotelBlocks,
       };
     });
     

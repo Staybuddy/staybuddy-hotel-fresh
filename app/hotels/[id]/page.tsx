@@ -704,6 +704,15 @@ export default function HotelDetailPage() {
   }, []);
 
   const openReview = (room?: any) => {
+    if (hotel?.isBlockedForSelectedDates) {
+      alert(hotel.blockReason || "This property is blocked/unavailable for the selected dates. Please choose different dates.");
+      return;
+    }
+    const targetRoom = room || displayRoom;
+    if (targetRoom && targetRoom.availableRooms !== undefined && targetRoom.availableRooms <= 0) {
+      alert("No rooms are available for the selected dates. Please choose different dates.");
+      return;
+    }
     if (!bookingData.checkIn || !bookingData.checkOut) {
       const bar = document.getElementById("availability-bar");
       if (bar) {
@@ -1891,6 +1900,30 @@ export default function HotelDetailPage() {
                   gap: "var(--space-4)",
                 }}
               >
+                {hotel?.isBlockedForSelectedDates && (
+                  <div
+                    style={{
+                      background: "#fef2f2",
+                      border: "1.5px solid #fca5a5",
+                      borderRadius: "var(--radius-md)",
+                      padding: "14px 16px",
+                      color: "#991b1b",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 10,
+                      fontWeight: 700,
+                      fontSize: "0.9rem",
+                    }}
+                  >
+                    <span style={{ fontSize: "1.2rem" }}>🚫</span>
+                    <div>
+                      <div>Property Unavailable for Selected Dates</div>
+                      <div style={{ fontSize: "0.8rem", fontWeight: 500, color: "#b91c1c", marginTop: 2 }}>
+                        {hotel.blockReason || "The partner has blocked bookings for these dates. Please select different check-in / check-out dates."}
+                      </div>
+                    </div>
+                  </div>
+                )}
                 {bookingData.rooms > 1 && (
                   <div
                     style={{
@@ -2612,36 +2645,61 @@ export default function HotelDetailPage() {
                       </div>
 
                       {/* Live API Confirmation & Guarantee Badge */}
-                      <div
-                        style={{
-                          color: "#15803d",
-                          fontWeight: 700,
-                          fontSize: "0.8rem",
-                          marginBottom: 14,
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 6,
-                          background: "#f0fdf4",
-                          padding: "6px 10px",
-                          borderRadius: "8px",
-                          border: "1px solid #bbf7d0",
-                        }}
-                      >
-                        <span
+                      {(hotel?.isBlockedForSelectedDates || (displayRoom?.availableRooms !== undefined && displayRoom.availableRooms <= 0)) ? (
+                        <div
                           style={{
-                            width: 7,
-                            height: 7,
-                            borderRadius: "50%",
-                            background: "#22c55e",
-                            display: "inline-block",
-                            boxShadow: "0 0 0 3px rgba(34, 197, 94, 0.2)",
+                            color: "#b91c1c",
+                            fontWeight: 700,
+                            fontSize: "0.8rem",
+                            marginBottom: 14,
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 6,
+                            background: "#fef2f2",
+                            padding: "6px 10px",
+                            borderRadius: "8px",
+                            border: "1px solid #fecaca",
                           }}
-                        />
-                        {displayRoom?.availableRooms !== undefined
-                          ? displayRoom.availableRooms
-                          : displayRoom?.staybuddyAllocation || 1}{" "}
-                        Rooms Available • Live Instant Confirmation
-                      </div>
+                        >
+                          <span>🚫</span>
+                          <span>
+                            {hotel?.isBlockedForSelectedDates
+                              ? "Property Blocked / Unavailable for Selected Dates"
+                              : "0 Rooms Available for Selected Dates"}
+                          </span>
+                        </div>
+                      ) : (
+                        <div
+                          style={{
+                            color: "#15803d",
+                            fontWeight: 700,
+                            fontSize: "0.8rem",
+                            marginBottom: 14,
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 6,
+                            background: "#f0fdf4",
+                            padding: "6px 10px",
+                            borderRadius: "8px",
+                            border: "1px solid #bbf7d0",
+                          }}
+                        >
+                          <span
+                            style={{
+                              width: 7,
+                              height: 7,
+                              borderRadius: "50%",
+                              background: "#22c55e",
+                              display: "inline-block",
+                              boxShadow: "0 0 0 3px rgba(34, 197, 94, 0.2)",
+                            }}
+                          />
+                          {displayRoom?.availableRooms !== undefined
+                            ? displayRoom.availableRooms
+                            : displayRoom?.staybuddyAllocation || 1}{" "}
+                          Rooms Available • Live Instant Confirmation
+                        </div>
+                      )}
 
                       {/* Key Perks Bullets (MMT Style) */}
                       <div
@@ -2918,7 +2976,27 @@ export default function HotelDetailPage() {
                       )}
 
                       {/* Main Action Button (MMT BOOK THIS NOW with StayBuddy Fluid Glass Animation) */}
-                      {bookingData.rooms > 1 && totalSelectedRoomsCount < bookingData.rooms ? (
+                      {(hotel?.isBlockedForSelectedDates || (displayRoom?.availableRooms !== undefined && displayRoom.availableRooms <= 0)) ? (
+                        <button
+                          type="button"
+                          className="btn"
+                          disabled={true}
+                          style={{
+                            width: "100%",
+                            fontSize: "0.95rem",
+                            padding: "14px",
+                            background: "#fee2e2",
+                            color: "#991b1b",
+                            border: "1px solid #fecaca",
+                            marginBottom: 12,
+                            fontWeight: 800,
+                            cursor: "not-allowed",
+                            borderRadius: "12px",
+                          }}
+                        >
+                          🚫 Unavailable for Selected Dates
+                        </button>
+                      ) : bookingData.rooms > 1 && totalSelectedRoomsCount < bookingData.rooms ? (
                         <button
                           type="button"
                           className="btn fluid-glass-btn"
