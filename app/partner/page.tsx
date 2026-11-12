@@ -3521,26 +3521,23 @@ export default function PartnerDashboard() {
       />
       
       {extranetModal && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex' }}>
-          <div style={{ position: 'absolute', inset: 0, background: 'rgba(15, 23, 42, 0.75)', backdropFilter: 'blur(6px)' }} onClick={() => setExtranetModal(null)} />
-          <div style={{ position: 'relative', background: '#f8fafc', width: '94%', maxWidth: 1080, margin: 'auto', maxHeight: '92vh', borderRadius: 24, display: 'flex', flexDirection: 'column', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)', overflow: 'hidden' }}>
-            
+        <div style={{ position: 'fixed', inset: 0, zIndex: 9999, background: 'var(--bg-secondary, #f8fafc)', display: 'flex', flexDirection: 'column', width: '100%', maxWidth: '100vw', height: '100dvh', overflow: 'hidden', boxSizing: 'border-box' }}>
             {/* Modal Header */}
-            <div style={{ padding: '18px 24px', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'white', flexWrap: 'wrap', gap: 12 }}>
+            <div style={{ background: 'var(--brand-500, #f97316)', color: 'white', padding: '14px 18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', boxSizing: 'border-box', flexWrap: 'wrap', gap: 12, flexShrink: 0 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
-                <div style={{ background: '#fff7ed', border: '1px solid #ffedd5', width: 44, height: 44, borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.4rem', flexShrink: 0 }}>
+                <div style={{ background: 'rgba(255,255,255,0.2)', padding: '8px 10px', borderRadius: 'var(--radius-lg, 12px)', display: 'flex', fontSize: '1.3rem', flexShrink: 0 }}>
                   🏨
                 </div>
                 <div style={{ minWidth: 0 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                    <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#0f172a', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                      Extranet Manager: {extranetModal.name}
+                    <h2 style={{ fontSize: '1.15rem', fontWeight: 800, color: 'white', margin: 0, letterSpacing: '-0.01em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      Extranet Manager — {extranetModal.name}
                     </h2>
-                    <span style={{ fontSize: '0.72rem', background: '#e0f2fe', color: '#0369a1', fontWeight: 700, padding: '2px 8px', borderRadius: 12 }}>
+                    <span style={{ fontSize: '0.72rem', background: 'rgba(255,255,255,0.22)', color: 'white', fontWeight: 700, padding: '2px 8px', borderRadius: 12 }}>
                       {extranetModal.city || 'Partner Property'}
                     </span>
                   </div>
-                  <p style={{ color: '#64748b', fontSize: '0.82rem', margin: '2px 0 0' }}>
+                  <p style={{ color: 'rgba(255,255,255,0.9)', fontSize: '0.8rem', margin: '2px 0 0', fontWeight: 500 }}>
                     Complete CRM, onboarding and inventory control • {
                       extranetModalTab === 'property' ? 'Tab 1 of 6 — Property Info' :
                       extranetModalTab === 'location' ? 'Tab 2 of 6 — Location & Transit' :
@@ -3557,14 +3554,13 @@ export default function PartnerDashboard() {
                 <button
                   type="button"
                   onClick={() => setExtranetIntroTarget(extranetModal)}
-                  className="btn"
                   style={{
-                    padding: '7px 12px',
+                    padding: '6px 12px',
                     fontSize: '0.8rem',
                     fontWeight: 700,
-                    background: '#f1f5f9',
-                    color: '#334155',
-                    border: '1px solid #cbd5e1',
+                    background: 'rgba(255,255,255,0.2)',
+                    color: 'white',
+                    border: '1px solid rgba(255,255,255,0.38)',
                     borderRadius: 8,
                     cursor: 'pointer',
                     display: 'flex',
@@ -3577,14 +3573,13 @@ export default function PartnerDashboard() {
                 <button
                   type="button"
                   onClick={() => openBlockModal(extranetModal)}
-                  className="btn"
                   style={{
-                    padding: '7px 14px',
+                    padding: '6px 14px',
                     fontSize: '0.8rem',
                     fontWeight: 700,
-                    background: '#fff7ed',
+                    background: 'white',
                     color: '#ea580c',
-                    border: '1px solid #fdba74',
+                    border: '1px solid white',
                     borderRadius: 8,
                     cursor: 'pointer',
                     display: 'flex',
@@ -3595,16 +3590,17 @@ export default function PartnerDashboard() {
                   <span>🔒 Smart Block</span>
                 </button>
                 <button 
+                  type="button"
                   onClick={() => setExtranetModal(null)} 
                   style={{ 
-                    background: '#f1f5f9', 
+                    background: 'rgba(255,255,255,0.2)', 
                     border: 'none', 
                     width: 36, 
                     height: 36, 
-                    borderRadius: '50%', 
+                    borderRadius: 10, 
                     cursor: 'pointer', 
                     fontSize: '1.1rem', 
-                    color: '#64748b',
+                    color: 'white',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center'
@@ -3625,7 +3621,8 @@ export default function PartnerDashboard() {
               WebkitOverflowScrolling: 'touch',
               scrollbarWidth: 'none',
               width: '100%',
-              boxSizing: 'border-box'
+              boxSizing: 'border-box',
+              flexShrink: 0
             }}>
               {[
                 { id: 'property', label: 'PROPERTY', step: 1 },
@@ -3665,14 +3662,14 @@ export default function PartnerDashboard() {
             </div>
 
             {/* Modal Body / Tab Contents */}
-            <div className="hide-scrollbar" style={{ flex: 1, overflowY: 'auto', padding: '24px 28px' }}>
-              <form onSubmit={(e) => {
+            <div className="hide-scrollbar" style={{ flex: 1, overflowY: 'auto', padding: '24px 18px' }}>
+              <form id="extranet-edit-form" onSubmit={(e) => {
                 e.preventDefault();
                 const updatedPayload = { ...extranetModal, images: extranetModal.images || [] };
                 updateHotelStatus(extranetModal._id, updatedPayload);
                 setExtranetModal(null);
                 alert('Property updated successfully!');
-              }} style={{ display: 'flex', flexDirection: 'column', gap: 20, paddingBottom: 60 }}>
+              }} style={{ display: 'flex', flexDirection: 'column', gap: 20, maxWidth: 960, margin: '0 auto', width: '100%', paddingBottom: 24 }}>
                 
                 {/* TAB 1: PROPERTY */}
                 {extranetModalTab === 'property' && (
@@ -4622,57 +4619,57 @@ export default function PartnerDashboard() {
                   </div>
                 )}
 
-                {/* Sticky Footer with Step Navigation & Actions */}
-                <div style={{ position: 'sticky', bottom: 0, background: '#f8fafc', padding: '16px 0', borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-                  <button 
-                    type="button" 
-                    onClick={() => setDeleteHotelModal(extranetModal)} 
-                    className="btn" 
-                    style={{ background: '#fff1f2', color: '#e11d48', border: '1px solid #fecdd3', fontWeight: 700, fontSize: '0.82rem', padding: '8px 14px' }}
-                  >
-                    🗑️ Delete Property
-                  </button>
-
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                    {/* Previous Tab button */}
-                    {extranetModalTab !== 'property' && (
-                      <button 
-                        type="button" 
-                        onClick={() => {
-                          const tabOrder = ['property', 'location', 'amenities', 'rooms', 'photos', 'policies'];
-                          const currIdx = tabOrder.indexOf(extranetModalTab);
-                          if (currIdx > 0) setExtranetModalTab(tabOrder[currIdx - 1] as any);
-                        }} 
-                        className="btn btn-outline" 
-                        style={{ background: 'white', fontSize: '0.82rem', padding: '8px 14px' }}
-                      >
-                        ← Prev Tab
-                      </button>
-                    )}
-
-                    {/* Next Tab button */}
-                    {extranetModalTab !== 'policies' && (
-                      <button 
-                        type="button" 
-                        onClick={() => {
-                          const tabOrder = ['property', 'location', 'amenities', 'rooms', 'photos', 'policies'];
-                          const currIdx = tabOrder.indexOf(extranetModalTab);
-                          if (currIdx < tabOrder.length - 1) setExtranetModalTab(tabOrder[currIdx + 1] as any);
-                        }} 
-                        className="btn" 
-                        style={{ background: '#f1f5f9', color: '#334155', border: '1px solid #cbd5e1', fontWeight: 700, fontSize: '0.82rem', padding: '8px 14px' }}
-                      >
-                        Next Tab →
-                      </button>
-                    )}
-
-                    <button type="button" onClick={() => setExtranetModal(null)} className="btn btn-outline" style={{ background: 'white', fontSize: '0.82rem', padding: '8px 16px' }}>Cancel</button>
-                    <button type="submit" className="btn btn-primary" style={{ padding: '10px 24px', fontSize: '0.88rem', fontWeight: 800 }}>Save Changes</button>
-                  </div>
-                </div>
               </form>
             </div>
-          </div>
+
+            {/* Sticky Footer with Step Navigation & Actions */}
+            <div style={{ flexShrink: 0, background: 'white', padding: '12px 24px', borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap', width: '100%', boxSizing: 'border-box' }}>
+              <button 
+                type="button" 
+                onClick={() => setDeleteHotelModal(extranetModal)} 
+                className="btn" 
+                style={{ background: '#fff1f2', color: '#e11d48', border: '1px solid #fecdd3', fontWeight: 700, fontSize: '0.82rem', padding: '8px 14px' }}
+              >
+                🗑️ Delete Property
+              </button>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                {/* Previous Tab button */}
+                {extranetModalTab !== 'property' && (
+                  <button 
+                    type="button" 
+                    onClick={() => {
+                      const tabOrder = ['property', 'location', 'amenities', 'rooms', 'photos', 'policies'];
+                      const currIdx = tabOrder.indexOf(extranetModalTab);
+                      if (currIdx > 0) setExtranetModalTab(tabOrder[currIdx - 1] as any);
+                    }} 
+                    className="btn btn-outline" 
+                    style={{ background: 'white', fontSize: '0.82rem', padding: '8px 14px' }}
+                  >
+                    ← Prev Tab
+                  </button>
+                )}
+
+                {/* Next Tab button */}
+                {extranetModalTab !== 'policies' && (
+                  <button 
+                    type="button" 
+                    onClick={() => {
+                      const tabOrder = ['property', 'location', 'amenities', 'rooms', 'photos', 'policies'];
+                      const currIdx = tabOrder.indexOf(extranetModalTab);
+                      if (currIdx < tabOrder.length - 1) setExtranetModalTab(tabOrder[currIdx + 1] as any);
+                    }} 
+                    className="btn" 
+                    style={{ background: '#f1f5f9', color: '#334155', border: '1px solid #cbd5e1', fontWeight: 700, fontSize: '0.82rem', padding: '8px 14px' }}
+                  >
+                    Next Tab →
+                  </button>
+                )}
+
+                <button type="button" onClick={() => setExtranetModal(null)} className="btn btn-outline" style={{ background: 'white', fontSize: '0.82rem', padding: '8px 16px' }}>Cancel</button>
+                <button type="submit" form="extranet-edit-form" className="btn btn-primary" style={{ padding: '10px 24px', fontSize: '0.88rem', fontWeight: 800 }}>Save Changes</button>
+              </div>
+            </div>
         </div>
       )}
 
