@@ -32,6 +32,28 @@ export default function Navbar({ middleContent, extendedContent }: { middleConte
     : '/login';
 
   const role = (session?.user as any)?.role;
+  const sessionIsOnboarder = Boolean((session?.user as any)?.isOnboarder || role === 'onboarder' || role === 'admin');
+  const [liveIsOnboarder, setLiveIsOnboarder] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    const email = session?.user?.email;
+    if (!email) {
+      setLiveIsOnboarder(null);
+      return;
+    }
+    let cancelled = false;
+    fetch(`/api/user/profile?email=${encodeURIComponent(email)}`)
+      .then(res => res.json())
+      .then(data => {
+        if (!cancelled && typeof data?.isOnboarder === 'boolean') {
+          setLiveIsOnboarder(data.isOnboarder);
+        }
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [session?.user?.email]);
+
+  const canSeeOnboarding = liveIsOnboarder !== null ? liveIsOnboarder : sessionIsOnboarder;
 
   const getDashboardLink = () => {
     if (role === 'admin') return '/admin';
@@ -121,13 +143,13 @@ export default function Navbar({ middleContent, extendedContent }: { middleConte
                         {[
                           ...(role === 'admin' ? [{ label: 'Admin Panel', href: '/admin', icon: '👑' }] : []),
                           ...(role === 'admin' || role === 'partner' ? [{ label: 'Partner Extranet', href: '/partner', icon: '🏨' }] : []),
-                          { label: 'Hotel Onboarding', href: '/partner', icon: '🚀' },
+                          ...(canSeeOnboarding ? [{ label: 'Hotel Onboarding', href: '/partner', icon: '🚀' }] : []),
                           { label: 'My Profile', href: '/profile', icon: '👤' },
                           { label: 'My Wallet', href: '/wallet', icon: '💰' },
                           { label: 'My Bookings', href: '/my-bookings', icon: '📋' },
                           { label: 'My Wishlist', href: '/wishlist', icon: '❤️' },
                         ].map(item => (
-                          <Link key={item.href} href={item.href} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 16px', fontSize: '0.875rem', color: 'var(--text-primary)', transition: 'background var(--transition-fast)' }}
+                          <Link key={item.label} href={item.href} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 16px', fontSize: '0.875rem', color: 'var(--text-primary)', transition: 'background var(--transition-fast)' }}
                             onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-secondary)')}
                             onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
                             onClick={() => setProfileOpen(false)}>

@@ -14,18 +14,37 @@ export async function GET(req: Request) {
     }
 
     const usersRef = db.collection('users');
-    const snapshot = await usersRef.where('email', '==', email).limit(1).get();
+    const [snapshot, staffSnap] = await Promise.all([
+      usersRef.where('email', '==', email).limit(1).get(),
+      db.collection('onboarding_staff')
+        .where('email', '==', email)
+        .where('status', '==', 'active')
+        .limit(1)
+        .get()
+        .catch(() => ({ empty: true })),
+    ]);
+
+    const isStaffActive = !staffSnap.empty;
 
     if (snapshot.empty) {
-      return NextResponse.json({ phone: '' });
+      return NextResponse.json({
+        phone: '',
+        isOnboarder: isStaffActive,
+        role: isStaffActive ? 'onboarder' : 'customer',
+      });
     }
 
     const userData = snapshot.docs[0].data();
+    const resolvedRole = userData.role || (isStaffActive ? 'onboarder' : 'customer');
+    const isOnboarder = Boolean(isStaffActive || userData.isOnboarder || resolvedRole === 'onboarder' || resolvedRole === 'admin');
+
     return NextResponse.json({
       success: true,
       phone: userData.phone || '',
       name: userData.name || '',
       email: userData.email || email,
+      role: resolvedRole,
+      isOnboarder,
     });
   } catch (error: any) {
     console.error('Error fetching user profile:', error);

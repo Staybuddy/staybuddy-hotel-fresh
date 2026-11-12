@@ -180,6 +180,7 @@ export const authOptions: NextAuthOptions = {
           user.id = existingUserDoc.id;
           (user as any).role = existingData.role;
           (user as any).partnerStatus = existingData.partnerStatus;
+          (user as any).isOnboarder = Boolean(existingData.isOnboarder || isOnboarderStaff || existingData.role === 'onboarder');
           (user as any).phone = existingData.phone;
         }
       }
@@ -189,6 +190,7 @@ export const authOptions: NextAuthOptions = {
       if (user) {
         token.role = (user as any).role;
         token.partnerStatus = (user as any).partnerStatus;
+        token.isOnboarder = Boolean((user as any).isOnboarder || (user as any).role === 'onboarder');
         token.id = user.id;
         token.phone = (user as any).phone;
       }
@@ -198,6 +200,7 @@ export const authOptions: NextAuthOptions = {
       if (session.user) {
         (session.user as any).role = token.role;
         (session.user as any).partnerStatus = token.partnerStatus;
+        (session.user as any).isOnboarder = Boolean(token.isOnboarder || token.role === 'onboarder');
         (session.user as any).id = token.id;
         (session.user as any).phone = token.phone;
       }

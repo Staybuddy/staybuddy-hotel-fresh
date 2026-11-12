@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic';
 import { db } from '@/lib/firebaseAdmin';
 import { applyMarginToRoom, getRoomPriceForOccupancy } from '@/lib/occupancyPricing';
 import { getCached, setCached, invalidateCache } from '@/lib/cache';
+import { getStayNights, isHotelBlockedForDates, getRoomBlockedCountForNight } from '@/lib/inventoryBlocks';
 
 export async function GET(request: NextRequest) {
   try {
@@ -131,8 +132,28 @@ export async function GET(request: NextRequest) {
       hotels = hotels.filter((h: any) => getHotelStar(h) >= 4);
     }
 
+    const stayNights = getStayNights(searchCheckIn, searchCheckOut);
+    const hasExplicitDates = Boolean(searchCheckIn && searchCheckOut);
+    const blocksByHotelId: Record<string, any[]> = {};
+
     if (status !== 'all') {
-      hotels = hotels.filter((h: any) => h.isBlocked !== true);
+      try {
+        const blocksSnap = await db.collection('inventory_blocks').get();
+        blocksSnap.docs.forEach((doc: any) => {
+          const blk = doc.data();
+          if (blk?.hotelId) {
+            if (!blocksByHotelId[blk.hotelId]) blocksByHotelId[blk.hotelId] = [];
+            blocksByHotelId[blk.hotelId].push(blk);
+          }
+        });
+      } catch (blkErr) {
+        console.warn('Batch inventory_blocks fetch error:', blkErr);
+      }
+
+      hotels = hotels.filter((h: any) => {
+        const check = isHotelBlockedForDates(h, blocksByHotelId[h._id] || [], stayNights, hasExplicitDates);
+        return !check.blocked;
+      });
     }
 
     hotels = hotels.sort((a: any, b: any) => (b.avgRating || 0) - (a.avgRating || 0));
@@ -152,7 +173,7 @@ export async function GET(request: NextRequest) {
           .where('hotelId', 'in', hotelIds.slice(0, 30))
           .get();
         roomsSnap.docs.forEach((doc: any) => {
-          const r = doc.data();
+          const r = { _id: doc.id, ...doc.data() };
           if (r.isActive !== false && r.hotelId) {
             if (!roomsByHotelId[r.hotelId]) roomsByHotelId[r.hotelId] = [];
             roomsByHotelId[r.hotelId].push(r);
@@ -256,16 +277,39 @@ export async function GET(request: NextRequest) {
           activeBookingsCount += (b.rooms || 1);
         }
       });
-      roomsLeft = Math.max(0, roomsLeft - activeBookingsCount);
 
-      return { ...hotel, images: hotelImages, startingPrice, startingB2BPrice, roomsLeft };
+      // Subtract rooms blocked by partner extranet on requested stay nights
+      const hotelBlocks = blocksByHotelId[hotel._id] || [];
+      let maxBlockedRoomsOnStay = 0;
+      if (hotelBlocks.length > 0 && rooms.length > 0) {
+        for (const nightStr of stayNights) {
+          let blockedOnNight = 0;
+          rooms.forEach((r: any) => {
+            const cap = Number(r.staybuddyAllocation !== undefined ? r.staybuddyAllocation : (r.totalRooms || 0)) + Number(r.extraInventoryToday || 0);
+            blockedOnNight += getRoomBlockedCountForNight(r._id, nightStr, hotelBlocks, cap);
+          });
+          if (blockedOnNight > maxBlockedRoomsOnStay) {
+            maxBlockedRoomsOnStay = blockedOnNight;
+          }
+        }
+      }
+
+      roomsLeft = Math.max(0, roomsLeft - activeBookingsCount - maxBlockedRoomsOnStay);
+
+      return { ...hotel, images: hotelImages, startingPrice, startingB2BPrice, roomsLeft, _blockedOutAllRooms: status !== 'all' && rooms.length > 0 && maxBlockedRoomsOnStay > 0 && roomsLeft <= 0 };
     });
 
+    const filteredHotelsWithPrices = hotelsWithPrices
+      .filter((h: any) => !h._blockedOutAllRooms)
+      .map(({ _blockedOutAllRooms, ...rest }: any) => rest);
+    const blockedOutDelta = hotelsWithPrices.length - filteredHotelsWithPrices.length;
+    const adjustedTotal = Math.max(0, total - blockedOutDelta);
+
     const responsePayload = {
-      hotels: hotelsWithPrices,
-      total,
+      hotels: filteredHotelsWithPrices,
+      total: adjustedTotal,
       page,
-      pages: Math.ceil(total / limitParam),
+      pages: Math.ceil(adjustedTotal / limitParam),
     };
 
     setCached(cacheKey, responsePayload, 20);

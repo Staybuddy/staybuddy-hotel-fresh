@@ -1,13 +1,30 @@
 import HomeClient from '@/components/HomeClient';
 import { db } from '@/lib/firebaseAdmin';
 import { applyMarginToRoom, getRoomPriceForOccupancy } from '@/lib/occupancyPricing';
+import { getDateStr, isHotelBlockedForDates } from '@/lib/inventoryBlocks';
 
 export const dynamic = 'force-dynamic';
 
 async function getFeaturedHotels() {
   try {
-    const hotelsSnap = await db.collection('hotels').where('status', '==', 'approved').get();
-    let hotels = hotelsSnap.docs.map(doc => ({ _id: doc.id, ...doc.data() }) as any);
+    const [hotelsSnap, blocksSnap] = await Promise.all([
+      db.collection('hotels').where('status', '==', 'approved').get(),
+      db.collection('inventory_blocks').get().catch(() => ({ docs: [] as any[] })),
+    ]);
+
+    const blocksByHotelId: Record<string, any[]> = {};
+    blocksSnap.docs.forEach((doc: any) => {
+      const blk = doc.data();
+      if (blk?.hotelId) {
+        if (!blocksByHotelId[blk.hotelId]) blocksByHotelId[blk.hotelId] = [];
+        blocksByHotelId[blk.hotelId].push(blk);
+      }
+    });
+
+    const todayStr = getDateStr(new Date());
+    let hotels = hotelsSnap.docs
+      .map(doc => ({ _id: doc.id, ...doc.data() }) as any)
+      .filter((h: any) => !isHotelBlockedForDates(h, blocksByHotelId[h._id] || [], [todayStr], false).blocked);
     hotels.sort((a, b) => (b.avgRating || 0) - (a.avgRating || 0));
     hotels = hotels.slice(0, 6);
     const hotelIds = hotels.map((h: any) => h._id).filter(Boolean);

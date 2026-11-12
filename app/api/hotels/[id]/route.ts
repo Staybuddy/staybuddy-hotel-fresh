@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic';
 import { db } from '@/lib/firebaseAdmin';
 import { applyMarginToRoom } from '@/lib/occupancyPricing';
 import { getCached, setCached, invalidateCache } from '@/lib/cache';
+import { getDateStr, getStayNights, isHotelBlockedForDates, getRoomBlockedCountForNight } from '@/lib/inventoryBlocks';
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -51,45 +52,43 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       }
     }
     
-    // Fetch active bookings to calculate live availability for each room
+    // Fetch active bookings & inventory blocks to calculate live availability for each room
     try {
       const searchParams = new URL(request.url).searchParams;
       const searchCheckIn = searchParams.get('checkIn');
       const searchCheckOut = searchParams.get('checkOut');
-      const todayStr = (() => {
-        const d = new Date();
-        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-      })();
+      const todayStr = getDateStr(new Date());
+      const stayNights = getStayNights(searchCheckIn, searchCheckOut);
+      const hasExplicitDates = Boolean(searchCheckIn && searchCheckOut);
 
-      const getDateStr = (d: Date | string | number) => {
-        const date = new Date(d);
-        return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-      };
-
-      // Determine stay nights to evaluate
-      let stayNights: string[] = [];
-      if (searchCheckIn && searchCheckOut) {
-        const start = new Date(searchCheckIn);
-        const end = new Date(searchCheckOut);
-        const curr = new Date(start);
-        while (curr < end) {
-          stayNights.push(getDateStr(curr));
-          curr.setDate(curr.getDate() + 1);
-        }
-      }
-      if (stayNights.length === 0) {
-        stayNights = [todayStr];
-      }
-
-      const bookingsSnap = await db.collection('bookings')
-        .where('hotelId', '==', hotel._id)
-        .where('status', '==', 'confirmed')
-        .get();
+      const [bookingsSnap, blocksSnap] = await Promise.all([
+        db.collection('bookings')
+          .where('hotelId', '==', hotel._id)
+          .where('status', '==', 'confirmed')
+          .get(),
+        db.collection('inventory_blocks')
+          .where('hotelId', '==', hotel._id)
+          .get()
+          .catch(() => ({ docs: [] as any[] })),
+      ]);
 
       const confirmedBookings = bookingsSnap.docs.map((doc: any) => doc.data());
+      const hotelBlocks = blocksSnap.docs.map((doc: any) => doc.data());
+
+      const propertyBlockStatus = isHotelBlockedForDates(hotel, hotelBlocks, stayNights, hasExplicitDates);
+      hotel.isBlockedForSelectedDates = propertyBlockStatus.blocked;
+      hotel.blockReason = propertyBlockStatus.reason;
 
       // Update rooms with exact night-by-night availability
       rooms = rooms.map(room => {
+        if (propertyBlockStatus.blocked) {
+          return {
+            ...room,
+            availableRooms: 0,
+            isBlockedForDates: true,
+          };
+        }
+
         const baseAlloc = Number(room.staybuddyAllocation !== undefined ? room.staybuddyAllocation : (room.totalRooms || 0));
         
         // Calculate available capacity for each night of the requested stay
@@ -97,6 +96,9 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
           // Extra inventory applies only if the night being evaluated is today
           const extraForNight = (nightStr === todayStr) ? Number(room.extraInventoryToday || 0) : 0;
           const nightCapacity = baseAlloc + extraForNight;
+
+          // Subtract rooms blocked by partner extranet on this night
+          const blockedOnNight = getRoomBlockedCountForNight(room._id, nightStr, hotelBlocks, nightCapacity);
 
           // Find bookings occupying this night: bIn <= nightStr and bOut > nightStr
           let bookedOnNight = 0;
@@ -110,7 +112,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
             }
           });
 
-          return Math.max(0, nightCapacity - bookedOnNight);
+          return Math.max(0, nightCapacity - bookedOnNight - blockedOnNight);
         });
 
         // The stay availability is the bottleneck (minimum) across all requested nights

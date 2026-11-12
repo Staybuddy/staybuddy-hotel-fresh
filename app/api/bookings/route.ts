@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/firebaseAdmin';
 import { calculateBookingPricing, calculateMultiRoomPricing, applyMarginToRoom } from '@/lib/occupancyPricing';
+import { getDateStr, getStayNights, isHotelBlockedForDates, getRoomBlockedCountForNight } from '@/lib/inventoryBlocks';
 
 export async function GET(request: NextRequest) {
   try {
@@ -144,20 +145,25 @@ export async function POST(request: NextRequest) {
     if (nights < 1) return NextResponse.json({ error: 'Check-out must be after check-in' }, { status: 400 });
 
     const requestedRooms = Number(body.rooms || 1);
-
-    const getDateStr = (d: Date | string | number) => {
-      const date = new Date(d);
-      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-    };
-
     const todayStr = getDateStr(new Date());
+    const stayNights = getStayNights(checkIn, checkOut);
 
-    // Generate all nights for this stay
-    const stayNights: string[] = [];
-    const currDate = new Date(checkInDate);
-    while (currDate < checkOutDate) {
-      stayNights.push(getDateStr(currDate));
-      currDate.setDate(currDate.getDate() + 1);
+    // Fetch partner inventory blocks for this hotel
+    let hotelBlocks: any[] = [];
+    try {
+      const blocksSnap = await db.collection('inventory_blocks')
+        .where('hotelId', '==', hotelId)
+        .get();
+      hotelBlocks = blocksSnap.docs.map((d: any) => d.data());
+    } catch (blkErr) {
+      console.warn('Error checking inventory blocks during booking:', blkErr);
+    }
+
+    const blockCheck = isHotelBlockedForDates(hotelData, hotelBlocks, stayNights, true);
+    if (blockCheck.blocked) {
+      return NextResponse.json({
+        error: `This property is currently blocked and unavailable for booking on these dates (${blockCheck.reason}).`,
+      }, { status: 400 });
     }
 
     const hasMultiRooms = Array.isArray(body.selectedRooms) && body.selectedRooms.length > 0;
@@ -223,7 +229,8 @@ export async function POST(request: NextRequest) {
             }
           });
 
-          const remaining = nightCapacity - bookedOnNight;
+          const blockedOnNight = getRoomBlockedCountForNight(sr.roomId, nightStr, hotelBlocks, nightCapacity);
+          const remaining = nightCapacity - bookedOnNight - blockedOnNight;
           if (remaining < sr.quantity) {
             return NextResponse.json({
               error: `Only ${Math.max(0, remaining)} room(s) available for "${rData.type}" on ${nightStr}. Requested: ${sr.quantity}.`
@@ -260,7 +267,8 @@ export async function POST(request: NextRequest) {
           }
         });
 
-        const remaining = nightCapacity - bookedOnNight;
+        const blockedOnNight = getRoomBlockedCountForNight(roomId, nightStr, hotelBlocks, nightCapacity);
+        const remaining = nightCapacity - bookedOnNight - blockedOnNight;
         if (remaining < requestedRooms) {
           return NextResponse.json({ 
             error: `Only ${Math.max(0, remaining)} room(s) available on ${nightStr}. Requested: ${requestedRooms}.` 

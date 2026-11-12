@@ -1688,7 +1688,7 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
               <p style={{ fontSize: '0.875rem', lineHeight: 1.7, color: '#64748b' }}>India&apos;s trusted OTA platform for hotel bookings — from budget to luxury.</p>
             </div>
             {[
-              { title: 'Explore', links: ['Hotels', 'Destinations', 'Deals', 'Hotel Onboarding'] },
+              { title: 'Explore', links: ['Hotels', 'Destinations', 'Deals'] },
               { title: 'Partners', links: ['List Your Hotel', 'Partner Login', 'Partner Resources', 'Success Stories'] },
               { title: 'Support', links: ['Help Center', 'Contact Us', 'Privacy Policy', 'Terms of Service'] },
             ].map(col => (

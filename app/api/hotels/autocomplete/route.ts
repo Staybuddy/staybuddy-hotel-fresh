@@ -27,16 +27,18 @@ export async function GET(request: NextRequest) {
     if (!allHotels) {
       try {
         const hotelsSnap = await db.collection('hotels').where('status', '==', 'approved').get();
-        allHotels = hotelsSnap.docs.map(doc => {
-          const data = doc.data();
-          return {
-            _id: doc.id,
-            name: data.name || '',
-            city: data.city || '',
-            area: data.area || '',
-            address: data.address || '',
-          };
-        });
+        allHotels = hotelsSnap.docs
+          .filter(doc => doc.data()?.isBlocked !== true)
+          .map(doc => {
+            const data = doc.data();
+            return {
+              _id: doc.id,
+              name: data.name || '',
+              city: data.city || '',
+              area: data.area || '',
+              address: data.address || '',
+            };
+          });
         setCached(CACHE_KEY, allHotels, 60);
       } catch (dbError) {
         console.warn('Firestore autocomplete fallback engaged:', dbError);
