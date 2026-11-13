@@ -9,7 +9,6 @@ import { parseCoordinates } from '@/lib/coordinates';
 import TradeShowExtractor from '@/components/admin/TradeShowExtractor';
 
 const NAV = [
-  { id: 'trade_shows', label: 'Trade Shows Extractor', icon: '🎯' },
   { id: 'overview', label: 'Dashboard', icon: '📊' },
   { id: 'bookings', label: 'Live Bookings', icon: '🛎️' },
   { id: 'referrals', label: 'Referral Bookings', icon: '🎁' },
@@ -21,12 +20,13 @@ const NAV = [
   { id: 'users', label: 'User Analytics', icon: '👥' },
   { id: 'agreements', label: 'Partner Agreements', icon: '📜' },
   { id: 'tax_invoices', label: 'Tax Invoices', icon: '🧾' },
+  { id: 'trade_shows', label: 'Trade Shows Extractor', icon: '🎯' },
 ];
 
 export default function AdminDashboard() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState('trade_shows');
+  const [activeTab, setActiveTab] = useState('overview');
   const [hotels, setHotels] = useState<any[]>([]);
   const [bookings, setBookings] = useState<any[]>([]);
   const [users, setUsers] = useState<any[]>([]);
