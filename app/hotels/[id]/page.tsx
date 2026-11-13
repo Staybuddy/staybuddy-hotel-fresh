@@ -98,6 +98,14 @@ export default function HotelDetailPage() {
   );
   const [confirmedBookingId, setConfirmedBookingId] = useState<string>("");
 
+  // Coupon state
+  const [couponCodeInput, setCouponCodeInput] = useState<string>("");
+  const [appliedCoupon, setAppliedCoupon] = useState<string>("");
+  const [couponDiscount, setCouponDiscount] = useState<number>(0);
+  const [couponLoading, setCouponLoading] = useState<boolean>(false);
+  const [couponError, setCouponError] = useState<string>("");
+  const [couponSuccess, setCouponSuccess] = useState<string>("");
+
   const searchParamsInitialized = useRef(false);
 
   const updateUrlParams = (updates: { adults?: number; rooms?: number; checkIn?: string; checkOut?: string; children?: number }) => {
@@ -233,6 +241,85 @@ export default function HotelDetailPage() {
       }).catch(() => {});
     }
   };
+
+  // Check for claimed coupon from homepage or query params
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const urlCoupon = searchParams.get("coupon");
+      const savedCoupon = localStorage.getItem("staybuddy_coupon") || localStorage.getItem("staybuddy_claimed_coupon");
+      const targetCoupon = (urlCoupon || savedCoupon || "").trim().toUpperCase();
+      if (targetCoupon) {
+        setCouponCodeInput(targetCoupon);
+      }
+    }
+  }, [searchParams]);
+
+  const applyCouponCode = async (codeToApply?: string) => {
+    const code = (codeToApply || couponCodeInput || "").trim().toUpperCase();
+    if (!code) {
+      setCouponError("Please enter a coupon code");
+      return;
+    }
+    setCouponLoading(true);
+    setCouponError("");
+    setCouponSuccess("");
+
+    try {
+      const userEmail = (bookingData.guestEmail || session?.user?.email || "").trim().toLowerCase();
+      const basePrice = currentPricing.basePricePerNight;
+      const res = await fetch("/api/coupons/validate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          code,
+          email: userEmail,
+          basePrice,
+        }),
+      });
+      const data = await res.json();
+      if (data.valid) {
+        setAppliedCoupon(data.code);
+        setCouponDiscount(Number(data.discountAmount) || Math.round(basePrice * 0.05));
+        setCouponSuccess(data.message || `🎉 ${data.discountPercentage}% Discount Applied!`);
+        try {
+          localStorage.setItem("staybuddy_claimed_coupon", data.code);
+          localStorage.setItem("staybuddy_coupon", data.code);
+        } catch (e) {}
+      } else {
+        setAppliedCoupon("");
+        setCouponDiscount(0);
+        setCouponError(data.error || "Invalid coupon code");
+      }
+    } catch (e) {
+      setCouponError("Failed to validate coupon");
+    } finally {
+      setCouponLoading(false);
+    }
+  };
+
+  const removeCoupon = () => {
+    setAppliedCoupon("");
+    setCouponDiscount(0);
+    setCouponCodeInput("");
+    setCouponSuccess("");
+    setCouponError("");
+    try {
+      localStorage.removeItem("staybuddy_claimed_coupon");
+      localStorage.removeItem("staybuddy_coupon");
+    } catch (e) {}
+  };
+
+  // Auto-apply FIRST5 when user enters review step if coupon was claimed
+  useEffect(() => {
+    if (bookingStep === 1 && !appliedCoupon) {
+      const urlCoupon = searchParams.get("coupon");
+      const savedCoupon = typeof window !== 'undefined' ? (localStorage.getItem("staybuddy_coupon") || localStorage.getItem("staybuddy_claimed_coupon")) : null;
+      const target = (urlCoupon || savedCoupon || couponCodeInput || "").trim().toUpperCase();
+      if (target === "FIRST5" || target === "STAYBUDDY5") {
+        applyCouponCode(target);
+      }
+    }
+  }, [bookingStep, searchParams]);
 
   async function fetchHotelData(cIn?: string, cOut?: string) {
     try {
@@ -584,6 +671,7 @@ export default function HotelDetailPage() {
         gstRegistrationNo: (bookingData as any).gstRegistrationNo,
         gstCompanyName: (bookingData as any).gstCompanyName,
         gstCompanyAddress: (bookingData as any).gstCompanyAddress,
+        couponCode: appliedCoupon || null,
         referralCode: typeof window !== 'undefined'
           ? (localStorage.getItem('staybuddy_ref') || document.cookie.split('; ').find(r => r.startsWith('staybuddy_ref='))?.split('=')[1] || '')
           : '',
@@ -860,7 +948,8 @@ export default function HotelDetailPage() {
 
   const bottomBarPrice = useMemo(() => {
     if (bookingStep === 1) {
-      return currentPricing.totalAmount || lowestRoomPrice * nights;
+      const rawTotal = currentPricing.totalAmount || lowestRoomPrice * nights;
+      return Math.max(0, rawTotal - couponDiscount);
     }
     if (totalSelectedRoomsCount > 0 || selectedRoom) {
       return currentPricing.basePricePerNight || lowestRoomPrice;
@@ -873,6 +962,7 @@ export default function HotelDetailPage() {
     totalSelectedRoomsCount,
     selectedRoom,
     nights,
+    couponDiscount,
   ]);
 
   const bottomBarTax = useMemo(() => {
@@ -3278,7 +3368,7 @@ export default function HotelDetailPage() {
                     >
                       <span style={{ fontSize: "1.2rem" }}>🚆</span>
                       <div style={{ fontSize: "0.8rem", color: "#166534", lineHeight: 1.4 }}>
-                        <span style={{ fontWeight: 800 }}>Train + Stay Offer:</span> Save flat 20% with coupon{" "}
+                        <span style={{ fontWeight: 800 }}>First Stay Offer:</span> Save flat 5% on 1st booking with coupon{" "}
                         <span
                           style={{
                             fontWeight: 800,
@@ -3288,7 +3378,7 @@ export default function HotelDetailPage() {
                             borderRadius: "4px",
                           }}
                         >
-                          STAYBUDDY20
+                          FIRST5
                         </span>
                       </div>
                     </div>
@@ -4581,6 +4671,29 @@ export default function HotelDetailPage() {
                         </div>
                       </div>
 
+                      {couponDiscount > 0 && (
+                        <div
+                          style={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "center",
+                            color: "#16a34a",
+                            fontWeight: 700,
+                            fontSize: "0.95rem",
+                          }}
+                        >
+                          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                            <span>⚡ 1st Booking Discount (5% Off)</span>
+                            <span style={{ fontSize: "0.7rem", background: "#dcfce7", color: "#15803d", padding: "2px 6px", borderRadius: 4, fontWeight: 800 }}>
+                              {appliedCoupon}
+                            </span>
+                          </div>
+                          <div>
+                            - ₹{couponDiscount.toLocaleString("en-IN")}
+                          </div>
+                        </div>
+                      )}
+
                       <hr
                         style={{
                           border: "none",
@@ -4606,7 +4719,7 @@ export default function HotelDetailPage() {
                             color: "var(--text-primary)",
                           }}
                         >
-                          ₹{currentPricing.totalAmount.toLocaleString()}
+                          ₹{Math.max(0, currentPricing.totalAmount - couponDiscount).toLocaleString("en-IN")}
                         </div>
                       </div>
                     </div>
@@ -4654,54 +4767,155 @@ export default function HotelDetailPage() {
                         display: "flex",
                         justifyContent: "space-between",
                         alignItems: "center",
-                        marginBottom: 16,
+                        marginBottom: 14,
                       }}
                     >
                       <h3
                         style={{
-                          fontSize: "1.1rem",
+                          fontSize: "1.05rem",
                           fontWeight: 800,
                           margin: 0,
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 6,
                         }}
                       >
-                        Coupon Codes
+                        <span>🎟️</span> Coupon Codes
                       </h3>
-                      <a
-                        href="#"
+                      {!appliedCoupon && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setCouponCodeInput("FIRST5");
+                            applyCouponCode("FIRST5");
+                          }}
+                          style={{
+                            fontSize: "0.78rem",
+                            color: "var(--brand-600)",
+                            fontWeight: 700,
+                            background: "none",
+                            border: "none",
+                            cursor: "pointer",
+                            textDecoration: "underline",
+                          }}
+                        >
+                          Apply FIRST5
+                        </button>
+                      )}
+                    </div>
+
+                    {appliedCoupon ? (
+                      <div
                         style={{
-                          fontSize: "0.8rem",
-                          color: "var(--brand-600)",
-                          fontWeight: 700,
-                          textDecoration: "none",
+                          background: "#f0fdf4",
+                          border: "1.5px solid #86efac",
+                          borderRadius: "10px",
+                          padding: "12px 14px",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          gap: 10,
                         }}
                       >
-                        View All
-                      </a>
-                    </div>
-                    <div style={{ display: "flex", gap: 8 }}>
-                      <input
-                        type="text"
-                        className="form-input"
-                        placeholder="HAVE A COUPON CODE?"
-                        style={{
-                          flex: 1,
-                          minWidth: 0,
-                          textTransform: "uppercase",
-                          fontSize: "0.85rem",
-                        }}
-                      />
-                      <button
-                        className="btn"
-                        style={{
-                          background: "#e2e8f0",
-                          color: "#475569",
-                          fontWeight: 700,
-                          border: "none",
-                        }}
-                      >
-                        APPLY
-                      </button>
-                    </div>
+                        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                          <span style={{ fontSize: "1.3rem" }}>🎉</span>
+                          <div>
+                            <div style={{ fontWeight: 800, color: "#166534", fontSize: "0.88rem" }}>
+                              Coupon {appliedCoupon} Applied!
+                            </div>
+                            <div style={{ fontSize: "0.75rem", color: "#15803d", marginTop: 2 }}>
+                              Flat 5% Off (-₹{couponDiscount.toLocaleString("en-IN")}) • Funded by StayBuddy Margin
+                            </div>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={removeCoupon}
+                          style={{
+                            background: "none",
+                            border: "none",
+                            color: "#dc2626",
+                            fontWeight: 700,
+                            fontSize: "0.82rem",
+                            cursor: "pointer",
+                            padding: "4px 8px",
+                          }}
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    ) : (
+                      <>
+                        <div style={{ display: "flex", gap: 8 }}>
+                          <input
+                            type="text"
+                            className="form-input"
+                            value={couponCodeInput}
+                            onChange={(e) => {
+                              setCouponCodeInput(e.target.value.toUpperCase());
+                              setCouponError("");
+                            }}
+                            placeholder="HAVE A COUPON CODE? (e.g. FIRST5)"
+                            style={{
+                              flex: 1,
+                              minWidth: 0,
+                              textTransform: "uppercase",
+                              fontSize: "0.85rem",
+                              fontWeight: 700,
+                              letterSpacing: "0.04em",
+                            }}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => applyCouponCode()}
+                            disabled={couponLoading}
+                            className="btn"
+                            style={{
+                              background: "linear-gradient(135deg, #ff6b35 0%, #ea580c 100%)",
+                              color: "white",
+                              fontWeight: 800,
+                              border: "none",
+                              padding: "0 20px",
+                              borderRadius: "8px",
+                              cursor: couponLoading ? "wait" : "pointer",
+                            }}
+                          >
+                            {couponLoading ? "Checking..." : "APPLY"}
+                          </button>
+                        </div>
+
+                        {couponError && (
+                          <div style={{ fontSize: "0.78rem", color: "#dc2626", fontWeight: 600, marginTop: 8, display: "flex", alignItems: "center", gap: 4 }}>
+                            <span>⚠️</span> {couponError}
+                          </div>
+                        )}
+
+                        {/* Quick 1st booking prompt */}
+                        <div
+                          onClick={() => {
+                            setCouponCodeInput("FIRST5");
+                            applyCouponCode("FIRST5");
+                          }}
+                          style={{
+                            marginTop: 10,
+                            padding: "8px 12px",
+                            background: "#fff7ed",
+                            border: "1px dashed #fdba74",
+                            borderRadius: "8px",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                            cursor: "pointer",
+                            fontSize: "0.78rem",
+                          }}
+                        >
+                          <span style={{ color: "#c2410c", fontWeight: 700 }}>
+                            ⚡ First time on StayBuddy? Tap to apply <strong>FIRST5</strong> for 5% off!
+                          </span>
+                          <span style={{ color: "#ea580c", fontWeight: 800 }}>APPLY ›</span>
+                        </div>
+                      </>
+                    )}
                   </div>
 
                   <div

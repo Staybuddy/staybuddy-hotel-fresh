@@ -288,11 +288,52 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
+    // Resolve Coupon Discount (Flat 5% on 1st booking, funded from StayBuddy margin)
+    let couponCode = body.couponCode ? String(body.couponCode).trim().toUpperCase() : null;
+    let couponDiscount = 0;
+    let isFirstBookingDiscount = false;
+
+    if (couponCode === 'FIRST5' || couponCode === 'STAYBUDDY5' || couponCode === 'STAYBUDDY20') {
+      const discountPercent = couponCode === 'STAYBUDDY20' ? 20 : 5;
+      const cleanEmail = guestEmail ? String(guestEmail).trim().toLowerCase() : '';
+
+      let isEligible = true;
+      if (cleanEmail) {
+        try {
+          const priorBookingsSnap = await db.collection('bookings')
+            .where('guestEmail', '==', cleanEmail)
+            .where('status', 'in', ['confirmed', 'completed'])
+            .limit(1)
+            .get();
+
+          if (!priorBookingsSnap.empty) {
+            isEligible = false;
+            console.log(`[Booking API] Email ${cleanEmail} has prior confirmed bookings, not eligible for 1st booking discount.`);
+          }
+        } catch (e) {
+          console.warn('[Booking API] Error checking prior bookings for email:', e);
+        }
+      }
+
+      if (isEligible) {
+        couponDiscount = Math.round(pricing.basePricePerNight * (discountPercent / 100));
+        isFirstBookingDiscount = true;
+      } else {
+        couponCode = null;
+      }
+    }
+
     const clientPrice = Math.round(pricing.basePricePerNight / requestedRooms);
-    const totalPrice = pricing.totalAmount;
     const basePartnerPrice = partnerPricing ? Math.round(partnerPricing.basePricePerNight / requestedRooms) : clientPrice;
     const totalPartnerPrice = partnerPricing ? partnerPricing.priceAfterDiscount : pricing.priceAfterDiscount;
-    const staybuddyProfit = pricing.priceAfterDiscount - (partnerPricing ? partnerPricing.priceAfterDiscount : pricing.priceAfterDiscount);
+
+    // The 5% discount is deducted strictly from StayBuddy margin (Partner receives their exact totalPartnerPrice)
+    const discountedBase = Math.max(0, pricing.basePricePerNight - couponDiscount);
+    const discountedGst = Math.round(discountedBase * 0.05);
+    const totalPrice = couponDiscount > 0 ? (discountedBase + discountedGst) : pricing.totalAmount;
+
+    const rawStaybuddyProfit = pricing.priceAfterDiscount - (partnerPricing ? partnerPricing.priceAfterDiscount : pricing.priceAfterDiscount);
+    const staybuddyProfit = Math.max(0, rawStaybuddyProfit - couponDiscount);
 
     const bookingRef = db.collection('bookings').doc();
     const counterRef = db.collection('metadata').doc('counters');
@@ -371,6 +412,11 @@ export async function POST(request: NextRequest) {
       partnerPricePerNight: basePartnerPrice, totalPartnerPrice,
       marginPercentage: margin,
       marginAmount: staybuddyProfit,
+      couponCode: couponCode || null,
+      discountAmount: couponDiscount,
+      couponDiscount: couponDiscount,
+      isFirstBookingDiscount,
+      discountFundedBy: couponDiscount > 0 ? 'StayBuddy Margin' : null,
       guestName, guestEmail, guestPhone, specialRequests,
       status, paymentStatus,
       gstRegistrationNo, gstCompanyName, gstCompanyAddress,
