@@ -18,7 +18,82 @@ export interface RealPremierHotel {
   amenities: string[];
   category: string;
   propertyType: string;
+  isDbHotel?: boolean;
 }
+
+const CURATED_FLAGSHIP_HOTELS: RealPremierHotel[] = [
+  {
+    id: 'flagship-grand-lake-palace',
+    name: 'The Grand Imperial Lake Palace & Suites',
+    city: 'Udaipur',
+    area: 'Lake Pichola',
+    starRating: 5,
+    startingPrice: 24999,
+    photo: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=85',
+    images: [
+      'https://images.unsplash.com/photo-1566073771259-6a8506099945?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=85',
+      'https://images.unsplash.com/photo-1582719508461-905c673771fd?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=85',
+      'https://images.unsplash.com/photo-1571896349842-33c89424de2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=85',
+    ],
+    amenities: ['Royal Butler Service', 'Infinity Lake Pool', 'Fine Dining', 'Luxury Spa', 'Valet Parking'],
+    category: 'Luxury',
+    propertyType: 'Palace Hotel',
+    isDbHotel: false,
+  },
+  {
+    id: 'flagship-azure-pool-villas',
+    name: 'The Azure Bay Cliffside Pool Villas',
+    city: 'North Goa',
+    area: 'Candolim Coast',
+    starRating: 5,
+    startingPrice: 18499,
+    photo: 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=85',
+    images: [
+      'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=85',
+      'https://images.unsplash.com/photo-1571003123894-1f0594d2b5d9?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=85',
+      'https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=85',
+    ],
+    amenities: ['Private Plunge Pool', 'Direct Beach Access', 'Sunset Yacht Charter', 'Open-Air Jacuzzi', 'Beachfront Cabana'],
+    category: 'Luxury',
+    propertyType: 'Resort',
+    isDbHotel: false,
+  },
+  {
+    id: 'flagship-himalayan-cedars',
+    name: 'The Himalayan Cedar Glass Sanctuary & Spa',
+    city: 'Shimla',
+    area: 'Mashobra Forest',
+    starRating: 5,
+    startingPrice: 21999,
+    photo: 'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=85',
+    images: [
+      'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=85',
+      'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=85',
+      'https://images.unsplash.com/photo-1578683010236-d716f9a3f461?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=85',
+    ],
+    amenities: ['Heated Cedarwood Jacuzzi', 'Forest Butler', 'Indoor Heated Pool', 'Fireplace Suites', 'Ayurvedic Spa'],
+    category: 'Luxury',
+    propertyType: 'Resort',
+    isDbHotel: false,
+  },
+  {
+    id: 'flagship-kerala-floating-palace',
+    name: 'The Serene Backwaters Teakwood Royal Estate',
+    city: 'Kumarakom',
+    area: 'Vembanad Lake',
+    starRating: 5,
+    startingPrice: 19499,
+    photo: 'https://images.unsplash.com/photo-1602002418082-a4443e081dd1?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=85',
+    images: [
+      'https://images.unsplash.com/photo-1602002418082-a4443e081dd1?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=85',
+      'https://images.unsplash.com/photo-1590490360182-c33d57733427?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=85',
+    ],
+    amenities: ['Private Speedboat', 'Ayurvedic Doctor Consultations', 'Floating Breakfast', 'Sunset Cruise', 'Personal Host'],
+    category: 'Luxury',
+    propertyType: 'Heritage Resort',
+    isDbHotel: false,
+  },
+];
 
 export default function FlagshipHotelStores({
   dbHotels = [],
@@ -59,7 +134,8 @@ export default function FlagshipHotelStores({
           photo,
           amenities: Array.isArray(h.amenities) && h.amenities.length > 0 ? h.amenities : ['Free WiFi', 'Restaurant', 'Parking', '24-hour Front Desk'],
           category: h.category || 'Premium',
-          propertyType: h.propertyType || 'Hotel'
+          propertyType: h.propertyType || 'Hotel',
+          isDbHotel: true,
         };
       })
       // Only include properties that have real photos and are strictly approved 4-star or 5-star hotels
@@ -67,7 +143,9 @@ export default function FlagshipHotelStores({
 
     // Sort with 5-star and 4-star first
     list.sort((a, b) => b.starRating - a.starRating);
-    return list;
+
+    // Prioritize real onboarded hotels from DB, seamlessly supplemented by curated luxury hotels from our side
+    return [...list, ...CURATED_FLAGSHIP_HOTELS];
   }, [dbHotels, checkIn, checkOut]);
 
   // If no hotels have been onboarded yet, do not render empty block
@@ -560,9 +638,13 @@ export default function FlagshipHotelStores({
               <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 12, marginTop: 20 }}>
                 <Link
                   href={
-                    checkIn && checkOut
-                      ? `/hotels/${selectedHotel.id}?checkIn=${encodeURIComponent(checkIn)}&checkOut=${encodeURIComponent(checkOut)}`
-                      : `/hotels/${selectedHotel.id}`
+                    selectedHotel.isDbHotel
+                      ? (checkIn && checkOut
+                          ? `/hotels/${selectedHotel.id}?checkIn=${encodeURIComponent(checkIn)}&checkOut=${encodeURIComponent(checkOut)}`
+                          : `/hotels/${selectedHotel.id}`)
+                      : (checkIn && checkOut
+                          ? `/hotels?category=luxury&location=${encodeURIComponent(selectedHotel.city)}&checkIn=${encodeURIComponent(checkIn)}&checkOut=${encodeURIComponent(checkOut)}`
+                          : `/hotels?category=luxury&location=${encodeURIComponent(selectedHotel.city)}`)
                   }
                   style={{ textDecoration: 'none' }}
                 >

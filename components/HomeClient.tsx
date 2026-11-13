@@ -16,6 +16,7 @@ import Image from 'next/image';
 import WishlistButton from '@/components/WishlistButton';
 import { adjustRoomsAndAdults, MAX_ADULTS_PER_ROOM } from '@/lib/occupancyPricing';
 import FlagshipHotelStores from '@/components/FlagshipHotelStores';
+import LuxurySegment from '@/components/LuxurySegment';
 
 const DESTINATIONS = [
   { city: 'Mumbai', country: 'India', hotels: 342 },
@@ -1314,6 +1315,9 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
       {/* ===== FLAGSHIP HOTEL STORES (4★ & 5★ Premier Luxury Brands with Interactive Stays Showcase) ===== */}
       <FlagshipHotelStores dbHotels={hotels} checkIn={searchData.checkIn} checkOut={searchData.checkOut} />
 
+      {/* ===== STAYBUDDY LUXE — THE ULTRA-LUXURY SEGMENT ===== */}
+      <LuxurySegment dbHotels={hotels} checkIn={searchData.checkIn} checkOut={searchData.checkOut} />
+
 
       {/* ===== HOTEL COLLECTIONS CARDS (Original 3 Categories - Clean & Separate) ===== */}
       <section className="container" style={{ marginBottom: '26px' }}>
@@ -1416,8 +1420,8 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
             </div>
           </Link>
 
-          {/* Card 3 - Experiences: Heritage Stays */}
-          <Link href="/hotels?minRating=5" className="home-collections-card" style={{ textDecoration: 'none', color: 'inherit', display: 'flex' }}>
+          {/* Card 3 - Experiences: StayBuddy Luxe Palaces & Heritage */}
+          <Link href="/hotels?category=luxury&minRating=5" className="home-collections-card" style={{ textDecoration: 'none', color: 'inherit', display: 'flex' }}>
             <div style={{
               background: 'linear-gradient(135deg, #fef3c7, #fde68a)',
               borderRadius: 'var(--radius-xl)', padding: 'var(--space-6)',
@@ -1436,12 +1440,12 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
             }}>
               <div style={{ position: 'absolute', right: '5%', bottom: '-10%', fontSize: '6rem', opacity: 0.1, pointerEvents: 'none' }}>🏰</div>
               <div style={{ position: 'relative', zIndex: 1, marginBottom: 24 }}>
-                <div style={{ display: 'inline-block', background: 'white', color: '#b45309', padding: '4px 10px', borderRadius: 'var(--radius-full)', fontSize: '0.75rem', fontWeight: 700, marginBottom: 12, textTransform: 'uppercase', border: '1px solid #fcd34d' }}>Experiences</div>
-                <h3 style={{ color: '#78350f', marginBottom: 8, fontSize: '1.4rem' }}>Heritage Stays</h3>
-                <p style={{ color: '#b45309', fontSize: '0.95rem', margin: 0, opacity: 0.8 }}>Experience royal treatment at historical palaces and forts.</p>
+                <div style={{ display: 'inline-block', background: 'white', color: '#b45309', padding: '4px 10px', borderRadius: 'var(--radius-full)', fontSize: '0.75rem', fontWeight: 800, marginBottom: 12, textTransform: 'uppercase', border: '1px solid #fcd34d' }}>👑 StayBuddy Luxe</div>
+                <h3 style={{ color: '#78350f', marginBottom: 8, fontSize: '1.4rem' }}>Palaces & Royal Heritage</h3>
+                <p style={{ color: '#b45309', fontSize: '0.95rem', margin: 0, opacity: 0.9 }}>Experience royal treatment at historical palaces, lakefront suites, and royal forts.</p>
               </div>
               <div style={{ color: '#d97706', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4, position: 'relative', zIndex: 1 }}>
-                See Heritage Stays →
+                Explore Luxe Stays →
               </div>
             </div>
           </Link>

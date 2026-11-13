@@ -760,6 +760,25 @@ function HotelSearch() {
                                 </span>
                                 <span>{starNum}-Star Hotel</span>
                               </span>
+                              {(starNum === 5 || (hotel.category && hotel.category.toLowerCase() === 'luxury')) && (
+                                <span
+                                  style={{
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: 4,
+                                    background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
+                                    border: '1px solid #fbbf24',
+                                    color: '#fbbf24',
+                                    fontSize: '0.72rem',
+                                    fontWeight: 800,
+                                    padding: '2px 8px',
+                                    borderRadius: '6px',
+                                    boxShadow: '0 2px 6px rgba(245, 158, 11, 0.25)'
+                                  }}
+                                >
+                                  👑 StayBuddy Luxe
+                                </span>
+                              )}
                             </div>
                           </div>
                           
