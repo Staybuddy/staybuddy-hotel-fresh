@@ -1034,27 +1034,6 @@ export default function HotelDetailPage() {
             <div style={{ color: "#f59e0b", fontSize: "1rem" }}>
               {"⭐".repeat(hotel.starRating || 4)}
             </div>
-            {(hotel.starRating === 5 || (hotel.category && hotel.category.toLowerCase() === 'luxury')) && (
-              <span
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: 6,
-                  background: "linear-gradient(135deg, #0f172a 0%, #1e293b 100%)",
-                  border: "1.5px solid #fbbf24",
-                  color: "#fbbf24",
-                  fontSize: "0.8rem",
-                  fontWeight: 800,
-                  padding: "4px 12px",
-                  borderRadius: "20px",
-                  boxShadow: "0 2px 8px rgba(245, 158, 11, 0.25)",
-                  letterSpacing: "0.04em"
-                }}
-              >
-                <span>👑</span>
-                <span>StayBuddy Luxe Verified</span>
-              </span>
-            )}
             {hotel.avgRating > 0 ? (
               <div style={{ display: "flex", alignItems: "center", gap: 6, background: "var(--brand-50)", color: "var(--brand-700)", padding: "4px 10px", borderRadius: "12px", border: "1px solid var(--brand-200)", fontSize: "0.85rem", fontWeight: 700 }}>
                 <span>★ {hotel.avgRating.toFixed(1)}</span>
@@ -1103,59 +1082,6 @@ export default function HotelDetailPage() {
             </button>
           </div>
         </div>
-
-        {/* Luxe VIP Privileges Banner for 5-star / Luxury properties */}
-        {(hotel.starRating === 5 || (hotel.category && hotel.category.toLowerCase() === 'luxury')) && (
-          <div
-            className="container"
-            style={{
-              marginBottom: 18,
-              padding: 0,
-            }}
-          >
-            <div
-              style={{
-                background: "linear-gradient(135deg, #090d16 0%, #171d2b 100%)",
-                border: "1.5px solid rgba(245, 158, 11, 0.45)",
-                borderRadius: "16px",
-                padding: "14px 20px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                flexWrap: "wrap",
-                gap: 12,
-                color: "#fde68a",
-                boxShadow: "0 8px 24px rgba(0,0,0,0.25)"
-              }}
-            >
-              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                <span style={{ fontSize: "1.4rem" }}>👑</span>
-                <div>
-                  <div style={{ fontWeight: 800, fontSize: "0.92rem", color: "#ffffff", letterSpacing: "0.02em" }}>
-                    StayBuddy Luxe VIP Inclusions & Bespoke Hospitality
-                  </div>
-                  <div style={{ fontSize: "0.78rem", color: "#fde68a", marginTop: 2 }}>
-                    ✨ Welcome High Tea • Chef-Curated Breakfast • 24/7 Butler & VIP Concierge Assistance Included
-                  </div>
-                </div>
-              </div>
-              <div
-                style={{
-                  background: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)",
-                  color: "#0f172a",
-                  padding: "5px 14px",
-                  borderRadius: "20px",
-                  fontWeight: 800,
-                  fontSize: "0.76rem",
-                  letterSpacing: "0.05em",
-                  textTransform: "uppercase"
-                }}
-              >
-                Ultra-Luxury Tier
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* Main Grid Wrapper */}
         <div

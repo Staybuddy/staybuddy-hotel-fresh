@@ -130,4 +130,3 @@ export function getRoomBlockedCountForNight(
 
   return Math.min(nightCapacity, blockedCount);
 }
-
