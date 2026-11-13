@@ -7,6 +7,7 @@ import { useSession, signIn } from "next-auth/react";
 import Navbar from "@/components/Navbar";
 import DateRangePicker from "@/components/DateRangePicker";
 import Image from "next/image";
+import BrandLoader from "@/components/BrandLoader";
 import {
   calculateBookingPricing,
   calculateMultiRoomPricing,
@@ -1048,10 +1049,10 @@ export default function HotelDetailPage() {
             display: "flex",
             justifyContent: "center",
             alignItems: "center",
-            height: "60vh",
+            minHeight: "60vh",
           }}
         >
-          <div className="spinner" style={{ width: 48, height: 48 }} />
+          <BrandLoader size={72} message="Loading hotel details..." />
         </div>
       </div>
     );
@@ -3545,7 +3546,7 @@ export default function HotelDetailPage() {
                   <div
                     className="card review-booking-dates-card"
                     style={{
-                      padding: "20px",
+                      padding: "12px 16px",
                       borderRadius: "var(--radius-lg)",
                     }}
                   >
@@ -3554,33 +3555,42 @@ export default function HotelDetailPage() {
                         flex: 1,
                         display: "flex",
                         flexDirection: "column",
-                        gap: 12,
+                        gap: 8,
+                        justifyContent: "center",
                       }}
                     >
                       <div
                         style={{
                           display: "flex",
                           justifyContent: "space-between",
-                          alignItems: "flex-start",
+                          alignItems: "center",
                         }}
                       >
-                        <div>
+                        <div
+                          onClick={() => {
+                            closeReview();
+                            setShowDatePicker(true);
+                          }}
+                          style={{ cursor: "pointer" }}
+                        >
                           <div
                             style={{
-                              fontSize: "0.75rem",
+                              fontSize: "0.68rem",
                               fontWeight: 800,
                               color: "var(--brand-600)",
                               textTransform: "uppercase",
-                              marginBottom: 4,
+                              letterSpacing: "0.04em",
                             }}
                           >
                             CHECK IN ✏️
                           </div>
                           <div
                             style={{
-                              fontSize: "1.2rem",
+                              fontSize: "1.02rem",
                               fontWeight: 800,
                               color: "var(--text-primary)",
+                              lineHeight: 1.25,
+                              marginTop: 2,
                             }}
                           >
                             {bookingData.checkIn
@@ -3596,10 +3606,9 @@ export default function HotelDetailPage() {
                           </div>
                           <div
                             style={{
-                              fontSize: "0.9rem",
+                              fontSize: "0.78rem",
                               color: "var(--text-secondary)",
                               fontWeight: 600,
-                              marginTop: 2,
                             }}
                           >
                             {hotel.checkInTime || "12:00 PM"}
@@ -3610,35 +3619,42 @@ export default function HotelDetailPage() {
                           style={{
                             background: "#eff6ff",
                             border: "1px solid #bfdbfe",
-                            padding: "6px 16px",
+                            padding: "3px 12px",
                             borderRadius: "var(--radius-full)",
-                            fontSize: "0.8rem",
+                            fontSize: "0.74rem",
                             fontWeight: 800,
                             color: "#1e40af",
                             alignSelf: "center",
-                            boxShadow: "0 2px 4px rgba(0,0,0,0.05)",
                           }}
                         >
                           {nights} NIGHT{nights > 1 ? "S" : ""}
                         </div>
 
-                        <div style={{ textAlign: "right" }}>
+                        <div
+                          onClick={() => {
+                            closeReview();
+                            setShowDatePicker(true);
+                          }}
+                          style={{ textAlign: "right", cursor: "pointer" }}
+                        >
                           <div
                             style={{
-                              fontSize: "0.75rem",
+                              fontSize: "0.68rem",
                               fontWeight: 800,
                               color: "var(--brand-600)",
                               textTransform: "uppercase",
-                              marginBottom: 4,
+                              letterSpacing: "0.04em",
                             }}
                           >
                             CHECK OUT ✏️
                           </div>
                           <div
                             style={{
-                              fontSize: "1.2rem",
+                              fontSize: "1.02rem",
                               fontWeight: 800,
                               color: "var(--text-primary)",
+                              lineHeight: 1.25,
+                              marginTop: 2,
                             }}
                           >
                             {bookingData.checkOut
@@ -3654,10 +3670,9 @@ export default function HotelDetailPage() {
                           </div>
                           <div
                             style={{
-                              fontSize: "0.9rem",
+                              fontSize: "0.78rem",
                               color: "var(--text-secondary)",
                               fontWeight: 600,
-                              marginTop: 2,
                             }}
                           >
                             {hotel.checkOutTime || "11:00 AM"}
@@ -3669,7 +3684,7 @@ export default function HotelDetailPage() {
                         style={{
                           border: "none",
                           borderTop: "1px dashed var(--border)",
-                          margin: "4px 0",
+                          margin: "2px 0",
                         }}
                       />
 
@@ -3679,17 +3694,86 @@ export default function HotelDetailPage() {
                           justifyContent: "space-between",
                           alignItems: "center",
                           flexWrap: "wrap",
-                          gap: 8,
+                          gap: 6,
                         }}
                       >
-                        <div style={{ fontSize: "0.9rem", fontWeight: 700 }}>
-                          {nights} Night{nights > 1 ? "s" : ""} |{" "}
-                          {bookingData.adults} Adult
-                          {bookingData.adults > 1 ? "s" : ""} |{" "}
-                          {bookingData.rooms} Room
-                          {bookingData.rooms > 1 ? "s" : ""}
+                        <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                          <span style={{ fontSize: "0.82rem", fontWeight: 700, color: "#1e293b" }}>
+                            {nights} Night{nights > 1 ? "s" : ""} • {bookingData.rooms} Room{bookingData.rooms > 1 ? "s" : ""} • {bookingData.adults} Guest{bookingData.adults > 1 ? "s" : ""}
+                          </span>
+
+                          {bookingData.rooms === 1 && (
+                            <div style={{ display: "inline-flex", gap: 4, alignItems: "center" }}>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setOccupancy("single");
+                                  setBookingData(prev => ({ ...prev, adults: 1 }));
+                                  updateUrlParams({ adults: 1 });
+                                }}
+                                style={{
+                                  padding: "2px 8px",
+                                  borderRadius: 14,
+                                  fontSize: "0.72rem",
+                                  fontWeight: 700,
+                                  cursor: "pointer",
+                                  border: bookingData.adults === 1 ? "1.5px solid #ea580c" : "1px solid #cbd5e1",
+                                  background: bookingData.adults === 1 ? "#fff7ed" : "#ffffff",
+                                  color: bookingData.adults === 1 ? "#c2410c" : "#64748b",
+                                  transition: "all 0.15s ease",
+                                }}
+                              >
+                                👤 1 Adult
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setOccupancy("double");
+                                  setBookingData(prev => ({ ...prev, adults: 2 }));
+                                  updateUrlParams({ adults: 2 });
+                                }}
+                                style={{
+                                  padding: "2px 8px",
+                                  borderRadius: 14,
+                                  fontSize: "0.72rem",
+                                  fontWeight: 700,
+                                  cursor: "pointer",
+                                  border: bookingData.adults === 2 ? "1.5px solid #ea580c" : "1px solid #cbd5e1",
+                                  background: bookingData.adults === 2 ? "#fff7ed" : "#ffffff",
+                                  color: bookingData.adults === 2 ? "#c2410c" : "#64748b",
+                                  transition: "all 0.15s ease",
+                                }}
+                              >
+                                👥 2 Adults
+                              </button>
+                              {Number(selectedRoom?.priceTriple) > 0 && (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setOccupancy("triple");
+                                    setBookingData(prev => ({ ...prev, adults: 3 }));
+                                    updateUrlParams({ adults: 3 });
+                                  }}
+                                  style={{
+                                    padding: "2px 8px",
+                                    borderRadius: 14,
+                                    fontSize: "0.72rem",
+                                    fontWeight: 700,
+                                    cursor: "pointer",
+                                    border: bookingData.adults === 3 ? "1.5px solid #ea580c" : "1px solid #cbd5e1",
+                                    background: bookingData.adults === 3 ? "#fff7ed" : "#ffffff",
+                                    color: bookingData.adults === 3 ? "#c2410c" : "#64748b",
+                                    transition: "all 0.15s ease",
+                                  }}
+                                >
+                                  👨‍👩‍👦 3 Adults
+                                </button>
+                              )}
+                            </div>
+                          )}
                         </div>
-                        <div style={{ display: "flex", gap: 8 }}>
+
+                        <div style={{ display: "flex", gap: 6 }}>
                           <button
                             onClick={() => {
                               closeReview();
@@ -3699,9 +3783,9 @@ export default function HotelDetailPage() {
                               background: "#ecfdf5",
                               border: "1px solid #a7f3d0",
                               color: "var(--success)",
-                              padding: "4px 12px",
+                              padding: "2px 10px",
                               borderRadius: "var(--radius-full)",
-                              fontSize: "0.8rem",
+                              fontSize: "0.75rem",
                               fontWeight: 600,
                               cursor: "pointer",
                             }}
@@ -3717,9 +3801,9 @@ export default function HotelDetailPage() {
                               background: "#eff6ff",
                               border: "1px solid #bfdbfe",
                               color: "var(--brand-600)",
-                              padding: "4px 12px",
+                              padding: "2px 10px",
                               borderRadius: "var(--radius-full)",
-                              fontSize: "0.8rem",
+                              fontSize: "0.75rem",
                               fontWeight: 600,
                               cursor: "pointer",
                             }}
@@ -3728,77 +3812,6 @@ export default function HotelDetailPage() {
                           </button>
                         </div>
                       </div>
-
-                      {bookingData.rooms === 1 && (
-                        <div style={{ display: "flex", gap: 8, marginTop: 4, flexWrap: "wrap", alignItems: "center", background: "#f8fafc", padding: "8px 12px", borderRadius: 8, border: "1px solid #e2e8f0" }}>
-                          <span style={{ fontSize: "0.78rem", fontWeight: 700, color: "#64748b" }}>Quick Occupancy:</span>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setOccupancy("single");
-                              setBookingData(prev => ({ ...prev, adults: 1 }));
-                              updateUrlParams({ adults: 1 });
-                            }}
-                            style={{
-                              padding: "4px 10px",
-                              borderRadius: 20,
-                              fontSize: "0.78rem",
-                              fontWeight: 700,
-                              cursor: "pointer",
-                              border: bookingData.adults === 1 ? "1.5px solid #ea580c" : "1px solid #cbd5e1",
-                              background: bookingData.adults === 1 ? "#fff7ed" : "#ffffff",
-                              color: bookingData.adults === 1 ? "#c2410c" : "#475569",
-                              transition: "all 0.15s ease",
-                            }}
-                          >
-                            👤 1 Adult (Single)
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setOccupancy("double");
-                              setBookingData(prev => ({ ...prev, adults: 2 }));
-                              updateUrlParams({ adults: 2 });
-                            }}
-                            style={{
-                              padding: "4px 10px",
-                              borderRadius: 20,
-                              fontSize: "0.78rem",
-                              fontWeight: 700,
-                              cursor: "pointer",
-                              border: bookingData.adults === 2 ? "1.5px solid #ea580c" : "1px solid #cbd5e1",
-                              background: bookingData.adults === 2 ? "#fff7ed" : "#ffffff",
-                              color: bookingData.adults === 2 ? "#c2410c" : "#475569",
-                              transition: "all 0.15s ease",
-                            }}
-                          >
-                            👥 2 Adults (Double)
-                          </button>
-                          {Number(selectedRoom?.priceTriple) > 0 && (
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setOccupancy("triple");
-                                setBookingData(prev => ({ ...prev, adults: 3 }));
-                                updateUrlParams({ adults: 3 });
-                              }}
-                              style={{
-                                padding: "4px 10px",
-                                borderRadius: 20,
-                                fontSize: "0.78rem",
-                                fontWeight: 700,
-                                cursor: "pointer",
-                                border: bookingData.adults === 3 ? "1.5px solid #ea580c" : "1px solid #cbd5e1",
-                                background: bookingData.adults === 3 ? "#fff7ed" : "#ffffff",
-                                color: bookingData.adults === 3 ? "#c2410c" : "#475569",
-                                transition: "all 0.15s ease",
-                              }}
-                            >
-                              👨‍👩‍👦 3 Adults (Triple)
-                            </button>
-                          )}
-                        </div>
-                      )}
                     </div>
 
                     <div
@@ -3806,26 +3819,31 @@ export default function HotelDetailPage() {
                       style={{
                         background: "#eff6ff",
                         borderRadius: "var(--radius-md)",
-                        padding: "16px",
+                        padding: "10px 12px",
                         border: "1px solid #bfdbfe",
+                        display: "flex",
+                        flexDirection: "column",
+                        justifyContent: "center",
                       }}
                     >
                       <h4
                         style={{
                           color: "var(--brand-700)",
-                          fontSize: "0.95rem",
+                          fontSize: "0.82rem",
                           fontWeight: 800,
                           margin: 0,
+                          lineHeight: 1.25,
                         }}
                       >
                         Guaranteed Early Check-in/Late Check-out
                       </h4>
                       <p
                         style={{
-                          fontSize: "0.8rem",
+                          fontSize: "0.72rem",
                           color: "var(--brand-600)",
                           margin: 0,
-                          lineHeight: 1.4,
+                          marginTop: 3,
+                          lineHeight: 1.3,
                         }}
                       >
                         Opt for guaranteed early check-in/late check-out at an
@@ -3833,13 +3851,13 @@ export default function HotelDetailPage() {
                       </p>
                       <button
                         style={{
-                          marginTop: "auto",
+                          marginTop: 6,
                           background: "white",
                           border: "1px solid var(--brand-400)",
                           color: "var(--brand-600)",
-                          padding: "6px",
+                          padding: "4px 8px",
                           borderRadius: "var(--radius-md)",
-                          fontSize: "0.85rem",
+                          fontSize: "0.76rem",
                           fontWeight: 700,
                           cursor: "pointer",
                         }}

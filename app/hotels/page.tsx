@@ -7,6 +7,7 @@ import DateRangePicker from '@/components/DateRangePicker';
 import GuestSelector from '@/components/GuestSelector';
 import LocationSearch from '@/components/LocationSearch';
 import Image from 'next/image';
+import BrandLoader from '@/components/BrandLoader';
 
 const AMENITY_OPTIONS = ['Free WiFi', 'Pool', 'Spa', 'Gym', 'Restaurant', 'Parking', 'AC', 'Bar', 'Pet Friendly', 'Breakfast'];
 const CATEGORIES = ['all', 'budget', 'standard', 'premium', 'luxury'];
@@ -886,5 +887,9 @@ function HotelSearch() {
 }
 
 export default function HotelsPage() {
-  return <Suspense fallback={<div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><div className="spinner" style={{ width: 40, height: 40 }} /></div>}><HotelSearch /></Suspense>;
+  return (
+    <Suspense fallback={<BrandLoader fullScreen size={76} message="Searching verified hotels..." />}>
+      <HotelSearch />
+    </Suspense>
+  );
 }

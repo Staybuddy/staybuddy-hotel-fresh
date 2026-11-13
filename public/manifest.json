@@ -1,0 +1,27 @@
+{
+  "name": "StayBuddy — Find & Book Hotels",
+  "short_name": "StayBuddy",
+  "description": "StayBuddy is your trusted OTA platform for hotel bookings. Find the best hotels at the best prices — from budget stays to luxury escapes.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#ea580c",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "48x48",
+      "type": "image/x-icon"
+    },
+    {
+      "src": "/icon.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/apple-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    }
+  ]
+}
