@@ -1,6 +1,7 @@
-import BrandLoader from '@/components/BrandLoader';
-
 export default function Loading() {
-  return <BrandLoader fullScreen size={84} message="Loading your stay..." />;
+  return (
+    <div style={{ minHeight: '80vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div className="spinner" style={{ width: 44, height: 44 }} />
+    </div>
+  );
 }
-

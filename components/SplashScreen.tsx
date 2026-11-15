@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
-import BrandLoader from './BrandLoader';
+import Logo from './Logo';
 
 export default function SplashScreen() {
   const [show, setShow] = useState(false);
@@ -49,16 +49,114 @@ export default function SplashScreen() {
         right: 0,
         bottom: 0,
         zIndex: 99999,
-        background: '#ffffff',
+        background: 'var(--bg-primary, #ffffff)',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
         opacity: fading ? 0 : 1,
-        transition: 'opacity 0.4s ease-out',
+        transition: 'opacity 0.5s ease-out',
       }}
     >
-      <BrandLoader size={84} message="Find & Book Great Stays" />
+      {/* Brand Name */}
+      <div style={{ margin: '0 0 40px 0' }}>
+        <Logo size="xl" />
+      </div>
+
+      {/* Loading Animation: 3 circles */}
+      <div style={{ position: 'relative', width: 120, height: 120 }}>
+        {/* Spinning Ring */}
+        <div
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            border: '3px solid var(--border, #e2e8f0)',
+            borderTopColor: 'var(--brand-500, #f97316)',
+            borderRadius: '50%',
+            animation: 'spin 1.5s linear infinite',
+          }}
+        />
+
+        {/* Inner Small Circles (Hotel, Resort, Villa emojis) */}
+        <div
+          style={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            display: 'flex',
+            gap: '8px',
+          }}
+        >
+          <div
+            style={{
+              width: 24,
+              height: 24,
+              borderRadius: '50%',
+              background: 'var(--bg-secondary, #f8fafc)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '0.8rem',
+              animation: 'bounce 1s infinite alternate',
+            }}
+          >
+            🏨
+          </div>
+          <div
+            style={{
+              width: 24,
+              height: 24,
+              borderRadius: '50%',
+              background: 'var(--bg-secondary, #f8fafc)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '0.8rem',
+              animation: 'bounce 1s infinite alternate 0.2s',
+            }}
+          >
+            🌴
+          </div>
+          <div
+            style={{
+              width: 24,
+              height: 24,
+              borderRadius: '50%',
+              background: 'var(--bg-secondary, #f8fafc)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '0.8rem',
+              animation: 'bounce 1s infinite alternate 0.4s',
+            }}
+          >
+            🏡
+          </div>
+        </div>
+      </div>
+
+      <style jsx>{`
+        @keyframes spin {
+          0% {
+            transform: rotate(0deg);
+          }
+          100% {
+            transform: rotate(360deg);
+          }
+        }
+        @keyframes bounce {
+          0% {
+            transform: translateY(0);
+          }
+          100% {
+            transform: translateY(-10px);
+          }
+        }
+      `}</style>
     </div>
   );
 }

@@ -1111,7 +1111,7 @@ export default function HotelDetailPage() {
             minHeight: "60vh",
           }}
         >
-          <BrandLoader size={72} message="Loading hotel details..." />
+          <div className="spinner" style={{ width: 48, height: 48 }} />
         </div>
       </div>
     );

@@ -897,7 +897,13 @@ function HotelSearch() {
 
 export default function HotelsPage() {
   return (
-    <Suspense fallback={<BrandLoader fullScreen size={76} message="Searching verified hotels..." />}>
+    <Suspense
+      fallback={
+        <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div className="spinner" style={{ width: 40, height: 40 }} />
+        </div>
+      }
+    >
       <HotelSearch />
     </Suspense>
   );

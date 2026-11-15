@@ -1,0 +1,20 @@
+User-agent: *
+Allow: /
+Allow: /favicon.ico
+Allow: /icon*.png
+Allow: /apple-icon*.png
+Allow: /manifest.json
+
+User-agent: Googlebot
+Allow: /
+Allow: /favicon.ico
+Allow: /icon*.png
+
+User-agent: Googlebot-Image
+Allow: /
+Allow: /*.ico
+Allow: /*.png
+Allow: /*.jpg
+Allow: /*.webp
+
+Sitemap: https://www.staybuddy.in/sitemap.xml

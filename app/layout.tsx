@@ -19,12 +19,15 @@ export const metadata: Metadata = {
   keywords: 'hotel booking, OTA, travel, accommodation, StayBuddy',
   icons: {
     icon: [
-      { url: '/favicon.ico', sizes: '48x48', type: 'image/x-icon' },
-      { url: '/icon.png', sizes: '192x192', type: 'image/png' },
+      { url: '/favicon.ico?v=3', sizes: '48x48', type: 'image/x-icon' },
+      { url: '/icon-48.png?v=3', sizes: '48x48', type: 'image/png' },
+      { url: '/icon-96.png?v=3', sizes: '96x96', type: 'image/png' },
+      { url: '/icon-192.png?v=3', sizes: '192x192', type: 'image/png' },
+      { url: '/icon-512.png?v=3', sizes: '512x512', type: 'image/png' },
     ],
-    shortcut: '/favicon.ico',
+    shortcut: '/favicon.ico?v=3',
     apple: [
-      { url: '/apple-icon.png', sizes: '180x180', type: 'image/png' },
+      { url: '/apple-icon.png?v=3', sizes: '180x180', type: 'image/png' },
     ],
   },
   manifest: '/manifest.json',
@@ -40,9 +43,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <head>
-        <link rel="icon" href="/favicon.ico" sizes="48x48" />
-        <link rel="icon" type="image/png" sizes="192x192" href="/icon.png" />
-        <link rel="apple-touch-icon" sizes="180x180" href="/apple-icon.png" />
+        <link rel="icon" href="/favicon.ico?v=3" sizes="48x48" />
+        <link rel="icon" type="image/png" sizes="48x48" href="/icon-48.png?v=3" />
+        <link rel="icon" type="image/png" sizes="96x96" href="/icon-96.png?v=3" />
+        <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png?v=3" />
+        <link rel="icon" type="image/png" sizes="512x512" href="/icon-512.png?v=3" />
+        <link rel="apple-touch-icon" sizes="180x180" href="/apple-icon.png?v=3" />
         <link rel="manifest" href="/manifest.json" />
         {/* Preload trending city destination images for instantaneous 0ms display on mobile & desktop */}
         <link rel="preload" as="image" href="/images/destinations/mumbai.jpg" />
