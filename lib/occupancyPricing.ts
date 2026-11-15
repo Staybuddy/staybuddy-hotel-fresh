@@ -41,43 +41,94 @@ export interface MultiRoomPricingResult extends BookingPricingResult {
 }
 
 /**
+ * Returns whether a room supports single occupancy (1 guest).
+ */
+export function isSingleOccupancyAvailable(room: any): boolean {
+  if (!room) return false;
+  const pSingle = Number(room.priceSingle);
+  if (!isNaN(pSingle) && pSingle > 0) return true;
+  // If priceSingle was not configured, but priceDouble is positive, single is allowed
+  const pDouble = Number(room.priceDouble);
+  if (!isNaN(pDouble) && pDouble > 0 && (room.priceSingle === undefined || room.priceSingle === '')) return true;
+  // Legacy room fallback
+  if (room.priceSingle === undefined && room.priceDouble === undefined && Number(room.price || room.clientPrice) > 0) {
+    return true;
+  }
+  return false;
+}
+
+/**
+ * Returns whether a room supports double occupancy (2 guests).
+ * STRICT: If partner only configured single or triple price, and priceDouble is 0/empty,
+ * double occupancy CANNOT be booked.
+ */
+export function isDoubleOccupancyAvailable(room: any): boolean {
+  if (!room) return false;
+  const pDouble = Number(room.priceDouble);
+  if (!isNaN(pDouble) && pDouble > 0) return true;
+  // If partner explicitly provided priceSingle or priceTriple, but left priceDouble empty/0 -> NOT ALLOWED!
+  const hasExplicitSingle = room.priceSingle !== undefined && room.priceSingle !== '' && Number(room.priceSingle) > 0;
+  const hasExplicitTriple = room.priceTriple !== undefined && room.priceTriple !== '' && Number(room.priceTriple) > 0;
+  if (hasExplicitSingle || hasExplicitTriple) {
+    return false;
+  }
+  // Legacy room fallback only when modern pricing fields were never used
+  if (room.priceDouble === undefined && room.priceSingle === undefined && Number(room.price || room.clientPrice) > 0) {
+    return true;
+  }
+  return false;
+}
+
+/**
  * Returns whether a room supports triple occupancy (3 guests).
  * Strictly requires the partner to have provided a positive priceTriple.
  */
 export function isTripleOccupancyAvailable(room: any): boolean {
   if (!room) return false;
-  const pTriple = Number(room.priceTriple) || 0;
-  return pTriple > 0;
+  const pTriple = Number(room.priceTriple);
+  return !isNaN(pTriple) && pTriple > 0;
 }
 
 /**
- * Returns the maximum guests allowed for a room.
- * - If partner configured a triple price > 0 -> 3 guests max.
- * - If partner did NOT provide a triple price -> 2 guests max (Double/Single only).
+ * Returns whether a room supports a specific occupancy count (1, 2, or 3 guests).
+ */
+export function isOccupancySupportedForRoom(room: any, occCount: number): boolean {
+  if (!room) return false;
+  if (occCount === 1) return isSingleOccupancyAvailable(room);
+  if (occCount === 2) return isDoubleOccupancyAvailable(room);
+  if (occCount === 3) return isTripleOccupancyAvailable(room);
+  return false;
+}
+
+/**
+ * Returns the maximum guests allowed for a room based on partner's active occupancy rates.
+ * - If partner configured priceTriple > 0 -> 3 guests max.
+ * - If partner configured priceDouble > 0 -> 2 guests max.
+ * - If partner ONLY configured priceSingle > 0 -> 1 guest max (Single occupancy only).
  */
 export function getRoomMaxOccupancy(room: any): number {
   if (!room) return 2;
-  return isTripleOccupancyAvailable(room) ? 3 : 2;
+  if (isTripleOccupancyAvailable(room)) return 3;
+  if (isDoubleOccupancyAvailable(room)) return 2;
+  if (isSingleOccupancyAvailable(room)) return 1;
+  return 2;
 }
 
 /**
  * Applies the hotel's configured admin margin percentage (e.g. 15%)
  * on top of the partner's B2B prices for single, double, and triple occupancy respectively.
+ * Preserves exact zeroes/empty states so occupancies not priced by partner remain disabled.
  */
 export function applyMarginToRoom(room: any, marginPercentage: number = 0) {
   if (!room) return room;
   const margin = Number(marginPercentage) || 0;
 
-  // Partner B2B base rates (preserve if already set)
-  let rawSingle = Number(room.b2bPriceSingle !== undefined ? room.b2bPriceSingle : room.priceSingle) || 0;
-  const rawDouble = Number(room.b2bPriceDouble !== undefined ? room.b2bPriceDouble : (room.priceDouble || room.priceSingle)) || 0;
+  // Partner B2B base rates (strictly preserve what was configured)
+  const rawSingle = Number(room.b2bPriceSingle !== undefined ? room.b2bPriceSingle : room.priceSingle) || 0;
+  const rawDouble = Number(room.b2bPriceDouble !== undefined ? room.b2bPriceDouble : room.priceDouble) || 0;
   const rawTriple = Number(room.b2bPriceTriple !== undefined ? room.b2bPriceTriple : room.priceTriple) || 0;
-  const rawFallback = Number(room.b2bPrice !== undefined ? room.b2bPrice : (room.price || room.clientPrice)) || 0;
-
-  // Safeguard: If single occupancy rate wasn't explicitly entered, inherit from b2bPrice or double price safely
-  if (rawSingle <= 0) {
-    rawSingle = Number(room.b2bPrice) || (rawDouble > 0 ? Math.round(rawDouble * 0.9) : rawFallback);
-  }
+  const isLegacy = rawSingle === 0 && rawDouble === 0 && rawTriple === 0;
+  const rawFallback = isLegacy ? (Number(room.b2bPrice !== undefined ? room.b2bPrice : (room.price || room.clientPrice)) || 0) : 0;
 
   if (margin <= 0) {
     return {
@@ -89,8 +140,8 @@ export function applyMarginToRoom(room: any, marginPercentage: number = 0) {
       priceSingle: rawSingle,
       priceDouble: rawDouble,
       priceTriple: rawTriple,
-      price: rawDouble || rawSingle || rawFallback,
-      clientPrice: rawDouble || rawSingle || rawFallback,
+      price: rawDouble || rawSingle || rawTriple || rawFallback,
+      clientPrice: rawDouble || rawSingle || rawTriple || rawFallback,
     };
   }
 
@@ -98,7 +149,7 @@ export function applyMarginToRoom(room: any, marginPercentage: number = 0) {
   const newSingle = rawSingle > 0 ? Math.round(rawSingle * mult) : 0;
   const newDouble = rawDouble > 0 ? Math.round(rawDouble * mult) : 0;
   const newTriple = rawTriple > 0 ? Math.round(rawTriple * mult) : 0;
-  const newFallback = rawFallback > 0 ? Math.round(rawFallback * mult) : (newDouble || newSingle);
+  const newFallback = rawFallback > 0 ? Math.round(rawFallback * mult) : (newDouble || newSingle || newTriple);
 
   return {
     ...room,
@@ -109,35 +160,36 @@ export function applyMarginToRoom(room: any, marginPercentage: number = 0) {
     priceSingle: newSingle,
     priceDouble: newDouble,
     priceTriple: newTriple,
-    price: newDouble || newSingle || newFallback,
-    clientPrice: newDouble || newSingle || newFallback,
+    price: newDouble || newSingle || newTriple || newFallback,
+    clientPrice: newDouble || newSingle || newTriple || newFallback,
   };
 }
 
 /**
  * Returns the unit price for a given room for a specific occupancy (1, 2, or 3 adults).
- * If 3-occupancy is requested but partner has NOT provided priceTriple, returns 0.
+ * If the occupancy is NOT supported (e.g. 2 guests when only single price was entered, or 3 guests when triple was not entered), returns 0.
  */
 export function getRoomPriceForOccupancy(room: any, occCount: number): number {
   if (!room) return 0;
+  if (!isOccupancySupportedForRoom(room, occCount)) {
+    return 0;
+  }
+
   const pSingle = Number(room.priceSingle) || 0;
   const pDouble = Number(room.priceDouble) || 0;
   const pTriple = Number(room.priceTriple) || 0;
-  const fallback = Number(room.price) || Number(room.clientPrice) || 0;
+  const legacyPrice = Number(room.price) || Number(room.clientPrice) || 0;
 
   if (occCount === 1) {
-    return pSingle || pDouble || fallback || 0;
+    return pSingle || pDouble || legacyPrice || 0;
   }
   if (occCount === 2) {
-    return pDouble || pSingle || fallback || 0;
+    return pDouble || legacyPrice || 0;
   }
   if (occCount === 3) {
-    // Strictly requires partner to have provided priceTriple
-    if (pTriple > 0) return pTriple;
-    // NOT AVAILABLE - partner did not configure 3-occupancy!
-    return 0;
+    return pTriple;
   }
-  return fallback || 0;
+  return 0;
 }
 
 /**
@@ -154,6 +206,15 @@ export function validateRoomOccupancy(
   const totalMaxCapacity = safeRooms * maxPerRoom;
 
   if (safeAdults > totalMaxCapacity) {
+    if (maxPerRoom === 1) {
+      return {
+        allowed: false,
+        maxCapacity: totalMaxCapacity,
+        errorMessage: safeRooms === 1
+          ? 'This room only accommodates 1 guest (Single occupancy only). Double and Triple occupancies are not offered by the hotel.'
+          : `These ${safeRooms} rooms only accommodate up to ${totalMaxCapacity} guest${totalMaxCapacity > 1 ? 's' : ''} (Single occupancy only). Please add more rooms.`,
+      };
+    }
     if (maxPerRoom === 2) {
       return {
         allowed: false,
@@ -170,15 +231,32 @@ export function validateRoomOccupancy(
     };
   }
 
-  // Check distribution to ensure no individual room exceeds its maxPerRoom
+  // Check distribution to ensure each individual room's occupancy is supported
   const distributions = distributeAdultsAcrossRooms(safeAdults, safeRooms);
-  const hasTriple = distributions.some((occ) => occ > 2);
-  if (hasTriple && maxPerRoom < 3) {
-    return {
-      allowed: false,
-      maxCapacity: totalMaxCapacity,
-      errorMessage: 'This room category does not offer 3-occupancy. Maximum 2 guests allowed per room.',
-    };
+  for (const occ of distributions) {
+    if (!isOccupancySupportedForRoom(room, occ)) {
+      if (occ === 3) {
+        return {
+          allowed: false,
+          maxCapacity: totalMaxCapacity,
+          errorMessage: 'This room category does not offer 3-occupancy (No triple price configured). Maximum 2 guests allowed per room.',
+        };
+      }
+      if (occ === 2) {
+        return {
+          allowed: false,
+          maxCapacity: totalMaxCapacity,
+          errorMessage: 'This room category does not offer Double occupancy (No double price configured). Only single occupancy is available.',
+        };
+      }
+      if (occ === 1) {
+        return {
+          allowed: false,
+          maxCapacity: totalMaxCapacity,
+          errorMessage: 'This room category does not offer Single occupancy.',
+        };
+      }
+    }
   }
 
   return { allowed: true, maxCapacity: totalMaxCapacity };
@@ -217,6 +295,28 @@ export function validateMultiRoomOccupancy(
     };
   }
 
+  const distributions = distributeAdultsAcrossRooms(safeAdults, roomInstances.length);
+  for (let idx = 0; idx < distributions.length; idx++) {
+    const occ = distributions[idx];
+    const r = roomInstances[idx];
+    if (!isOccupancySupportedForRoom(r, occ)) {
+      if (occ === 3) {
+        return {
+          allowed: false,
+          maxCapacity: totalCapacity,
+          errorMessage: `${r?.type || 'A selected room'} does not offer 3-occupancy (No triple price configured).`,
+        };
+      }
+      if (occ === 2) {
+        return {
+          allowed: false,
+          maxCapacity: totalCapacity,
+          errorMessage: `${r?.type || 'A selected room'} does not offer Double occupancy (No double price configured).`,
+        };
+      }
+    }
+  }
+
   return { allowed: true, maxCapacity: totalCapacity };
 }
 
@@ -228,31 +328,29 @@ export function validateMultiRoomOccupancy(
  * 3. Any remaining extra adults beyond all double rooms are distributed 1 per room up to Triple occupancy (3 adults per room).
  */
 export function distributeAdultsAcrossRooms(totalAdults: number, totalRooms: number): number[] {
-  const roomsCount = Math.max(1, totalRooms || 1);
-  const adultsCount = Math.max(1, totalAdults || 1);
+  const rooms = Math.max(1, totalRooms || 1);
+  const adults = Math.max(1, totalAdults || 1);
 
-  // Phase 1: Give 1 adult to each room (minimum single occupancy)
-  const distributions: number[] = new Array(roomsCount).fill(1);
-  let rem = Math.max(0, adultsCount - roomsCount);
+  const dist = new Array(rooms).fill(1);
+  let extra = adults - rooms;
 
-  // Phase 2: Prioritize standard Double occupancy first (bring each room up to 2 adults)
-  for (let i = 0; i < roomsCount && rem > 0; i++) {
-    distributions[i] += 1;
-    rem -= 1;
+  for (let i = 0; i < rooms && extra > 0; i++) {
+    dist[i] += 1;
+    extra -= 1;
   }
 
-  // Phase 3: If additional adults remain beyond all double rooms, add Triple occupancy (up to 3 adults)
-  for (let i = 0; i < roomsCount && rem > 0; i++) {
-    distributions[i] += 1;
-    rem -= 1;
+  for (let i = 0; i < rooms && extra > 0; i++) {
+    if (dist[i] < MAX_ADULTS_PER_ROOM) {
+      dist[i] += 1;
+      extra -= 1;
+    }
   }
 
-  return distributions;
+  return dist;
 }
 
 /**
- * Calculates total booking pricing for multiple rooms, occupancy distributions, and nights.
- * Enforces strict validation if 3-occupancy is not provided by the partner.
+ * Calculates complete pricing breakdown for a single selected room type with quantity.
  */
 export function calculateBookingPricing(
   room: any,
@@ -260,12 +358,12 @@ export function calculateBookingPricing(
   roomsCount: number,
   nights: number
 ): BookingPricingResult {
-  const safeRooms = Math.max(1, roomsCount || 1);
   const safeAdults = Math.max(1, adults || 1);
+  const safeRooms = Math.max(1, roomsCount || 1);
   const safeNights = Math.max(1, nights || 1);
 
-  const maxPerRoom = getRoomMaxOccupancy(room);
-  const totalMaxCapacity = safeRooms * maxPerRoom;
+  const maxOccupancyPerRoom = getRoomMaxOccupancy(room);
+  const totalMaxCapacity = safeRooms * maxOccupancyPerRoom;
   const validation = validateRoomOccupancy(room, safeAdults, safeRooms);
 
   if (!room) {
@@ -331,6 +429,10 @@ export function calculateBookingPricing(
     ? validation.errorMessage
     : hasMissingPrice && tripleCount > 0
     ? 'This room does not offer 3-occupancy (No triple price configured by hotel). Max 2 guests allowed per room.'
+    : hasMissingPrice && doubleCount > 0
+    ? 'This room does not offer Double occupancy (No double price configured by hotel). Only single occupancy is available.'
+    : hasMissingPrice
+    ? 'Price not configured for requested occupancy.'
     : undefined;
 
   const priceAfterDiscount = basePricePerNight * safeNights;
@@ -351,11 +453,19 @@ export function calculateBookingPricing(
   }
   if (doubleCount > 0) {
     const pDouble = getRoomPriceForOccupancy(room, 2);
-    summaryParts.push(`${doubleCount} Double (${doubleCount * 2} Adults @ ₹${pDouble.toLocaleString()})`);
+    summaryParts.push(
+      pDouble > 0
+        ? `${doubleCount} Double (${doubleCount * 2} Adults @ ₹${pDouble.toLocaleString()})`
+        : `${doubleCount} Double (Not Available)`
+    );
   }
   if (singleCount > 0) {
     const pSingle = getRoomPriceForOccupancy(room, 1);
-    summaryParts.push(`${singleCount} Single (${singleCount * 1} Adult${singleCount > 1 ? 's' : ''} @ ₹${pSingle.toLocaleString()})`);
+    summaryParts.push(
+      pSingle > 0
+        ? `${singleCount} Single (${singleCount * 1} Adult${singleCount > 1 ? 's' : ''} @ ₹${pSingle.toLocaleString()})`
+        : `${singleCount} Single (Not Available)`
+    );
   }
 
   return {
@@ -402,6 +512,7 @@ export function calculateMultiRoomPricing(
   });
 
   const totalRooms = roomInstances.length;
+
   if (totalRooms === 0) {
     return {
       distributions: [1],
@@ -442,8 +553,7 @@ export function calculateMultiRoomPricing(
 
   distributions.forEach((occ, idx) => {
     const r = roomInstances[idx];
-    const maxForThisRoom = getRoomMaxOccupancy(r);
-    if (occ > maxForThisRoom) {
+    if (!isOccupancySupportedForRoom(r, occ)) {
       exceedsIndividualRoom = true;
     }
 
@@ -468,7 +578,7 @@ export function calculateMultiRoomPricing(
     roomBreakdowns.push({
       roomIndex: idx + 1,
       roomId: r?._id,
-      roomType: r?.type || `Room ${idx + 1}`,
+      roomType: r?.type || 'Room',
       occupancy: occType,
       adults: occ,
       pricePerNight: price,
@@ -480,7 +590,7 @@ export function calculateMultiRoomPricing(
     safeAdults > totalMaxCapacity
       ? `Selected ${totalRooms} room(s) can accommodate at most ${totalMaxCapacity} guests. Please select additional rooms.`
       : exceedsIndividualRoom || hasMissingPrice
-      ? 'One or more selected rooms do not offer 3-occupancy (No triple price configured). Please select rooms that accommodate 3 guests, or add more rooms.'
+      ? 'One or more selected rooms cannot accommodate the assigned guests (Rate not configured by hotel for this occupancy). Please check room limits or add more rooms.'
       : undefined;
 
   const priceAfterDiscount = basePricePerNight * safeNights;
@@ -511,20 +621,16 @@ export function calculateMultiRoomPricing(
     });
   } else {
     if (tripleCount > 0) {
-      const pTriple = getRoomPriceForOccupancy(roomInstances[0], 3);
-      summaryParts.push(
-        pTriple > 0
-          ? `${tripleCount} Triple (${tripleCount * 3} Adults @ ₹${pTriple.toLocaleString()})`
-          : `${tripleCount} Triple (Not Available)`
-      );
+      const p = getRoomPriceForOccupancy(roomInstances[0], 3);
+      summaryParts.push(p > 0 ? `${tripleCount} Triple @ ₹${p.toLocaleString()}` : `${tripleCount} Triple (Not Available)`);
     }
     if (doubleCount > 0) {
-      const pDouble = getRoomPriceForOccupancy(roomInstances[0], 2);
-      summaryParts.push(`${doubleCount} Double (${doubleCount * 2} Adults @ ₹${pDouble.toLocaleString()})`);
+      const p = getRoomPriceForOccupancy(roomInstances[0], 2);
+      summaryParts.push(p > 0 ? `${doubleCount} Double @ ₹${p.toLocaleString()}` : `${doubleCount} Double (Not Available)`);
     }
     if (singleCount > 0) {
-      const pSingle = getRoomPriceForOccupancy(roomInstances[0], 1);
-      summaryParts.push(`${singleCount} Single (${singleCount * 1} Adult${singleCount > 1 ? 's' : ''} @ ₹${pSingle.toLocaleString()})`);
+      const p = getRoomPriceForOccupancy(roomInstances[0], 1);
+      summaryParts.push(p > 0 ? `${singleCount} Single @ ₹${p.toLocaleString()}` : `${singleCount} Single (Not Available)`);
     }
   }
 
@@ -551,40 +657,35 @@ export function calculateMultiRoomPricing(
 }
 
 /**
- * Validates and adjusts room and adult counts ensuring max 3 adults per room constraint.
- * Also ensures that there is at least 1 adult member per room (rooms <= adults <= rooms * 3).
+ * Adjusts requested rooms & adults safely within limits.
  */
 export function adjustRoomsAndAdults(
-  currentRooms: number,
   currentAdults: number,
-  fieldChanged: 'rooms' | 'adults',
-  newValue: number
-): { rooms: number; adults: number } {
-  let r = Math.max(1, currentRooms);
-  let a = Math.max(1, currentAdults);
+  currentRooms: number,
+  action: 'adults_inc' | 'adults_dec' | 'rooms_inc' | 'rooms_dec'
+): { adults: number; rooms: number } {
+  let adults = Math.max(1, currentAdults);
+  let rooms = Math.max(1, currentRooms);
 
-  if (fieldChanged === 'rooms') {
-    r = Math.max(1, newValue);
-    // If rooms decreased, cap adults at r * MAX_ADULTS_PER_ROOM
-    if (a > r * MAX_ADULTS_PER_ROOM) {
-      a = r * MAX_ADULTS_PER_ROOM;
+  if (action === 'adults_inc') {
+    adults += 1;
+    const minRoomsNeeded = Math.ceil(adults / MAX_ADULTS_PER_ROOM);
+    if (rooms < minRoomsNeeded) rooms = minRoomsNeeded;
+  } else if (action === 'adults_dec') {
+    if (adults > 1) {
+      adults -= 1;
+      if (rooms > adults) rooms = adults;
     }
-    // Each room requires at least 1 adult member
-    if (a < r) {
-      a = r;
-    }
-  } else if (fieldChanged === 'adults') {
-    a = Math.max(1, newValue);
-    // If adults increased, ensure at least Math.ceil(a / MAX_ADULTS_PER_ROOM) rooms
-    const minRequiredRooms = Math.ceil(a / MAX_ADULTS_PER_ROOM);
-    if (r < minRequiredRooms) {
-      r = minRequiredRooms;
-    }
-    // Cannot have more rooms than adults (at least 1 adult per room)
-    if (r > a) {
-      r = a;
+  } else if (action === 'rooms_inc') {
+    rooms += 1;
+    if (adults < rooms) adults = rooms;
+  } else if (action === 'rooms_dec') {
+    if (rooms > 1) {
+      rooms -= 1;
+      const maxCap = rooms * MAX_ADULTS_PER_ROOM;
+      if (adults > maxCap) adults = maxCap;
     }
   }
 
-  return { rooms: r, adults: a };
+  return { adults, rooms };
 }

@@ -2337,6 +2337,8 @@ export default function PartnerDashboard() {
 
                           <div>
                             {(() => {
+                              const hasSingle = Number(room.priceSingle) > 0;
+                              const hasDouble = Number(room.priceDouble) > 0;
                               const isTripleActive = (room as any).hasTriple !== undefined 
                                 ? Boolean((room as any).hasTriple) 
                                 : Boolean(room.priceTriple && Number(room.priceTriple) > 0);
@@ -2349,15 +2351,31 @@ export default function PartnerDashboard() {
                                     </h4>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
                                       <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#64748b' }}>Allowed Occupancy:</span>
-                                      <span style={{ background: '#f1f5f9', color: '#0f172a', padding: '2px 8px', borderRadius: 10, fontSize: '0.72rem', fontWeight: 600 }}>1 Guest (Single)</span>
-                                      <span style={{ background: '#f1f5f9', color: '#0f172a', padding: '2px 8px', borderRadius: 10, fontSize: '0.72rem', fontWeight: 600 }}>2 Guests (Double)</span>
+                                      {hasSingle ? (
+                                        <span style={{ background: '#ecfdf5', color: '#059669', border: '1px solid #a7f3d0', padding: '2px 8px', borderRadius: 10, fontSize: '0.72rem', fontWeight: 700 }}>
+                                          ✓ 1 Guest (Single)
+                                        </span>
+                                      ) : (
+                                        <span style={{ background: '#f1f5f9', color: '#94a3b8', padding: '2px 8px', borderRadius: 10, fontSize: '0.72rem', fontWeight: 600 }}>
+                                          1 Guest
+                                        </span>
+                                      )}
+                                      {hasDouble ? (
+                                        <span style={{ background: '#ecfdf5', color: '#059669', border: '1px solid #a7f3d0', padding: '2px 8px', borderRadius: 10, fontSize: '0.72rem', fontWeight: 700 }}>
+                                          ✓ 2 Guests (Double)
+                                        </span>
+                                      ) : (
+                                        <span style={{ background: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca', padding: '2px 8px', borderRadius: 10, fontSize: '0.72rem', fontWeight: 700 }} title="Double price not entered. Guests cannot book double occupancy in this room.">
+                                          ✕ Double Not Added (No 2-Occupancy)
+                                        </span>
+                                      )}
                                       {isTripleActive ? (
                                         <span style={{ background: '#ecfdf5', color: '#059669', border: '1px solid #a7f3d0', padding: '2px 8px', borderRadius: 10, fontSize: '0.72rem', fontWeight: 700 }}>
                                           ✓ 3 Guests (Triple Active)
                                         </span>
                                       ) : (
                                         <span style={{ background: '#fef2f2', color: '#991b1b', border: '1px solid #fecaca', padding: '2px 8px', borderRadius: 10, fontSize: '0.72rem', fontWeight: 700 }} title="Guests cannot book 3 adults for this room">
-                                          ✕ 3-Occupancy Not Added (Max 2 Guests)
+                                          ✕ 3-Occupancy Not Added (Max {hasDouble ? 2 : 1} Guests)
                                         </span>
                                       )}
                                     </div>
@@ -2377,13 +2395,16 @@ export default function PartnerDashboard() {
 
                                     <div className="form-group">
                                       <div className="pricing-header-row">
-                                        <label className="form-label">Double Price (₹)<span className="required">*</span></label>
+                                        <label className="form-label">Double Price (₹)</label>
                                       </div>
                                       <input className="form-input" type="number" min="0" placeholder="e.g. 2000" value={room.priceDouble} onChange={e => {
                                         const newRooms = [...hotelForm.rooms];
+                                        const numDbl = Number(e.target.value) || 0;
                                         newRooms[index].priceDouble = e.target.value;
+                                        const numTrp = Number(newRooms[index].priceTriple) || 0;
+                                        newRooms[index].maxGuests = numTrp > 0 ? 3 : (numDbl > 0 ? 2 : 1);
                                         setHotelForm({ ...hotelForm, rooms: newRooms });
-                                      }} required />
+                                      }} />
                                     </div>
                                     
                                     {isTripleActive ? (
@@ -2495,10 +2516,20 @@ export default function PartnerDashboard() {
                                     </div>
                                   </div>
 
-                                  {!isTripleActive && (
+                                  {!hasDouble && !isTripleActive ? (
+                                    <div style={{ fontSize: '0.75rem', color: '#c2410c', marginTop: 6, display: 'flex', alignItems: 'center', gap: 6 }}>
+                                      <span>ℹ️</span>
+                                      <span>This room accommodates <strong>1 guest only (Single occupancy)</strong>. If guests search for 2 or 3 adults in 1 room, this room cannot be booked. Enter Double Price or click &quot;Add 3-Occupancy&quot; to allow more guests.</span>
+                                    </div>
+                                  ) : !isTripleActive ? (
                                     <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: 6, display: 'flex', alignItems: 'center', gap: 6 }}>
                                       <span>ℹ️</span>
                                       <span>This room accommodates <strong>up to 2 guests only</strong>. If guests search for 3 adults in 1 room, this room cannot be booked. Click &quot;Add 3-Occupancy&quot; to allow 3 guests.</span>
+                                    </div>
+                                  ) : (
+                                    <div style={{ fontSize: '0.75rem', color: '#059669', marginTop: 6, display: 'flex', alignItems: 'center', gap: 6 }}>
+                                      <span>✓</span>
+                                      <span>This room accommodates <strong>up to 3 guests</strong> (Single, Double &amp; Triple occupancies are all active).</span>
                                     </div>
                                   )}
                                 </>
@@ -4028,6 +4059,40 @@ export default function PartnerDashboard() {
                             </button>
                           </div>
 
+                          {/* Pricing & Allowed Occupancy Summary Badge */}
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8, flexWrap: 'wrap', gap: 6 }}>
+                            <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#64748b' }}>Allowed Occupancy:</span>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                              {Number(room.priceSingle) > 0 ? (
+                                <span style={{ background: '#ecfdf5', color: '#059669', border: '1px solid #a7f3d0', padding: '2px 8px', borderRadius: 10, fontSize: '0.7rem', fontWeight: 700 }}>
+                                  ✓ 1 Guest (Single)
+                                </span>
+                              ) : (
+                                <span style={{ background: '#f1f5f9', color: '#94a3b8', padding: '2px 8px', borderRadius: 10, fontSize: '0.7rem', fontWeight: 600 }}>
+                                  1 Guest
+                                </span>
+                              )}
+                              {Number(room.priceDouble) > 0 ? (
+                                <span style={{ background: '#ecfdf5', color: '#059669', border: '1px solid #a7f3d0', padding: '2px 8px', borderRadius: 10, fontSize: '0.7rem', fontWeight: 700 }}>
+                                  ✓ 2 Guests (Double)
+                                </span>
+                              ) : (
+                                <span style={{ background: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca', padding: '2px 8px', borderRadius: 10, fontSize: '0.7rem', fontWeight: 700 }} title="Double price not entered. Guests cannot book double occupancy in this room.">
+                                  ✕ Double Not Added (No 2-Occupancy)
+                                </span>
+                              )}
+                              {Number(room.priceTriple) > 0 ? (
+                                <span style={{ background: '#ecfdf5', color: '#059669', border: '1px solid #a7f3d0', padding: '2px 8px', borderRadius: 10, fontSize: '0.7rem', fontWeight: 700 }}>
+                                  ✓ 3 Guests (Triple Active)
+                                </span>
+                              ) : (
+                                <span style={{ background: '#fef2f2', color: '#991b1b', border: '1px solid #fecaca', padding: '2px 8px', borderRadius: 10, fontSize: '0.7rem', fontWeight: 700 }} title="Guests cannot book 3 adults for this room">
+                                  ✕ 3-Occupancy Not Added (Max {Number(room.priceDouble) > 0 ? 2 : 1} Guests)
+                                </span>
+                              )}
+                            </div>
+                          </div>
+
                           {/* 5-Column Pricing & Rate Plan Row (Matching Photo 1) */}
                           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(135px, 1fr))', gap: 12, marginBottom: 14 }}>
                             <div>
@@ -4053,11 +4118,13 @@ export default function PartnerDashboard() {
                                 value={room.priceDouble || ''} 
                                 onChange={e => {
                                   const updatedRooms = [...extranetModal.rooms];
-                                  updatedRooms[rIdx].priceDouble = Number(e.target.value) || 0;
+                                  const valDbl = Number(e.target.value) || 0;
+                                  updatedRooms[rIdx].priceDouble = valDbl;
+                                  const numTrp = Number(updatedRooms[rIdx].priceTriple) || 0;
+                                  updatedRooms[rIdx].maxGuests = numTrp > 0 ? 3 : (valDbl > 0 ? 2 : 1);
                                   setExtranetModal({...extranetModal, rooms: updatedRooms});
                                 }} 
                                 style={{ width: '100%', padding: '9px 12px', borderRadius: 8, border: '1.5px solid #bbf7d0', background: '#f0fdf4', fontSize: '0.9rem', fontWeight: 700 }} 
-                                required 
                               />
                             </div>
                             <div>
@@ -4072,7 +4139,8 @@ export default function PartnerDashboard() {
                                   const updatedRooms = [...extranetModal.rooms];
                                   const numTrp = Number(e.target.value) || 0;
                                   updatedRooms[rIdx].priceTriple = numTrp;
-                                  updatedRooms[rIdx].maxGuests = numTrp > 0 ? 3 : 2;
+                                  const valDbl = Number(updatedRooms[rIdx].priceDouble) || 0;
+                                  updatedRooms[rIdx].maxGuests = numTrp > 0 ? 3 : (valDbl > 0 ? 2 : 1);
                                   setExtranetModal({...extranetModal, rooms: updatedRooms});
                                 }} 
                                 style={{ width: '100%', padding: '9px 12px', borderRadius: 8, border: room.priceTriple ? '1.5px solid #bfdbfe' : '1.5px dashed #fdba74', background: room.priceTriple ? '#eff6ff' : 'white', fontSize: '0.9rem', fontWeight: 700, color: '#1e40af' }} 

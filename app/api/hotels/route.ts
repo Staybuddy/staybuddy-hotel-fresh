@@ -219,18 +219,17 @@ export async function GET(request: NextRequest) {
         const fallback = Number(r.priceDouble) || Number(r.priceSingle) || Number(r.price) || Number(r.clientPrice) || 0;
         if (fallback > 0) fallbackPrices.push(fallback);
       });
-      // CRITICAL: If triple occupancy (3 guests) is requested, DO NOT randomly fallback to double/single rates
-      // Only show starting price if partner explicitly added triple occupancy in the extranet!
-      if (occPerRoom !== 3) {
-        if (validPrices.length === 0 && fallbackPrices.length > 0) {
-          validPrices.push(...fallbackPrices);
-        }
-        if (hotel.basePrice && Number(hotel.basePrice) > 0) {
+      // CRITICAL: Only show starting price if rooms support the requested occupancy (single/double/triple)!
+      // If partner has not added a rate for the requested occupancy, do NOT fall back to other occupancies.
+      if (validPrices.length === 0) {
+        const hasAnyOccupancyPricing = rooms.some((r: any) => 
+          Number(r.priceSingle) > 0 || Number(r.priceDouble) > 0 || Number(r.priceTriple) > 0
+        );
+        // Only legacy properties without modern occupancy pricing may fall back to hotel basePrice for 1-2 guests
+        if (!hasAnyOccupancyPricing && occPerRoom <= 2 && hotel.basePrice && Number(hotel.basePrice) > 0) {
           const baseNum = Number(hotel.basePrice);
           const baseWithMargin = margin > 0 ? Math.round(baseNum * (1 + margin / 100)) : baseNum;
-          if (validPrices.length === 0) {
-            validPrices.push(baseWithMargin);
-          }
+          validPrices.push(baseWithMargin);
         }
       }
       const startingPrice = validPrices.length > 0 ? Math.min(...validPrices) : 0;

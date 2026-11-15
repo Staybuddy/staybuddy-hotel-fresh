@@ -7,12 +7,16 @@ import { useSession, signIn } from "next-auth/react";
 import Navbar from "@/components/Navbar";
 import DateRangePicker from "@/components/DateRangePicker";
 import Image from "next/image";
-import BrandLoader from "@/components/BrandLoader";
 import {
   calculateBookingPricing,
   calculateMultiRoomPricing,
   adjustRoomsAndAdults,
   getRoomPriceForOccupancy,
+  isOccupancySupportedForRoom,
+  isSingleOccupancyAvailable,
+  isDoubleOccupancyAvailable,
+  isTripleOccupancyAvailable,
+  getRoomMaxOccupancy,
   MAX_ADULTS_PER_ROOM,
 } from "@/lib/occupancyPricing";
 import { getTransitDistancesForHotel, TransitItem } from "@/lib/transitHubs";
@@ -107,18 +111,20 @@ export default function HotelDetailPage() {
   const [couponError, setCouponError] = useState<string>("");
   const [couponSuccess, setCouponSuccess] = useState<string>("");
 
-  // Smart Triple Occupancy notification toast
+  // Smart Occupancy notification toast
   const [tripleToast, setTripleToast] = useState<{
     show: boolean;
     roomName: string;
     message?: string;
+    occupancyType?: 'single' | 'double' | 'triple';
   } | null>(null);
 
-  const showTripleNotification = (roomName?: string, customMsg?: string) => {
+  const showTripleNotification = (roomName?: string, customMsg?: string, occType: 'single' | 'double' | 'triple' = 'triple') => {
     setTripleToast({
       show: true,
       roomName: roomName || selectedRoom?.type || "This room",
       message: customMsg,
+      occupancyType: occType,
     });
   };
 
@@ -131,6 +137,13 @@ export default function HotelDetailPage() {
     setOccupancy("double");
     setBookingData((prev) => ({ ...prev, adults: 2 }));
     updateUrlParams({ adults: 2 });
+  };
+
+  const switchToSingleOccupancy = () => {
+    setTripleToast(null);
+    setOccupancy("single");
+    setBookingData((prev) => ({ ...prev, adults: 1 }));
+    updateUrlParams({ adults: 1 });
   };
 
   useEffect(() => {
@@ -527,8 +540,9 @@ export default function HotelDetailPage() {
 
   const handleAddRoom = (room: any) => {
     if (!room) return;
-    if (bookingData.rooms === 1 && bookingData.adults === 3 && !(Number(room.priceTriple) > 0)) {
-      showTripleNotification(room.type);
+    if (bookingData.rooms === 1 && !isOccupancySupportedForRoom(room, bookingData.adults)) {
+      const occType = bookingData.adults === 3 ? 'triple' : bookingData.adults === 2 ? 'double' : 'single';
+      showTripleNotification(room.type, undefined, occType);
       return;
     }
     if (bookingData.rooms === 1) {
@@ -561,8 +575,9 @@ export default function HotelDetailPage() {
 
   const handleSelectAllOfRoom = (room: any) => {
     if (!room) return;
-    if (bookingData.rooms === 1 && bookingData.adults === 3 && !(Number(room.priceTriple) > 0)) {
-      showTripleNotification(room.type);
+    if (bookingData.rooms === 1 && !isOccupancySupportedForRoom(room, bookingData.adults)) {
+      const occType = bookingData.adults === 3 ? 'triple' : bookingData.adults === 2 ? 'double' : 'single';
+      showTripleNotification(room.type, undefined, occType);
       return;
     }
     setSelectedRoomsMap({ [room._id]: bookingData.rooms });
@@ -844,9 +859,10 @@ export default function HotelDetailPage() {
       alert("No rooms are available for the selected dates. Please choose different dates.");
       return;
     }
-    // Strict Triple Occupancy Validation: If partner has not added triple occupancy, client cannot book triple room
-    if (bookingData.rooms === 1 && bookingData.adults === 3 && !(Number(targetRoom?.priceTriple) > 0)) {
-      showTripleNotification(targetRoom?.type);
+    // Strict Occupancy Validation: Client can only book occupancies configured by the partner
+    if (bookingData.rooms === 1 && !isOccupancySupportedForRoom(targetRoom, bookingData.adults)) {
+      const occType = bookingData.adults === 3 ? 'triple' : bookingData.adults === 2 ? 'double' : 'single';
+      showTripleNotification(targetRoom?.type, undefined, occType);
       const roomSection = document.getElementById("rooms-section");
       if (roomSection) roomSection.scrollIntoView({ behavior: "smooth" });
       return;
@@ -1040,8 +1056,9 @@ export default function HotelDetailPage() {
       return;
     }
     const displayRoom = selectedRoomsList[0]?.room || selectedRoom;
-    if (bookingStep === 0 && bookingData.rooms === 1 && bookingData.adults === 3 && !(Number(displayRoom?.priceTriple) > 0)) {
-      showTripleNotification(displayRoom?.type);
+    if (bookingStep === 0 && bookingData.rooms === 1 && !isOccupancySupportedForRoom(displayRoom, bookingData.adults)) {
+      const occType = bookingData.adults === 3 ? 'triple' : bookingData.adults === 2 ? 'double' : 'single';
+      showTripleNotification(displayRoom?.type, undefined, occType);
       const roomsEl = document.getElementById("rooms-section");
       if (roomsEl) roomsEl.scrollIntoView({ behavior: "smooth", block: "start" });
       return;
@@ -2266,18 +2283,23 @@ export default function HotelDetailPage() {
                             >
                               <span>🛏️ {room.bedType}</span>
                               {(() => {
-                                const hasTriple = Boolean(room.priceTriple && Number(room.priceTriple) > 0);
-                                const maxCap = hasTriple ? 3 : 2;
+                                const maxCap = getRoomMaxOccupancy(room);
+                                const hasTriple = isTripleOccupancyAvailable(room);
                                 return (
                                   <span style={{ fontWeight: 600 }}>
-                                    👥 Max {maxCap} guests {hasTriple ? '(1-3 Guests)' : '(1-2 Guests Only)'}
+                                    👥 Max {maxCap} {maxCap === 1 ? 'guest (Single Only)' : hasTriple ? 'guests (1-3 Guests)' : 'guests (1-2 Guests Only)'}
                                   </span>
                                 );
                               })()}
                               {room.size && <span>📐 {room.size} m²</span>}
-                              {Boolean(bookingData.rooms === 1 && bookingData.adults === 3 && !(Number(room.priceTriple) > 0)) && (
+                              {Boolean(bookingData.rooms === 1 && bookingData.adults === 3 && !isTripleOccupancyAvailable(room)) && (
                                 <span style={{ backgroundColor: '#fee2e2', color: '#b91c1c', padding: '2px 8px', borderRadius: 4, fontWeight: 700, fontSize: '0.75rem', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                                  ⚠️ 3-Occupancy Not Available (Max 2 Guests)
+                                  ⚠️ 3-Occupancy Not Available (Max {getRoomMaxOccupancy(room)} Guests)
+                                </span>
+                              )}
+                              {Boolean(bookingData.rooms === 1 && bookingData.adults === 2 && !isDoubleOccupancyAvailable(room)) && (
+                                <span style={{ backgroundColor: '#fee2e2', color: '#b91c1c', padding: '2px 8px', borderRadius: 4, fontWeight: 700, fontSize: '0.75rem', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                                  ⚠️ Double Occupancy Not Available (1 Guest Only)
                                 </span>
                               )}
                               {room.ratePlan === 'CP' ? (
@@ -2300,7 +2322,7 @@ export default function HotelDetailPage() {
                             </div>
                           </div>
                           <div className="room-card-action" style={{ textAlign: "right", flexShrink: 0 }}>
-                            {Boolean(bookingData.rooms === 1 && bookingData.adults === 3 && !(Number(room.priceTriple) > 0)) ? (
+                            {Boolean(bookingData.rooms === 1 && !isOccupancySupportedForRoom(room, bookingData.adults)) ? (
                               <div>
                                 <div
                                   style={{
@@ -2309,7 +2331,7 @@ export default function HotelDetailPage() {
                                     color: "#dc2626",
                                   }}
                                 >
-                                  No Triple Rate
+                                  {bookingData.adults === 3 ? "No Triple Rate" : bookingData.adults === 2 ? "No Double Rate" : "Rate Unavailable"}
                                 </div>
                                 <div
                                   style={{
@@ -2318,7 +2340,11 @@ export default function HotelDetailPage() {
                                     fontWeight: 600,
                                   }}
                                 >
-                                  Max 2 Guests Only
+                                  {bookingData.adults === 3
+                                    ? `Max ${getRoomMaxOccupancy(room)} Guests Only`
+                                    : bookingData.adults === 2
+                                    ? "Single Occupancy Only"
+                                    : "Not Configured"}
                                 </div>
                               </div>
                             ) : (
@@ -2353,7 +2379,7 @@ export default function HotelDetailPage() {
 
                             {bookingData.rooms === 1 ? (
                               <>
-                                {Boolean(bookingData.adults === 3 && !(Number(room.priceTriple) > 0)) ? (
+                                {Boolean(!isOccupancySupportedForRoom(room, bookingData.adults)) ? (
                                   <button
                                     type="button"
                                     className="btn btn-sm"
@@ -2368,13 +2394,14 @@ export default function HotelDetailPage() {
                                       padding: "6px 12px",
                                       fontSize: "0.78rem",
                                     }}
-                                    title="No space for triple occupancy in this room. Click for info."
+                                    title="Requested occupancy not available in this room. Click for info."
                                     onClick={(e) => {
                                       e.stopPropagation();
-                                      showTripleNotification(room.type);
+                                      const occType = bookingData.adults === 3 ? 'triple' : bookingData.adults === 2 ? 'double' : 'single';
+                                      showTripleNotification(room.type, undefined, occType);
                                     }}
                                   >
-                                    🚫 No Space for 3 Guests
+                                    {bookingData.adults === 3 ? "🚫 No Space for 3 Guests" : bookingData.adults === 2 ? "🚫 1 Guest Max (No Double Rate)" : "🚫 Rate Unavailable"}
                                   </button>
                                 ) : (
                                   <button
@@ -3858,28 +3885,51 @@ export default function HotelDetailPage() {
                               >
                                 👤 1 Adult
                               </button>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setOccupancy("double");
-                                  setBookingData(prev => ({ ...prev, adults: 2 }));
-                                  updateUrlParams({ adults: 2 });
-                                }}
-                                style={{
-                                  padding: "2px 8px",
-                                  borderRadius: 14,
-                                  fontSize: "0.72rem",
-                                  fontWeight: 700,
-                                  cursor: "pointer",
-                                  border: bookingData.adults === 2 ? "1.5px solid #ea580c" : "1px solid #cbd5e1",
-                                  background: bookingData.adults === 2 ? "#fff7ed" : "#ffffff",
-                                  color: bookingData.adults === 2 ? "#c2410c" : "#64748b",
-                                  transition: "all 0.15s ease",
-                                }}
-                              >
-                                👥 2 Adults
-                              </button>
-                              {Number(selectedRoom?.priceTriple) > 0 ? (
+                              {isDoubleOccupancyAvailable(selectedRoom) ? (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setOccupancy("double");
+                                    setBookingData(prev => ({ ...prev, adults: 2 }));
+                                    updateUrlParams({ adults: 2 });
+                                  }}
+                                  style={{
+                                    padding: "2px 8px",
+                                    borderRadius: 14,
+                                    fontSize: "0.72rem",
+                                    fontWeight: 700,
+                                    cursor: "pointer",
+                                    border: bookingData.adults === 2 ? "1.5px solid #ea580c" : "1px solid #cbd5e1",
+                                    background: bookingData.adults === 2 ? "#fff7ed" : "#ffffff",
+                                    color: bookingData.adults === 2 ? "#c2410c" : "#64748b",
+                                    transition: "all 0.15s ease",
+                                  }}
+                                >
+                                  👥 2 Adults
+                                </button>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    showTripleNotification(selectedRoom?.type, undefined, 'double');
+                                  }}
+                                  style={{
+                                    padding: "2px 8px",
+                                    borderRadius: 14,
+                                    fontSize: "0.72rem",
+                                    fontWeight: 700,
+                                    cursor: "pointer",
+                                    border: "1px dashed #fca5a5",
+                                    background: "#fef2f2",
+                                    color: "#991b1b",
+                                    opacity: 0.85,
+                                  }}
+                                  title="Double occupancy not offered for this room"
+                                >
+                                  🚫 2 Adults (Unavailable)
+                                </button>
+                              )}
+                              {isTripleOccupancyAvailable(selectedRoom) ? (
                                 <button
                                   type="button"
                                   onClick={() => {
@@ -3905,7 +3955,7 @@ export default function HotelDetailPage() {
                                 <button
                                   type="button"
                                   onClick={() => {
-                                    showTripleNotification(selectedRoom?.type);
+                                    showTripleNotification(selectedRoom?.type, undefined, 'triple');
                                   }}
                                   style={{
                                     padding: "2px 8px",
@@ -5613,7 +5663,7 @@ export default function HotelDetailPage() {
                 >
                   Price per night {bookingData.rooms > 1 ? `(${bookingData.rooms} Rooms, ${bookingData.adults} Adults)` : ""}
                 </span>
-                {bookingData.rooms === 1 && bookingData.adults === 3 && !(Number(roomDetailsModal.priceTriple) > 0) ? (
+                {bookingData.rooms === 1 && !isOccupancySupportedForRoom(roomDetailsModal, bookingData.adults) ? (
                   <div>
                     <div
                       style={{
@@ -5622,10 +5672,14 @@ export default function HotelDetailPage() {
                         color: "#dc2626",
                       }}
                     >
-                      No Triple Rate
+                      {bookingData.adults === 3 ? "No Triple Rate" : bookingData.adults === 2 ? "No Double Rate" : "Rate Unavailable"}
                     </div>
                     <div style={{ fontSize: "0.78rem", color: "#64748b" }}>
-                      Max 2 guests allowed
+                      {bookingData.adults === 3
+                        ? `Max ${getRoomMaxOccupancy(roomDetailsModal)} guests allowed`
+                        : bookingData.adults === 2
+                        ? "Single Occupancy Only"
+                        : "Rate not configured"}
                     </div>
                   </div>
                 ) : (
@@ -5647,7 +5701,7 @@ export default function HotelDetailPage() {
                 >
                   Close
                 </button>
-                {bookingData.rooms === 1 && bookingData.adults === 3 && !(Number(roomDetailsModal.priceTriple) > 0) ? (
+                {bookingData.rooms === 1 && !isOccupancySupportedForRoom(roomDetailsModal, bookingData.adults) ? (
                   <button
                     type="button"
                     className="btn"
@@ -5659,11 +5713,12 @@ export default function HotelDetailPage() {
                     }}
                     onClick={() => {
                       const roomType = roomDetailsModal.type;
+                      const occType = bookingData.adults === 3 ? 'triple' : bookingData.adults === 2 ? 'double' : 'single';
                       setRoomDetailsModal(null);
-                      showTripleNotification(roomType);
+                      showTripleNotification(roomType, undefined, occType);
                     }}
                   >
-                    🚫 No Space for 3 Guests
+                    {bookingData.adults === 3 ? "🚫 No Space for 3 Guests" : bookingData.adults === 2 ? "🚫 1 Guest Max (No Double Rate)" : "🚫 Rate Unavailable"}
                   </button>
                 ) : (
                   <button
@@ -6178,33 +6233,62 @@ export default function HotelDetailPage() {
             </div>
             <div style={{ minWidth: 0, flex: 1 }}>
               <div style={{ fontWeight: 800, fontSize: "0.92rem", color: "#ffffff", lineHeight: 1.25 }}>
-                No space for triple occupancy in this room
+                {tripleToast.occupancyType === 'double'
+                  ? 'Double occupancy not available in this room'
+                  : tripleToast.occupancyType === 'single'
+                  ? 'Single rate not configured for this room'
+                  : 'No space for triple occupancy in this room'}
               </div>
               <div style={{ fontSize: "0.78rem", color: "#94a3b8", marginTop: 2, lineHeight: 1.35 }}>
-                {tripleToast.message || `${tripleToast.roomName} accommodates max 2 guests. Partner has not configured 3-guest occupancy for this room.`}
+                {tripleToast.message || (
+                  tripleToast.occupancyType === 'double'
+                    ? `${tripleToast.roomName} accommodates max 1 guest only. Hotel configured single occupancy only for this room.`
+                    : `${tripleToast.roomName} accommodates max 2 guests. Partner has not configured 3-guest occupancy for this room.`
+                )}
               </div>
             </div>
           </div>
 
           <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
-            <button
-              type="button"
-              onClick={switchToDoubleOccupancy}
-              style={{
-                background: "linear-gradient(135deg, #fb923c, #ea580c)",
-                color: "#ffffff",
-                border: "none",
-                padding: "8px 14px",
-                borderRadius: "10px",
-                fontSize: "0.78rem",
-                fontWeight: 800,
-                cursor: "pointer",
-                whiteSpace: "nowrap",
-                boxShadow: "0 2px 8px rgba(234, 88, 12, 0.4)",
-              }}
-            >
-              Switch to 2 Guests
-            </button>
+            {tripleToast.occupancyType === 'double' ? (
+              <button
+                type="button"
+                onClick={switchToSingleOccupancy}
+                style={{
+                  background: "linear-gradient(135deg, #fb923c, #ea580c)",
+                  color: "#ffffff",
+                  border: "none",
+                  padding: "8px 14px",
+                  borderRadius: "10px",
+                  fontSize: "0.78rem",
+                  fontWeight: 800,
+                  cursor: "pointer",
+                  whiteSpace: "nowrap",
+                  boxShadow: "0 2px 8px rgba(234, 88, 12, 0.4)",
+                }}
+              >
+                Switch to 1 Guest
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={switchToDoubleOccupancy}
+                style={{
+                  background: "linear-gradient(135deg, #fb923c, #ea580c)",
+                  color: "#ffffff",
+                  border: "none",
+                  padding: "8px 14px",
+                  borderRadius: "10px",
+                  fontSize: "0.78rem",
+                  fontWeight: 800,
+                  cursor: "pointer",
+                  whiteSpace: "nowrap",
+                  boxShadow: "0 2px 8px rgba(234, 88, 12, 0.4)",
+                }}
+              >
+                Switch to 2 Guests
+              </button>
+            )}
             <button
               type="button"
               onClick={closeTripleNotification}

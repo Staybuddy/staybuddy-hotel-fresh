@@ -361,11 +361,11 @@ export default function Logo({
   style = {},
 }: LogoProps) {
   const dimensions = {
-    xs: { icon: 20, font: '1rem', tag: '0.5rem', gap: 6 },
-    sm: { icon: 26, font: '1.25rem', tag: '0.55rem', gap: 8 },
-    md: { icon: 34, font: '1.65rem', tag: '0.62rem', gap: 10 },
-    lg: { icon: 46, font: '2.3rem', tag: '0.75rem', gap: 14 },
-    xl: { icon: 64, font: '3.2rem', tag: '0.95rem', gap: 18 },
+    xs: { icon: 22, font: '1.05rem', tag: '0.5rem', gap: 6 },
+    sm: { icon: 28, font: '1.35rem', tag: '0.55rem', gap: 8 },
+    md: { icon: 42, font: '1.95rem', tag: '0.68rem', gap: 10 },
+    lg: { icon: 50, font: '2.4rem', tag: '0.75rem', gap: 14 },
+    xl: { icon: 68, font: '3.3rem', tag: '0.95rem', gap: 18 },
   };
 
   const currentDim =

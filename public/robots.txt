@@ -18,3 +18,4 @@ Allow: /*.jpg
 Allow: /*.webp
 
 Sitemap: https://www.staybuddy.in/sitemap.xml
+
