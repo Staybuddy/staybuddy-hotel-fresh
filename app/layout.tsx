@@ -43,7 +43,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <head>
+        <link rel="preconnect" href="https://images.unsplash.com" crossOrigin="anonymous" />
+        <link rel="dns-prefetch" href="https://images.unsplash.com" />
+        <link rel="preconnect" href="https://checkout.razorpay.com" />
+        <link rel="dns-prefetch" href="https://checkout.razorpay.com" />
         <link rel="icon" href="/favicon.ico?v=3" sizes="48x48" />
+        <link rel="shortcut icon" href="/favicon.ico?v=3" />
         <link rel="icon" type="image/png" sizes="48x48" href="/icon-48.png?v=3" />
         <link rel="icon" type="image/png" sizes="96x96" href="/icon-96.png?v=3" />
         <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png?v=3" />

@@ -3,14 +3,28 @@ import { db } from '@/lib/firebaseAdmin';
 import { applyMarginToRoom, getRoomPriceForOccupancy } from '@/lib/occupancyPricing';
 import { getDateStr, isHotelBlockedForDates } from '@/lib/inventoryBlocks';
 
-export const dynamic = 'force-dynamic';
+// ISR Edge Caching: Serve instantly (10-30ms TTFB) from Vercel Edge CDN, background revalidate every 60s
+export const revalidate = 60;
+
+function withTimeout<T>(promise: Promise<T>, ms: number, fallback: T): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((resolve) => setTimeout(() => resolve(fallback), ms)),
+  ]);
+}
 
 async function getFeaturedHotels() {
   try {
-    const [hotelsSnap, blocksSnap] = await Promise.all([
+    const fetchPromise = Promise.all([
       db.collection('hotels').where('status', '==', 'approved').get(),
       db.collection('inventory_blocks').get().catch(() => ({ docs: [] as any[] })),
     ]);
+
+    const result = await withTimeout(fetchPromise, 4000, null);
+    if (!result) {
+      return [];
+    }
+    const [hotelsSnap, blocksSnap] = result;
 
     const blocksByHotelId: Record<string, any[]> = {};
     blocksSnap.docs.forEach((doc: any) => {
@@ -33,16 +47,20 @@ async function getFeaturedHotels() {
     const roomsByHotelId: Record<string, any[]> = {};
     if (hotelIds.length > 0) {
       try {
-        const roomsSnap = await db.collection('rooms')
-          .where('hotelId', 'in', hotelIds)
-          .get();
-        roomsSnap.docs.forEach((doc: any) => {
-          const r = doc.data();
-          if (r.isActive !== false && r.hotelId) {
-            if (!roomsByHotelId[r.hotelId]) roomsByHotelId[r.hotelId] = [];
-            roomsByHotelId[r.hotelId].push(r);
-          }
-        });
+        const roomsSnap = await withTimeout(
+          db.collection('rooms').where('hotelId', 'in', hotelIds).get(),
+          3000,
+          null
+        );
+        if (roomsSnap) {
+          roomsSnap.docs.forEach((doc: any) => {
+            const r = doc.data();
+            if (r.isActive !== false && r.hotelId) {
+              if (!roomsByHotelId[r.hotelId]) roomsByHotelId[r.hotelId] = [];
+              roomsByHotelId[r.hotelId].push(r);
+            }
+          });
+        }
       } catch (e) {
         console.warn('Batch rooms error in getFeaturedHotels', e);
       }
@@ -52,16 +70,20 @@ async function getFeaturedHotels() {
     const bookingsByHotelId: Record<string, any[]> = {};
     if (hotelIds.length > 0) {
       try {
-        const bookingsSnap = await db.collection('bookings')
-          .where('hotelId', 'in', hotelIds)
-          .get();
-        bookingsSnap.docs.forEach((doc: any) => {
-          const b = doc.data();
-          if (b.status !== 'cancelled' && b.status !== 'completed' && b.hotelId) {
-            if (!bookingsByHotelId[b.hotelId]) bookingsByHotelId[b.hotelId] = [];
-            bookingsByHotelId[b.hotelId].push(b);
-          }
-        });
+        const bookingsSnap = await withTimeout(
+          db.collection('bookings').where('hotelId', 'in', hotelIds).get(),
+          3000,
+          null
+        );
+        if (bookingsSnap) {
+          bookingsSnap.docs.forEach((doc: any) => {
+            const b = doc.data();
+            if (b.status !== 'cancelled' && b.status !== 'completed' && b.hotelId) {
+              if (!bookingsByHotelId[b.hotelId]) bookingsByHotelId[b.hotelId] = [];
+              bookingsByHotelId[b.hotelId].push(b);
+            }
+          });
+        }
       } catch (e) {
         console.warn('Batch bookings error in getFeaturedHotels', e);
       }
@@ -137,7 +159,14 @@ async function getFeaturedHotels() {
 
 async function getRecentReviews() {
   try {
-    const reviewsSnap = await db.collection('reviews').get();
+    const reviewsSnap = await withTimeout(
+      db.collection('reviews').get(),
+      3000,
+      null
+    );
+    if (!reviewsSnap) {
+      throw new Error('Timeout fetching reviews');
+    }
     
     const allReviews = reviewsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() as any }))
       .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
