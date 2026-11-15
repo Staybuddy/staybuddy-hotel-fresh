@@ -434,17 +434,24 @@ export default function PartnerDashboard() {
 
   async function handleAddRoom(e: React.FormEvent) {
     e.preventDefault();
+    const numSingle = parseInt(roomForm.priceSingle) || 0;
+    const numDouble = parseInt(roomForm.priceDouble) || 0;
+    const numTriple = parseInt(roomForm.priceTriple) || 0;
+    const dynamicMaxGuests = numTriple > 0 ? 3 : (numDouble > 0 ? 2 : (numSingle > 0 ? 1 : 2));
+    const dynamicBedType = dynamicMaxGuests === 1 ? 'Single' : (roomForm.bedType || 'Double');
+
     const res = await fetch('/api/rooms', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ 
         ...roomForm, 
         hotelId: addRoomModal, 
-        priceSingle: parseInt(roomForm.priceSingle) || 0, 
-        priceDouble: parseInt(roomForm.priceDouble) || 0, 
-        priceTriple: parseInt(roomForm.priceTriple) || 0, 
+        priceSingle: numSingle, 
+        priceDouble: numDouble, 
+        priceTriple: numTriple, 
         b2bPrice: parseInt(roomForm.b2bPrice) || 0, 
-        maxGuests: parseInt(roomForm.maxGuests) || 3, 
+        maxGuests: dynamicMaxGuests,
+        bedType: dynamicBedType, 
         totalRooms: roomForm.totalRooms !== '' ? Math.max(0, parseInt(roomForm.totalRooms) || 0) : 0, 
         staybuddyAllocation: roomForm.staybuddyAllocation !== '' ? Math.max(0, parseInt(roomForm.staybuddyAllocation) || 0) : 0,
         size: roomForm.size ? parseInt(roomForm.size) : undefined,
@@ -3696,7 +3703,26 @@ export default function PartnerDashboard() {
             <div className="hide-scrollbar" style={{ flex: 1, overflowY: 'auto', padding: '24px 18px' }}>
               <form id="extranet-edit-form" onSubmit={(e) => {
                 e.preventDefault();
-                const updatedPayload = { ...extranetModal, images: extranetModal.images || [] };
+                const sanitizedRooms = (extranetModal.rooms || []).map((r: any) => {
+                  const pSingle = Number(r.priceSingle) || 0;
+                  const pDouble = Number(r.priceDouble) || 0;
+                  const pTriple = Number(r.priceTriple) || 0;
+                  const maxGuests = pTriple > 0 ? 3 : (pDouble > 0 ? 2 : (pSingle > 0 ? 1 : 2));
+                  const bedType = maxGuests === 1 ? 'Single' : (r.bedType || 'Double');
+                  return {
+                    ...r,
+                    priceSingle: pSingle,
+                    priceDouble: pDouble,
+                    priceTriple: pTriple,
+                    maxGuests,
+                    bedType,
+                  };
+                });
+                const updatedPayload = { 
+                  ...extranetModal, 
+                  rooms: sanitizedRooms,
+                  images: extranetModal.images || [] 
+                };
                 updateHotelStatus(extranetModal._id, updatedPayload);
                 setExtranetModal(null);
                 alert('Property updated successfully!');

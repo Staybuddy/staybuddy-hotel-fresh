@@ -146,15 +146,18 @@ export async function POST(request: NextRequest) {
     }
 
     const roomRef = db.collection('rooms').doc();
+    const numSingle = Number(priceSingle) || 0;
+    const numDouble = Number(priceDouble) || 0;
     const numTriple = Number(priceTriple) || 0;
-    const guests = numTriple > 0 ? (maxGuests ? parseInt(maxGuests) : 3) : 2;
+    const guests = numTriple > 0 ? 3 : (numDouble > 0 ? 2 : (numSingle > 0 ? 1 : 2));
+    const effectiveBedType = guests === 1 ? 'Single' : (bedType || 'Double');
     const numTotal = totalRooms !== undefined && totalRooms !== '' ? Math.max(0, Number(totalRooms)) : 0;
     const baseAlloc = staybuddyAllocation !== undefined && staybuddyAllocation !== '' ? Math.max(0, Number(staybuddyAllocation)) : numTotal;
     const newRoom = {
       _id: roomRef.id,
       hotelId, type, description: description || '', 
       priceSingle, priceDouble, priceTriple, b2bPrice, 
-      ratePlan: ratePlan || 'EP', maxGuests: guests, bedType: bedType || '', size: size || '', 
+      ratePlan: ratePlan || 'EP', maxGuests: guests, bedType: effectiveBedType, size: size || '', 
       images: images || [], amenities: amenities || [], totalRooms: numTotal, 
       staybuddyAllocation: baseAlloc, 
       availableRooms: baseAlloc,
@@ -189,12 +192,21 @@ export async function PUT(request: NextRequest) {
     const updateFields: any = {};
     if (priceSingle !== undefined) updateFields.priceSingle = priceSingle;
     if (priceDouble !== undefined) updateFields.priceDouble = priceDouble;
-    if (priceTriple !== undefined) {
-      updateFields.priceTriple = priceTriple;
-      updateFields.maxGuests = Number(priceTriple) > 0 ? 3 : 2;
-    }
+    if (priceTriple !== undefined) updateFields.priceTriple = priceTriple;
     if (b2bPrice !== undefined) updateFields.b2bPrice = b2bPrice;
     if (ratePlan !== undefined) updateFields.ratePlan = ratePlan;
+
+    // Recalculate maxGuests & bedType whenever pricing is modified
+    if (priceSingle !== undefined || priceDouble !== undefined || priceTriple !== undefined) {
+      const effSingle = priceSingle !== undefined ? Number(priceSingle) : Number(currentRoom.priceSingle || 0);
+      const effDouble = priceDouble !== undefined ? Number(priceDouble) : Number(currentRoom.priceDouble || 0);
+      const effTriple = priceTriple !== undefined ? Number(priceTriple) : Number(currentRoom.priceTriple || 0);
+      const computedMax = effTriple > 0 ? 3 : (effDouble > 0 ? 2 : (effSingle > 0 ? 1 : 2));
+      updateFields.maxGuests = computedMax;
+      if (computedMax === 1) {
+        updateFields.bedType = 'Single';
+      }
+    }
 
     const baseAlloc = staybuddyAllocation !== undefined 
       ? Number(staybuddyAllocation) 

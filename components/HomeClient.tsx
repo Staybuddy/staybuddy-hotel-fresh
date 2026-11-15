@@ -16,6 +16,7 @@ import Image from 'next/image';
 import WishlistButton from '@/components/WishlistButton';
 import { adjustRoomsAndAdults, MAX_ADULTS_PER_ROOM } from '@/lib/occupancyPricing';
 import FlagshipHotelStores from '@/components/FlagshipHotelStores';
+import WelcomeAuthModal from '@/components/WelcomeAuthModal';
 
 const DESTINATIONS = [
   { city: 'Mumbai', country: 'India', hotels: 342 },
@@ -1761,6 +1762,9 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
           </div>
         </div>
       </footer>
+
+      {/* Welcome Card & Guest / Sign-in Modal */}
+      <WelcomeAuthModal />
     </div>
   );
 }

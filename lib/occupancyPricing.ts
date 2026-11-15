@@ -47,36 +47,39 @@ export function isSingleOccupancyAvailable(room: any): boolean {
   if (!room) return false;
   const pSingle = Number(room.priceSingle);
   if (!isNaN(pSingle) && pSingle > 0) return true;
-  // If priceSingle was not configured, but priceDouble is positive, single is allowed
+  // If priceSingle was not explicitly set, but priceDouble is positive, single guest can stay at double rate
   const pDouble = Number(room.priceDouble);
-  if (!isNaN(pDouble) && pDouble > 0 && (room.priceSingle === undefined || room.priceSingle === '')) return true;
+  if (!isNaN(pDouble) && pDouble > 0) return true;
+  const pTriple = Number(room.priceTriple);
+  if (!isNaN(pTriple) && pTriple > 0) return true;
   // Legacy room fallback
-  if (room.priceSingle === undefined && room.priceDouble === undefined && Number(room.price || room.clientPrice) > 0) {
-    return true;
-  }
-  return false;
+  const legacyPrice = Number(room.price || room.clientPrice || room.b2bPrice);
+  return !isNaN(legacyPrice) && legacyPrice > 0;
 }
 
 /**
  * Returns whether a room supports double occupancy (2 guests).
- * STRICT: If partner only configured single or triple price, and priceDouble is 0/empty,
- * double occupancy CANNOT be booked.
+ * STRICT BUSINESS RULE:
+ * If partner only configured single price (priceSingle > 0) and left priceDouble empty/0,
+ * double occupancy CANNOT be booked under any circumstances.
  */
 export function isDoubleOccupancyAvailable(room: any): boolean {
   if (!room) return false;
   const pDouble = Number(room.priceDouble);
   if (!isNaN(pDouble) && pDouble > 0) return true;
+
   // If partner explicitly provided priceSingle or priceTriple, but left priceDouble empty/0 -> NOT ALLOWED!
-  const hasExplicitSingle = room.priceSingle !== undefined && room.priceSingle !== '' && Number(room.priceSingle) > 0;
-  const hasExplicitTriple = room.priceTriple !== undefined && room.priceTriple !== '' && Number(room.priceTriple) > 0;
+  const pSingle = Number(room.priceSingle);
+  const pTriple = Number(room.priceTriple);
+  const hasExplicitSingle = !isNaN(pSingle) && pSingle > 0;
+  const hasExplicitTriple = !isNaN(pTriple) && pTriple > 0;
   if (hasExplicitSingle || hasExplicitTriple) {
     return false;
   }
-  // Legacy room fallback only when modern pricing fields were never used
-  if (room.priceDouble === undefined && room.priceSingle === undefined && Number(room.price || room.clientPrice) > 0) {
-    return true;
-  }
-  return false;
+
+  // Legacy room fallback only when modern pricing fields were never used at all
+  const legacyPrice = Number(room.price || room.clientPrice || room.b2bPrice);
+  return !isNaN(legacyPrice) && legacyPrice > 0;
 }
 
 /**
@@ -112,6 +115,18 @@ export function getRoomMaxOccupancy(room: any): number {
   if (isDoubleOccupancyAvailable(room)) return 2;
   if (isSingleOccupancyAvailable(room)) return 1;
   return 2;
+}
+
+/**
+ * Returns a human-friendly bed label that matches actual priced room occupancy,
+ * ensuring single-only rooms never show misleading "Double" labels.
+ */
+export function getRoomBedLabel(room: any): string {
+  if (!room) return 'Double Bed';
+  const maxCap = getRoomMaxOccupancy(room);
+  if (maxCap === 1) return 'Single Bed';
+  if (maxCap === 3) return 'Double + Extra Bed';
+  return room.bedType || 'Double Bed';
 }
 
 /**
@@ -178,7 +193,7 @@ export function getRoomPriceForOccupancy(room: any, occCount: number): number {
   const pSingle = Number(room.priceSingle) || 0;
   const pDouble = Number(room.priceDouble) || 0;
   const pTriple = Number(room.priceTriple) || 0;
-  const legacyPrice = Number(room.price) || Number(room.clientPrice) || 0;
+  const legacyPrice = Number(room.price) || Number(room.clientPrice) || Number(room.b2bPrice) || 0;
 
   if (occCount === 1) {
     return pSingle || pDouble || legacyPrice || 0;
