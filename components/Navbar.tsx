@@ -2,7 +2,6 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Logo from './Logo';
-import InstallAppButton from './InstallAppButton';
 import { useSession, signOut } from 'next-auth/react';
 import { useRouter, usePathname } from 'next/navigation';
 
@@ -95,7 +94,6 @@ export default function Navbar({ middleContent, extendedContent }: { middleConte
 
           {/* Right Nav */}
           <div style={{ flex: '0 0 auto', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8 }}>
-            <InstallAppButton />
             {!session && (
               <>
                 <Link href="/partner" className="btn btn-ghost hide-mobile" style={{ fontWeight: 600 }}>List Your Hotel</Link>

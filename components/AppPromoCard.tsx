@@ -30,54 +30,12 @@ export default function AppPromoCard() {
             </div>
             
             <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-              <a
-                href="/StayBuddy.apk"
-                download="StayBuddy.apk"
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 8,
-                  background: 'linear-gradient(135deg, #ea580c, #c2410c)',
-                  color: 'white',
-                  border: 'none',
-                  padding: '12px 24px',
-                  borderRadius: 'var(--radius-lg)',
-                  fontWeight: 800,
-                  fontSize: '0.95rem',
-                  cursor: 'pointer',
-                  textDecoration: 'none',
-                  boxShadow: '0 8px 20px rgba(234, 88, 12, 0.4)',
-                  transition: 'transform var(--transition-fast)',
-                }}
-                onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.05)'}
-                onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
-              >
-                <span style={{ fontSize: '1.25rem' }}>🤖</span> Download Android APK
-              </a>
-              <a
-                href="https://cage-passion-though-childrens.trycloudflare.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 8,
-                  background: 'rgba(255,255,255,0.1)',
-                  color: 'white',
-                  border: '1px solid rgba(255,255,255,0.25)',
-                  padding: '12px 24px',
-                  borderRadius: 'var(--radius-lg)',
-                  fontWeight: 800,
-                  fontSize: '0.95rem',
-                  cursor: 'pointer',
-                  textDecoration: 'none',
-                  transition: 'all var(--transition-fast)',
-                }}
-                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.2)'; e.currentTarget.style.transform = 'scale(1.05)'; }}
-                onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; e.currentTarget.style.transform = 'scale(1)'; }}
-              >
-                <span style={{ fontSize: '1.25rem' }}>📲</span> Open Mobile App
-              </a>
+              <button style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'white', color: 'black', border: 'none', padding: '10px 20px', borderRadius: 'var(--radius-lg)', fontWeight: 800, fontSize: '0.9rem', cursor: 'pointer', transition: 'transform var(--transition-fast)' }} onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.05)'} onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}>
+                <span style={{ fontSize: '1.25rem' }}>🍎</span> App Store
+              </button>
+              <button style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(255,255,255,0.1)', color: 'white', border: '1px solid rgba(255,255,255,0.2)', padding: '10px 20px', borderRadius: 'var(--radius-lg)', fontWeight: 800, fontSize: '0.9rem', cursor: 'pointer', transition: 'all var(--transition-fast)' }} onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.2)'; e.currentTarget.style.transform = 'scale(1.05)'; }} onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; e.currentTarget.style.transform = 'scale(1)'; }}>
+                <span style={{ fontSize: '1.25rem' }}>🤖</span> Google Play
+              </button>
             </div>
           </div>
 
