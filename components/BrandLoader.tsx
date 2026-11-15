@@ -164,3 +164,4 @@ export default function BrandLoader({
     </div>
   );
 }
+

@@ -107,6 +107,40 @@ export default function HotelDetailPage() {
   const [couponError, setCouponError] = useState<string>("");
   const [couponSuccess, setCouponSuccess] = useState<string>("");
 
+  // Smart Triple Occupancy notification toast
+  const [tripleToast, setTripleToast] = useState<{
+    show: boolean;
+    roomName: string;
+    message?: string;
+  } | null>(null);
+
+  const showTripleNotification = (roomName?: string, customMsg?: string) => {
+    setTripleToast({
+      show: true,
+      roomName: roomName || selectedRoom?.type || "This room",
+      message: customMsg,
+    });
+  };
+
+  const closeTripleNotification = () => {
+    setTripleToast(null);
+  };
+
+  const switchToDoubleOccupancy = () => {
+    setTripleToast(null);
+    setOccupancy("double");
+    setBookingData((prev) => ({ ...prev, adults: 2 }));
+    updateUrlParams({ adults: 2 });
+  };
+
+  useEffect(() => {
+    if (!tripleToast?.show) return;
+    const timer = setTimeout(() => {
+      setTripleToast(null);
+    }, 6000);
+    return () => clearTimeout(timer);
+  }, [tripleToast]);
+
   const searchParamsInitialized = useRef(false);
 
   const updateUrlParams = (updates: { adults?: number; rooms?: number; checkIn?: string; checkOut?: string; children?: number }) => {
@@ -493,6 +527,10 @@ export default function HotelDetailPage() {
 
   const handleAddRoom = (room: any) => {
     if (!room) return;
+    if (bookingData.rooms === 1 && bookingData.adults === 3 && !(Number(room.priceTriple) > 0)) {
+      showTripleNotification(room.type);
+      return;
+    }
     if (bookingData.rooms === 1) {
       setSelectedRoomsMap({ [room._id]: 1 });
       setSelectedRoom(room);
@@ -523,6 +561,10 @@ export default function HotelDetailPage() {
 
   const handleSelectAllOfRoom = (room: any) => {
     if (!room) return;
+    if (bookingData.rooms === 1 && bookingData.adults === 3 && !(Number(room.priceTriple) > 0)) {
+      showTripleNotification(room.type);
+      return;
+    }
     setSelectedRoomsMap({ [room._id]: bookingData.rooms });
     setSelectedRoom(room);
   };
@@ -802,6 +844,13 @@ export default function HotelDetailPage() {
       alert("No rooms are available for the selected dates. Please choose different dates.");
       return;
     }
+    // Strict Triple Occupancy Validation: If partner has not added triple occupancy, client cannot book triple room
+    if (bookingData.rooms === 1 && bookingData.adults === 3 && !(Number(targetRoom?.priceTriple) > 0)) {
+      showTripleNotification(targetRoom?.type);
+      const roomSection = document.getElementById("rooms-section");
+      if (roomSection) roomSection.scrollIntoView({ behavior: "smooth" });
+      return;
+    }
     if (!bookingData.checkIn || !bookingData.checkOut) {
       const bar = document.getElementById("availability-bar");
       if (bar) {
@@ -990,6 +1039,13 @@ export default function HotelDetailPage() {
       handleBooking();
       return;
     }
+    const displayRoom = selectedRoomsList[0]?.room || selectedRoom;
+    if (bookingStep === 0 && bookingData.rooms === 1 && bookingData.adults === 3 && !(Number(displayRoom?.priceTriple) > 0)) {
+      showTripleNotification(displayRoom?.type);
+      const roomsEl = document.getElementById("rooms-section");
+      if (roomsEl) roomsEl.scrollIntoView({ behavior: "smooth", block: "start" });
+      return;
+    }
     if (bookingData.rooms > 1 && totalSelectedRoomsCount < bookingData.rooms) {
       const roomsEl = document.getElementById("rooms-section");
       if (roomsEl) {
@@ -1002,7 +1058,6 @@ export default function HotelDetailPage() {
       }
       return;
     }
-    const displayRoom = selectedRoomsList[0]?.room || selectedRoom;
     if (displayRoom) {
       openReview(displayRoom);
       return;
@@ -1022,6 +1077,10 @@ export default function HotelDetailPage() {
     if (bookingStep === 1) {
       const payAmount = currentPricing?.totalAmount || bottomBarPrice;
       return bookingLoading ? "PROCESSING..." : `PROCEED TO PAY ₹${payAmount.toLocaleString('en-IN')}`;
+    }
+    const displayRoom = selectedRoomsList[0]?.room || selectedRoom;
+    if (bookingStep === 0 && bookingData.rooms === 1 && bookingData.adults === 3 && !(Number(displayRoom?.priceTriple) > 0)) {
+      return "🚫 NO TRIPLE OCCUPANCY";
     }
     if (bookingData.rooms > 1 && totalSelectedRoomsCount < bookingData.rooms) {
       return `SELECT ROOM (${totalSelectedRoomsCount}/${bookingData.rooms})`;
@@ -2241,46 +2300,81 @@ export default function HotelDetailPage() {
                             </div>
                           </div>
                           <div className="room-card-action" style={{ textAlign: "right", flexShrink: 0 }}>
-                            <div>
-                              <div
-                                style={{
-                                  fontSize: "1.3rem",
-                                  fontWeight: 800,
-                                  color: "var(--brand-600)",
-                                }}
-                              >
-                                ₹{unitPrice.toLocaleString()}
+                            {Boolean(bookingData.rooms === 1 && bookingData.adults === 3 && !(Number(room.priceTriple) > 0)) ? (
+                              <div>
+                                <div
+                                  style={{
+                                    fontSize: "1.05rem",
+                                    fontWeight: 800,
+                                    color: "#dc2626",
+                                  }}
+                                >
+                                  No Triple Rate
+                                </div>
+                                <div
+                                  style={{
+                                    fontSize: "0.74rem",
+                                    color: "#64748b",
+                                    fontWeight: 600,
+                                  }}
+                                >
+                                  Max 2 Guests Only
+                                </div>
                               </div>
-                              <div
-                                style={{
-                                  fontSize: "0.75rem",
-                                  color: "var(--text-muted)",
-                                }}
-                              >
-                                {bookingData.rooms > 1
-                                  ? allocatedCount > 1
-                                    ? `₹${(unitPrice * allocatedCount).toLocaleString()} for ${allocatedCount} rooms`
-                                    : "per room / night"
-                                  : bookingData.adults === 1
-                                    ? "per night (1 Adult)"
-                                    : bookingData.adults === 3
-                                      ? "per night (3 Adults)"
-                                      : "per night (2 Adults)"}
+                            ) : (
+                              <div>
+                                <div
+                                  style={{
+                                    fontSize: "1.3rem",
+                                    fontWeight: 800,
+                                    color: "var(--brand-600)",
+                                  }}
+                                >
+                                  ₹{unitPrice.toLocaleString()}
+                                </div>
+                                <div
+                                  style={{
+                                    fontSize: "0.75rem",
+                                    color: "var(--text-muted)",
+                                  }}
+                                >
+                                  {bookingData.rooms > 1
+                                    ? allocatedCount > 1
+                                      ? `₹${(unitPrice * allocatedCount).toLocaleString()} for ${allocatedCount} rooms`
+                                      : "per room / night"
+                                    : bookingData.adults === 1
+                                      ? "per night (1 Adult)"
+                                      : bookingData.adults === 3
+                                        ? "per night (3 Adults)"
+                                        : "per night (2 Adults)"}
+                                </div>
                               </div>
-                            </div>
+                            )}
 
                             {bookingData.rooms === 1 ? (
                               <>
                                 {Boolean(bookingData.adults === 3 && !(Number(room.priceTriple) > 0)) ? (
                                   <button
                                     type="button"
-                                    disabled={true}
                                     className="btn btn-sm"
-                                    style={{ marginTop: 8, background: '#e2e8f0', color: '#64748b', cursor: 'not-allowed', border: 'none', fontWeight: 700 }}
-                                    title="3-occupancy is not offered for this room. Max 2 guests allowed."
-                                    onClick={(e) => e.stopPropagation()}
+                                    style={{
+                                      marginTop: 8,
+                                      background: "#fee2e2",
+                                      color: "#991b1b",
+                                      border: "1px solid #fca5a5",
+                                      fontWeight: 800,
+                                      cursor: "pointer",
+                                      borderRadius: 8,
+                                      padding: "6px 12px",
+                                      fontSize: "0.78rem",
+                                    }}
+                                    title="No space for triple occupancy in this room. Click for info."
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      showTripleNotification(room.type);
+                                    }}
                                   >
-                                    Max 2 Guests Only
+                                    🚫 No Space for 3 Guests
                                   </button>
                                 ) : (
                                   <button
@@ -2636,12 +2730,18 @@ export default function HotelDetailPage() {
                 const isRoomSelected = totalSelectedRoomsCount > 0 || !!selectedRoom;
                 const displayRoom = selectedRoomsList[0]?.room || selectedRoom || (rooms && rooms.length > 0 ? rooms[0] : null);
 
+                const isTripleCapIssue = Boolean(
+                  bookingData.rooms === 1 &&
+                  bookingData.adults === 3 &&
+                  !(Number(displayRoom?.priceTriple) > 0)
+                );
+
                 // Pricing calculation (Live synced)
                 const fallbackPrice = displayRoom ? (
                   occupancy === "single"
                     ? (displayRoom.priceSingle || displayRoom.priceDouble || displayRoom.price || hotel?.price || 1999)
                     : occupancy === "triple"
-                    ? (displayRoom.priceTriple || displayRoom.priceDouble || displayRoom.price || hotel?.price || 1999)
+                    ? (isTripleCapIssue ? 0 : (displayRoom.priceTriple || 0))
                     : (displayRoom.priceDouble || displayRoom.priceSingle || displayRoom.price || hotel?.price || 1999)
                 ) : (hotel?.price || 1999);
 
@@ -2986,66 +3086,94 @@ export default function HotelDetailPage() {
                       )}
 
                       {/* Price Section with Strike-through & Taxes & Fees (MMT Style) */}
-                      <div style={{ marginBottom: 16 }}>
-                        <div
-                          style={{
-                            display: "flex",
-                            alignItems: "baseline",
-                            gap: 6,
-                            marginBottom: 2,
-                          }}
-                        >
-                          <span
+                      {isTripleCapIssue ? (
+                        <div style={{ background: "#fef2f2", border: "1.5px solid #fecaca", borderRadius: 12, padding: "12px 14px", marginBottom: 14 }}>
+                          <div style={{ color: "#991b1b", fontWeight: 800, fontSize: "1.02rem", display: "flex", alignItems: "center", gap: 6 }}>
+                            <span>🚫</span> No Space for Triple Occupancy
+                          </div>
+                          <div style={{ fontSize: "0.8rem", color: "#7f1d1d", marginTop: 4, lineHeight: 1.4 }}>
+                            {displayRoom?.type || "This room"} only accommodates up to 2 guests. Triple occupancy was not configured by the hotel partner.
+                          </div>
+                          <button
+                            type="button"
+                            onClick={switchToDoubleOccupancy}
                             style={{
-                              textDecoration: "line-through",
-                              color: "#94a3b8",
-                              fontSize: "0.88rem",
-                              fontWeight: 600,
+                              marginTop: 10,
+                              background: "#ea580c",
+                              color: "#ffffff",
+                              border: "none",
+                              padding: "6px 14px",
+                              borderRadius: 6,
+                              fontSize: "0.78rem",
+                              fontWeight: 700,
+                              cursor: "pointer",
                             }}
                           >
-                            ₹{strikePrice.toLocaleString("en-IN")}
-                          </span>
-                          <span style={{ color: "#64748b", fontSize: "0.78rem", fontWeight: 600 }}>
-                            Per Night:
-                          </span>
+                            Switch to 2 Guests (₹{((displayRoom?.priceDouble || displayRoom?.price || 1999)).toLocaleString('en-IN')}/night)
+                          </button>
                         </div>
-                        <div style={{ display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap" }}>
-                          <span
+                      ) : (
+                        <div style={{ marginBottom: 16 }}>
+                          <div
                             style={{
-                              fontSize: "2.3rem",
-                              fontWeight: 900,
-                              color: "#0f172a",
-                              lineHeight: 1,
-                              letterSpacing: "-0.02em",
+                              display: "flex",
+                              alignItems: "baseline",
+                              gap: 6,
+                              marginBottom: 2,
                             }}
                           >
-                            ₹{finalBasePrice.toLocaleString("en-IN")}
-                          </span>
-                          <span
+                            <span
+                              style={{
+                                textDecoration: "line-through",
+                                color: "#94a3b8",
+                                fontSize: "0.88rem",
+                                fontWeight: 600,
+                              }}
+                            >
+                              ₹{strikePrice.toLocaleString("en-IN")}
+                            </span>
+                            <span style={{ color: "#64748b", fontSize: "0.78rem", fontWeight: 600 }}>
+                              Per Night:
+                            </span>
+                          </div>
+                          <div style={{ display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap" }}>
+                            <span
+                              style={{
+                                fontSize: "2.3rem",
+                                fontWeight: 900,
+                                color: "#0f172a",
+                                lineHeight: 1,
+                                letterSpacing: "-0.02em",
+                              }}
+                            >
+                              ₹{finalBasePrice.toLocaleString("en-IN")}
+                            </span>
+                            <span
+                              style={{
+                                fontSize: "0.88rem",
+                                color: "#64748b",
+                                fontWeight: 600,
+                              }}
+                            >
+                              + ₹{finalGst.toLocaleString("en-IN")} taxes & fees
+                            </span>
+                          </div>
+                          <div
                             style={{
-                              fontSize: "0.88rem",
-                              color: "#64748b",
-                              fontWeight: 600,
+                              fontSize: "0.76rem",
+                              color: "#059669",
+                              fontWeight: 700,
+                              marginTop: 4,
                             }}
                           >
-                            + ₹{finalGst.toLocaleString("en-IN")} taxes & fees
-                          </span>
+                            ✓ Verified Live B2B Guaranteed Rate
+                            {hotel?.marginPercentage ? ` (${hotel.marginPercentage}% Margin Applied)` : ""}
+                          </div>
                         </div>
-                        <div
-                          style={{
-                            fontSize: "0.76rem",
-                            color: "#059669",
-                            fontWeight: 700,
-                            marginTop: 4,
-                          }}
-                        >
-                          ✓ Verified Live B2B Guaranteed Rate
-                          {hotel?.marginPercentage ? ` (${hotel.marginPercentage}% Margin Applied)` : ""}
-                        </div>
-                      </div>
+                      )}
 
                       {/* Capacity Exceeded Validation Warning */}
-                      {isRoomSelected && !currentPricing.canBook && (
+                      {isRoomSelected && !currentPricing.canBook && !isTripleCapIssue && (
                         <div
                           style={{
                             background: "#fef2f2",
@@ -3111,24 +3239,29 @@ export default function HotelDetailPage() {
                         >
                           Select {bookingData.rooms - totalSelectedRoomsCount} More Room{bookingData.rooms - totalSelectedRoomsCount > 1 ? "s" : ""}
                         </button>
-                      ) : isRoomSelected && !currentPricing.canBook ? (
+                      ) : isTripleCapIssue || (isRoomSelected && !currentPricing.canBook) ? (
                         <button
+                          type="button"
                           className="btn"
-                          disabled={true}
+                          onClick={() => showTripleNotification(displayRoom?.type)}
                           style={{
                             width: "100%",
                             fontSize: "0.92rem",
                             padding: "14px",
-                            background: "#e2e8f0",
-                            color: "#64748b",
-                            border: "none",
+                            background: "#fee2e2",
+                            color: "#991b1b",
+                            border: "1.5px solid #fca5a5",
                             marginBottom: 12,
                             fontWeight: 800,
-                            cursor: "not-allowed",
+                            cursor: "pointer",
                             borderRadius: "12px",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            gap: 8,
                           }}
                         >
-                          🚫 Cannot Book: Capacity Exceeded
+                          <span>🚫</span> No Space for Triple Occupancy
                         </button>
                       ) : (
                         <button
@@ -3746,7 +3879,7 @@ export default function HotelDetailPage() {
                               >
                                 👥 2 Adults
                               </button>
-                              {Number(selectedRoom?.priceTriple) > 0 && (
+                              {Number(selectedRoom?.priceTriple) > 0 ? (
                                 <button
                                   type="button"
                                   onClick={() => {
@@ -3767,6 +3900,27 @@ export default function HotelDetailPage() {
                                   }}
                                 >
                                   👨‍👩‍👦 3 Adults
+                                </button>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    showTripleNotification(selectedRoom?.type);
+                                  }}
+                                  style={{
+                                    padding: "2px 8px",
+                                    borderRadius: 14,
+                                    fontSize: "0.72rem",
+                                    fontWeight: 700,
+                                    cursor: "pointer",
+                                    border: "1px dashed #fca5a5",
+                                    background: "#fef2f2",
+                                    color: "#991b1b",
+                                    opacity: 0.85,
+                                  }}
+                                  title="No space for triple occupancy in this room"
+                                >
+                                  🚫 3 Adults (Unavailable)
                                 </button>
                               )}
                             </div>
@@ -5459,15 +5613,32 @@ export default function HotelDetailPage() {
                 >
                   Price per night {bookingData.rooms > 1 ? `(${bookingData.rooms} Rooms, ${bookingData.adults} Adults)` : ""}
                 </span>
-                <div
-                  style={{
-                    fontSize: "1.5rem",
-                    fontWeight: 800,
-                    color: "var(--brand-600)",
-                  }}
-                >
-                  ₹{getRoomPrice(roomDetailsModal).toLocaleString()}
-                </div>
+                {bookingData.rooms === 1 && bookingData.adults === 3 && !(Number(roomDetailsModal.priceTriple) > 0) ? (
+                  <div>
+                    <div
+                      style={{
+                        fontSize: "1.2rem",
+                        fontWeight: 800,
+                        color: "#dc2626",
+                      }}
+                    >
+                      No Triple Rate
+                    </div>
+                    <div style={{ fontSize: "0.78rem", color: "#64748b" }}>
+                      Max 2 guests allowed
+                    </div>
+                  </div>
+                ) : (
+                  <div
+                    style={{
+                      fontSize: "1.5rem",
+                      fontWeight: 800,
+                      color: "var(--brand-600)",
+                    }}
+                  >
+                    ₹{getRoomPrice(roomDetailsModal).toLocaleString()}
+                  </div>
+                )}
               </div>
               <div style={{ display: "flex", gap: 12 }}>
                 <button
@@ -5476,20 +5647,40 @@ export default function HotelDetailPage() {
                 >
                   Close
                 </button>
-                <button
-                  className="btn btn-primary"
-                  onClick={() => {
-                    const room = roomDetailsModal;
-                    setRoomDetailsModal(null);
-                    if (bookingData.rooms === 1) {
-                      setTimeout(() => openReview(room), 100);
-                    } else {
-                      handleAddRoom(room);
-                    }
-                  }}
-                >
-                  {bookingData.rooms > 1 ? "+ Add this Room" : "Select this Room"}
-                </button>
+                {bookingData.rooms === 1 && bookingData.adults === 3 && !(Number(roomDetailsModal.priceTriple) > 0) ? (
+                  <button
+                    type="button"
+                    className="btn"
+                    style={{
+                      background: "#fee2e2",
+                      color: "#991b1b",
+                      border: "1px solid #fca5a5",
+                      fontWeight: 800,
+                    }}
+                    onClick={() => {
+                      const roomType = roomDetailsModal.type;
+                      setRoomDetailsModal(null);
+                      showTripleNotification(roomType);
+                    }}
+                  >
+                    🚫 No Space for 3 Guests
+                  </button>
+                ) : (
+                  <button
+                    className="btn btn-primary"
+                    onClick={() => {
+                      const room = roomDetailsModal;
+                      setRoomDetailsModal(null);
+                      if (bookingData.rooms === 1) {
+                        setTimeout(() => openReview(room), 100);
+                      } else {
+                        handleAddRoom(room);
+                      }
+                    }}
+                  >
+                    {bookingData.rooms > 1 ? "+ Add this Room" : "Select this Room"}
+                  </button>
+                )}
               </div>
             </div>
           </div>
@@ -5943,6 +6134,102 @@ export default function HotelDetailPage() {
           </button>
         </div>
       </div>
+
+      {/* Smart Bottom Notification Toast: Triple Occupancy Restriction */}
+      {mounted && tripleToast?.show && createPortal(
+        <div
+          className="triple-occupancy-bottom-toast"
+          role="alert"
+          style={{
+            position: "fixed",
+            bottom: 24,
+            left: "50%",
+            transform: "translateX(-50%)",
+            zIndex: 999999,
+            maxWidth: 540,
+            width: "calc(100% - 32px)",
+            background: "#0f172a",
+            color: "#ffffff",
+            borderRadius: "16px",
+            boxShadow: "0 20px 45px -8px rgba(0, 0, 0, 0.55), 0 0 0 1.5px rgba(234, 88, 12, 0.45)",
+            padding: "14px 18px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 14,
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0, flex: 1 }}>
+            <div
+              style={{
+                width: 38,
+                height: 38,
+                borderRadius: "50%",
+                background: "rgba(234, 88, 12, 0.2)",
+                border: "1.5px solid #ea580c",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: "1.15rem",
+                flexShrink: 0,
+              }}
+            >
+              🚫
+            </div>
+            <div style={{ minWidth: 0, flex: 1 }}>
+              <div style={{ fontWeight: 800, fontSize: "0.92rem", color: "#ffffff", lineHeight: 1.25 }}>
+                No space for triple occupancy in this room
+              </div>
+              <div style={{ fontSize: "0.78rem", color: "#94a3b8", marginTop: 2, lineHeight: 1.35 }}>
+                {tripleToast.message || `${tripleToast.roomName} accommodates max 2 guests. Partner has not configured 3-guest occupancy for this room.`}
+              </div>
+            </div>
+          </div>
+
+          <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+            <button
+              type="button"
+              onClick={switchToDoubleOccupancy}
+              style={{
+                background: "linear-gradient(135deg, #fb923c, #ea580c)",
+                color: "#ffffff",
+                border: "none",
+                padding: "8px 14px",
+                borderRadius: "10px",
+                fontSize: "0.78rem",
+                fontWeight: 800,
+                cursor: "pointer",
+                whiteSpace: "nowrap",
+                boxShadow: "0 2px 8px rgba(234, 88, 12, 0.4)",
+              }}
+            >
+              Switch to 2 Guests
+            </button>
+            <button
+              type="button"
+              onClick={closeTripleNotification}
+              style={{
+                background: "rgba(255, 255, 255, 0.12)",
+                border: "none",
+                color: "#94a3b8",
+                width: 28,
+                height: 28,
+                borderRadius: "50%",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                cursor: "pointer",
+                fontSize: "0.85rem",
+                fontWeight: 700,
+              }}
+              aria-label="Close notification"
+            >
+              ✕
+            </button>
+          </div>
+        </div>,
+        document.body
+      )}
     </div>
   );
 }

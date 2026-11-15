@@ -831,9 +831,18 @@ function HotelSearch() {
                                 <div style={{ fontSize: '0.7rem', color: '#16a34a', fontWeight: 600 }}>1 Adult rate</div>
                               )}
                               {filters.adults === 3 && (
-                                <div style={{ fontSize: '0.7rem', color: '#2563eb', fontWeight: 600 }}>3 Adults rate</div>
+                                <div style={{ fontSize: '0.7rem', color: '#2563eb', fontWeight: 700 }}>✓ 3 Adults (Triple Room)</div>
                               )}
                             </>
+                          ) : filters.adults === 3 ? (
+                            <div style={{ textAlign: 'right', marginTop: 6 }}>
+                              <div style={{ fontSize: '0.86rem', fontWeight: 800, color: '#dc2626' }}>
+                                🚫 No Triple Occupancy
+                              </div>
+                              <div style={{ fontSize: '0.72rem', color: '#64748b', marginTop: 2 }}>
+                                Max 2 guests per room
+                              </div>
+                            </div>
                           ) : (
                             <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#64748b', marginTop: 6 }}>
                               Check rates

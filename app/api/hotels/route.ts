@@ -219,14 +219,18 @@ export async function GET(request: NextRequest) {
         const fallback = Number(r.priceDouble) || Number(r.priceSingle) || Number(r.price) || Number(r.clientPrice) || 0;
         if (fallback > 0) fallbackPrices.push(fallback);
       });
-      if (validPrices.length === 0 && fallbackPrices.length > 0) {
-        validPrices.push(...fallbackPrices);
-      }
-      if (hotel.basePrice && Number(hotel.basePrice) > 0) {
-        const baseNum = Number(hotel.basePrice);
-        const baseWithMargin = margin > 0 ? Math.round(baseNum * (1 + margin / 100)) : baseNum;
-        if (validPrices.length === 0) {
-          validPrices.push(baseWithMargin);
+      // CRITICAL: If triple occupancy (3 guests) is requested, DO NOT randomly fallback to double/single rates
+      // Only show starting price if partner explicitly added triple occupancy in the extranet!
+      if (occPerRoom !== 3) {
+        if (validPrices.length === 0 && fallbackPrices.length > 0) {
+          validPrices.push(...fallbackPrices);
+        }
+        if (hotel.basePrice && Number(hotel.basePrice) > 0) {
+          const baseNum = Number(hotel.basePrice);
+          const baseWithMargin = margin > 0 ? Math.round(baseNum * (1 + margin / 100)) : baseNum;
+          if (validPrices.length === 0) {
+            validPrices.push(baseWithMargin);
+          }
         }
       }
       const startingPrice = validPrices.length > 0 ? Math.min(...validPrices) : 0;

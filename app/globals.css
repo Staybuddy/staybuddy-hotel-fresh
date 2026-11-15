@@ -1424,6 +1424,22 @@ tbody tr:hover { background: var(--bg-secondary); }
   }
 }
 
+/* Bottom Toast Notification (Triple Occupancy & Warnings) */
+@keyframes bottomToastSlideUp {
+  0% {
+    transform: translate(-50%, 50px);
+    opacity: 0;
+  }
+  100% {
+    transform: translate(-50%, 0);
+    opacity: 1;
+  }
+}
+
+.triple-occupancy-bottom-toast {
+  animation: bottomToastSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
 /* ===== PARTNER PRICING GRID & ALIGNMENT ===== */
 .partner-pricing-grid {
   display: grid;
