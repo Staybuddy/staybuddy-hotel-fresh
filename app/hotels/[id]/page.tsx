@@ -66,12 +66,14 @@ export default function HotelDetailPage() {
   const [showFilmstrip, setShowFilmstrip] = useState(true);
   const [selectedRoom, setSelectedRoom] = useState<any>(null);
   const [selectedRoomsMap, setSelectedRoomsMap] = useState<Record<string, number>>({});
+  const initialAdults = Math.max(1, parseInt(searchParams.get("adults") || "2", 10));
+  const initialRooms = Math.min(initialAdults, Math.max(1, parseInt(searchParams.get("rooms") || "1", 10)));
   const [bookingData, setBookingData] = useState({
     checkIn: searchParams.get("checkIn") || "",
     checkOut: searchParams.get("checkOut") || "",
     guests: "1",
-    rooms: parseInt(searchParams.get("rooms") || "1", 10),
-    adults: parseInt(searchParams.get("adults") || "2", 10),
+    rooms: initialRooms,
+    adults: initialAdults,
     children: parseInt(searchParams.get("children") || "0", 10),
     guestFirstName: "",
     guestLastName: "",
@@ -98,7 +100,6 @@ export default function HotelDetailPage() {
   const [roomDetailsModal, setRoomDetailsModal] = useState<any>(null);
   const [modalImageIndex, setModalImageIndex] = useState(0);
 
-  const initialAdults = parseInt(searchParams.get("adults") || "2", 10);
   const [occupancy, setOccupancy] = useState<"single" | "double" | "triple">(
     initialAdults === 1 ? "single" : initialAdults === 3 ? "triple" : "double",
   );
@@ -191,17 +192,20 @@ export default function HotelDetailPage() {
     const checkInParam = searchParams.get("checkIn");
     const checkOutParam = searchParams.get("checkOut");
     if (checkInParam || searchParams.has("adults") || searchParams.has("rooms")) {
-      const a = searchParams.has("adults") ? parseInt(searchParams.get("adults") as string, 10) : bookingData.adults;
+      const rawA = searchParams.has("adults") ? parseInt(searchParams.get("adults") as string, 10) : bookingData.adults;
+      const rawR = searchParams.has("rooms") ? parseInt(searchParams.get("rooms") as string, 10) : bookingData.rooms;
+      const safeA = Math.max(1, isNaN(rawA) ? 2 : rawA);
+      const safeR = Math.min(safeA, Math.max(1, isNaN(rawR) ? 1 : rawR));
       setBookingData(p => ({
         ...p,
         checkIn: checkInParam || p.checkIn,
         checkOut: checkOutParam || p.checkOut,
-        adults: a,
-        rooms: searchParams.has("rooms") ? parseInt(searchParams.get("rooms") as string, 10) : p.rooms,
+        adults: safeA,
+        rooms: safeR,
         children: searchParams.has("children") ? parseInt(searchParams.get("children") as string, 10) : p.children,
       }));
       if (searchParams.has("adults")) {
-        setOccupancy(a === 1 ? "single" : a === 3 ? "triple" : "double");
+        setOccupancy(safeA === 1 ? "single" : safeA === 3 ? "triple" : "double");
       }
     }
   }, [searchParams]);

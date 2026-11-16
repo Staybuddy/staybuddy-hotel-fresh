@@ -672,35 +672,49 @@ export function calculateMultiRoomPricing(
 }
 
 /**
- * Adjusts requested rooms & adults safely within limits.
+ * Safely adjusts requested rooms & adults:
+ * Standard signature used across GuestSelector, HomeClient, and Hotel Details:
+ *   adjustRoomsAndAdults(rooms, adults, field, targetValue)
+ * 
+ * Strict Invariants:
+ * 1. 1 Adult can NEVER be assigned 2 or more rooms (rooms <= adults).
+ * 2. Each room holds at most MAX_ADULTS_PER_ROOM (3) adults (minRooms = ceil(adults / 3)).
+ * 3. When adults increase, rooms auto-scale if adults > rooms * 3.
+ * 4. When adults decrease, rooms auto-scale down so rooms never exceed adults.
  */
 export function adjustRoomsAndAdults(
-  currentAdults: number,
   currentRooms: number,
-  action: 'adults_inc' | 'adults_dec' | 'rooms_inc' | 'rooms_dec'
-): { adults: number; rooms: number } {
-  let adults = Math.max(1, currentAdults);
-  let rooms = Math.max(1, currentRooms);
+  currentAdults: number,
+  field: 'rooms' | 'adults' | string,
+  targetValue?: number
+): { rooms: number; adults: number } {
+  let rooms = Math.max(1, Number(currentRooms) || 1);
+  let adults = Math.max(1, Number(currentAdults) || 1);
+  const target = targetValue !== undefined ? Math.max(1, Number(targetValue) || 1) : (field === 'rooms' ? rooms : adults);
 
-  if (action === 'adults_inc') {
-    adults += 1;
-    const minRoomsNeeded = Math.ceil(adults / MAX_ADULTS_PER_ROOM);
-    if (rooms < minRoomsNeeded) rooms = minRoomsNeeded;
-  } else if (action === 'adults_dec') {
-    if (adults > 1) {
-      adults -= 1;
-      if (rooms > adults) rooms = adults;
+  if (field === 'rooms') {
+    rooms = Math.min(10, Math.max(1, target));
+    // Each room must have at least 1 adult
+    if (adults < rooms) {
+      adults = rooms;
     }
-  } else if (action === 'rooms_inc') {
-    rooms += 1;
-    if (adults < rooms) adults = rooms;
-  } else if (action === 'rooms_dec') {
-    if (rooms > 1) {
-      rooms -= 1;
-      const maxCap = rooms * MAX_ADULTS_PER_ROOM;
-      if (adults > maxCap) adults = maxCap;
+    // Cannot exceed 3 adults per room
+    const maxCapacity = rooms * MAX_ADULTS_PER_ROOM;
+    if (adults > maxCapacity) {
+      adults = maxCapacity;
+    }
+  } else if (field === 'adults') {
+    adults = Math.min(30, Math.max(1, target));
+    // Each room can accommodate up to 3 adults
+    const minRoomsNeeded = Math.ceil(adults / MAX_ADULTS_PER_ROOM);
+    if (rooms < minRoomsNeeded) {
+      rooms = minRoomsNeeded;
+    }
+    // STRICT FIX: You cannot have more rooms than adults (e.g. 1 adult with 2 rooms is prohibited)
+    if (rooms > adults) {
+      rooms = adults;
     }
   }
 
-  return { adults, rooms };
+  return { rooms, adults };
 }
