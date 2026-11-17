@@ -6,7 +6,33 @@ import { useSession, signOut } from 'next-auth/react';
 import { useRouter, usePathname } from 'next/navigation';
 
 export default function Navbar({ middleContent, extendedContent }: { middleContent?: React.ReactNode, extendedContent?: React.ReactNode }) {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
+  const [cachedUser, setCachedUser] = useState<any>(null);
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('staybuddy_auth_user');
+      if (stored) {
+        setCachedUser(JSON.parse(stored));
+      }
+    } catch (_) {}
+  }, []);
+
+  useEffect(() => {
+    if (session?.user) {
+      try {
+        localStorage.setItem('staybuddy_auth_user', JSON.stringify(session.user));
+        setCachedUser(session.user);
+      } catch (_) {}
+    } else if (status === 'unauthenticated') {
+      try {
+        localStorage.removeItem('staybuddy_auth_user');
+        setCachedUser(null);
+      } catch (_) {}
+    }
+  }, [session, status]);
+
+  const activeUser = session?.user || cachedUser;
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
@@ -31,12 +57,12 @@ export default function Navbar({ middleContent, extendedContent }: { middleConte
     ? `/login?callbackUrl=${encodeURIComponent(currentUrl)}`
     : '/login';
 
-  const role = (session?.user as any)?.role;
-  const sessionIsOnboarder = Boolean((session?.user as any)?.isOnboarder || role === 'onboarder' || role === 'admin');
+  const role = (activeUser as any)?.role;
+  const sessionIsOnboarder = Boolean((activeUser as any)?.isOnboarder || role === 'onboarder' || role === 'admin');
   const [liveIsOnboarder, setLiveIsOnboarder] = useState<boolean | null>(null);
 
   useEffect(() => {
-    const email = session?.user?.email;
+    const email = activeUser?.email;
     if (!email) {
       setLiveIsOnboarder(null);
       return;
@@ -51,7 +77,7 @@ export default function Navbar({ middleContent, extendedContent }: { middleConte
       })
       .catch(() => {});
     return () => { cancelled = true; };
-  }, [session?.user?.email]);
+  }, [activeUser?.email]);
 
   const canSeeOnboarding = liveIsOnboarder !== null ? liveIsOnboarder : sessionIsOnboarder;
 
@@ -94,14 +120,17 @@ export default function Navbar({ middleContent, extendedContent }: { middleConte
 
           {/* Right Nav */}
           <div style={{ flex: '0 0 auto', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8 }}>
-            {!session && (
+            {!activeUser && status !== 'loading' && (
               <>
                 <Link href="/partner" className="btn btn-ghost hide-mobile" style={{ fontWeight: 600 }}>List Your Hotel</Link>
                 <Link href={loginUrl} className="btn btn-outline" style={{ border: '2px solid var(--border)' }}>Log In</Link>
                 <Link href={loginUrl} className="btn btn-primary hide-mobile">Get Started</Link>
               </>
             )}
-            {session && (
+            {!activeUser && status === 'loading' && (
+              <div style={{ width: 72, height: 36, background: '#f1f5f9', borderRadius: 8 }} />
+            )}
+            {activeUser && (
               <div style={{ position: 'relative' }}>
                 <button
                   onClick={() => setProfileOpen(!profileOpen)}
@@ -118,9 +147,9 @@ export default function Navbar({ middleContent, extendedContent }: { middleConte
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     color: 'white', fontWeight: 700, fontSize: '0.875rem',
                   }}>
-                    {session.user?.name?.[0]?.toUpperCase()}
+                    {activeUser.name?.[0]?.toUpperCase() || 'U'}
                   </div>
-                  <span style={{ fontSize: '0.875rem', fontWeight: 600 }}>{session.user?.name?.split(' ')[0]}</span>
+                  <span style={{ fontSize: '0.875rem', fontWeight: 600 }}>{activeUser.name?.split(' ')[0] || 'Account'}</span>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ color: 'var(--text-muted)' }}>
                     <path d="M6 9l6 6 6-6"/>
                   </svg>
@@ -135,8 +164,8 @@ export default function Navbar({ middleContent, extendedContent }: { middleConte
                       width: 240, minWidth: 240, zIndex: 100, overflow: 'hidden',
                     }}>
                       <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border)' }}>
-                        <div style={{ fontWeight: 700, fontSize: '0.9rem' }}>{session.user?.name}</div>
-                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{session.user?.email}</div>
+                        <div style={{ fontWeight: 700, fontSize: '0.9rem' }}>{activeUser.name}</div>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{activeUser.email}</div>
                         <span className="badge badge-primary" style={{ marginTop: 4 }}>{role}</span>
                       </div>
                       <div style={{ padding: '8px 0' }}>
@@ -158,7 +187,12 @@ export default function Navbar({ middleContent, extendedContent }: { middleConte
                         ))}
                         <div style={{ borderTop: '1px solid var(--border)', margin: '8px 0' }} />
                         <button
-                          onClick={() => { signOut({ callbackUrl: '/' }); setProfileOpen(false); }}
+                          onClick={() => {
+                            try { localStorage.removeItem('staybuddy_auth_user'); } catch(_) {}
+                            setCachedUser(null);
+                            signOut({ callbackUrl: '/' });
+                            setProfileOpen(false);
+                          }}
                           style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 16px', fontSize: '0.875rem', color: 'var(--danger)', width: '100%', background: 'none', border: 'none', cursor: 'pointer', transition: 'background var(--transition-fast)' }}
                           onMouseEnter={e => (e.currentTarget.style.background = '#fee2e2')}
                           onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}

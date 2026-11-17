@@ -213,10 +213,23 @@ export const authOptions: NextAuthOptions = {
   },
   session: {
     strategy: 'jwt',
-    maxAge: 10 * 365 * 24 * 60 * 60, // 10 years - Never expire session while performing tasks
+    maxAge: 10 * 365 * 24 * 60 * 60, // 10 years - Never expire session until explicit logout
   },
   jwt: {
     maxAge: 10 * 365 * 24 * 60 * 60, // 10 years persistent JWT
+  },
+  useSecureCookies: process.env.NODE_ENV === 'production',
+  cookies: {
+    sessionToken: {
+      name: process.env.NODE_ENV === 'production' ? '__Secure-next-auth.session-token' : 'next-auth.session-token',
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: process.env.NODE_ENV === 'production',
+        maxAge: 10 * 365 * 24 * 60 * 60, // 10 years persistent cookie
+      },
+    },
   },
   secret: process.env.NEXTAUTH_SECRET,
 };

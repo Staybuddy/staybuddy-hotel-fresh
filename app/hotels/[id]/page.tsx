@@ -400,8 +400,16 @@ export default function HotelDetailPage() {
       const res = await fetch(`/api/hotels/${id}${query}`);
       const data = await res.json();
       setHotel(data.hotel);
-      setRooms(data.rooms || []);
+      const incomingRooms = data.rooms || [];
+      setRooms(incomingRooms);
       setReviews(data.reviews || []);
+      if (incomingRooms.length > 0 && !selectedRoom) {
+        const bestRoom = incomingRooms.find((r: any) => isOccupancySupportedForRoom(r, bookingData.adults)) || incomingRooms[0];
+        if (bestRoom) {
+          setSelectedRoom(bestRoom);
+          setSelectedRoomsMap({ [bestRoom._id]: bookingData.rooms });
+        }
+      }
     } catch (e) {
       console.error(e);
     } finally {
@@ -875,7 +883,12 @@ export default function HotelDetailPage() {
       alert(hotel.blockReason || "This property is blocked/unavailable for the selected dates. Please choose different dates.");
       return;
     }
-    const targetRoom = room || displayRoom;
+    const targetRoom = room || selectedRoomsList[0]?.room || selectedRoom || (rooms && rooms.length > 0 ? rooms[0] : null);
+    if (!targetRoom) {
+      const roomSection = document.getElementById("rooms-section");
+      if (roomSection) roomSection.scrollIntoView({ behavior: "smooth" });
+      return;
+    }
     if (targetRoom && targetRoom.availableRooms !== undefined && targetRoom.availableRooms <= 0) {
       alert("No rooms are available for the selected dates. Please choose different dates.");
       return;
@@ -1076,7 +1089,12 @@ export default function HotelDetailPage() {
       handleBooking();
       return;
     }
-    const displayRoom = selectedRoomsList[0]?.room || selectedRoom;
+    const displayRoom = selectedRoomsList[0]?.room || selectedRoom || (rooms && rooms.length > 0 ? rooms[0] : null);
+    if (!displayRoom) {
+      const roomsEl = document.getElementById("rooms-section");
+      if (roomsEl) roomsEl.scrollIntoView({ behavior: "smooth", block: "start" });
+      return;
+    }
     if (bookingStep === 0 && bookingData.rooms === 1 && !isOccupancySupportedForRoom(displayRoom, bookingData.adults)) {
       const occType = bookingData.adults === 3 ? 'triple' : bookingData.adults === 2 ? 'double' : 'single';
       showTripleNotification(displayRoom?.type, undefined, occType);

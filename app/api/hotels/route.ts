@@ -204,7 +204,34 @@ export async function GET(request: NextRequest) {
 
     // 3. Instant In-Memory Aggregation: 0ms per hotel instead of 100ms
     const hotelsWithPrices = paginatedHotels.map((hotel: any) => {
-      let rooms = roomsByHotelId[hotel._id] || [];
+      let collRooms = roomsByHotelId[hotel._id] || [];
+      let rooms: any[] = [];
+      if (hotel.rooms && Array.isArray(hotel.rooms) && hotel.rooms.length > 0) {
+        rooms = hotel.rooms.map((hr: any) => {
+          const matchingColl = collRooms.find((cr: any) => 
+            (cr._id && (cr._id === hr._id || cr._id === hr.id)) ||
+            (cr.id && (cr.id === hr._id || cr.id === hr.id)) ||
+            (cr.type && hr.type && cr.type.toLowerCase().trim() === hr.type.toLowerCase().trim())
+          );
+          return {
+            ...(matchingColl || {}),
+            ...hr,
+            _id: hr._id || hr.id || matchingColl?._id || `room_${Date.now()}`,
+            priceSingle: Number(hr.priceSingle !== undefined && hr.priceSingle !== '' ? hr.priceSingle : (matchingColl?.priceSingle || 0)) || 0,
+            priceDouble: Number(hr.priceDouble !== undefined && hr.priceDouble !== '' ? hr.priceDouble : (matchingColl?.priceDouble || 0)) || 0,
+            priceTriple: Number(hr.priceTriple !== undefined && hr.priceTriple !== '' ? hr.priceTriple : (matchingColl?.priceTriple || 0)) || 0,
+          };
+        });
+        collRooms.forEach((cr: any) => {
+          const already = rooms.some((r: any) => 
+            (r._id && r._id === cr._id) ||
+            (r.type && cr.type && r.type.toLowerCase().trim() === cr.type.toLowerCase().trim())
+          );
+          if (!already) rooms.push(cr);
+        });
+      } else {
+        rooms = collRooms;
+      }
       const margin = Number(hotel.marginPercentage) || 0;
       rooms = rooms.map((r: any) => applyMarginToRoom(r, margin));
       

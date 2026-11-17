@@ -45,12 +45,12 @@ export interface MultiRoomPricingResult extends BookingPricingResult {
  */
 export function isSingleOccupancyAvailable(room: any): boolean {
   if (!room) return false;
-  const pSingle = Number(room.priceSingle);
+  const pSingle = Number(room.priceSingle) > 0 ? Number(room.priceSingle) : Number(room.b2bPriceSingle);
   if (!isNaN(pSingle) && pSingle > 0) return true;
   // If priceSingle was not explicitly set, but priceDouble is positive, single guest can stay at double rate
-  const pDouble = Number(room.priceDouble);
+  const pDouble = Number(room.priceDouble) > 0 ? Number(room.priceDouble) : Number(room.b2bPriceDouble);
   if (!isNaN(pDouble) && pDouble > 0) return true;
-  const pTriple = Number(room.priceTriple);
+  const pTriple = Number(room.priceTriple) > 0 ? Number(room.priceTriple) : Number(room.b2bPriceTriple);
   if (!isNaN(pTriple) && pTriple > 0) return true;
   // Legacy room fallback
   const legacyPrice = Number(room.price || room.clientPrice || room.b2bPrice);
@@ -65,12 +65,18 @@ export function isSingleOccupancyAvailable(room: any): boolean {
  */
 export function isDoubleOccupancyAvailable(room: any): boolean {
   if (!room) return false;
-  const pDouble = Number(room.priceDouble);
+  const pDouble = Number(room.priceDouble) > 0 ? Number(room.priceDouble) : Number(room.b2bPriceDouble);
   if (!isNaN(pDouble) && pDouble > 0) return true;
 
+  // If room explicitly specifies maxGuests >= 2 and single price is not explicitly set, allow double occupancy
+  const maxCap = Number(room.maxGuests);
+  if (!isNaN(maxCap) && maxCap >= 2 && (!room.priceSingle || Number(room.priceSingle) <= 0)) {
+    return true;
+  }
+
   // If partner explicitly provided priceSingle or priceTriple, but left priceDouble empty/0 -> NOT ALLOWED!
-  const pSingle = Number(room.priceSingle);
-  const pTriple = Number(room.priceTriple);
+  const pSingle = Number(room.priceSingle) > 0 ? Number(room.priceSingle) : Number(room.b2bPriceSingle);
+  const pTriple = Number(room.priceTriple) > 0 ? Number(room.priceTriple) : Number(room.b2bPriceTriple);
   const hasExplicitSingle = !isNaN(pSingle) && pSingle > 0;
   const hasExplicitTriple = !isNaN(pTriple) && pTriple > 0;
   if (hasExplicitSingle || hasExplicitTriple) {
@@ -88,7 +94,7 @@ export function isDoubleOccupancyAvailable(room: any): boolean {
  */
 export function isTripleOccupancyAvailable(room: any): boolean {
   if (!room) return false;
-  const pTriple = Number(room.priceTriple);
+  const pTriple = Number(room.priceTriple) > 0 ? Number(room.priceTriple) : Number(room.b2bPriceTriple);
   return !isNaN(pTriple) && pTriple > 0;
 }
 
