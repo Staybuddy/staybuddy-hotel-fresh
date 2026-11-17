@@ -192,6 +192,16 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
       setShowDatePicker(true);
       return;
     }
+    // Prevent same-day or invalid checkout: hotel stay requires minimum 1 night
+    let safeCheckOut = searchData.checkOut;
+    if (searchData.checkIn >= safeCheckOut) {
+      const parts = searchData.checkIn.split('-').map(Number);
+      if (parts.length === 3) {
+        const nextD = new Date(parts[0], parts[1] - 1, parts[2] + 1);
+        safeCheckOut = `${nextD.getFullYear()}-${String(nextD.getMonth() + 1).padStart(2, '0')}-${String(nextD.getDate()).padStart(2, '0')}`;
+        setSearchData(p => ({ ...p, checkOut: safeCheckOut }));
+      }
+    }
     if (!searchData.adults || searchData.adults < 1) {
       setValidationErrorField('adults');
       setSearchError('Guests are mandatory. Please select at least 1 adult.');

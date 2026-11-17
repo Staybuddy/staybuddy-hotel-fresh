@@ -138,12 +138,27 @@ export function applyMarginToRoom(room: any, marginPercentage: number = 0) {
   if (!room) return room;
   const margin = Number(marginPercentage) || 0;
 
-  // Partner B2B base rates (strictly preserve what was configured)
-  const rawSingle = Number(room.b2bPriceSingle !== undefined ? room.b2bPriceSingle : room.priceSingle) || 0;
-  const rawDouble = Number(room.b2bPriceDouble !== undefined ? room.b2bPriceDouble : room.priceDouble) || 0;
-  const rawTriple = Number(room.b2bPriceTriple !== undefined ? room.b2bPriceTriple : room.priceTriple) || 0;
+  // Base rates: prioritize explicit partner B2B rates only if strictly positive;
+  // otherwise strictly preserve the partner's configured priceSingle, priceDouble, priceTriple
+  const rawSingle = Number(room.b2bPriceSingle) > 0
+    ? Number(room.b2bPriceSingle)
+    : (Number(room.priceSingle) || 0);
+
+  const rawDouble = Number(room.b2bPriceDouble) > 0
+    ? Number(room.b2bPriceDouble)
+    : (Number(room.priceDouble) || 0);
+
+  const rawTriple = Number(room.b2bPriceTriple) > 0
+    ? Number(room.b2bPriceTriple)
+    : (Number(room.priceTriple) || 0);
+
   const isLegacy = rawSingle === 0 && rawDouble === 0 && rawTriple === 0;
-  const rawFallback = isLegacy ? (Number(room.b2bPrice !== undefined ? room.b2bPrice : (room.price || room.clientPrice)) || 0) : 0;
+  const rawFallback = isLegacy
+    ? (Number(room.b2bPrice) > 0 ? Number(room.b2bPrice) : (Number(room.price) || Number(room.clientPrice) || 0))
+    : 0;
+
+  const maxGuests = rawTriple > 0 ? 3 : (rawDouble > 0 ? 2 : (rawSingle > 0 ? 1 : (Number(room.maxGuests) || 2)));
+  const bedType = maxGuests === 1 ? 'Single' : (room.bedType || 'Double');
 
   if (margin <= 0) {
     return {
@@ -151,12 +166,14 @@ export function applyMarginToRoom(room: any, marginPercentage: number = 0) {
       b2bPriceSingle: rawSingle,
       b2bPriceDouble: rawDouble,
       b2bPriceTriple: rawTriple,
-      b2bPrice: rawFallback,
+      b2bPrice: rawFallback || (rawDouble || rawSingle || rawTriple),
       priceSingle: rawSingle,
       priceDouble: rawDouble,
       priceTriple: rawTriple,
       price: rawDouble || rawSingle || rawTriple || rawFallback,
       clientPrice: rawDouble || rawSingle || rawTriple || rawFallback,
+      maxGuests,
+      bedType,
     };
   }
 
@@ -171,12 +188,14 @@ export function applyMarginToRoom(room: any, marginPercentage: number = 0) {
     b2bPriceSingle: rawSingle,
     b2bPriceDouble: rawDouble,
     b2bPriceTriple: rawTriple,
-    b2bPrice: rawFallback,
+    b2bPrice: rawFallback || (rawDouble || rawSingle || rawTriple),
     priceSingle: newSingle,
     priceDouble: newDouble,
     priceTriple: newTriple,
     price: newDouble || newSingle || newTriple || newFallback,
     clientPrice: newDouble || newSingle || newTriple || newFallback,
+    maxGuests,
+    bedType,
   };
 }
 

@@ -68,9 +68,18 @@ export default function HotelDetailPage() {
   const [selectedRoomsMap, setSelectedRoomsMap] = useState<Record<string, number>>({});
   const initialAdults = Math.max(1, parseInt(searchParams.get("adults") || "2", 10));
   const initialRooms = Math.min(initialAdults, Math.max(1, parseInt(searchParams.get("rooms") || "1", 10)));
+  const rawCheckIn = searchParams.get("checkIn") || "";
+  let rawCheckOut = searchParams.get("checkOut") || "";
+  if (rawCheckIn && rawCheckOut && rawCheckIn >= rawCheckOut) {
+    const parts = rawCheckIn.split('-').map(Number);
+    if (parts.length === 3) {
+      const d = new Date(parts[0], parts[1] - 1, parts[2] + 1);
+      rawCheckOut = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    }
+  }
   const [bookingData, setBookingData] = useState({
-    checkIn: searchParams.get("checkIn") || "",
-    checkOut: searchParams.get("checkOut") || "",
+    checkIn: rawCheckIn,
+    checkOut: rawCheckOut,
     guests: "1",
     rooms: initialRooms,
     adults: initialAdults,
@@ -190,7 +199,14 @@ export default function HotelDetailPage() {
     if (searchParamsInitialized.current) return;
     searchParamsInitialized.current = true;
     const checkInParam = searchParams.get("checkIn");
-    const checkOutParam = searchParams.get("checkOut");
+    let checkOutParam = searchParams.get("checkOut");
+    if (checkInParam && checkOutParam && checkInParam >= checkOutParam) {
+      const parts = checkInParam.split('-').map(Number);
+      if (parts.length === 3) {
+        const d = new Date(parts[0], parts[1] - 1, parts[2] + 1);
+        checkOutParam = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      }
+    }
     if (checkInParam || searchParams.has("adults") || searchParams.has("rooms")) {
       const rawA = searchParams.has("adults") ? parseInt(searchParams.get("adults") as string, 10) : bookingData.adults;
       const rawR = searchParams.has("rooms") ? parseInt(searchParams.get("rooms") as string, 10) : bookingData.rooms;

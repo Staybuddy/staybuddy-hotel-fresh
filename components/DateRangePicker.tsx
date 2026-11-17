@@ -40,6 +40,15 @@ export default function DateRangePicker({ checkIn, checkOut, onChange, onClose, 
     return d;
   };
 
+  const formatDateStr = (d: Date) => {
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  };
+
+  const getNextDayStr = (d: Date) => {
+    const next = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1);
+    return formatDateStr(next);
+  };
+
   const checkInDate = parseLocal(checkIn);
   const checkOutDate = parseLocal(checkOut);
 
@@ -52,18 +61,24 @@ export default function DateRangePicker({ checkIn, checkOut, onChange, onClose, 
   };
 
   const handleDateClick = (date: Date) => {
-    const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    const dateStr = formatDateStr(date);
 
     if (activeSelection === 'checkIn') {
-      if (checkOutDate && date > checkOutDate) {
-        onChange(dateStr, '');
+      // Hotel stay requires minimum 1 night: check-out must be at least checkIn + 1 day
+      const defaultNextDayStr = getNextDayStr(date);
+      if (!checkOutDate || date.getTime() >= checkOutDate.getTime()) {
+        onChange(dateStr, defaultNextDayStr);
       } else {
         onChange(dateStr, checkOut);
       }
       setActiveSelection('checkOut');
     } else {
-      if (checkInDate && date < checkInDate) {
-        onChange(dateStr, '');
+      // activeSelection === 'checkOut'
+      // Same-day check-in and check-out (e.g. 17 to 17) is not allowed.
+      // If user clicks on or before checkInDate, treat it as the new checkIn date with checkOut = next day
+      if (checkInDate && date.getTime() <= checkInDate.getTime()) {
+        const nextDayStr = getNextDayStr(date);
+        onChange(dateStr, nextDayStr);
         setActiveSelection('checkOut');
       } else {
         onChange(checkIn, dateStr);

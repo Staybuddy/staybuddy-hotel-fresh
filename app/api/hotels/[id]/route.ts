@@ -37,11 +37,57 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     if (!hotel) return NextResponse.json({ error: 'Hotel not found' }, { status: 404 });
 
-    // Fetch rooms from Firestore rooms collection first
-    const roomsSnapshot = await db.collection('rooms').where('hotelId', '==', resolvedParams.id).where('isActive', '==', true).get();
-    let rooms: any[] = roomsSnapshot.docs.map(doc => ({ _id: doc.id, ...doc.data() }));
-    if (rooms.length === 0 && hotel.rooms && hotel.rooms.length > 0) {
-      rooms = hotel.rooms;
+    // Fetch rooms from Firestore rooms collection (supporting both resolvedParams.id and hotel._id)
+    const possibleHotelIds = Array.from(new Set([
+      resolvedParams.id,
+      hotel._id,
+      hotelDoc?.id,
+      hotel.id
+    ].filter(Boolean)));
+
+    let collRooms: any[] = [];
+    try {
+      const roomsSnapshot = await db.collection('rooms')
+        .where('hotelId', 'in', possibleHotelIds)
+        .get();
+      collRooms = roomsSnapshot.docs
+        .map(doc => ({ _id: doc.id, ...doc.data() }))
+        .filter((r: any) => r.isActive !== false);
+    } catch (rErr) {
+      console.warn('Error fetching rooms collection:', rErr);
+    }
+
+    let rooms: any[] = [];
+    if (hotel.rooms && Array.isArray(hotel.rooms) && hotel.rooms.length > 0) {
+      // Prioritize partner-configured room pricing from hotel.rooms
+      rooms = hotel.rooms.map((hr: any) => {
+        const matchingColl = collRooms.find((cr: any) => 
+          (cr._id && (cr._id === hr._id || cr._id === hr.id)) ||
+          (cr.id && (cr.id === hr._id || cr.id === hr.id)) ||
+          (cr.type && hr.type && cr.type.toLowerCase().trim() === hr.type.toLowerCase().trim())
+        );
+        return {
+          ...(matchingColl || {}),
+          ...hr,
+          _id: hr._id || hr.id || matchingColl?._id || `room_${Date.now()}`,
+          priceSingle: Number(hr.priceSingle !== undefined && hr.priceSingle !== '' ? hr.priceSingle : (matchingColl?.priceSingle || 0)) || 0,
+          priceDouble: Number(hr.priceDouble !== undefined && hr.priceDouble !== '' ? hr.priceDouble : (matchingColl?.priceDouble || 0)) || 0,
+          priceTriple: Number(hr.priceTriple !== undefined && hr.priceTriple !== '' ? hr.priceTriple : (matchingColl?.priceTriple || 0)) || 0,
+        };
+      });
+
+      // Add any collection rooms not already in hotel.rooms
+      collRooms.forEach((cr: any) => {
+        const already = rooms.some((r: any) => 
+          (r._id && r._id === cr._id) ||
+          (r.type && cr.type && r.type.toLowerCase().trim() === cr.type.toLowerCase().trim())
+        );
+        if (!already) {
+          rooms.push(cr);
+        }
+      });
+    } else {
+      rooms = collRooms;
     }
 
     // Image fallback: if hotel.images is empty, fallback to room images
@@ -224,7 +270,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
         if (roomId && !String(roomId).startsWith('new_')) {
           const rRef = db.collection('rooms').doc(String(roomId));
           const { _id: r_id, id: rId, ...rFields } = r;
-          batch.set(rRef, { ...rFields, hotelId: docRef.id, updatedAt: new Date().toISOString() }, { merge: true });
+          batch.set(rRef, { ...rFields, hotelId: docRef.id, isActive: true, updatedAt: new Date().toISOString() }, { merge: true });
         } else {
           const newRoomRef = db.collection('rooms').doc();
           const { _id: r_id, id: rId, ...rFields } = r;
@@ -243,8 +289,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     await docRef.update(updateData);
     const updated = await docRef.get();
     
-    invalidateCache('hotel_detail_');
-    invalidateCache('hotels_search_');
+    invalidateCache();
 
     return NextResponse.json({ hotel: { _id: updated.id, ...updated.data() } });
   } catch (error) {
