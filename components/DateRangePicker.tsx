@@ -15,14 +15,20 @@ const DAYS = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
 
 export default function DateRangePicker({ checkIn, checkOut, onChange, onClose, activeSelection, setActiveSelection }: DateRangePickerProps) {
   const [currentMonth, setCurrentMonth] = useState(new Date());
-  
+  const [localIn, setLocalIn] = useState<string>(checkIn || '');
+  const [localOut, setLocalOut] = useState<string>(checkOut || '');
+  const [hoverDate, setHoverDate] = useState<Date | null>(null);
+
   useEffect(() => {
+    setLocalIn(checkIn || '');
+    setLocalOut(checkOut || '');
     if (checkIn) {
-      setCurrentMonth(new Date(checkIn));
-    } else {
-      setCurrentMonth(new Date());
+      const parts = checkIn.split('-').map(Number);
+      if (parts.length === 3) {
+        setCurrentMonth(new Date(parts[0], parts[1] - 1, 1));
+      }
     }
-  }, [checkIn]);
+  }, [checkIn, checkOut]);
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -34,7 +40,6 @@ export default function DateRangePicker({ checkIn, checkOut, onChange, onClose, 
       const [y, m, d] = parts.map(Number);
       return new Date(y, m - 1, d);
     }
-    // Fallback for full ISO strings if any
     const d = new Date(dateStr);
     d.setHours(0, 0, 0, 0);
     return d;
@@ -49,8 +54,15 @@ export default function DateRangePicker({ checkIn, checkOut, onChange, onClose, 
     return formatDateStr(next);
   };
 
-  const checkInDate = parseLocal(checkIn);
-  const checkOutDate = parseLocal(checkOut);
+  const formatShort = (dateStr: string) => {
+    if (!dateStr) return '';
+    const d = parseLocal(dateStr);
+    if (!d) return '';
+    return `${d.getDate()} ${MONTHS[d.getMonth()].slice(0, 3)}`;
+  };
+
+  const checkInDate = parseLocal(localIn);
+  const checkOutDate = parseLocal(localOut);
 
   const handlePrevMonth = () => {
     setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1));
@@ -63,27 +75,45 @@ export default function DateRangePicker({ checkIn, checkOut, onChange, onClose, 
   const handleDateClick = (date: Date) => {
     const dateStr = formatDateStr(date);
 
-    if (activeSelection === 'checkIn') {
-      // Hotel stay requires minimum 1 night: check-out must be at least checkIn + 1 day
-      const defaultNextDayStr = getNextDayStr(date);
-      if (!checkOutDate || date.getTime() >= checkOutDate.getTime()) {
-        onChange(dateStr, defaultNextDayStr);
-      } else {
-        onChange(dateStr, checkOut);
-      }
+    if (activeSelection === 'checkIn' || (localIn && localOut)) {
+      // Starting fresh or selecting Check-in:
+      // Only select the check-in date. DO NOT auto-select the next day as checkout.
+      setLocalIn(dateStr);
+      setLocalOut('');
       setActiveSelection('checkOut');
     } else {
       // activeSelection === 'checkOut'
-      // Same-day check-in and check-out (e.g. 17 to 17) is not allowed.
-      // If user clicks on or before checkInDate, treat it as the new checkIn date with checkOut = next day
-      if (checkInDate && date.getTime() <= checkInDate.getTime()) {
-        const nextDayStr = getNextDayStr(date);
-        onChange(dateStr, nextDayStr);
+      if (!checkInDate) {
+        setLocalIn(dateStr);
+        setLocalOut('');
         setActiveSelection('checkOut');
-      } else {
-        onChange(checkIn, dateStr);
-        onClose(); // Auto close on successful checkout selection
+        return;
       }
+
+      // Check-out must be strictly after Check-in (minimum 1 night)
+      if (date.getTime() > checkInDate.getTime()) {
+        setLocalOut(dateStr);
+        onChange(localIn, dateStr);
+        onClose();
+      } else {
+        // User clicked same date or earlier date: treat as new Check-in date
+        setLocalIn(dateStr);
+        setLocalOut('');
+        setActiveSelection('checkOut');
+      }
+    }
+  };
+
+  const handleConfirm = () => {
+    if (localIn && localOut && localIn < localOut) {
+      onChange(localIn, localOut);
+      onClose();
+    } else if (localIn) {
+      const fallbackOut = getNextDayStr(parseLocal(localIn)!);
+      onChange(localIn, fallbackOut);
+      onClose();
+    } else {
+      onClose();
     }
   };
 
@@ -133,7 +163,13 @@ export default function DateRangePicker({ checkIn, checkOut, onChange, onClose, 
             const isPast = day < today;
             const isCheckIn = checkInDate && day.getTime() === checkInDate.getTime();
             const isCheckOut = checkOutDate && day.getTime() === checkOutDate.getTime();
-            const isBetween = checkInDate && checkOutDate && day > checkInDate && day < checkOutDate;
+            
+            // Preview range while hovering
+            const isHoverRange = Boolean(
+              checkInDate && !checkOutDate && hoverDate && hoverDate > checkInDate &&
+              day > checkInDate && day < hoverDate
+            );
+            const isBetween = Boolean(checkInDate && checkOutDate && day > checkInDate && day < checkOutDate);
             const isSelected = isCheckIn || isCheckOut;
 
             let bg = 'transparent';
@@ -151,9 +187,13 @@ export default function DateRangePicker({ checkIn, checkOut, onChange, onClose, 
               bg = 'var(--brand-50)';
               color = 'var(--brand-700)';
               borderRadius = '0';
+            } else if (isHoverRange) {
+              bg = '#fff7ed';
+              color = '#ea580c';
+              borderRadius = '0';
             }
 
-            if (isCheckIn && checkOutDate) {
+            if (isCheckIn && (checkOutDate || isHoverRange)) {
               borderRadius = 'var(--radius-md) 0 0 var(--radius-md)';
             } else if (isCheckOut && checkInDate) {
               borderRadius = '0 var(--radius-md) var(--radius-md) 0';
@@ -165,6 +205,7 @@ export default function DateRangePicker({ checkIn, checkOut, onChange, onClose, 
                 key={i}
                 disabled={isPast}
                 onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDateClick(day); }}
+                onMouseEnter={() => { if (!isPast) setHoverDate(day); }}
                 style={{
                   height: 40,
                   display: 'flex',
@@ -179,17 +220,7 @@ export default function DateRangePicker({ checkIn, checkOut, onChange, onClose, 
                   cursor: isPast ? 'not-allowed' : 'pointer',
                   position: 'relative',
                   opacity: isPast ? 0.4 : 1,
-                  transition: 'background 0.2s'
-                }}
-                onMouseEnter={e => {
-                  if (!isPast && !isSelected) {
-                    (e.currentTarget as HTMLElement).style.background = isBetween ? 'var(--brand-100)' : '#f1f5f9';
-                  }
-                }}
-                onMouseLeave={e => {
-                  if (!isPast && !isSelected) {
-                    (e.currentTarget as HTMLElement).style.background = isBetween ? 'var(--brand-50)' : 'transparent';
-                  }
+                  transition: 'background 0.15s ease'
                 }}
               >
                 {day.getDate()}
@@ -204,13 +235,85 @@ export default function DateRangePicker({ checkIn, checkOut, onChange, onClose, 
   return (
     <div 
       style={{
-        display: 'flex', gap: 40, width: 'max-content',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 16,
+        width: 'max-content',
+        maxWidth: '100%',
         cursor: 'default',
-        padding: '8px'
+        padding: '16px 20px'
       }}
-      onClick={e => e.stopPropagation()} // Prevent closing when clicking inside picker
+      onClick={e => e.stopPropagation()}
+      onMouseLeave={() => setHoverDate(null)}
     >
-      {renderMonth(0)}
+      {/* Step guidance banner */}
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: '10px 14px',
+        background: '#fff7ed',
+        border: '1px solid #fed7aa',
+        borderRadius: '14px',
+        gap: 12
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.85rem', fontWeight: 700, color: '#c2410c' }}>
+          <span>🗓️</span>
+          <span>
+            {!localIn
+              ? 'Select Check-in Date'
+              : !localOut
+              ? `Check-in: ${formatShort(localIn)} — Now select Check-out Date`
+              : `${formatShort(localIn)} → ${formatShort(localOut)}`}
+          </span>
+        </div>
+        {localIn && (
+          <button
+            type="button"
+            onClick={() => {
+              setLocalIn('');
+              setLocalOut('');
+              setActiveSelection('checkIn');
+            }}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: '#9a3412',
+              fontSize: '0.78rem',
+              fontWeight: 600,
+              cursor: 'pointer',
+              textDecoration: 'underline'
+            }}
+          >
+            Reset
+          </button>
+        )}
+      </div>
+
+      <div style={{ display: 'flex', gap: 40 }}>
+        {renderMonth(0)}
+      </div>
+
+      {/* Done / Confirm Footer */}
+      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, paddingTop: 8, borderTop: '1px solid var(--border)' }}>
+        <button
+          type="button"
+          onClick={onClose}
+          className="btn btn-ghost"
+          style={{ padding: '8px 16px', fontSize: '0.85rem' }}
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          onClick={handleConfirm}
+          className="btn btn-primary"
+          style={{ padding: '8px 20px', fontSize: '0.85rem' }}
+          disabled={!localIn}
+        >
+          {localOut ? 'Done' : 'Select Dates'}
+        </button>
+      </div>
     </div>
   );
 }

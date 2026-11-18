@@ -146,15 +146,18 @@ export default function HotelDetailPage() {
   const switchToDoubleOccupancy = () => {
     setTripleToast(null);
     setOccupancy("double");
-    setBookingData((prev) => ({ ...prev, adults: 2 }));
-    updateUrlParams({ adults: 2 });
+    setBookingData((prev) => {
+      const safeRooms = Math.min(prev.rooms, 2);
+      updateUrlParams({ adults: 2, rooms: safeRooms });
+      return { ...prev, adults: 2, rooms: safeRooms };
+    });
   };
 
   const switchToSingleOccupancy = () => {
     setTripleToast(null);
     setOccupancy("single");
-    setBookingData((prev) => ({ ...prev, adults: 1 }));
-    updateUrlParams({ adults: 1 });
+    setBookingData((prev) => ({ ...prev, adults: 1, rooms: 1 }));
+    updateUrlParams({ adults: 1, rooms: 1 });
   };
 
   useEffect(() => {
@@ -225,6 +228,51 @@ export default function HotelDetailPage() {
       }
     }
   }, [searchParams]);
+
+  // Synchronize with user's last chosen search criteria (e.g. from homepage or previous navigation)
+  useEffect(() => {
+    try {
+      const hasUrlParams = searchParams.has("adults") || searchParams.has("rooms") || searchParams.has("checkIn");
+      if (!hasUrlParams) {
+        const saved = localStorage.getItem('staybuddy_last_search');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (parsed && typeof parsed === 'object') {
+            const safeA = Math.max(1, Number(parsed.adults) || 2);
+            const safeR = Math.min(safeA, Math.max(1, Number(parsed.rooms) || 1));
+            setBookingData(prev => ({
+              ...prev,
+              checkIn: parsed.checkIn || prev.checkIn,
+              checkOut: parsed.checkOut || prev.checkOut,
+              adults: safeA,
+              rooms: safeR,
+              children: Number(parsed.children) || 0,
+            }));
+            setOccupancy(safeA === 1 ? "single" : safeA === 3 ? "triple" : "double");
+            updateUrlParams({
+              adults: safeA,
+              rooms: safeR,
+              checkIn: parsed.checkIn,
+              checkOut: parsed.checkOut,
+              children: Number(parsed.children) || 0,
+            });
+          }
+        }
+      }
+    } catch (_) {}
+  }, []);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('staybuddy_last_search', JSON.stringify({
+        checkIn: bookingData.checkIn,
+        checkOut: bookingData.checkOut,
+        adults: bookingData.adults,
+        rooms: bookingData.rooms,
+        children: bookingData.children,
+      }));
+    } catch (_) {}
+  }, [bookingData.checkIn, bookingData.checkOut, bookingData.adults, bookingData.rooms, bookingData.children]);
 
   useEffect(() => {
     if (session?.user) {
@@ -3172,8 +3220,11 @@ export default function HotelDetailPage() {
                                 onClick={() => {
                                   setOccupancy(occ as any);
                                   const adultCount = occ === "single" ? 1 : occ === "triple" ? 3 : 2;
-                                  setBookingData((prev) => ({ ...prev, adults: adultCount }));
-                                  updateUrlParams({ adults: adultCount });
+                                  setBookingData((prev) => {
+                                    const safeRooms = Math.min(prev.rooms, adultCount);
+                                    updateUrlParams({ adults: adultCount, rooms: safeRooms });
+                                    return { ...prev, adults: adultCount, rooms: safeRooms };
+                                  });
                                 }}
                                 style={{
                                   border: isAct ? "2px solid #ea580c" : "1px solid #e2e8f0",
@@ -3967,8 +4018,8 @@ export default function HotelDetailPage() {
                                 type="button"
                                 onClick={() => {
                                   setOccupancy("single");
-                                  setBookingData(prev => ({ ...prev, adults: 1 }));
-                                  updateUrlParams({ adults: 1 });
+                                  setBookingData(prev => ({ ...prev, adults: 1, rooms: 1 }));
+                                  updateUrlParams({ adults: 1, rooms: 1 });
                                 }}
                                 style={{
                                   padding: "2px 8px",
@@ -3989,8 +4040,11 @@ export default function HotelDetailPage() {
                                   type="button"
                                   onClick={() => {
                                     setOccupancy("double");
-                                    setBookingData(prev => ({ ...prev, adults: 2 }));
-                                    updateUrlParams({ adults: 2 });
+                                    setBookingData(prev => {
+                                      const safeRooms = Math.min(prev.rooms, 2);
+                                      updateUrlParams({ adults: 2, rooms: safeRooms });
+                                      return { ...prev, adults: 2, rooms: safeRooms };
+                                    });
                                   }}
                                   style={{
                                     padding: "2px 8px",
@@ -4033,8 +4087,11 @@ export default function HotelDetailPage() {
                                   type="button"
                                   onClick={() => {
                                     setOccupancy("triple");
-                                    setBookingData(prev => ({ ...prev, adults: 3 }));
-                                    updateUrlParams({ adults: 3 });
+                                    setBookingData(prev => {
+                                      const safeRooms = Math.min(prev.rooms, 3);
+                                      updateUrlParams({ adults: 3, rooms: safeRooms });
+                                      return { ...prev, adults: 3, rooms: safeRooms };
+                                    });
                                   }}
                                   style={{
                                     padding: "2px 8px",

@@ -741,5 +741,13 @@ export function adjustRoomsAndAdults(
     }
   }
 
+  // Absolute invariant: 1 adult can strictly NEVER have more than 1 room
+  if (adults <= 1) {
+    rooms = 1;
+    adults = 1;
+  } else if (rooms > adults) {
+    rooms = adults;
+  }
+
   return { rooms, adults };
 }

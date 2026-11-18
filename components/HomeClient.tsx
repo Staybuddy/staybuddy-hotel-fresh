@@ -44,6 +44,36 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
   const [searchError, setSearchError] = useState('');
   const [validationErrorField, setValidationErrorField] = useState<'location' | 'dates' | 'adults' | null>(null);
   const [userWishlistIds, setUserWishlistIds] = useState<string[]>([]);
+
+  // Synchronize search criteria with localStorage so choices (e.g. 1 adult, custom dates) persist across page transitions
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('staybuddy_last_search');
+      if (saved) {
+        const p = JSON.parse(saved);
+        if (p && typeof p === 'object') {
+          const safeA = Math.max(1, Number(p.adults) || 2);
+          const safeR = Math.min(safeA, Math.max(1, Number(p.rooms) || 1));
+          setSearchData(prev => ({
+            ...prev,
+            propertyType: p.propertyType || prev.propertyType,
+            location: p.location || prev.location,
+            checkIn: p.checkIn || prev.checkIn,
+            checkOut: p.checkOut || prev.checkOut,
+            adults: safeA,
+            rooms: safeR,
+            children: Number(p.children) || 0,
+          }));
+        }
+      }
+    } catch (_) {}
+  }, []);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('staybuddy_last_search', JSON.stringify(searchData));
+    } catch (_) {}
+  }, [searchData]);
   
   // Dynamic Real Property First Photos for Newly Added Hotels Slideshow
   const newlyAddedSlides = useMemo(() => {
@@ -1779,6 +1809,25 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
   );
 }
 
+function buildHotelLinkWithSearch(hotelId: string): string {
+  if (typeof window === 'undefined') return `/hotels/${hotelId}`;
+  try {
+    const raw = localStorage.getItem('staybuddy_last_search');
+    if (raw) {
+      const s = JSON.parse(raw);
+      const params = new URLSearchParams();
+      if (s.checkIn) params.set('checkIn', s.checkIn);
+      if (s.checkOut) params.set('checkOut', s.checkOut);
+      if (s.adults) params.set('adults', String(s.adults));
+      if (s.rooms) params.set('rooms', String(s.rooms));
+      if (s.children !== undefined && s.children !== null) params.set('children', String(s.children));
+      const qs = params.toString();
+      if (qs) return `/hotels/${hotelId}?${qs}`;
+    }
+  } catch (_) {}
+  return `/hotels/${hotelId}`;
+}
+
 function FeaturedSpotlightHotel({ hotel, isWishlisted }: { hotel: any, isWishlisted?: boolean }) {
   const [imgIndex, setImgIndex] = useState(0);
   const images: string[] = Array.isArray(hotel.images) && hotel.images.length > 0 ? hotel.images : [];
@@ -1801,7 +1850,7 @@ function FeaturedSpotlightHotel({ hotel, isWishlisted }: { hotel: any, isWishlis
 
   return (
     <Link
-      href={`/hotels/${hotel._id}`}
+      href={buildHotelLinkWithSearch(hotel._id)}
       style={{ textDecoration: 'none', color: 'inherit', display: 'block', width: '100%' }}
     >
       <div className="card featured-spotlight-card" style={{ cursor: 'pointer' }}>
@@ -1970,7 +2019,7 @@ function HotelCard({ hotel, isWishlisted }: { hotel: any, isWishlisted?: boolean
   };
 
   return (
-    <Link href={`/hotels/${hotel._id}`} style={{ textDecoration: 'none' }}>
+    <Link href={buildHotelLinkWithSearch(hotel._id)} style={{ textDecoration: 'none' }}>
       <div className="card card-hover hotel-card" style={{ height: '100%' }}>
         <div className="hotel-card-img-wrapper" style={{ position: 'relative', width: '100%', height: '220px' }}>
           {hotel.images?.[imgIndex] ? (

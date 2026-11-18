@@ -101,6 +101,44 @@ function HotelSearch() {
     }));
   }, [searchParams]);
 
+  useEffect(() => {
+    try {
+      const hasUrl = searchParams.has('adults') || searchParams.has('checkIn');
+      if (!hasUrl) {
+        const saved = localStorage.getItem('staybuddy_last_search');
+        if (saved) {
+          const p = JSON.parse(saved);
+          if (p && typeof p === 'object') {
+            const safeA = Math.max(1, Number(p.adults) || 2);
+            const safeR = Math.min(safeA, Math.max(1, Number(p.rooms) || 1));
+            setFilters(prev => ({
+              ...prev,
+              city: p.location || prev.city,
+              checkIn: p.checkIn || prev.checkIn,
+              checkOut: p.checkOut || prev.checkOut,
+              adults: safeA,
+              rooms: safeR,
+              children: Number(p.children) || prev.children,
+            }));
+          }
+        }
+      }
+    } catch (_) {}
+  }, []);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('staybuddy_last_search', JSON.stringify({
+        location: filters.city,
+        checkIn: filters.checkIn,
+        checkOut: filters.checkOut,
+        adults: filters.adults,
+        rooms: filters.rooms,
+        children: filters.children,
+      }));
+    } catch (_) {}
+  }, [filters.city, filters.checkIn, filters.checkOut, filters.adults, filters.rooms, filters.children]);
+
   useEffect(() => { fetchHotels(); }, [filters, page]);
 
   async function fetchHotels() {
