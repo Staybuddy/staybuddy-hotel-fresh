@@ -12,19 +12,26 @@ export default function WelcomeAuthModal() {
   const [loadingGoogle, setLoadingGoogle] = useState(false);
 
   useEffect(() => {
-    // Only show to unauthenticated visitors who haven't dismissed it in the current session
-    if (status === 'authenticated') return;
     if (typeof window === 'undefined') return;
+    if (status === 'authenticated') return;
 
     try {
-      const dismissed = sessionStorage.getItem('staybuddy_welcome_dismissed');
-      if (!dismissed) {
-        // Small delay so page renders smoothly before modal pops
-        const timer = setTimeout(() => {
-          setIsOpen(true);
-        }, 600);
-        return () => clearTimeout(timer);
-      }
+      // 1. If user is already authenticated or cached in localStorage, never show welcome modal
+      const cachedAuth = localStorage.getItem('staybuddy_auth_user');
+      if (cachedAuth) return;
+
+      // 2. If user already dismissed or continued as guest previously, never show again
+      const dismissed = localStorage.getItem('staybuddy_welcome_dismissed');
+      if (dismissed === 'true') return;
+
+      // 3. Do not pop up while NextAuth is still loading the session
+      if (status === 'loading') return;
+
+      // Only show to a brand new first-time visitor with a gentle delay
+      const timer = setTimeout(() => {
+        setIsOpen(true);
+      }, 1000);
+      return () => clearTimeout(timer);
     } catch {
       // Ignore storage errors
     }
@@ -32,7 +39,7 @@ export default function WelcomeAuthModal() {
 
   const handleDismiss = () => {
     try {
-      sessionStorage.setItem('staybuddy_welcome_dismissed', 'true');
+      localStorage.setItem('staybuddy_welcome_dismissed', 'true');
     } catch {}
     setIsOpen(false);
   };
@@ -40,7 +47,7 @@ export default function WelcomeAuthModal() {
   const handleGoogleSignIn = async () => {
     setLoadingGoogle(true);
     try {
-      sessionStorage.setItem('staybuddy_welcome_dismissed', 'true');
+      localStorage.setItem('staybuddy_welcome_dismissed', 'true');
       await signIn('google', { callbackUrl: '/' });
     } catch (err) {
       console.error('Google sign-in error', err);
@@ -50,7 +57,7 @@ export default function WelcomeAuthModal() {
 
   const handlePhoneEmailSignIn = () => {
     try {
-      sessionStorage.setItem('staybuddy_welcome_dismissed', 'true');
+      localStorage.setItem('staybuddy_welcome_dismissed', 'true');
     } catch {}
     setIsOpen(false);
     router.push('/login');

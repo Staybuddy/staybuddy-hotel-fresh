@@ -5506,7 +5506,7 @@ export default function HotelDetailPage() {
                 }}
               >
                 <div
-                  style={{ width: "100%", height: 440, position: "relative", cursor: "zoom-in" }}
+                  style={{ width: "100%", height: "clamp(240px, 35vh, 420px)", position: "relative", cursor: "zoom-in" }}
                   onClick={() => {
                     const currentImg = roomDetailsModal.images[modalImageIndex];
                     const foundIdx = allPhotos.findIndex((p) => p.url === currentImg);
@@ -5519,6 +5519,7 @@ export default function HotelDetailPage() {
                     src={roomDetailsModal.images[modalImageIndex]}
                     alt={roomDetailsModal.type}
                     fill
+                    priority
                     sizes="(max-width: 768px) 100vw, 900px"
                     style={{
                       objectFit: "cover",

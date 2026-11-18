@@ -9,13 +9,13 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   try {
     const resolvedParams = await params;
 
-    // Ultra-fast In-Memory Cache (15s TTL)
+    // Ultra-fast In-Memory Cache (60s TTL)
     const cacheKey = `hotel_detail_${request.url}`;
     const cachedResponse = getCached<any>(cacheKey);
     if (cachedResponse) {
       return NextResponse.json(cachedResponse, {
         headers: {
-          'Cache-Control': 'public, s-maxage=15, stale-while-revalidate=59',
+          'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300',
           'X-Cache': 'HIT',
         },
       });
@@ -107,13 +107,18 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       const stayNights = getStayNights(searchCheckIn, searchCheckOut);
       const hasExplicitDates = Boolean(searchCheckIn && searchCheckOut);
 
-      const [bookingsSnap, blocksSnap] = await Promise.all([
+      const targetHotelId = hotel._id || resolvedParams.id;
+      const [bookingsSnap, blocksSnap, rSnap] = await Promise.all([
         db.collection('bookings')
           .where('hotelId', '==', hotel._id)
           .where('status', '==', 'confirmed')
           .get(),
         db.collection('inventory_blocks')
           .where('hotelId', '==', hotel._id)
+          .get()
+          .catch(() => ({ docs: [] as any[] })),
+        db.collection('reviews')
+          .where('hotelId', '==', targetHotelId)
           .get()
           .catch(() => ({ docs: [] as any[] })),
       ]);
@@ -170,20 +175,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         };
       });
 
-    } catch (e) {
-      console.error('Error calculating room availability', e);
-      // Fallback to allocation if error
-      rooms = rooms.map(room => ({ ...room, availableRooms: (Number(room.staybuddyAllocation) || 0) + (Number(room.extraInventoryToday) || 0) }));
-    }
-
-    // Fetch reviews for the hotel
-    let reviews: any[] = [];
-    try {
-      const targetHotelId = hotel._id || resolvedParams.id;
-      const rSnap = await db.collection('reviews')
-        .where('hotelId', '==', targetHotelId)
-        .get();
-      
+      // Parse reviews fetched concurrently
       reviews = rSnap.docs.map(doc => {
         const data = doc.data();
         return {
@@ -197,8 +189,11 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         };
       });
       reviews.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
-    } catch (rErr) {
-      console.warn('Error fetching hotel reviews:', rErr);
+
+    } catch (e) {
+      console.error('Error calculating room availability', e);
+      // Fallback to allocation if error
+      rooms = rooms.map(room => ({ ...room, availableRooms: (Number(room.staybuddyAllocation) || 0) + (Number(room.extraInventoryToday) || 0) }));
     }
 
     const margin = Number(hotel.marginPercentage) || 0;
@@ -208,11 +203,12 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     }
 
     const responsePayload = { hotel, rooms, reviews };
-    setCached(cacheKey, responsePayload, 15);
+    setCached(cacheKey, responsePayload, 60);
 
     return NextResponse.json(responsePayload, {
       headers: {
-        'Cache-Control': 'public, s-maxage=15, stale-while-revalidate=59',
+        'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300',
+        'X-Cache': 'MISS',
       },
     });
   } catch (error) {

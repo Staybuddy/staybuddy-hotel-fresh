@@ -24,12 +24,9 @@ export default function Navbar({ middleContent, extendedContent }: { middleConte
         localStorage.setItem('staybuddy_auth_user', JSON.stringify(session.user));
         setCachedUser(session.user);
       } catch (_) {}
-    } else if (status === 'unauthenticated') {
-      try {
-        localStorage.removeItem('staybuddy_auth_user');
-        setCachedUser(null);
-      } catch (_) {}
     }
+    // Deliberately DO NOT remove staybuddy_auth_user on transient 'unauthenticated' status
+    // on Chrome reload or tab restart. It stays persistent until the user explicitly clicks Sign Out.
   }, [session, status]);
 
   const activeUser = session?.user || cachedUser;

@@ -213,10 +213,10 @@ export const authOptions: NextAuthOptions = {
   },
   session: {
     strategy: 'jwt',
-    maxAge: 10 * 365 * 24 * 60 * 60, // 10 years - Never expire session until explicit logout
+    maxAge: 365 * 24 * 60 * 60, // 1 year persistent session (within Chromium 400-day limit)
   },
   jwt: {
-    maxAge: 10 * 365 * 24 * 60 * 60, // 10 years persistent JWT
+    maxAge: 365 * 24 * 60 * 60, // 1 year persistent JWT
   },
   useSecureCookies: process.env.NODE_ENV === 'production',
   cookies: {
@@ -227,10 +227,10 @@ export const authOptions: NextAuthOptions = {
         sameSite: 'lax',
         path: '/',
         secure: process.env.NODE_ENV === 'production',
-        maxAge: 10 * 365 * 24 * 60 * 60, // 10 years persistent cookie
+        maxAge: 365 * 24 * 60 * 60, // 1 year persistent cookie
       },
     },
   },
-  secret: process.env.NEXTAUTH_SECRET,
+  secret: process.env.NEXTAUTH_SECRET || 'staybuddy-super-secret-key-change-in-production-2026',
 };
 

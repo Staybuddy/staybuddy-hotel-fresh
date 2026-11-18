@@ -9,13 +9,13 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
 
-    // 1. Ultra-fast In-Memory Cache (20s TTL)
+    // 1. Ultra-fast In-Memory Cache (30s TTL)
     const cacheKey = `hotels_search_${request.url}`;
     const cachedResponse = getCached<any>(cacheKey);
     if (cachedResponse) {
       return NextResponse.json(cachedResponse, {
         headers: {
-          'Cache-Control': 'public, s-maxage=15, stale-while-revalidate=59',
+          'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=120',
           'X-Cache': 'HIT',
         },
       });
@@ -342,11 +342,11 @@ export async function GET(request: NextRequest) {
       pages: Math.ceil(adjustedTotal / limitParam),
     };
 
-    setCached(cacheKey, responsePayload, 20);
+    setCached(cacheKey, responsePayload, 30);
 
     return NextResponse.json(responsePayload, {
       headers: {
-        'Cache-Control': 'public, s-maxage=15, stale-while-revalidate=59',
+        'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=120',
       },
     });
   } catch (error) {
