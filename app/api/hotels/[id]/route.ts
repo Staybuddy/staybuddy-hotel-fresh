@@ -58,6 +58,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     }
 
     let rooms: any[] = [];
+    let reviews: any[] = [];
     if (hotel.rooms && Array.isArray(hotel.rooms) && hotel.rooms.length > 0) {
       // Prioritize partner-configured room pricing from hotel.rooms
       rooms = hotel.rooms.map((hr: any) => {
