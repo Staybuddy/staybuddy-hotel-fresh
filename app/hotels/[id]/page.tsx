@@ -555,6 +555,14 @@ export default function HotelDetailPage() {
   // Keep selected room in sync with sorted room list and active occupancy
   useEffect(() => {
     if (sortedRoomsList.length > 0) {
+      if (selectedRoom) {
+        // If current selected room only supports Triple occupancy, automatically align bookingData to 3 adults
+        if (bookingData.rooms === 1 && isTripleOccupancyAvailable(selectedRoom) && !isDoubleOccupancyAvailable(selectedRoom) && bookingData.adults !== 3) {
+          setOccupancy("triple");
+          setBookingData((p) => ({ ...p, adults: 3 }));
+          return;
+        }
+      }
       const isCurrentValid = selectedRoom && isOccupancySupportedForRoom(selectedRoom, bookingData.adults);
       if (!isCurrentValid) {
         const bestRoom = sortedRoomsList.find((r: any) => isOccupancySupportedForRoom(r, bookingData.adults)) || sortedRoomsList[0];
@@ -564,7 +572,7 @@ export default function HotelDetailPage() {
         }
       }
     }
-  }, [sortedRoomsList, bookingData.adults, bookingData.rooms]);
+  }, [sortedRoomsList, bookingData.adults, bookingData.rooms, selectedRoom]);
 
   // Clean description removing any raw bullet distances (distances are rendered in their own dedicated visual card)
   const cleanDescription = useMemo(() => {
@@ -1056,6 +1064,17 @@ export default function HotelDetailPage() {
       if (bookingData.rooms === 1 || totalSelectedRoomsCount === 0) {
         setSelectedRoomsMap({ [room._id]: bookingData.rooms });
         setSelectedRoom(room);
+        if (bookingData.rooms === 1) {
+          if (isTripleOccupancyAvailable(room) && !isDoubleOccupancyAvailable(room)) {
+            setOccupancy("triple");
+            setBookingData((p) => ({ ...p, adults: 3, rooms: 1 }));
+            updateUrlParams({ adults: 3, rooms: 1 });
+          } else if (isSingleOccupancyAvailable(room) && !isDoubleOccupancyAvailable(room)) {
+            setOccupancy("single");
+            setBookingData((p) => ({ ...p, adults: 1, rooms: 1 }));
+            updateUrlParams({ adults: 1, rooms: 1 });
+          }
+        }
       }
     }
     if (bookingData.rooms > 1 && totalSelectedRoomsCount < bookingData.rooms && !room) {
@@ -2664,6 +2683,17 @@ export default function HotelDetailPage() {
                                       e.stopPropagation();
                                       setSelectedRoom(room);
                                       setSelectedRoomsMap({ [room._id]: 1 });
+                                      if (bookingData.rooms === 1) {
+                                        if (isTripleOccupancyAvailable(room) && !isDoubleOccupancyAvailable(room)) {
+                                          setOccupancy("triple");
+                                          setBookingData((prev) => ({ ...prev, adults: 3, rooms: 1 }));
+                                          updateUrlParams({ adults: 3, rooms: 1 });
+                                        } else if (isSingleOccupancyAvailable(room) && !isDoubleOccupancyAvailable(room)) {
+                                          setOccupancy("single");
+                                          setBookingData((prev) => ({ ...prev, adults: 1, rooms: 1 }));
+                                          updateUrlParams({ adults: 1, rooms: 1 });
+                                        }
+                                      }
                                     }}
                                   >
                                     {selectedRoom?._id === room._id ? "Selected ✓" : "Select"}
@@ -3079,7 +3109,7 @@ export default function HotelDetailPage() {
                               marginTop: 4,
                             }}
                           >
-                            Fits {fitsAdults} Adults
+                            Fits {fitsAdults} Adults {bookingData.rooms === 1 && (bookingData.adults === 3 ? "• Triple Occupancy" : bookingData.adults === 1 ? "• Single Occupancy" : "• Double Occupancy")}
                           </div>
                         </div>
                         {isRoomSelected ? (
@@ -3306,7 +3336,11 @@ export default function HotelDetailPage() {
                         <div
                           style={{
                             display: "grid",
-                            gridTemplateColumns: "1fr 1fr 1fr",
+                            gridTemplateColumns: [
+                              displayRoom.priceSingle && "1fr",
+                              displayRoom.priceDouble && "1fr",
+                              displayRoom.priceTriple && "1fr"
+                            ].filter(Boolean).join(" ") || "1fr",
                             gap: 6,
                             marginBottom: 16,
                           }}
@@ -3317,9 +3351,9 @@ export default function HotelDetailPage() {
                                 ? displayRoom.priceSingle
                                 : occ === "triple"
                                 ? displayRoom.priceTriple
-                                : displayRoom.priceDouble || displayRoom.priceSingle;
+                                : displayRoom.priceDouble;
                             if (!p) return null;
-                            const isAct = occupancy === occ;
+                            const isAct = occupancy === occ || (occ === "triple" && bookingData.adults === 3) || (occ === "single" && bookingData.adults === 1);
                             return (
                               <div
                                 key={occ}
@@ -3335,7 +3369,7 @@ export default function HotelDetailPage() {
                                 style={{
                                   border: isAct ? "2px solid #ea580c" : "1px solid #e2e8f0",
                                   borderRadius: "10px",
-                                  padding: "6px 2px",
+                                  padding: "6px 4px",
                                   textAlign: "center",
                                   cursor: "pointer",
                                   background: isAct ? "#fff7ed" : "white",
@@ -3350,7 +3384,7 @@ export default function HotelDetailPage() {
                                     textTransform: "capitalize",
                                   }}
                                 >
-                                  {occ} {occ === "double" && "⭐"}
+                                  {occ === "triple" ? "Triple (3 Guests)" : occ === "double" ? "Double (2 Guests)" : "Single (1 Guest)"}
                                 </div>
                                 <div
                                   style={{
@@ -3360,7 +3394,7 @@ export default function HotelDetailPage() {
                                     marginTop: 2,
                                   }}
                                 >
-                                  ₹{p.toLocaleString()}
+                                  ₹{Number(p).toLocaleString()}
                                 </div>
                               </div>
                             );

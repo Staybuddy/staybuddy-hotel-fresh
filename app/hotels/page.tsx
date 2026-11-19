@@ -754,7 +754,36 @@ function HotelSearch() {
                       {/* Image / Gallery */}
                       <div className="hotel-horizontal-img">
                         {hotel.images?.[0] ? (
-                          <Image src={hotel.images[0]} alt={hotel.name} fill priority={index < 2} style={{ objectFit: 'cover' }} sizes="(max-width: 900px) 100vw, 320px" />
+                          <>
+                            <Image 
+                              src={hotel.images[0]} 
+                              alt={hotel.name} 
+                              fill 
+                              priority={index < 2} 
+                              style={{ objectFit: 'cover', objectPosition: 'center 20%' }} 
+                              sizes="(max-width: 900px) 100vw, 320px" 
+                            />
+                            {hotel.images.length > 1 && (
+                              <span style={{
+                                position: 'absolute',
+                                bottom: 8,
+                                right: 8,
+                                background: 'rgba(15, 23, 42, 0.75)',
+                                backdropFilter: 'blur(6px)',
+                                color: '#ffffff',
+                                fontSize: '0.72rem',
+                                fontWeight: 700,
+                                padding: '3px 8px',
+                                borderRadius: 6,
+                                zIndex: 2,
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 4,
+                              }}>
+                                📷 {hotel.images.length} Photos
+                              </span>
+                            )}
+                          </>
                         ) : (
                           <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg, var(--brand-100), var(--brand-200))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '3rem' }}>🏨</div>
                         )}

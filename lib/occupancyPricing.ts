@@ -68,13 +68,8 @@ export function isDoubleOccupancyAvailable(room: any): boolean {
   const pDouble = Number(room.priceDouble) > 0 ? Number(room.priceDouble) : Number(room.b2bPriceDouble);
   if (!isNaN(pDouble) && pDouble > 0) return true;
 
-  // If room explicitly specifies maxGuests >= 2 and single price is not explicitly set, allow double occupancy
-  const maxCap = Number(room.maxGuests);
-  if (!isNaN(maxCap) && maxCap >= 2 && (!room.priceSingle || Number(room.priceSingle) <= 0)) {
-    return true;
-  }
-
-  // If partner explicitly provided priceSingle or priceTriple, but left priceDouble empty/0 -> NOT ALLOWED!
+  // If partner explicitly provided priceSingle or priceTriple, but left priceDouble empty/0 -> STRICTLY NOT ALLOWED!
+  // (e.g. Single-only rooms or Triple-only rooms must not accept Double occupancy bookings)
   const pSingle = Number(room.priceSingle) > 0 ? Number(room.priceSingle) : Number(room.b2bPriceSingle);
   const pTriple = Number(room.priceTriple) > 0 ? Number(room.priceTriple) : Number(room.b2bPriceTriple);
   const hasExplicitSingle = !isNaN(pSingle) && pSingle > 0;
@@ -83,7 +78,7 @@ export function isDoubleOccupancyAvailable(room: any): boolean {
     return false;
   }
 
-  // Legacy room fallback only when modern pricing fields were never used at all
+  // Legacy room fallback only when modern pricing fields (single, double, triple) were never used at all
   const legacyPrice = Number(room.price || room.clientPrice || room.b2bPrice);
   return !isNaN(legacyPrice) && legacyPrice > 0;
 }
