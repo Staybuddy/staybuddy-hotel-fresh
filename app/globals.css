@@ -1743,13 +1743,13 @@ tbody tr:hover { background: var(--bg-secondary); }
   transition: transform 0.08s ease;
 }
 .hotel-horizontal-img {
-  width: 290px;
-  min-width: 290px;
-  height: 225px;
+  width: 320px;
+  min-width: 320px;
+  height: 245px;
   position: relative;
   overflow: hidden;
   flex-shrink: 0;
-  background: #f1f5f9;
+  background: #0f172a;
 }
 .hotel-horizontal-details {
   flex: 1;
@@ -1827,10 +1827,10 @@ tbody tr:hover { background: var(--bg-secondary); }
   .hotel-horizontal-img {
     width: 100% !important;
     min-width: 100% !important;
-    height: 240px !important;
-    min-height: 240px !important;
-    max-height: 280px !important;
-    aspect-ratio: 16 / 11 !important;
+    height: 275px !important;
+    min-height: 275px !important;
+    max-height: 320px !important;
+    aspect-ratio: auto !important;
     background: #0f172a !important;
     border-radius: 14px 14px 0 0 !important;
     position: relative !important;

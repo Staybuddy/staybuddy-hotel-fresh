@@ -751,38 +751,28 @@ function HotelSearch() {
                     style={{ textDecoration: 'none', color: 'inherit', width: '100%', WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation' }}
                   >
                     <div className="hotel-horizontal-card">
-                      {/* Image / Gallery */}
+                      {/* Image / Gallery - Smart Full Building Display */}
                       <div className="hotel-horizontal-img">
                         {hotel.images?.[0] ? (
                           <>
+                            {/* Ambient blurred backdrop so portrait photos fill full container with matching colors */}
+                            <Image 
+                              src={hotel.images[0]} 
+                              alt="" 
+                              fill 
+                              aria-hidden="true"
+                              style={{ objectFit: 'cover', filter: 'blur(20px)', transform: 'scale(1.15)', opacity: 0.55 }} 
+                              sizes="(max-width: 900px) 100vw, 340px" 
+                            />
+                            {/* Sharp foreground image: displays COMPLETE building and full photo without any cutoffs */}
                             <Image 
                               src={hotel.images[0]} 
                               alt={hotel.name} 
                               fill 
                               priority={index < 2} 
-                              style={{ objectFit: 'cover', objectPosition: 'center 20%' }} 
-                              sizes="(max-width: 900px) 100vw, 320px" 
+                              style={{ objectFit: 'contain', objectPosition: 'center' }} 
+                              sizes="(max-width: 900px) 100vw, 340px" 
                             />
-                            {hotel.images.length > 1 && (
-                              <span style={{
-                                position: 'absolute',
-                                bottom: 8,
-                                right: 8,
-                                background: 'rgba(15, 23, 42, 0.75)',
-                                backdropFilter: 'blur(6px)',
-                                color: '#ffffff',
-                                fontSize: '0.72rem',
-                                fontWeight: 700,
-                                padding: '3px 8px',
-                                borderRadius: 6,
-                                zIndex: 2,
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: 4,
-                              }}>
-                                📷 {hotel.images.length} Photos
-                              </span>
-                            )}
                           </>
                         ) : (
                           <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg, var(--brand-100), var(--brand-200))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '3rem' }}>🏨</div>
