@@ -44,7 +44,7 @@ function HotelSearch() {
     starRating: searchParams.get('starRating') || searchParams.get('minRating') || '',
     sortBy: 'rating',
     rooms: parseInt(searchParams.get('rooms') || '1', 10),
-    adults: parseInt(searchParams.get('adults') || '2', 10),
+    adults: parseInt(searchParams.get('adults') || '1', 10),
     children: parseInt(searchParams.get('children') || '0', 10),
   });
 
@@ -109,7 +109,7 @@ function HotelSearch() {
         if (saved) {
           const p = JSON.parse(saved);
           if (p && typeof p === 'object') {
-            const safeA = Math.max(1, Number(p.adults) || 2);
+            const safeA = Math.max(1, Number(p.adults) || 1);
             const safeR = Math.min(safeA, Math.max(1, Number(p.rooms) || 1));
             setFilters(prev => ({
               ...prev,

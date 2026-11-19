@@ -35,6 +35,25 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       }
     }
 
+    if (!hotel) {
+      const snapHotelId = await db.collection('hotels').where('hotelId', '==', resolvedParams.id).limit(1).get();
+      if (!snapHotelId.empty) {
+        hotel = { _id: snapHotelId.docs[0].id, ...snapHotelId.docs[0].data() };
+      }
+    }
+    if (!hotel) {
+      const snapId = await db.collection('hotels').where('id', '==', resolvedParams.id).limit(1).get();
+      if (!snapId.empty) {
+        hotel = { _id: snapId.docs[0].id, ...snapId.docs[0].data() };
+      }
+    }
+    if (!hotel) {
+      const snapSlug = await db.collection('hotels').where('slug', '==', resolvedParams.id).limit(1).get();
+      if (!snapSlug.empty) {
+        hotel = { _id: snapSlug.docs[0].id, ...snapSlug.docs[0].data() };
+      }
+    }
+
     if (!hotel) return NextResponse.json({ error: 'Hotel not found' }, { status: 404 });
 
     // Fetch rooms from Firestore rooms collection (supporting both resolvedParams.id and hotel._id)
@@ -201,6 +220,25 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     rooms = rooms.map(room => applyMarginToRoom(room, margin));
     if (hotel.rooms && Array.isArray(hotel.rooms)) {
       hotel.rooms = hotel.rooms.map((r: any) => applyMarginToRoom(r, margin));
+    }
+
+    // Always sort rooms so lowest price / lowest occupancy room is first (e.g. Standard Room before Deluxe Room)
+    const getSortPrice = (r: any) => {
+      const candidates = [
+        Number(r.priceSingle),
+        Number(r.priceDouble),
+        Number(r.priceTriple),
+        Number(r.price),
+        Number(r.clientPrice),
+        Number(r.b2bPriceSingle),
+        Number(r.b2bPriceDouble),
+        Number(r.b2bPrice),
+      ].filter(p => !isNaN(p) && p > 0);
+      return candidates.length > 0 ? Math.min(...candidates) : 999999;
+    };
+    rooms.sort((a, b) => getSortPrice(a) - getSortPrice(b));
+    if (hotel.rooms && Array.isArray(hotel.rooms)) {
+      hotel.rooms.sort((a: any, b: any) => getSortPrice(a) - getSortPrice(b));
     }
 
     const responsePayload = { hotel, rooms, reviews };

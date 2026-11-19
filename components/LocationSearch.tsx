@@ -93,6 +93,21 @@ export default function LocationSearch({ city, onChange, placeholder = "Search d
 
   const handleHotelSelect = (hotelId: string) => {
     setShowDropdown(false);
+    try {
+      const raw = localStorage.getItem('staybuddy_last_search');
+      if (raw) {
+        const s = JSON.parse(raw);
+        const p = new URLSearchParams();
+        if (s.checkIn) p.set('checkIn', s.checkIn);
+        if (s.checkOut) p.set('checkOut', s.checkOut);
+        if (s.adults) p.set('adults', String(s.adults));
+        if (s.rooms) p.set('rooms', String(s.rooms));
+        if (s.children) p.set('children', String(s.children));
+        const qs = p.toString();
+        router.push(`/hotels/${hotelId}${qs ? `?${qs}` : ''}`);
+        return;
+      }
+    } catch (_) {}
     router.push(`/hotels/${hotelId}`);
   };
 

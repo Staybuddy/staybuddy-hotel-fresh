@@ -24,10 +24,14 @@ export default function FlagshipHotelStores({
   dbHotels = [],
   checkIn = '',
   checkOut = '',
+  adults = 1,
+  rooms = 1,
 }: {
   dbHotels?: any[];
   checkIn?: string;
   checkOut?: string;
+  adults?: number;
+  rooms?: number;
 }) {
   const router = useRouter();
   const [selectedHotel, setSelectedHotel] = useState<RealPremierHotel | null>(null);
@@ -559,11 +563,15 @@ export default function FlagshipHotelStores({
               {/* Action Buttons */}
               <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 12, marginTop: 20 }}>
                 <Link
-                  href={
-                    checkIn && checkOut
-                      ? `/hotels/${selectedHotel.id}?checkIn=${encodeURIComponent(checkIn)}&checkOut=${encodeURIComponent(checkOut)}`
-                      : `/hotels/${selectedHotel.id}`
-                  }
+                  href={(() => {
+                    const p = new URLSearchParams();
+                    if (checkIn) p.set('checkIn', checkIn);
+                    if (checkOut) p.set('checkOut', checkOut);
+                    if (adults) p.set('adults', String(adults));
+                    if (rooms) p.set('rooms', String(rooms));
+                    const qs = p.toString();
+                    return `/hotels/${selectedHotel.id}${qs ? `?${qs}` : ''}`;
+                  })()}
                   style={{ textDecoration: 'none' }}
                 >
                   <button

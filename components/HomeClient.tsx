@@ -38,7 +38,7 @@ const AMENITY_ICONS: Record<string, string> = {
 
 export default function HomeClient({ initialHotels, recentReviews = [] }: { initialHotels: any[], recentReviews?: any[] }) {
   const router = useRouter();
-  const [searchData, setSearchData] = useState({ propertyType: '', location: '', checkIn: '', checkOut: '', rooms: 1, adults: 2, children: 0 });
+  const [searchData, setSearchData] = useState({ propertyType: '', location: '', checkIn: '', checkOut: '', rooms: 1, adults: 1, children: 0 });
   const [hotels, setHotels] = useState<any[]>(initialHotels);
   const [loading, setLoading] = useState(false);
   const [searchError, setSearchError] = useState('');
@@ -52,7 +52,7 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
       if (saved) {
         const p = JSON.parse(saved);
         if (p && typeof p === 'object') {
-          const safeA = Math.max(1, Number(p.adults) || 2);
+          const safeA = Math.max(1, Number(p.adults) || 1);
           const safeR = Math.min(safeA, Math.max(1, Number(p.rooms) || 1));
           setSearchData(prev => ({
             ...prev,
@@ -1359,7 +1359,13 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
       </section>
 
       {/* ===== FLAGSHIP HOTEL STORES (4★ & 5★ Premier Luxury Brands with Interactive Stays Showcase) ===== */}
-      <FlagshipHotelStores dbHotels={hotels} checkIn={searchData.checkIn} checkOut={searchData.checkOut} />
+      <FlagshipHotelStores
+        dbHotels={hotels}
+        checkIn={searchData.checkIn}
+        checkOut={searchData.checkOut}
+        adults={searchData.adults}
+        rooms={searchData.rooms}
+      />
 
 
       {/* ===== HOTEL COLLECTIONS CARDS (Original 3 Categories - Clean & Separate) ===== */}

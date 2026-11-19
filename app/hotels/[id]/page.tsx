@@ -66,10 +66,69 @@ export default function HotelDetailPage() {
   const [showFilmstrip, setShowFilmstrip] = useState(true);
   const [selectedRoom, setSelectedRoom] = useState<any>(null);
   const [selectedRoomsMap, setSelectedRoomsMap] = useState<Record<string, number>>({});
-  const initialAdults = Math.max(1, parseInt(searchParams.get("adults") || "2", 10));
-  const initialRooms = Math.min(initialAdults, Math.max(1, parseInt(searchParams.get("rooms") || "1", 10)));
-  const rawCheckIn = searchParams.get("checkIn") || "";
-  let rawCheckOut = searchParams.get("checkOut") || "";
+  
+  // Prioritize URL searchParams, fallback to active search session in localStorage, default to 1 adult (single occupancy)
+  const getStoredAdults = () => {
+    const fromUrl = searchParams.get("adults");
+    if (fromUrl) {
+      const n = parseInt(fromUrl, 10);
+      if (!isNaN(n) && n > 0) return n;
+    }
+    if (typeof window !== "undefined") {
+      try {
+        const saved = localStorage.getItem("staybuddy_last_search");
+        if (saved) {
+          const p = JSON.parse(saved);
+          if (p && p.adults) {
+            const n = parseInt(p.adults, 10);
+            if (!isNaN(n) && n > 0) return n;
+          }
+        }
+      } catch (_) {}
+    }
+    return 1;
+  };
+
+  const getStoredRooms = (adultsCount: number) => {
+    const fromUrl = searchParams.get("rooms");
+    if (fromUrl) {
+      const n = parseInt(fromUrl, 10);
+      if (!isNaN(n) && n > 0) return Math.min(n, adultsCount);
+    }
+    if (typeof window !== "undefined") {
+      try {
+        const saved = localStorage.getItem("staybuddy_last_search");
+        if (saved) {
+          const p = JSON.parse(saved);
+          if (p && p.rooms) {
+            const n = parseInt(p.rooms, 10);
+            if (!isNaN(n) && n > 0) return Math.min(n, adultsCount);
+          }
+        }
+      } catch (_) {}
+    }
+    return 1;
+  };
+
+  const getStoredDate = (field: 'checkIn' | 'checkOut') => {
+    const fromUrl = searchParams.get(field);
+    if (fromUrl) return fromUrl;
+    if (typeof window !== "undefined") {
+      try {
+        const saved = localStorage.getItem("staybuddy_last_search");
+        if (saved) {
+          const p = JSON.parse(saved);
+          if (p && p[field]) return p[field];
+        }
+      } catch (_) {}
+    }
+    return "";
+  };
+
+  const initialAdults = getStoredAdults();
+  const initialRooms = getStoredRooms(initialAdults);
+  const rawCheckIn = getStoredDate('checkIn');
+  let rawCheckOut = getStoredDate('checkOut');
   if (rawCheckIn && rawCheckOut && rawCheckIn >= rawCheckOut) {
     const parts = rawCheckIn.split('-').map(Number);
     if (parts.length === 3) {
@@ -211,9 +270,9 @@ export default function HotelDetailPage() {
       }
     }
     if (checkInParam || searchParams.has("adults") || searchParams.has("rooms")) {
-      const rawA = searchParams.has("adults") ? parseInt(searchParams.get("adults") as string, 10) : bookingData.adults;
-      const rawR = searchParams.has("rooms") ? parseInt(searchParams.get("rooms") as string, 10) : bookingData.rooms;
-      const safeA = Math.max(1, isNaN(rawA) ? 2 : rawA);
+      const rawA = searchParams.has("adults") ? parseInt(searchParams.get("adults") as string, 10) : getStoredAdults();
+      const rawR = searchParams.has("rooms") ? parseInt(searchParams.get("rooms") as string, 10) : getStoredRooms(rawA);
+      const safeA = Math.max(1, isNaN(rawA) ? 1 : rawA);
       const safeR = Math.min(safeA, Math.max(1, isNaN(rawR) ? 1 : rawR));
       setBookingData(p => ({
         ...p,
@@ -223,39 +282,29 @@ export default function HotelDetailPage() {
         rooms: safeR,
         children: searchParams.has("children") ? parseInt(searchParams.get("children") as string, 10) : p.children,
       }));
-      if (searchParams.has("adults")) {
-        setOccupancy(safeA === 1 ? "single" : safeA === 3 ? "triple" : "double");
-      }
+      setOccupancy(safeA === 1 ? "single" : safeA === 3 ? "triple" : "double");
     }
   }, [searchParams]);
 
   // Synchronize with user's last chosen search criteria (e.g. from homepage or previous navigation)
   useEffect(() => {
     try {
-      const hasUrlParams = searchParams.has("adults") || searchParams.has("rooms") || searchParams.has("checkIn");
-      if (!hasUrlParams) {
-        const saved = localStorage.getItem('staybuddy_last_search');
-        if (saved) {
-          const parsed = JSON.parse(saved);
-          if (parsed && typeof parsed === 'object') {
-            const safeA = Math.max(1, Number(parsed.adults) || 2);
-            const safeR = Math.min(safeA, Math.max(1, Number(parsed.rooms) || 1));
+      const hasUrlAdults = searchParams.has("adults");
+      const saved = localStorage.getItem('staybuddy_last_search');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed && typeof parsed === 'object') {
+          const safeA = Math.max(1, Number(parsed.adults) || 1);
+          const safeR = Math.min(safeA, Math.max(1, Number(parsed.rooms) || 1));
+          if (!hasUrlAdults) {
             setBookingData(prev => ({
               ...prev,
-              checkIn: parsed.checkIn || prev.checkIn,
-              checkOut: parsed.checkOut || prev.checkOut,
               adults: safeA,
               rooms: safeR,
-              children: Number(parsed.children) || 0,
+              checkIn: prev.checkIn || parsed.checkIn || '',
+              checkOut: prev.checkOut || parsed.checkOut || '',
             }));
             setOccupancy(safeA === 1 ? "single" : safeA === 3 ? "triple" : "double");
-            updateUrlParams({
-              adults: safeA,
-              rooms: safeR,
-              checkIn: parsed.checkIn,
-              checkOut: parsed.checkOut,
-              children: Number(parsed.children) || 0,
-            });
           }
         }
       }
@@ -449,10 +498,16 @@ export default function HotelDetailPage() {
       const data = await res.json();
       setHotel(data.hotel);
       const incomingRooms = data.rooms || [];
-      setRooms(incomingRooms);
+      // Always sort rooms by price ascending for active occupancy (lowest occupancy rate / cheapest room first)
+      const sortedRooms = [...incomingRooms].sort((a: any, b: any) => {
+        const pA = getRoomPriceForOccupancy(a, bookingData.adults) || a.priceSingle || a.priceDouble || a.price || 999999;
+        const pB = getRoomPriceForOccupancy(b, bookingData.adults) || b.priceSingle || b.priceDouble || b.price || 999999;
+        return Number(pA) - Number(pB);
+      });
+      setRooms(sortedRooms);
       setReviews(data.reviews || []);
-      if (incomingRooms.length > 0 && !selectedRoom) {
-        const bestRoom = incomingRooms.find((r: any) => isOccupancySupportedForRoom(r, bookingData.adults)) || incomingRooms[0];
+      if (sortedRooms.length > 0 && !selectedRoom) {
+        const bestRoom = sortedRooms.find((r: any) => isOccupancySupportedForRoom(r, bookingData.adults)) || sortedRooms[0];
         if (bestRoom) {
           setSelectedRoom(bestRoom);
           setSelectedRoomsMap({ [bestRoom._id]: bookingData.rooms });
@@ -481,6 +536,34 @@ export default function HotelDetailPage() {
     });
     return Array.from(map.values());
   }, [hotel?.images, rooms]);
+
+  // Always sort rooms so lowest price / lowest occupancy room is first (e.g. Standard Room before Deluxe Room)
+  const sortedRoomsList = useMemo(() => {
+    return [...rooms].sort((a: any, b: any) => {
+      const suppA = isOccupancySupportedForRoom(a, bookingData.adults);
+      const suppB = isOccupancySupportedForRoom(b, bookingData.adults);
+      if (suppA && !suppB) return -1;
+      if (!suppA && suppB) return 1;
+
+      const pA = getRoomPriceForOccupancy(a, bookingData.adults) || a.priceSingle || a.priceDouble || a.price || 999999;
+      const pB = getRoomPriceForOccupancy(b, bookingData.adults) || b.priceSingle || b.priceDouble || b.price || 999999;
+      return Number(pA) - Number(pB);
+    });
+  }, [rooms, bookingData.adults]);
+
+  // Keep selected room in sync with sorted room list and active occupancy
+  useEffect(() => {
+    if (sortedRoomsList.length > 0) {
+      const isCurrentValid = selectedRoom && isOccupancySupportedForRoom(selectedRoom, bookingData.adults);
+      if (!isCurrentValid) {
+        const bestRoom = sortedRoomsList.find((r: any) => isOccupancySupportedForRoom(r, bookingData.adults)) || sortedRoomsList[0];
+        if (bestRoom) {
+          setSelectedRoom(bestRoom);
+          setSelectedRoomsMap({ [bestRoom._id]: bookingData.rooms });
+        }
+      }
+    }
+  }, [sortedRoomsList, bookingData.adults, bookingData.rooms]);
 
   // Clean description removing any raw bullet distances (distances are rendered in their own dedicated visual card)
   const cleanDescription = useMemo(() => {
@@ -2262,7 +2345,7 @@ export default function HotelDetailPage() {
                     No rooms available
                   </p>
                 ) : (
-                  rooms.map((room) => {
+                  sortedRoomsList.map((room) => {
                     const allocatedCount = selectedRoomsMap[room._id] || 0;
                     const unitPrice = getRoomPrice(room);
                     const isCardSelected = allocatedCount > 0 || (bookingData.rooms === 1 && selectedRoom?._id === room._id);
@@ -5510,9 +5593,9 @@ export default function HotelDetailPage() {
             style={{
               position: "fixed",
               inset: 0,
-              background: "rgba(0,0,0,0.6)",
-              backdropFilter: "blur(4px)",
-              zIndex: 1000,
+              background: "rgba(0,0,0,0.7)",
+              backdropFilter: "blur(6px)",
+              zIndex: 20000,
             }}
             onClick={() => setRoomDetailsModal(null)}
           />
@@ -5527,11 +5610,12 @@ export default function HotelDetailPage() {
               borderRadius: "var(--radius-xl)",
               width: "92%",
               maxWidth: 820,
-              maxHeight: "92vh",
+              maxHeight: "90vh",
               overflowY: "auto",
-              zIndex: 1001,
-              boxShadow: "var(--shadow-xl)",
+              zIndex: 20001,
+              boxShadow: "0 25px 60px rgba(0,0,0,0.5)",
               padding: "var(--space-6)",
+              paddingBottom: "max(24px, env(safe-area-inset-bottom))",
             }}
           >
             <button
@@ -6299,7 +6383,8 @@ export default function HotelDetailPage() {
       )}
 
       {/* MOBILE STICKY BOTTOM BAR ("DOWN SCREEN HEAD BUTTON" - MAKEMYTRIP STYLE) */}
-      <div className="mobile-down-bar">
+      {!roomDetailsModal && (
+        <div className="mobile-down-bar">
         {/* Left Column: Price, Tax & Occupancy */}
         <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0, flex: 1, paddingRight: 10 }}>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
@@ -6394,6 +6479,7 @@ export default function HotelDetailPage() {
           </button>
         </div>
       </div>
+      )}
 
       {/* Smart Bottom Notification Toast: Triple Occupancy Restriction */}
       {mounted && tripleToast?.show && createPortal(
