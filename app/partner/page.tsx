@@ -449,7 +449,7 @@ export default function PartnerDashboard() {
         priceSingle: numSingle, 
         priceDouble: numDouble, 
         priceTriple: numTriple, 
-        b2bPrice: parseInt(roomForm.b2bPrice) || 0, 
+        b2bPrice: numDouble || numSingle || 0, 
         maxGuests: dynamicMaxGuests,
         bedType: dynamicBedType, 
         totalRooms: roomForm.totalRooms !== '' ? Math.max(0, parseInt(roomForm.totalRooms) || 0) : 0, 
@@ -506,14 +506,20 @@ export default function PartnerDashboard() {
   async function saveRoomInventory(roomIndex: number, field: string, value: any) {
     const room = hotelRooms[roomIndex];
     const newRooms = [...hotelRooms];
-    newRooms[roomIndex] = { ...room, [field]: value };
+    const updates: any = { [field]: value };
+    if (field === 'priceDouble') {
+      updates.b2bPrice = Number(value) || Number(room.priceSingle) || 0;
+    } else if (field === 'priceSingle' && !room.priceDouble) {
+      updates.b2bPrice = Number(value) || 0;
+    }
+    newRooms[roomIndex] = { ...room, ...updates };
     setHotelRooms(newRooms);
     
     try {
       await fetch('/api/rooms', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ roomId: room._id, [field]: value })
+        body: JSON.stringify({ roomId: room._id, ...updates })
       });
       // Refresh with current date view to keep smart availability in exact sync
       if (inventoryModal) {
@@ -2396,6 +2402,9 @@ export default function PartnerDashboard() {
                                       <input className="form-input" type="number" min="0" placeholder="e.g. 1500" value={room.priceSingle} onChange={e => {
                                         const newRooms = [...hotelForm.rooms];
                                         newRooms[index].priceSingle = e.target.value;
+                                        if (!newRooms[index].priceDouble) {
+                                          newRooms[index].b2bPrice = e.target.value;
+                                        }
                                         setHotelForm({ ...hotelForm, rooms: newRooms });
                                       }} required />
                                     </div>
@@ -2408,6 +2417,7 @@ export default function PartnerDashboard() {
                                         const newRooms = [...hotelForm.rooms];
                                         const numDbl = Number(e.target.value) || 0;
                                         newRooms[index].priceDouble = e.target.value;
+                                        newRooms[index].b2bPrice = e.target.value || newRooms[index].priceSingle || '';
                                         const numTrp = Number(newRooms[index].priceTriple) || 0;
                                         newRooms[index].maxGuests = numTrp > 0 ? 3 : (numDbl > 0 ? 2 : 1);
                                         setHotelForm({ ...hotelForm, rooms: newRooms });
@@ -2494,17 +2504,6 @@ export default function PartnerDashboard() {
                                         </button>
                                       </div>
                                     )}
-
-                                    <div className="form-group">
-                                      <div className="pricing-header-row">
-                                        <label className="form-label">B2B Price (₹)</label>
-                                      </div>
-                                      <input className="form-input" type="number" min="0" placeholder="e.g. 1200" value={room.b2bPrice} onChange={e => {
-                                        const newRooms = [...hotelForm.rooms];
-                                        newRooms[index].b2bPrice = e.target.value;
-                                        setHotelForm({ ...hotelForm, rooms: newRooms });
-                                      }} />
-                                    </div>
 
                                     <div className="form-group pricing-col-span-mobile">
                                       <div className="pricing-header-row">
@@ -3040,7 +3039,7 @@ export default function PartnerDashboard() {
                         </div>
                       </div>
 
-                      <div className="partner-pricing-grid-4" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 'var(--space-4)' }}>
+                      <div className="partner-pricing-grid-4" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 'var(--space-4)' }}>
                         <div className="form-group">
                           <div className="pricing-header-row">
                             <label className="form-label">Single Price (₹)<span className="required">*</span></label>
@@ -3117,13 +3116,6 @@ export default function PartnerDashboard() {
                             </button>
                           </div>
                         )}
-
-                        <div className="form-group">
-                          <div className="pricing-header-row">
-                            <label className="form-label">B2B Price (₹)</label>
-                          </div>
-                          <input className="form-input" type="number" min="0" placeholder="e.g. 1200" value={roomForm.b2bPrice} onChange={e => setRoomForm(p => ({ ...p, b2bPrice: e.target.value }))} />
-                        </div>
                       </div>
 
                       {!isModalTripleActive && (
@@ -3395,7 +3387,6 @@ export default function PartnerDashboard() {
                           <th style={{ padding: '12px 10px' }}>Sgl (₹)</th>
                           <th style={{ padding: '12px 10px' }}>Dbl (₹)</th>
                           <th style={{ padding: '12px 10px' }}>Trp (₹)</th>
-                          <th style={{ padding: '12px 10px' }}>B2B (₹)</th>
                           <th style={{ padding: '12px 10px', textAlign: 'center' }}>Total</th>
                           <th style={{ padding: '12px 10px', textAlign: 'center' }}>Daily Base (Alloc)</th>
                           {isViewingToday && <th style={{ padding: '12px 10px', textAlign: 'center' }}>Extra (Today)</th>}
@@ -3443,7 +3434,6 @@ export default function PartnerDashboard() {
                                   )}
                                 </div>
                               </td>
-                              <td style={{ padding: '12px 10px' }}><input type="number" style={{ width: 60, padding: '4px 6px', borderRadius: 4, border: '1px solid #cbd5e1' }} value={room.b2bPrice || ''} onChange={e => saveRoomInventory(i, 'b2bPrice', Number(e.target.value))} /></td>
                               <td style={{ padding: '12px 10px', textAlign: 'center', color: 'var(--text-muted)' }}>{room.totalRooms}</td>
                               <td style={{ padding: '12px 10px', textAlign: 'center' }}>
                                 <input 
@@ -3714,6 +3704,7 @@ export default function PartnerDashboard() {
                     priceSingle: pSingle,
                     priceDouble: pDouble,
                     priceTriple: pTriple,
+                    b2bPrice: pDouble || pSingle || 0,
                     maxGuests,
                     bedType,
                   };
@@ -4129,7 +4120,11 @@ export default function PartnerDashboard() {
                                 value={room.priceSingle !== undefined ? room.priceSingle : ''} 
                                 onChange={e => {
                                   const updatedRooms = [...extranetModal.rooms];
-                                  updatedRooms[rIdx].priceSingle = Number(e.target.value) || 0;
+                                  const valSgl = Number(e.target.value) || 0;
+                                  updatedRooms[rIdx].priceSingle = valSgl;
+                                  if (!updatedRooms[rIdx].priceDouble) {
+                                    updatedRooms[rIdx].b2bPrice = valSgl;
+                                  }
                                   setExtranetModal({...extranetModal, rooms: updatedRooms});
                                 }} 
                                 style={{ width: '100%', padding: '9px 12px', borderRadius: 8, border: '1.5px solid #fed7aa', background: '#fff7ed', fontSize: '0.9rem', fontWeight: 700 }} 
@@ -4146,6 +4141,7 @@ export default function PartnerDashboard() {
                                   const updatedRooms = [...extranetModal.rooms];
                                   const valDbl = Number(e.target.value) || 0;
                                   updatedRooms[rIdx].priceDouble = valDbl;
+                                  updatedRooms[rIdx].b2bPrice = valDbl || updatedRooms[rIdx].priceSingle || 0;
                                   const numTrp = Number(updatedRooms[rIdx].priceTriple) || 0;
                                   updatedRooms[rIdx].maxGuests = numTrp > 0 ? 3 : (valDbl > 0 ? 2 : 1);
                                   setExtranetModal({...extranetModal, rooms: updatedRooms});
@@ -4170,20 +4166,6 @@ export default function PartnerDashboard() {
                                   setExtranetModal({...extranetModal, rooms: updatedRooms});
                                 }} 
                                 style={{ width: '100%', padding: '9px 12px', borderRadius: 8, border: room.priceTriple ? '1.5px solid #bfdbfe' : '1.5px dashed #fdba74', background: room.priceTriple ? '#eff6ff' : 'white', fontSize: '0.9rem', fontWeight: 700, color: '#1e40af' }} 
-                              />
-                            </div>
-                            <div style={{ background: '#f0fdf4', padding: '4px 8px', borderRadius: 8, border: '1.5px solid #86efac' }}>
-                              <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 800, color: '#166534', marginBottom: 4 }}>B2B Price (₹)</label>
-                              <input 
-                                type="number" 
-                                placeholder="e.g. 1200" 
-                                value={room.b2bPrice !== undefined ? room.b2bPrice : ''} 
-                                onChange={e => {
-                                  const updatedRooms = [...extranetModal.rooms];
-                                  updatedRooms[rIdx].b2bPrice = Number(e.target.value);
-                                  setExtranetModal({...extranetModal, rooms: updatedRooms});
-                                }} 
-                                style={{ width: '100%', padding: '7px 10px', borderRadius: 6, border: '1px solid #16a34a', background: '#ffffff', fontSize: '0.9rem', fontWeight: 800, color: '#166534' }} 
                               />
                             </div>
                             <div>

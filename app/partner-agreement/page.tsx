@@ -220,7 +220,7 @@ export default async function PartnerAgreementPage({
                       const singleFormatted = formatPrice(room.priceSingle) || 'N/A';
                       const doubleFormatted = formatPrice(room.priceDouble) || singleFormatted;
                       const tripleFormatted = hasTriple ? formatPrice(room.priceTriple) : null;
-                      const b2bFormatted = formatPrice(room.b2bPrice) || 'Contract Net';
+                      const b2bFormatted = formatPrice(room.b2bPrice || room.priceDouble || room.priceSingle) || 'Contract Net';
                       const isEven = idx % 2 === 0;
 
                       return (
@@ -279,7 +279,7 @@ export default async function PartnerAgreementPage({
                   const singleFormatted = formatPrice(room.priceSingle) || 'N/A';
                   const doubleFormatted = formatPrice(room.priceDouble) || singleFormatted;
                   const tripleFormatted = hasTriple ? formatPrice(room.priceTriple) : null;
-                  const b2bFormatted = formatPrice(room.b2bPrice) || 'Contract Net';
+                  const b2bFormatted = formatPrice(room.b2bPrice || room.priceDouble || room.priceSingle) || 'Contract Net';
 
                   return (
                     <div 

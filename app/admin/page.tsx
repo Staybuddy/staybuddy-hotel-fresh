@@ -2524,7 +2524,7 @@ export default function AdminDashboard() {
                   <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0f172a', margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
                     🛏️ Rooms & Occupancy Pricing ({(editingHotel.rooms || []).length} Types)
                   </h3>
-                  <span style={{ fontSize: '0.8rem', color: '#64748b' }}>Single, Double, Triple & B2B rates</span>
+                  <span style={{ fontSize: '0.8rem', color: '#64748b' }}>Single, Double & Triple B2B Net Rates</span>
                 </div>
 
                 {(!editingHotel.rooms || editingHotel.rooms.length === 0) ? (
@@ -2560,33 +2560,30 @@ export default function AdminDashboard() {
                           </div>
                         </div>
 
-                        {/* Occupancy Pricing Cards */}
+                        {/* Occupancy Pricing Cards - Pure B2B Net Rates */}
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 10, marginTop: 10 }}>
                           <div style={{ background: '#fff7ed', padding: '10px 12px', borderRadius: 8, border: '1px solid #fed7aa', borderLeft: '4px solid #f97316' }}>
                             <div style={{ fontSize: '0.7rem', textTransform: 'uppercase', color: '#9a3412', fontWeight: 800 }}>👤 Single (1 Adult)</div>
                             <div style={{ fontSize: '1.15rem', fontWeight: 800, color: '#c2410c', marginTop: 2 }}>
-                              ₹{editingHotel.marginPercentage ? Math.round((room.priceSingle || 0) * (1 + (editingHotel.marginPercentage || 0) / 100)) : (room.priceSingle || 0)}
+                              ₹{room.priceSingle || 0}
                             </div>
-                            <div style={{ fontSize: '0.72rem', color: '#9a3412', marginTop: 2 }}>B2B: ₹{room.priceSingle || 0}</div>
+                            <div style={{ fontSize: '0.72rem', color: '#9a3412', marginTop: 2 }}>B2B Net Rate</div>
                           </div>
                           <div style={{ background: '#f0fdf4', padding: '10px 12px', borderRadius: 8, border: '1px solid #bbf7d0', borderLeft: '4px solid #22c55e' }}>
                             <div style={{ fontSize: '0.7rem', textTransform: 'uppercase', color: '#166534', fontWeight: 800 }}>👥 Double (2 Adults)</div>
                             <div style={{ fontSize: '1.15rem', fontWeight: 800, color: '#15803d', marginTop: 2 }}>
-                              ₹{editingHotel.marginPercentage ? Math.round((room.priceDouble || room.priceSingle || 0) * (1 + (editingHotel.marginPercentage || 0) / 100)) : (room.priceDouble || room.priceSingle || 0)}
+                              ₹{room.priceDouble || room.priceSingle || 0}
                             </div>
-                            <div style={{ fontSize: '0.72rem', color: '#166534', marginTop: 2 }}>B2B: ₹{room.priceDouble || room.priceSingle || 0}</div>
+                            <div style={{ fontSize: '0.72rem', color: '#166534', marginTop: 2 }}>B2B Net Rate</div>
                           </div>
                           <div style={{ background: '#eff6ff', padding: '10px 12px', borderRadius: 8, border: '1px solid #bfdbfe', borderLeft: '4px solid #3b82f6' }}>
                             <div style={{ fontSize: '0.7rem', textTransform: 'uppercase', color: '#1e40af', fontWeight: 800 }}>👨‍👩‍👦 Triple (3 Adults)</div>
                             <div style={{ fontSize: '1.15rem', fontWeight: 800, color: '#1d4ed8', marginTop: 2 }}>
-                              ₹{editingHotel.marginPercentage && room.priceTriple ? Math.round(Number(room.priceTriple) * (1 + (editingHotel.marginPercentage || 0) / 100)) : (room.priceTriple || 0)}
+                              {Number(room.priceTriple) > 0 ? `₹${room.priceTriple}` : '— (Not active)'}
                             </div>
-                            <div style={{ fontSize: '0.72rem', color: '#1e40af', marginTop: 2 }}>B2B: ₹{room.priceTriple || 0}</div>
-                          </div>
-                          <div style={{ background: '#faf5ff', padding: '10px 12px', borderRadius: 8, border: '1px solid #e9d5ff', borderLeft: '4px solid #a855f7' }}>
-                            <div style={{ fontSize: '0.7rem', textTransform: 'uppercase', color: '#6b21a8', fontWeight: 800 }}>💼 B2B Partner Rate</div>
-                            <div style={{ fontSize: '1.15rem', fontWeight: 800, color: '#7e22ce', marginTop: 2 }}>₹{room.b2bPrice || 0}</div>
-                            <div style={{ fontSize: '0.72rem', color: '#6b21a8', marginTop: 2 }}>Margin: {editingHotel.marginPercentage || 0}%</div>
+                            <div style={{ fontSize: '0.72rem', color: '#1e40af', marginTop: 2 }}>
+                              {Number(room.priceTriple) > 0 ? 'B2B Net Rate' : 'Max 2 Guests'}
+                            </div>
                           </div>
                         </div>
 
@@ -3128,7 +3125,11 @@ export default function AdminDashboard() {
                                 value={room.priceSingle !== undefined ? room.priceSingle : ''} 
                                 onChange={e => {
                                   const updatedRooms = [...extranetModal.rooms];
-                                  updatedRooms[rIdx].priceSingle = Number(e.target.value) || 0;
+                                  const valSgl = Number(e.target.value) || 0;
+                                  updatedRooms[rIdx].priceSingle = valSgl;
+                                  if (!updatedRooms[rIdx].priceDouble) {
+                                    updatedRooms[rIdx].b2bPrice = valSgl;
+                                  }
                                   setExtranetModal({...extranetModal, rooms: updatedRooms});
                                 }} 
                                 style={{ width: '100%', padding: '9px 12px', borderRadius: 8, border: '1.5px solid #fed7aa', background: '#fff7ed', fontSize: '0.9rem', fontWeight: 700 }} 
@@ -3143,7 +3144,9 @@ export default function AdminDashboard() {
                                 value={room.priceDouble || ''} 
                                 onChange={e => {
                                   const updatedRooms = [...extranetModal.rooms];
-                                  updatedRooms[rIdx].priceDouble = Number(e.target.value) || 0;
+                                  const valDbl = Number(e.target.value) || 0;
+                                  updatedRooms[rIdx].priceDouble = valDbl;
+                                  updatedRooms[rIdx].b2bPrice = valDbl || updatedRooms[rIdx].priceSingle || 0;
                                   setExtranetModal({...extranetModal, rooms: updatedRooms});
                                 }} 
                                 style={{ width: '100%', padding: '9px 12px', borderRadius: 8, border: '1.5px solid #bbf7d0', background: '#f0fdf4', fontSize: '0.9rem', fontWeight: 700 }} 
@@ -3164,20 +3167,6 @@ export default function AdminDashboard() {
                                   setExtranetModal({...extranetModal, rooms: updatedRooms});
                                 }} 
                                 style={{ width: '100%', padding: '9px 12px', borderRadius: 8, border: room.priceTriple ? '1.5px solid #bfdbfe' : '1.5px dashed #fdba74', background: room.priceTriple ? '#eff6ff' : 'white', fontSize: '0.9rem', fontWeight: 700, color: '#1e40af' }} 
-                              />
-                            </div>
-                            <div style={{ background: '#f0fdf4', padding: '4px 8px', borderRadius: 8, border: '1.5px solid #86efac' }}>
-                              <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 800, color: '#166534', marginBottom: 4 }}>B2B Price (₹)</label>
-                              <input 
-                                type="number" 
-                                placeholder="e.g. 1200" 
-                                value={room.b2bPrice !== undefined ? room.b2bPrice : ''} 
-                                onChange={e => {
-                                  const updatedRooms = [...extranetModal.rooms];
-                                  updatedRooms[rIdx].b2bPrice = Number(e.target.value);
-                                  setExtranetModal({...extranetModal, rooms: updatedRooms});
-                                }} 
-                                style={{ width: '100%', padding: '7px 10px', borderRadius: 6, border: '1px solid #16a34a', background: '#ffffff', fontSize: '0.9rem', fontWeight: 800, color: '#166534' }} 
                               />
                             </div>
                             <div>
