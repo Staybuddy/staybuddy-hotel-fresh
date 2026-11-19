@@ -75,33 +75,28 @@ export default function DateRangePicker({ checkIn, checkOut, onChange, onClose, 
   const handleDateClick = (date: Date) => {
     const dateStr = formatDateStr(date);
 
-    if (activeSelection === 'checkIn' || (localIn && localOut)) {
-      // Starting fresh or selecting Check-in:
-      // Only select the check-in date. DO NOT auto-select the next day as checkout.
-      setLocalIn(dateStr);
-      setLocalOut('');
-      setActiveSelection('checkOut');
-    } else {
-      // activeSelection === 'checkOut'
-      if (!checkInDate) {
-        setLocalIn(dateStr);
-        setLocalOut('');
-        setActiveSelection('checkOut');
-        return;
-      }
-
-      // Check-out must be strictly after Check-in (minimum 1 night)
-      if (date.getTime() > checkInDate.getTime()) {
+    // If user explicitly clicked Check-Out input in the search bar:
+    if (activeSelection === 'checkOut' && localIn) {
+      const inDate = parseLocal(localIn);
+      // Check-out must be at least 1 day after check-in (same-day booking not allowed)
+      if (inDate && date.getTime() > inDate.getTime()) {
         setLocalOut(dateStr);
         onChange(localIn, dateStr);
         onClose();
-      } else {
-        // User clicked same date or earlier date: treat as new Check-in date
-        setLocalIn(dateStr);
-        setLocalOut('');
-        setActiveSelection('checkOut');
+        return;
       }
+      // If user clicked same date or prior date, restart with new check-in
+      setLocalIn(dateStr);
+      setLocalOut('');
+      setActiveSelection('checkOut');
+      return;
     }
+
+    // Default flow: selecting Check-In date
+    // Only select check-in date. DO NOT auto-select checkout so user has freedom to choose any checkout date.
+    setLocalIn(dateStr);
+    setLocalOut('');
+    setActiveSelection('checkOut');
   };
 
   const handleConfirm = () => {

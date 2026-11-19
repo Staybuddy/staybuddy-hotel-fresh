@@ -21,9 +21,9 @@ export default function WelcomeAuthModal() {
     }
     if (status === 'loading') return;
 
-    // Check if user already dismissed or continued as guest in this browser session
-    const guestSession = sessionStorage.getItem('staybuddy_welcome_guest');
-    if (guestSession === 'true') return;
+    // Check if user already dismissed or continued as guest in this browser session or device
+    const guestDismissed = localStorage.getItem('staybuddy_welcome_guest') || sessionStorage.getItem('staybuddy_welcome_guest');
+    if (guestDismissed === 'true') return;
 
     // Open immediately on first visit before browsing
     const timer = setTimeout(() => {
@@ -35,6 +35,7 @@ export default function WelcomeAuthModal() {
 
   const handleDismiss = () => {
     try {
+      localStorage.setItem('staybuddy_welcome_guest', 'true');
       sessionStorage.setItem('staybuddy_welcome_guest', 'true');
     } catch {}
     setIsOpen(false);

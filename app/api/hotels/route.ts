@@ -213,13 +213,25 @@ export async function GET(request: NextRequest) {
             (cr.id && (cr.id === hr._id || cr.id === hr.id)) ||
             (cr.type && hr.type && cr.type.toLowerCase().trim() === hr.type.toLowerCase().trim())
           );
+          const pSingle = Number(matchingColl?.priceSingle) > 0
+            ? Number(matchingColl.priceSingle)
+            : Number(hr.priceSingle !== undefined && hr.priceSingle !== '' ? hr.priceSingle : (matchingColl?.priceSingle || 0)) || 0;
+
+          const pDouble = Number(matchingColl?.priceDouble) > 0
+            ? Number(matchingColl.priceDouble)
+            : Number(hr.priceDouble !== undefined && hr.priceDouble !== '' ? hr.priceDouble : (matchingColl?.priceDouble || 0)) || 0;
+
+          const pTriple = Number(matchingColl?.priceTriple) > 0
+            ? Number(matchingColl.priceTriple)
+            : Number(hr.priceTriple !== undefined && hr.priceTriple !== '' ? hr.priceTriple : (matchingColl?.priceTriple || 0)) || 0;
+
           return {
-            ...(matchingColl || {}),
             ...hr,
-            _id: hr._id || hr.id || matchingColl?._id || `room_${Date.now()}`,
-            priceSingle: Number(hr.priceSingle !== undefined && hr.priceSingle !== '' ? hr.priceSingle : (matchingColl?.priceSingle || 0)) || 0,
-            priceDouble: Number(hr.priceDouble !== undefined && hr.priceDouble !== '' ? hr.priceDouble : (matchingColl?.priceDouble || 0)) || 0,
-            priceTriple: Number(hr.priceTriple !== undefined && hr.priceTriple !== '' ? hr.priceTriple : (matchingColl?.priceTriple || 0)) || 0,
+            ...(matchingColl || {}),
+            _id: matchingColl?._id || hr._id || hr.id || `room_${Date.now()}`,
+            priceSingle: pSingle,
+            priceDouble: pDouble,
+            priceTriple: pTriple,
           };
         });
         collRooms.forEach((cr: any) => {

@@ -448,12 +448,16 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
                           <div style={{ display: 'flex', alignItems: 'center', gap: 12, border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', padding: '4px 8px' }}>
                             <button className="btn-ghost" style={{ padding: '4px 8px', fontSize: '1.2rem', lineHeight: 1 }} onClick={() => setSearchData(p => {
                               const adj = adjustRoomsAndAdults(p.rooms, p.adults, 'rooms', p.rooms - 1);
-                              return { ...p, rooms: adj.rooms, adults: adj.adults };
+                              const safeA = Math.max(1, adj.adults);
+                              const safeR = safeA === 1 ? 1 : Math.min(safeA, adj.rooms);
+                              return { ...p, rooms: safeR, adults: safeA };
                             })}>−</button>
                             <span style={{ fontWeight: 700, width: 20, textAlign: 'center' }}>{searchData.rooms}</span>
                             <button className="btn-ghost" style={{ padding: '4px 8px', fontSize: '1.2rem', lineHeight: 1 }} onClick={() => setSearchData(p => {
                               const adj = adjustRoomsAndAdults(p.rooms, p.adults, 'rooms', Math.min(10, p.rooms + 1));
-                              return { ...p, rooms: adj.rooms, adults: adj.adults };
+                              const safeA = Math.max(adj.adults, adj.rooms);
+                              const safeR = safeA === 1 ? 1 : Math.min(safeA, adj.rooms);
+                              return { ...p, rooms: safeR, adults: safeA };
                             })}>+</button>
                           </div>
                         </div>
@@ -466,12 +470,16 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
                           <div style={{ display: 'flex', alignItems: 'center', gap: 12, border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', padding: '4px 8px' }}>
                             <button className="btn-ghost" style={{ padding: '4px 8px', fontSize: '1.2rem', lineHeight: 1 }} onClick={() => setSearchData(p => {
                               const adj = adjustRoomsAndAdults(p.rooms, p.adults, 'adults', p.adults - 1);
-                              return { ...p, rooms: adj.rooms, adults: adj.adults };
+                              const safeA = Math.max(1, adj.adults);
+                              const safeR = safeA === 1 ? 1 : Math.min(safeA, adj.rooms);
+                              return { ...p, rooms: safeR, adults: safeA };
                             })}>−</button>
                             <span style={{ fontWeight: 700, width: 20, textAlign: 'center' }}>{searchData.adults}</span>
                             <button className="btn-ghost" style={{ padding: '4px 8px', fontSize: '1.2rem', lineHeight: 1 }} onClick={() => setSearchData(p => {
                               const adj = adjustRoomsAndAdults(p.rooms, p.adults, 'adults', Math.min(30, p.adults + 1));
-                              return { ...p, rooms: adj.rooms, adults: adj.adults };
+                              const safeA = Math.max(1, adj.adults);
+                              const safeR = safeA === 1 ? 1 : Math.min(safeA, adj.rooms);
+                              return { ...p, rooms: safeR, adults: safeA };
                             })}>+</button>
                           </div>
                         </div>

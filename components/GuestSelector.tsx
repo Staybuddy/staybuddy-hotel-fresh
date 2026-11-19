@@ -1,4 +1,5 @@
 'use client';
+import { useEffect } from 'react';
 
 interface GuestSelectorProps {
   rooms: number;
@@ -38,15 +39,31 @@ const Stepper = ({ label, subLabel, value, field, min, onUpdate }: { label: stri
 import { adjustRoomsAndAdults, MAX_ADULTS_PER_ROOM } from '@/lib/occupancyPricing';
 
 export default function GuestSelector({ rooms, adults, children, onChange, onClose }: GuestSelectorProps) {
+  // Enforce invariant: 1 adult can strictly NEVER have more than 1 room
+  const safeAdults = Math.max(1, Number(adults) || 1);
+  const safeRooms = safeAdults === 1 ? 1 : Math.min(safeAdults, Math.max(1, Number(rooms) || 1));
+
+  useEffect(() => {
+    if (rooms !== safeRooms || adults !== safeAdults) {
+      onChange(safeRooms, safeAdults, children);
+    }
+  }, [rooms, adults, safeRooms, safeAdults, children, onChange]);
   
   const update = (field: 'rooms' | 'adults' | 'children', value: number) => {
-    let r = rooms, a = adults, c = children;
+    let r = safeRooms, a = safeAdults, c = children;
     if (field === 'rooms' || field === 'adults') {
-      const adjusted = adjustRoomsAndAdults(rooms, adults, field, value);
+      const adjusted = adjustRoomsAndAdults(safeRooms, safeAdults, field, value);
       r = adjusted.rooms;
       a = adjusted.adults;
     }
     if (field === 'children') c = Math.max(0, value);
+    // Absolute rule: rooms must never exceed adults
+    if (a <= 1) {
+      r = 1;
+      a = 1;
+    } else if (r > a) {
+      r = a;
+    }
     onChange(r, a, c);
   };
 
@@ -60,9 +77,9 @@ export default function GuestSelector({ rooms, adults, children, onChange, onClo
       onClick={e => e.stopPropagation()}
     >
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-        <Stepper label="Rooms" subLabel="Max 3 adults per room" value={rooms} field="rooms" min={1} onUpdate={update} />
+        <Stepper label="Rooms" subLabel="Max 3 adults per room" value={safeRooms} field="rooms" min={1} onUpdate={update} />
         <div style={{ height: 1, background: 'var(--border)' }} />
-        <Stepper label="Adults" subLabel={`Max ${rooms * MAX_ADULTS_PER_ROOM} for ${rooms} room${rooms > 1 ? 's' : ''}`} value={adults} field="adults" min={1} onUpdate={update} />
+        <Stepper label="Adults" subLabel={`Max ${safeRooms * MAX_ADULTS_PER_ROOM} for ${safeRooms} room${safeRooms > 1 ? 's' : ''}`} value={safeAdults} field="adults" min={1} onUpdate={update} />
         <div style={{ height: 1, background: 'var(--border)' }} />
         <Stepper label="Children" subLabel="0 - 17 Years Old" value={children} field="children" min={0} onUpdate={update} />
       </div>

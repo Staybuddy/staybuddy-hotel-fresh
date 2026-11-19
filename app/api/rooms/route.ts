@@ -243,6 +243,32 @@ export async function PUT(request: NextRequest) {
     updateFields.updatedAt = new Date().toISOString();
 
     await roomRef.update(updateFields);
+
+    // Sync updated room fields directly into hotel.rooms embedded array if present
+    try {
+      if (currentRoom.hotelId) {
+        const hotelRef = db.collection('hotels').doc(currentRoom.hotelId);
+        const hotelSnap = await hotelRef.get();
+        if (hotelSnap.exists) {
+          const hData = hotelSnap.data();
+          if (Array.isArray(hData?.rooms) && hData.rooms.length > 0) {
+            const updatedRooms = hData.rooms.map((hr: any) => {
+              if (
+                hr._id === roomId || 
+                hr.id === roomId || 
+                (hr.type && currentRoom.type && hr.type.toLowerCase().trim() === currentRoom.type.toLowerCase().trim())
+              ) {
+                return { ...hr, ...updateFields };
+              }
+              return hr;
+            });
+            await hotelRef.update({ rooms: updatedRooms, updatedAt: new Date().toISOString() });
+          }
+        }
+      }
+    } catch (hSyncErr) {
+      console.warn('Could not sync room update to hotel.rooms:', hSyncErr);
+    }
     
     const updatedDoc = await roomRef.get();
     const room = { _id: updatedDoc.id, ...updatedDoc.data() };

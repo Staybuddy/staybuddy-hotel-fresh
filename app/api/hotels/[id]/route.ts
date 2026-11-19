@@ -79,20 +79,46 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     let rooms: any[] = [];
     let reviews: any[] = [];
     if (hotel.rooms && Array.isArray(hotel.rooms) && hotel.rooms.length > 0) {
-      // Prioritize partner-configured room pricing from hotel.rooms
+      // Merge hotel.rooms with collRooms (Partner Extranet CRM rooms collection is primary source of truth)
       rooms = hotel.rooms.map((hr: any) => {
         const matchingColl = collRooms.find((cr: any) => 
           (cr._id && (cr._id === hr._id || cr._id === hr.id)) ||
           (cr.id && (cr.id === hr._id || cr.id === hr.id)) ||
           (cr.type && hr.type && cr.type.toLowerCase().trim() === hr.type.toLowerCase().trim())
         );
+
+        // Strictly preserve room-specific photos uploaded by partner
+        const roomImgs = (Array.isArray(matchingColl?.images) && matchingColl.images.length > 0)
+          ? matchingColl.images
+          : (Array.isArray(hr.images) && hr.images.length > 0)
+          ? hr.images
+          : (Array.isArray(hr.photos) && hr.photos.length > 0)
+          ? hr.photos
+          : (Array.isArray(matchingColl?.photos) && matchingColl.photos.length > 0)
+          ? matchingColl.photos
+          : (Array.isArray(hotel.images) ? hotel.images.slice(0, 1) : []);
+
+        // Rates: prioritize live Partner Extranet CRM prices from collRooms
+        const pSingle = Number(matchingColl?.priceSingle) > 0
+          ? Number(matchingColl.priceSingle)
+          : Number(hr.priceSingle !== undefined && hr.priceSingle !== '' ? hr.priceSingle : (matchingColl?.priceSingle || 0)) || 0;
+
+        const pDouble = Number(matchingColl?.priceDouble) > 0
+          ? Number(matchingColl.priceDouble)
+          : Number(hr.priceDouble !== undefined && hr.priceDouble !== '' ? hr.priceDouble : (matchingColl?.priceDouble || 0)) || 0;
+
+        const pTriple = Number(matchingColl?.priceTriple) > 0
+          ? Number(matchingColl.priceTriple)
+          : Number(hr.priceTriple !== undefined && hr.priceTriple !== '' ? hr.priceTriple : (matchingColl?.priceTriple || 0)) || 0;
+
         return {
-          ...(matchingColl || {}),
           ...hr,
-          _id: hr._id || hr.id || matchingColl?._id || `room_${Date.now()}`,
-          priceSingle: Number(hr.priceSingle !== undefined && hr.priceSingle !== '' ? hr.priceSingle : (matchingColl?.priceSingle || 0)) || 0,
-          priceDouble: Number(hr.priceDouble !== undefined && hr.priceDouble !== '' ? hr.priceDouble : (matchingColl?.priceDouble || 0)) || 0,
-          priceTriple: Number(hr.priceTriple !== undefined && hr.priceTriple !== '' ? hr.priceTriple : (matchingColl?.priceTriple || 0)) || 0,
+          ...(matchingColl || {}),
+          images: roomImgs,
+          _id: matchingColl?._id || hr._id || hr.id || `room_${Date.now()}`,
+          priceSingle: pSingle,
+          priceDouble: pDouble,
+          priceTriple: pTriple,
         };
       });
 

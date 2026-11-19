@@ -60,6 +60,7 @@ export default function HotelDetailPage() {
   const [activeImg, setActiveImg] = useState(0);
   const [activeHeroIndex, setActiveHeroIndex] = useState(0);
   const [showGalleryModal, setShowGalleryModal] = useState(false);
+  const [customGalleryPhotos, setCustomGalleryPhotos] = useState<Array<{ url: string; label: string }> | null>(null);
   const [galleryActiveIndex, setGalleryActiveIndex] = useState(0);
   const [isAutoPlaying, setIsAutoPlaying] = useState(false);
   const [galleryFitMode, setGalleryFitMode] = useState<"contain" | "cover">("contain");
@@ -590,10 +591,21 @@ export default function HotelDetailPage() {
     return hotel ? getTransitDistancesForHotel(hotel) : [];
   }, [hotel]);
 
-  const openPhotoViewer = (index: number) => {
-    if (allPhotos.length === 0) return;
-    setGalleryActiveIndex(Math.max(0, Math.min(index, allPhotos.length - 1)));
+  const activePhotosList = useMemo(() => {
+    return (customGalleryPhotos && customGalleryPhotos.length > 0) ? customGalleryPhotos : allPhotos;
+  }, [customGalleryPhotos, allPhotos]);
+
+  const openPhotoViewer = (index: number, customList?: Array<{ url: string; label: string }>) => {
+    const list = customList && customList.length > 0 ? customList : allPhotos;
+    if (list.length === 0) return;
+    setCustomGalleryPhotos(customList || null);
+    setGalleryActiveIndex(Math.max(0, Math.min(index, list.length - 1)));
     setShowGalleryModal(true);
+  };
+
+  const closePhotoViewer = () => {
+    setShowGalleryModal(false);
+    setCustomGalleryPhotos(null);
   };
 
   // Lock body scroll when photo modal or room details is open
@@ -625,10 +637,10 @@ export default function HotelDetailPage() {
     const minSwipeDistance = 45;
     if (distance > minSwipeDistance) {
       // Swiped left -> next photo
-      setGalleryActiveIndex((prev) => (prev + 1) % (allPhotos.length || 1));
+      setGalleryActiveIndex((prev) => (prev + 1) % (activePhotosList.length || 1));
     } else if (distance < -minSwipeDistance) {
       // Swiped right -> previous photo
-      setGalleryActiveIndex((prev) => (prev - 1 + allPhotos.length) % (allPhotos.length || 1));
+      setGalleryActiveIndex((prev) => (prev - 1 + activePhotosList.length) % (activePhotosList.length || 1));
     }
     setTouchStartX(null);
     setTouchEndX(null);
@@ -637,25 +649,25 @@ export default function HotelDetailPage() {
   useEffect(() => {
     if (!showGalleryModal) return;
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setShowGalleryModal(false);
+      if (e.key === "Escape") closePhotoViewer();
       if (e.key === "ArrowRight") {
-        setGalleryActiveIndex((prev) => (prev + 1) % (allPhotos.length || 1));
+        setGalleryActiveIndex((prev) => (prev + 1) % (activePhotosList.length || 1));
       }
       if (e.key === "ArrowLeft") {
-        setGalleryActiveIndex((prev) => (prev - 1 + allPhotos.length) % (allPhotos.length || 1));
+        setGalleryActiveIndex((prev) => (prev - 1 + activePhotosList.length) % (activePhotosList.length || 1));
       }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [showGalleryModal, allPhotos.length]);
+  }, [showGalleryModal, activePhotosList.length]);
 
   useEffect(() => {
-    if (!showGalleryModal || !isAutoPlaying || allPhotos.length <= 1) return;
+    if (!showGalleryModal || !isAutoPlaying || activePhotosList.length <= 1) return;
     const timer = setInterval(() => {
-      setGalleryActiveIndex((prev) => (prev + 1) % allPhotos.length);
+      setGalleryActiveIndex((prev) => (prev + 1) % activePhotosList.length);
     }, 3000);
     return () => clearInterval(timer);
-  }, [showGalleryModal, isAutoPlaying, allPhotos.length]);
+  }, [showGalleryModal, isAutoPlaying, activePhotosList.length]);
 
   const totalSelectedRoomsCount = useMemo(() => {
     return Object.values(selectedRoomsMap).reduce((sum, count) => sum + (count || 0), 0);
@@ -2084,10 +2096,12 @@ export default function HotelDetailPage() {
                               style={{ padding: "4px 8px", fontSize: "1.2rem", lineHeight: 1 }}
                               onClick={() => {
                                 const adj = adjustRoomsAndAdults(bookingData.rooms, bookingData.adults, 'rooms', bookingData.rooms - 1);
-                                setBookingData((p) => ({ ...p, rooms: adj.rooms, adults: adj.adults }));
-                                updateUrlParams({ rooms: adj.rooms, adults: adj.adults });
-                                if (adj.rooms === 1) {
-                                  setOccupancy(adj.adults === 1 ? "single" : adj.adults === 3 ? "triple" : "double");
+                                const safeA = Math.max(1, adj.adults);
+                                const safeR = safeA === 1 ? 1 : Math.min(safeA, adj.rooms);
+                                setBookingData((p) => ({ ...p, rooms: safeR, adults: safeA }));
+                                updateUrlParams({ rooms: safeR, adults: safeA });
+                                if (safeR === 1) {
+                                  setOccupancy(safeA === 1 ? "single" : safeA === 3 ? "triple" : "double");
                                 }
                               }}
                             >
@@ -2099,10 +2113,12 @@ export default function HotelDetailPage() {
                               style={{ padding: "4px 8px", fontSize: "1.2rem", lineHeight: 1 }}
                               onClick={() => {
                                 const adj = adjustRoomsAndAdults(bookingData.rooms, bookingData.adults, 'rooms', Math.min(10, bookingData.rooms + 1));
-                                setBookingData((p) => ({ ...p, rooms: adj.rooms, adults: adj.adults }));
-                                updateUrlParams({ rooms: adj.rooms, adults: adj.adults });
-                                if (adj.rooms === 1) {
-                                  setOccupancy(adj.adults === 1 ? "single" : adj.adults === 3 ? "triple" : "double");
+                                const safeA = Math.max(adj.adults, adj.rooms);
+                                const safeR = safeA === 1 ? 1 : Math.min(safeA, adj.rooms);
+                                setBookingData((p) => ({ ...p, rooms: safeR, adults: safeA }));
+                                updateUrlParams({ rooms: safeR, adults: safeA });
+                                if (safeR === 1) {
+                                  setOccupancy(safeA === 1 ? "single" : safeA === 3 ? "triple" : "double");
                                 }
                               }}
                             >
@@ -2124,10 +2140,12 @@ export default function HotelDetailPage() {
                               style={{ padding: "4px 8px", fontSize: "1.2rem", lineHeight: 1 }}
                               onClick={() => {
                                 const adj = adjustRoomsAndAdults(bookingData.rooms, bookingData.adults, 'adults', Math.max(1, bookingData.adults - 1));
-                                setBookingData((p) => ({ ...p, rooms: adj.rooms, adults: adj.adults }));
-                                updateUrlParams({ rooms: adj.rooms, adults: adj.adults });
-                                if (adj.rooms === 1) {
-                                  setOccupancy(adj.adults === 1 ? "single" : adj.adults === 3 ? "triple" : "double");
+                                const safeA = Math.max(1, adj.adults);
+                                const safeR = safeA === 1 ? 1 : Math.min(safeA, adj.rooms);
+                                setBookingData((p) => ({ ...p, rooms: safeR, adults: safeA }));
+                                updateUrlParams({ rooms: safeR, adults: safeA });
+                                if (safeR === 1) {
+                                  setOccupancy(safeA === 1 ? "single" : safeA === 3 ? "triple" : "double");
                                 }
                               }}
                             >
@@ -2139,10 +2157,12 @@ export default function HotelDetailPage() {
                               style={{ padding: "4px 8px", fontSize: "1.2rem", lineHeight: 1 }}
                               onClick={() => {
                                 const adj = adjustRoomsAndAdults(bookingData.rooms, bookingData.adults, 'adults', Math.min(30, bookingData.adults + 1));
-                                setBookingData((p) => ({ ...p, rooms: adj.rooms, adults: adj.adults }));
-                                updateUrlParams({ rooms: adj.rooms, adults: adj.adults });
-                                if (adj.rooms === 1) {
-                                  setOccupancy(adj.adults === 1 ? "single" : adj.adults === 3 ? "triple" : "double");
+                                const safeA = Math.max(1, adj.adults);
+                                const safeR = safeA === 1 ? 1 : Math.min(safeA, adj.rooms);
+                                setBookingData((p) => ({ ...p, rooms: safeR, adults: safeA }));
+                                updateUrlParams({ rooms: safeR, adults: safeA });
+                                if (safeR === 1) {
+                                  setOccupancy(safeA === 1 ? "single" : safeA === 3 ? "triple" : "double");
                                 }
                               }}
                             >
@@ -2376,8 +2396,11 @@ export default function HotelDetailPage() {
                               className="room-card-thumbnail"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                const foundIdx = allPhotos.findIndex(p => p.url === room.images[0]);
-                                openPhotoViewer(foundIdx >= 0 ? foundIdx : 0);
+                                const roomPhotosList = (room.images || []).map((url: string, i: number) => ({
+                                  url,
+                                  label: `${room.type} • Photo ${i + 1} of ${room.images.length}`,
+                                }));
+                                openPhotoViewer(0, roomPhotosList);
                               }}
                               title="Click to view full photo gallery"
                             >
@@ -5606,151 +5629,161 @@ export default function HotelDetailPage() {
               top: "50%",
               left: "50%",
               transform: "translate(-50%, -50%)",
-              background: "white",
-              borderRadius: "var(--radius-xl)",
+              background: "#ffffff",
+              borderRadius: "24px",
               width: "92%",
-              maxWidth: 820,
+              maxWidth: 720,
               maxHeight: "90vh",
               overflowY: "auto",
+              overflowX: "hidden",
               zIndex: 20001,
-              boxShadow: "0 25px 60px rgba(0,0,0,0.5)",
-              padding: "var(--space-6)",
-              paddingBottom: "max(24px, env(safe-area-inset-bottom))",
+              boxShadow: "0 30px 80px rgba(0,0,0,0.55)",
+              padding: 0,
             }}
           >
-            <button
-              onClick={() => setRoomDetailsModal(null)}
-              style={{
-                position: "absolute",
-                top: 16,
-                right: 16,
-                background: "var(--bg-secondary)",
-                border: "none",
-                borderRadius: "50%",
-                width: 32,
-                height: 32,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                cursor: "pointer",
-                zIndex: 2,
-              }}
-            >
-              ✕
-            </button>
-
-            {roomDetailsModal.images && roomDetailsModal.images.length > 0 && (
+            {/* End-to-End Room Photo Hero (Edge-to-Edge with Zero Gaps) */}
+            {roomDetailsModal.images && roomDetailsModal.images.length > 0 ? (
               <div
                 style={{
-                  margin: "calc(-1 * var(--space-6, 24px)) calc(-1 * var(--space-6, 24px)) var(--space-4, 16px)",
                   position: "relative",
+                  width: "100%",
+                  height: "clamp(260px, 40vh, 420px)",
+                  background: "#0f172a",
+                  overflow: "hidden",
                 }}
               >
-                <div
-                  style={{ width: "100%", height: "clamp(240px, 35vh, 420px)", position: "relative", cursor: "zoom-in" }}
-                  onClick={() => {
-                    const currentImg = roomDetailsModal.images[modalImageIndex];
-                    const foundIdx = allPhotos.findIndex((p) => p.url === currentImg);
-                    setRoomDetailsModal(null);
-                    openPhotoViewer(foundIdx >= 0 ? foundIdx : 0);
+                <Image
+                  src={roomDetailsModal.images[modalImageIndex]}
+                  alt={roomDetailsModal.type}
+                  fill
+                  priority
+                  sizes="(max-width: 768px) 100vw, 820px"
+                  style={{
+                    objectFit: "cover",
                   }}
-                  title="Click to view full screen"
+                />
+
+                {/* Floating Glass Close Button */}
+                <button
+                  type="button"
+                  onClick={() => setRoomDetailsModal(null)}
+                  aria-label="Close"
+                  style={{
+                    position: "absolute",
+                    top: 14,
+                    right: 14,
+                    background: "rgba(15, 23, 42, 0.7)",
+                    backdropFilter: "blur(8px)",
+                    WebkitBackdropFilter: "blur(8px)",
+                    border: "1px solid rgba(255, 255, 255, 0.3)",
+                    borderRadius: "50%",
+                    width: 36,
+                    height: 36,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    cursor: "pointer",
+                    color: "#ffffff",
+                    fontSize: "1rem",
+                    fontWeight: 800,
+                    zIndex: 10,
+                    boxShadow: "0 4px 12px rgba(0,0,0,0.35)",
+                  }}
                 >
-                  <Image
-                    src={roomDetailsModal.images[modalImageIndex]}
-                    alt={roomDetailsModal.type}
-                    fill
-                    priority
-                    sizes="(max-width: 768px) 100vw, 900px"
-                    style={{
-                      objectFit: "cover",
-                      borderTopLeftRadius: "var(--radius-xl)",
-                      borderTopRightRadius: "var(--radius-xl)",
-                    }}
-                  />
-                  <div
-                    style={{
-                      position: "absolute",
-                      bottom: 12,
-                      right: 12,
-                      background: "rgba(15, 23, 42, 0.75)",
-                      backdropFilter: "blur(6px)",
-                      color: "white",
-                      padding: "6px 14px",
-                      borderRadius: 20,
-                      fontSize: "0.8rem",
-                      fontWeight: 700,
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 6,
-                      border: "1px solid rgba(255,255,255,0.25)",
-                      boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
-                    }}
-                  >
-                    <span>⤢ View Full Screen</span>
-                  </div>
+                  ✕
+                </button>
+
+                {/* Scoped Full Screen Button (Shows ONLY this room's photos) */}
+                <div
+                  style={{
+                    position: "absolute",
+                    bottom: 14,
+                    right: 14,
+                    background: "rgba(15, 23, 42, 0.75)",
+                    backdropFilter: "blur(8px)",
+                    color: "#ffffff",
+                    padding: "6px 14px",
+                    borderRadius: 20,
+                    fontSize: "0.8rem",
+                    fontWeight: 700,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 6,
+                    border: "1px solid rgba(255,255,255,0.25)",
+                    boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
+                    cursor: "pointer",
+                    zIndex: 5,
+                  }}
+                  onClick={() => {
+                    const roomPhotosList = (roomDetailsModal.images || []).map((url: string, i: number) => ({
+                      url,
+                      label: `${roomDetailsModal.type} • Photo ${i + 1} of ${roomDetailsModal.images.length}`,
+                    }));
+                    setRoomDetailsModal(null);
+                    openPhotoViewer(modalImageIndex, roomPhotosList);
+                  }}
+                >
+                  <span>⤢ View Full Screen</span>
                 </div>
 
                 {roomDetailsModal.images.length > 1 && (
                   <>
                     <button
+                      type="button"
                       onClick={(e) => {
                         e.stopPropagation();
                         setModalImageIndex((prev) =>
-                          prev === 0
-                            ? roomDetailsModal.images.length - 1
-                            : prev - 1,
+                          prev === 0 ? roomDetailsModal.images.length - 1 : prev - 1
                         );
                       }}
                       style={{
                         position: "absolute",
-                        left: 16,
+                        left: 12,
                         top: "50%",
                         transform: "translateY(-50%)",
-                        background: "rgba(255,255,255,0.8)",
-                        border: "none",
+                        background: "rgba(15, 23, 42, 0.65)",
+                        backdropFilter: "blur(6px)",
+                        border: "1px solid rgba(255,255,255,0.25)",
                         borderRadius: "50%",
-                        width: 40,
-                        height: 40,
+                        width: 38,
+                        height: 38,
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
                         cursor: "pointer",
-                        boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
+                        color: "#ffffff",
                         fontSize: "1.2rem",
-                        color: "#0f172a",
-                        zIndex: 2,
+                        zIndex: 5,
                       }}
                     >
                       ←
                     </button>
                     <button
+                      type="button"
                       onClick={(e) => {
                         e.stopPropagation();
                         setModalImageIndex((prev) =>
-                          prev === roomDetailsModal.images.length - 1
-                            ? 0
-                            : prev + 1,
+                          prev === roomDetailsModal.images.length - 1 ? 0 : prev + 1
                         );
                       }}
                       style={{
                         position: "absolute",
-                        right: 16,
+                        right: 12,
                         top: "50%",
                         transform: "translateY(-50%)",
-                        background: "rgba(255,255,255,0.8)",
-                        border: "none",
+                        background: "rgba(15, 23, 42, 0.65)",
+                        backdropFilter: "blur(6px)",
+                        border: "1px solid rgba(255,255,255,0.25)",
                         borderRadius: "50%",
-                        width: 40,
-                        height: 40,
+                        width: 38,
+                        height: 38,
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
                         cursor: "pointer",
-                        boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
+                        color: "#ffffff",
                         fontSize: "1.2rem",
-                        color: "#0f172a",
-                        zIndex: 2,
+                        zIndex: 5,
                       }}
                     >
                       →
@@ -5758,23 +5791,66 @@ export default function HotelDetailPage() {
                     <div
                       style={{
                         position: "absolute",
-                        bottom: 16,
-                        left: "50%",
-                        transform: "translateX(-50%)",
-                        background: "rgba(0,0,0,0.6)",
-                        color: "white",
+                        bottom: 14,
+                        left: 14,
+                        background: "rgba(15, 23, 42, 0.75)",
+                        backdropFilter: "blur(8px)",
+                        color: "#ffffff",
                         padding: "4px 12px",
                         borderRadius: 20,
-                        fontSize: "0.8rem",
-                        fontWeight: 600,
+                        fontSize: "0.78rem",
+                        fontWeight: 700,
+                        border: "1px solid rgba(255,255,255,0.2)",
+                        zIndex: 5,
                       }}
                     >
-                      {modalImageIndex + 1} / {roomDetailsModal.images.length}
+                      {modalImageIndex + 1} / {roomDetailsModal.images.length} Photos
                     </div>
                   </>
                 )}
               </div>
+            ) : (
+              <div
+                style={{
+                  position: "relative",
+                  width: "100%",
+                  height: 160,
+                  background: "linear-gradient(135deg, #fed7aa 0%, #ea580c 100%)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: "3rem",
+                }}
+              >
+                🏨
+                <button
+                  type="button"
+                  onClick={() => setRoomDetailsModal(null)}
+                  style={{
+                    position: "absolute",
+                    top: 14,
+                    right: 14,
+                    background: "rgba(0,0,0,0.5)",
+                    color: "#ffffff",
+                    border: "none",
+                    borderRadius: "50%",
+                    width: 34,
+                    height: 34,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    cursor: "pointer",
+                    fontSize: "0.95rem",
+                    fontWeight: 700,
+                  }}
+                >
+                  ✕
+                </button>
+              </div>
             )}
+
+            {/* Modal Body Container with Clean Padding */}
+            <div style={{ padding: "22px 24px", paddingBottom: "max(24px, env(safe-area-inset-bottom))" }}>
 
             <h2 style={{ fontSize: "1.5rem", marginBottom: 8 }}>
               {roomDetailsModal.type}
@@ -6027,12 +6103,13 @@ export default function HotelDetailPage() {
                 )}
               </div>
             </div>
+            </div>
           </div>
         </>
       )}
 
       {/* Full-Screen Client Photo Viewer / Lightbox ("All photos appear one by one") */}
-      {showGalleryModal && allPhotos.length > 0 && (
+      {showGalleryModal && activePhotosList.length > 0 && (
         <div
           style={{
             position: "fixed",
@@ -6047,7 +6124,7 @@ export default function HotelDetailPage() {
             userSelect: "none",
             touchAction: "pan-y",
           }}
-          onClick={() => setShowGalleryModal(false)}
+          onClick={closePhotoViewer}
         >
           {/* Floating Top Bar Overlay */}
           <div
@@ -6071,11 +6148,11 @@ export default function HotelDetailPage() {
                   🏨 {hotel?.name}
                 </h3>
                 <span style={{ fontSize: "0.7rem", background: "rgba(255,255,255,0.18)", color: "#f1f5f9", padding: "2px 8px", borderRadius: 12, fontWeight: 700 }}>
-                  {allPhotos[galleryActiveIndex]?.label}
+                  {activePhotosList[galleryActiveIndex]?.label}
                 </span>
               </div>
               <div style={{ fontSize: "0.75rem", color: "#94a3b8", fontWeight: 600 }}>
-                Photo {galleryActiveIndex + 1} of {allPhotos.length} • Swipe or tap arrows
+                Photo {galleryActiveIndex + 1} of {activePhotosList.length} • Swipe or tap arrows
               </div>
             </div>
 
@@ -6172,7 +6249,7 @@ export default function HotelDetailPage() {
                 type="button"
                 onClick={(e) => {
                   e.stopPropagation();
-                  setShowGalleryModal(false);
+                  closePhotoViewer();
                 }}
                 style={{
                   background: "rgba(255,255,255,0.25)",
@@ -6220,7 +6297,7 @@ export default function HotelDetailPage() {
               type="button"
               onClick={(e) => {
                 e.stopPropagation();
-                setGalleryActiveIndex((prev) => (prev - 1 + allPhotos.length) % allPhotos.length);
+                setGalleryActiveIndex((prev) => (prev - 1 + activePhotosList.length) % activePhotosList.length);
               }}
               style={{
                 position: "absolute",
@@ -6262,7 +6339,7 @@ export default function HotelDetailPage() {
               title="Click photo to toggle Fit / Fill Screen"
             >
               <img
-                src={allPhotos[galleryActiveIndex]?.url}
+                src={activePhotosList[galleryActiveIndex]?.url}
                 alt={`${hotel?.name} photo ${galleryActiveIndex + 1}`}
                 style={{
                   width: galleryFitMode === "cover" ? "100%" : "auto",
@@ -6283,7 +6360,7 @@ export default function HotelDetailPage() {
               type="button"
               onClick={(e) => {
                 e.stopPropagation();
-                setGalleryActiveIndex((prev) => (prev + 1) % allPhotos.length);
+                setGalleryActiveIndex((prev) => (prev + 1) % activePhotosList.length);
               }}
               style={{
                 position: "absolute",
@@ -6327,12 +6404,12 @@ export default function HotelDetailPage() {
                 gap: 10,
                 overflowX: "auto",
                 alignItems: "center",
-                justifyContent: allPhotos.length > 8 ? "flex-start" : "center",
+                justifyContent: activePhotosList.length > 8 ? "flex-start" : "center",
                 pointerEvents: "auto",
               }}
               onClick={(e) => e.stopPropagation()}
             >
-              {allPhotos.map((photo: any, pIdx: number) => {
+              {activePhotosList.map((photo: any, pIdx: number) => {
                 const isActive = pIdx === galleryActiveIndex;
                 return (
                   <div
