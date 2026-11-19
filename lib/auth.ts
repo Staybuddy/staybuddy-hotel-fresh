@@ -102,6 +102,69 @@ export const authOptions: NextAuthOptions = {
         };
       },
     }),
+    CredentialsProvider({
+      id: 'email-signin',
+      name: 'Email Sign In',
+      credentials: {
+        email: { label: 'Email', type: 'email' },
+        name: { label: 'Name', type: 'text' },
+      },
+      async authorize(credentials) {
+        if (!credentials?.email) {
+          throw new Error('Please enter your email address');
+        }
+        const email = credentials.email.trim().toLowerCase();
+        // Basic email syntax validation
+        if (!email.includes('@') || !email.includes('.')) {
+          throw new Error('Please enter a valid email address');
+        }
+
+        const usersRef = db.collection('users');
+        const snapshot = await usersRef.where('email', '==', email).limit(1).get();
+
+        let userId: string;
+        let userData: any;
+
+        if (snapshot.empty) {
+          const rawName = (credentials.name || '').trim();
+          const defaultName = rawName || email.split('@')[0].replace(/[._-]/g, ' ') || 'StayBuddy Guest';
+          const capitalizedName = defaultName.charAt(0).toUpperCase() + defaultName.slice(1);
+
+          const newUserData = {
+            name: capitalizedName,
+            email: email,
+            role: 'customer',
+            isActive: true,
+            partnerStatus: 'none',
+            referralCode: await generateReferralCode(capitalizedName),
+            referralCount: 0,
+            walletBalance: 500, // ₹500 Welcome Bonus Credits
+            createdAt: new Date(),
+          };
+          const newUserRef = await usersRef.add(newUserData);
+          await handleReferral(newUserRef, newUserData);
+          userId = newUserRef.id;
+          userData = newUserData;
+        } else {
+          userId = snapshot.docs[0].id;
+          userData = snapshot.docs[0].data();
+        }
+
+        const u = userData as any;
+        if (!u.isActive) {
+          throw new Error('Your account has been suspended. Contact support.');
+        }
+
+        return {
+          id: userId,
+          name: u.name,
+          email: u.email,
+          role: u.role || 'customer',
+          image: u.avatar,
+          phone: u.phone,
+        };
+      },
+    }),
   ],
   callbacks: {
     async signIn({ user, account, profile }) {

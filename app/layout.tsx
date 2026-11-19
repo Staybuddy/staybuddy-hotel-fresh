@@ -10,6 +10,7 @@ import Providers from '@/components/Providers';
 import SplashScreen from '@/components/SplashScreen';
 import ReferralTracker from '@/components/ReferralTracker';
 import PwaRegister from '@/components/PwaRegister';
+import WelcomeAuthModal from '@/components/WelcomeAuthModal';
 import { Suspense } from 'react';
 import Script from 'next/script';
 
@@ -70,7 +71,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </Suspense>
         <SplashScreen />
         <PwaRegister />
-        <Providers>{children}</Providers>
+        <Providers>
+          <WelcomeAuthModal />
+          {children}
+        </Providers>
       </body>
     </html>
   );
