@@ -566,7 +566,7 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
               <button className="hero-search-btn"
                 onClick={handleSearch}
                 style={{ 
-                  background: 'linear-gradient(135deg, #ff6b35, #ea580c)', 
+                  background: 'linear-gradient(135deg, #f0643b, #de532b)', 
                   color: 'white', 
                   border: 'none', 
                   borderRadius: '30px', 
@@ -575,7 +575,7 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
                   fontWeight: 800, 
                   cursor: 'pointer',
                   whiteSpace: 'nowrap',
-                  boxShadow: '0 4px 15px rgba(255,107,53,0.4)',
+                  boxShadow: '0 4px 16px rgba(240, 100, 59, 0.3)',
                   flexShrink: 0,
                   alignSelf: 'center',
                   marginTop: 4,
@@ -751,9 +751,9 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
                         left: isCompact ? 8 : '12%',
                         right: isCompact ? 8 : '12%',
                         height: 3,
-                        background: 'linear-gradient(90deg, #ff6b35, #ea580c)',
+                        background: 'linear-gradient(90deg, #f0643b, #de532b)',
                         borderRadius: '3px 3px 0 0',
-                        boxShadow: '0 -1px 6px rgba(255, 107, 53, 0.45)',
+                        boxShadow: '0 -1px 6px rgba(240, 100, 59, 0.35)',
                         animation: 'fadeIn 0.2s ease'
                       }}
                     />
@@ -777,12 +777,12 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
               className="hero-banner-container"
               style={{ 
                 position: 'relative',
-                background: `linear-gradient(180deg, rgba(15, 23, 42, 0.42) 0%, rgba(15, 23, 42, 0.7) 100%), url('/images/hero-banner.jpg') center 35% / cover no-repeat`,
+                background: `linear-gradient(180deg, rgba(15, 23, 42, 0.36) 0%, rgba(15, 23, 42, 0.64) 100%), url('/images/hero-banner.jpg') center 35% / cover no-repeat`,
                 padding: searchData.propertyType ? '32px 0 40px 0' : '44px 0 48px 0',
                 marginTop: '-8px',
                 transition: 'padding 0.3s ease',
                 overflow: 'hidden',
-                boxShadow: 'inset 0 -20px 30px -10px rgba(0,0,0,0.2)'
+                boxShadow: 'inset 0 -20px 30px -10px rgba(0,0,0,0.18)'
               }}
             >
               <div className="container hero-section-container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '0 16px', position: 'relative', zIndex: 10 }}>
@@ -1612,7 +1612,7 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
                 display: block;
                 width: 70px;
                 height: 4px;
-                background: linear-gradient(90deg, #ff6b35, #ea580c);
+                background: linear-gradient(90deg, #f0643b, #de532b);
                 border-radius: 4px;
                 margin: 0 auto 28px;
               }

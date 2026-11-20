@@ -81,12 +81,12 @@ export default function CityDestinationCard({
         style={{
           cursor: 'pointer',
           border: isHovered
-            ? '2.5px solid #ff6b35'
+            ? '2px solid #f0643b'
             : '2px solid rgba(255, 255, 255, 0.18)',
           transition: 'transform 0.45s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.45s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.3s ease',
-          transform: isHovered ? 'translateY(-8px) scale(1.02)' : 'translateY(0) scale(1)',
+          transform: isHovered ? 'translateY(-7px) scale(1.02)' : 'translateY(0) scale(1)',
           boxShadow: isHovered
-            ? '0 22px 45px -8px rgba(0, 0, 0, 0.5), 0 0 0 3px rgba(255, 107, 53, 0.45), 0 0 25px rgba(255, 107, 53, 0.25)'
+            ? '0 18px 36px -8px rgba(15, 23, 42, 0.4), 0 0 0 2px rgba(240, 100, 59, 0.4), 0 0 18px rgba(240, 100, 59, 0.2)'
             : '0 4px 14px rgba(0, 0, 0, 0.12)',
           userSelect: 'none',
           WebkitUserSelect: 'none',
@@ -167,14 +167,14 @@ export default function CityDestinationCard({
             background: 'rgba(15, 23, 42, 0.78)',
             backdropFilter: 'blur(8px)',
             WebkitBackdropFilter: 'blur(8px)',
-            border: isHovered ? '1.5px solid rgba(255, 107, 53, 0.85)' : '1px solid rgba(255, 255, 255, 0.35)',
+            border: isHovered ? '1.5px solid rgba(240, 100, 59, 0.75)' : '1px solid rgba(255, 255, 255, 0.35)',
             color: '#ffffff',
             fontSize: '0.72rem',
             fontWeight: 700,
             padding: '3px 10px',
             borderRadius: '9999px',
             letterSpacing: '0.02em',
-            boxShadow: isHovered ? '0 4px 14px rgba(255, 107, 53, 0.45)' : '0 2px 6px rgba(0,0,0,0.3)',
+            boxShadow: isHovered ? '0 4px 12px rgba(240, 100, 59, 0.35)' : '0 2px 6px rgba(0,0,0,0.3)',
             transition: 'all 0.35s cubic-bezier(0.16, 1, 0.3, 1)',
             transform: isHovered ? 'scale(1.06)' : 'scale(1)',
             display: 'inline-flex',
@@ -247,7 +247,7 @@ export default function CityDestinationCard({
                 height: isHovered ? '26px' : '20px',
                 borderRadius: '9999px',
                 background: isHovered
-                  ? 'linear-gradient(135deg, #ff7e47, #ea580c)'
+                  ? 'linear-gradient(135deg, #f0643b, #de532b)'
                   : 'rgba(255, 255, 255, 0.3)',
                 color: '#ffffff',
                 fontWeight: 800,
@@ -255,7 +255,7 @@ export default function CityDestinationCard({
                 flexShrink: 0,
                 transition: 'all 0.35s cubic-bezier(0.16, 1, 0.3, 1)',
                 transform: isHovered ? 'translateX(3px) scale(1.08)' : 'translateX(0)',
-                boxShadow: isHovered ? '0 4px 14px rgba(234, 88, 12, 0.7)' : 'none',
+                boxShadow: isHovered ? '0 4px 12px rgba(240, 100, 59, 0.55)' : 'none',
               }}
             >
               →
