@@ -259,7 +259,24 @@ export default function LocationSearch({ city, onChange, placeholder = "Search d
           <div style={{ position: 'relative', background: 'white', borderRadius: '24px', width: '100%', maxWidth: 500, maxHeight: '90vh', overflow: 'hidden', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)', display: 'flex', flexDirection: 'column' }}>
             
             <div style={{ padding: '20px 24px', borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
-              <h2 style={{ fontSize: '1.25rem', fontWeight: 800, margin: 0, color: '#0f172a' }}>Where do you want to go?</h2>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                <h2 style={{ fontSize: '1.25rem', fontWeight: 800, margin: 0, color: '#0f172a' }}>Where do you want to go?</h2>
+                <span style={{
+                  background: 'linear-gradient(135deg, #f0fdf4, #dcfce7)',
+                  color: '#15803d',
+                  border: '1px solid #bbf7d0',
+                  fontSize: '0.7rem',
+                  fontWeight: 800,
+                  padding: '3px 9px',
+                  borderRadius: '9999px',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 4,
+                  boxShadow: '0 1px 3px rgba(22, 163, 74, 0.1)'
+                }}>
+                  ✨ Smart AI Search
+                </span>
+              </div>
               <button onClick={() => setIsModalOpen(false)} style={{ background: '#f1f5f9', border: 'none', cursor: 'pointer', color: '#64748b', width: 36, height: 36, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background 0.2s' }}>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
               </button>
@@ -377,15 +394,52 @@ export default function LocationSearch({ city, onChange, placeholder = "Search d
                     onMouseEnter={e => e.currentTarget.style.background = '#f8fafc'}
                     onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                   >
-                    <div style={{ background: '#f1f5f9', width: 44, height: 44, borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748b' }}>
+                    <div style={{ background: '#f1f5f9', width: 44, height: 44, borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748b', flexShrink: 0 }}>
                       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 21h18"></path><path d="M5 21V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16"></path><path d="M9 21v-4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v4"></path><path d="M9 7h.01"></path><path d="M9 11h.01"></path><path d="M15 7h.01"></path><path d="M15 11h.01"></path></svg>
                     </div>
-                    <div style={{ display: 'flex', flexDirection: 'column' }}>
-                      <span style={{ fontWeight: 700, fontSize: '1.05rem', color: '#0f172a', marginBottom: 2 }}>{h.name}</span>
+                    <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 2 }}>
+                        <span style={{ fontWeight: 700, fontSize: '1.05rem', color: '#0f172a' }}>{h.name}</span>
+                        {h.isAiMatch && (
+                          <span style={{
+                            background: 'linear-gradient(135deg, #eff6ff, #dbeafe)',
+                            color: '#1d4ed8',
+                            fontSize: '0.68rem',
+                            fontWeight: 800,
+                            padding: '2px 8px',
+                            borderRadius: '9999px',
+                            border: '1px solid #bfdbfe',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 3,
+                          }}>
+                            ✨ Smart Match
+                          </span>
+                        )}
+                      </div>
                       <span style={{ fontSize: '0.8rem', color: '#64748b' }}>{h.city}, India</span>
                     </div>
                   </div>
                 ))}
+
+                {query.length >= 2 && results.hotels.length === 0 && results.cities.length === 0 && !loading && (
+                  <div style={{
+                    padding: '24px 16px',
+                    textAlign: 'center',
+                    background: '#f8fafc',
+                    borderRadius: '16px',
+                    border: '1px dashed #cbd5e1',
+                    marginTop: 12
+                  }}>
+                    <div style={{ fontSize: '1.8rem', marginBottom: 6 }}>🔍</div>
+                    <div style={{ fontWeight: 700, color: '#334155', fontSize: '0.95rem', marginBottom: 4 }}>
+                      Looking for &quot;{query}&quot;
+                    </div>
+                    <div style={{ color: '#64748b', fontSize: '0.82rem' }}>
+                      Press Enter to search all destinations and verified stays for this query.
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>

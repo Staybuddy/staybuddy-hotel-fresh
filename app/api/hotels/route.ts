@@ -4,6 +4,7 @@ import { db } from '@/lib/firebaseAdmin';
 import { applyMarginToRoom, getRoomPriceForOccupancy } from '@/lib/occupancyPricing';
 import { getCached, setCached, invalidateCache } from '@/lib/cache';
 import { getStayNights, isHotelBlockedForDates, getRoomBlockedCountForNight } from '@/lib/inventoryBlocks';
+import { calculateSmartScore } from '@/lib/smartSearch';
 
 export async function GET(request: NextRequest) {
   try {
@@ -86,10 +87,30 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // Apply memory filters for things Firestore can't do natively like regex & case-insensitivity
+    // Smart AI Memory Filter: handles city, area, hotel name, phonetic variations & typos
     if (city) {
-      const cityLower = city.toLowerCase();
-      hotels = hotels.filter((h: any) => h.city?.toLowerCase().includes(cityLower) || h.area?.toLowerCase().includes(cityLower));
+      const cityLower = city.toLowerCase().trim();
+      hotels = hotels
+        .map((h: any) => {
+          const score = Math.max(
+            calculateSmartScore(city, h.name || ''),
+            calculateSmartScore(city, h.city || ''),
+            calculateSmartScore(city, h.area || ''),
+            calculateSmartScore(city, h.address || '')
+          );
+          return { ...h, smartScore: score };
+        })
+        .filter((h: any) => {
+          if (h.smartScore >= 60) return true;
+          // Fallback to substring matching
+          return (
+            h.city?.toLowerCase().includes(cityLower) ||
+            h.area?.toLowerCase().includes(cityLower) ||
+            h.name?.toLowerCase().includes(cityLower) ||
+            cityLower.includes(h.city?.toLowerCase() || '')
+          );
+        })
+        .sort((a: any, b: any) => (b.smartScore || 0) - (a.smartScore || 0));
     }
 
     // Property Type filter (case-insensitive, default to Hotel)
