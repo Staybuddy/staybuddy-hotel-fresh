@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/firebaseAdmin';
+import { reconcileBookingPayment } from '@/lib/bookingPaymentReconcile';
 
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -12,6 +13,15 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     
     if (!docSnap.exists) return NextResponse.json({ error: 'Booking not found' }, { status: 404 });
     
+    // If setting to confirmed and paid, trigger full reconciliation ensuring 3 emails (Client, Partner, Admin) are dispatched
+    if (status === 'confirmed' || paymentStatus === 'paid') {
+      const { booking } = await reconcileBookingPayment(resolvedParams.id, {
+        paymentId: paymentId || undefined,
+        source: 'manual_admin'
+      });
+      return NextResponse.json({ booking });
+    }
+
     const updates: any = {};
     if (status) updates.status = status;
     if (paymentId) updates.paymentId = paymentId;

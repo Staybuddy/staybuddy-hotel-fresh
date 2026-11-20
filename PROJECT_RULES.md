@@ -14,3 +14,9 @@
 4. **Partner & Extranet**:
    - Partner portal URL: `https://www.staybuddy.in/partner`
    - Customer booking flow: `https://www.staybuddy.in/hotels`
+5. **Successful Booking Notification Rule (Strict 3-Email Guarantee)**:
+   - **Every successful booking ALWAYS carries 3 emails**:
+     1. **Client / Guest Email (`sendBookingConfirmationEmail`)**: Sent to `guestEmail` / `customerId.email` containing booking confirmation & tax invoice.
+     2. **Partner / Hotel Email (`sendPartnerNotificationEmail`)**: Sent to `hotel.contactEmail` / `hotel.partnerEmail` / `hotel.email` containing new booking alert with guest name, phone, room, check-in, check-out, and Partner B2B Payout.
+     3. **Admin Email (`sendPaymentAuditEmail`)**: Sent to StayBuddy Admin (`staybuddyhotels@gmail.com` / `ADMIN_AUDIT_EMAIL`) containing instant payment audit alert with Hotel ID, Booking ID, Amount Received, and Razorpay transaction details.
+   - Any booking reconciliation or confirmation flow must guarantee all 3 emails are dispatched.

@@ -129,6 +129,9 @@ export async function reconcileBookingPayment(bookingId: string, options: Paymen
       if (hotel.partnerEmail && typeof hotel.partnerEmail === 'string' && hotel.partnerEmail.includes('@')) {
         notificationEmails.add(hotel.partnerEmail.trim().toLowerCase());
       }
+      if (hotel.email && typeof hotel.email === 'string' && hotel.email.includes('@')) {
+        notificationEmails.add(hotel.email.trim().toLowerCase());
+      }
 
       // Fallback: If no dedicated hotel email was configured, look up partner user account,
       // but ensure we NEVER dispatch partner emails to an admin's personal or StayBuddy account.
