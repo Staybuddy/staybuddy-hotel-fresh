@@ -1077,6 +1077,7 @@ tbody tr:hover { background: var(--bg-secondary); }
 /* City Destination Cards Responsive Sizing - 100% Synchronized Mobile & Desktop */
 .city-dest-card-link {
   width: 210px;
+  display: block;
 }
 .city-dest-card {
   position: relative;
@@ -1084,7 +1085,10 @@ tbody tr:hover { background: var(--bg-secondary); }
   height: 250px;
   border-radius: 20px;
   overflow: hidden;
-  background-color: #e2e8f0;
+  background-color: #1e293b;
+  contain: paint layout;
+  transform: translateZ(0);
+  will-change: transform, box-shadow;
 }
 .city-dest-card img,
 .city-dest-card img.city-dest-card-img {
@@ -1101,7 +1105,48 @@ tbody tr:hover { background: var(--bg-secondary); }
   object-fit: cover !important;
   object-position: center !important;
   display: block !important;
+  transform: translateZ(0);
+  will-change: transform, filter;
 }
+
+/* Shimmer beam light reflection */
+@keyframes sbShimmerSweep {
+  0% {
+    transform: translateX(-160%) skewX(-22deg);
+  }
+  100% {
+    transform: translateX(320%) skewX(-22deg);
+  }
+}
+
+/* Pulsing green live availability dot */
+@keyframes sbLivePulse {
+  0% {
+    transform: scale(0.9);
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+  }
+  70% {
+    transform: scale(1.18);
+    box-shadow: 0 0 0 5px rgba(16, 185, 129, 0);
+  }
+  100% {
+    transform: scale(0.9);
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+  }
+}
+
+.sb-live-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #10b981;
+  display: inline-block;
+  margin-right: 5px;
+  animation: sbLivePulse 1.8s infinite cubic-bezier(0.4, 0, 0.6, 1);
+  box-shadow: 0 0 6px #10b981;
+  vertical-align: middle;
+}
+
 @media (max-width: 768px) {
   .city-dest-card-link {
     width: 185px;

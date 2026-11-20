@@ -146,7 +146,7 @@ async function getFeaturedHotels() {
         inventoryBlocks: hotelBlocks,
       };
     });
-    
+
     return hotelsWithPrices;
   } catch (error) {
     console.error('Failed to fetch featured hotels', error);
@@ -194,11 +194,11 @@ async function getRecentReviews() {
     if (!reviewsSnap || reviewsSnap.empty) {
       return FALLBACK_VERIFIED_REVIEWS;
     }
-    
+
     const allReviews = reviewsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() as any }))
       .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
       .slice(0, 6);
-    
+
     if (allReviews.length === 0) return FALLBACK_VERIFIED_REVIEWS;
 
     return allReviews.map((data: any) => ({
@@ -221,7 +221,7 @@ export default async function HomePage() {
     getFeaturedHotels(),
     getRecentReviews(),
   ]);
-  
+
   return <HomeClient initialHotels={initialHotels} recentReviews={recentReviews} />;
 }
 

@@ -7,6 +7,7 @@ interface CityDestinationCardProps {
   city: string;
   country?: string;
   hotels: number;
+  index?: number;
   isLast?: boolean;
 }
 
@@ -14,6 +15,7 @@ export default function CityDestinationCard({
   city,
   country = 'India',
   hotels,
+  index = 0,
   isLast = false,
 }: CityDestinationCardProps) {
   // Ensure we are working with the canonical parent city
@@ -79,18 +81,19 @@ export default function CityDestinationCard({
         style={{
           cursor: 'pointer',
           border: isHovered
-            ? '2px solid var(--brand-500, #ff6b35)'
-            : '2px solid rgba(255, 255, 255, 0.15)',
-          transition: 'transform 0.4s cubic-bezier(0.25, 1, 0.5, 1), box-shadow 0.4s ease, border-color 0.3s ease',
-          transform: isHovered ? 'translateY(-6px)' : 'translateY(0)',
+            ? '2.5px solid #ff6b35'
+            : '2px solid rgba(255, 255, 255, 0.18)',
+          transition: 'transform 0.45s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.45s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.3s ease',
+          transform: isHovered ? 'translateY(-8px) scale(1.02)' : 'translateY(0) scale(1)',
           boxShadow: isHovered
-            ? '0 18px 36px -6px rgba(0, 0, 0, 0.35)'
+            ? '0 22px 45px -8px rgba(0, 0, 0, 0.5), 0 0 0 3px rgba(255, 107, 53, 0.45), 0 0 25px rgba(255, 107, 53, 0.25)'
             : '0 4px 14px rgba(0, 0, 0, 0.12)',
           userSelect: 'none',
           WebkitUserSelect: 'none',
+          animation: `fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) ${index * 60}ms both`,
         }}
       >
-        {/* 100% Full-bleed Ultra-Fast City Background Photo */}
+        {/* 100% Full-bleed Ultra-Fast City Background Photo with Cinematic Zoom & Rich Saturation */}
         <img
           src={photoUrl}
           alt={`${canonicalCity} city travel destination`}
@@ -118,10 +121,27 @@ export default function CityDestinationCard({
             objectFit: 'cover',
             objectPosition: 'center',
             display: 'block',
-            transition: 'transform 0.5s cubic-bezier(0.25, 1, 0.5, 1)',
-            transform: isHovered ? 'scale(1.06)' : 'scale(1)',
+            transition: 'transform 0.7s cubic-bezier(0.16, 1, 0.3, 1), filter 0.5s ease',
+            transform: isHovered ? 'scale(1.12) rotate(0.35deg)' : 'scale(1) rotate(0deg)',
+            filter: isHovered ? 'saturate(1.18) contrast(1.06) brightness(1.03)' : 'saturate(1) contrast(1) brightness(1)',
             opacity: 1,
             zIndex: 1,
+          }}
+        />
+
+        {/* Shimmer Light Reflection Sweep Beam */}
+        <div
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: '60%',
+            height: '100%',
+            background: 'linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.3) 50%, transparent 100%)',
+            transform: isHovered ? 'translateX(300%) skewX(-22deg)' : 'translateX(-160%) skewX(-22deg)',
+            transition: isHovered ? 'transform 0.85s cubic-bezier(0.16, 1, 0.3, 1)' : 'none',
+            zIndex: 2,
+            pointerEvents: 'none',
           }}
         />
 
@@ -131,35 +151,38 @@ export default function CityDestinationCard({
             position: 'absolute',
             inset: 0,
             background:
-              'linear-gradient(to top, rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 0, 0.25) 20%, transparent 28%)',
+              'linear-gradient(to top, rgba(0, 0, 0, 0.82) 0%, rgba(0, 0, 0, 0.25) 22%, transparent 32%)',
             zIndex: 2,
             pointerEvents: 'none',
           }}
         />
 
-        {/* Top-Right Badge: Verified Stays */}
+        {/* Top-Right Badge: Live Verified Stays with Pulsing Green Indicator */}
         <div
           style={{
             position: 'absolute',
             top: '10px',
             right: '10px',
             zIndex: 3,
-            background: 'rgba(15, 23, 42, 0.75)',
+            background: 'rgba(15, 23, 42, 0.78)',
             backdropFilter: 'blur(8px)',
             WebkitBackdropFilter: 'blur(8px)',
-            border: isHovered ? '1px solid rgba(255, 107, 53, 0.7)' : '1px solid rgba(255, 255, 255, 0.35)',
+            border: isHovered ? '1.5px solid rgba(255, 107, 53, 0.85)' : '1px solid rgba(255, 255, 255, 0.35)',
             color: '#ffffff',
-            fontSize: '0.7rem',
+            fontSize: '0.72rem',
             fontWeight: 700,
-            padding: '3px 9px',
+            padding: '3px 10px',
             borderRadius: '9999px',
             letterSpacing: '0.02em',
-            boxShadow: isHovered ? '0 4px 12px rgba(255, 107, 53, 0.35)' : '0 2px 6px rgba(0,0,0,0.3)',
+            boxShadow: isHovered ? '0 4px 14px rgba(255, 107, 53, 0.45)' : '0 2px 6px rgba(0,0,0,0.3)',
             transition: 'all 0.35s cubic-bezier(0.16, 1, 0.3, 1)',
             transform: isHovered ? 'scale(1.06)' : 'scale(1)',
+            display: 'inline-flex',
+            alignItems: 'center',
           }}
         >
-          {hotels} {hotels === 1 ? 'hotel' : 'hotels'}
+          <span className="sb-live-dot" />
+          <span>{hotels} {hotels === 1 ? 'hotel' : 'hotels'}</span>
         </div>
 
         {/* Bottom Details Content - Sleek & Compact Floating Text */}
@@ -184,8 +207,8 @@ export default function CityDestinationCard({
               overflow: 'hidden',
               textOverflow: 'ellipsis',
               textShadow: '0 2px 8px rgba(0,0,0,0.95)',
-              transition: 'transform 0.3s ease',
-              transform: isHovered ? 'translateX(2px)' : 'translateX(0)',
+              transition: 'transform 0.35s ease',
+              transform: isHovered ? 'translateX(3px)' : 'translateX(0)',
             }}
           >
             {canonicalCity}
@@ -209,6 +232,8 @@ export default function CityDestinationCard({
                 textOverflow: 'ellipsis',
                 paddingRight: '6px',
                 fontWeight: 500,
+                transition: 'color 0.3s ease',
+                color: isHovered ? '#ffedd5' : 'rgba(255, 255, 255, 0.95)',
               }}
             >
               {landmark}
@@ -218,17 +243,19 @@ export default function CityDestinationCard({
                 display: 'inline-flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                width: isHovered ? '24px' : '20px',
-                height: '20px',
+                width: isHovered ? '26px' : '20px',
+                height: isHovered ? '26px' : '20px',
                 borderRadius: '9999px',
-                background: isHovered ? 'var(--brand-500, #ff6b35)' : 'rgba(255, 255, 255, 0.3)',
+                background: isHovered
+                  ? 'linear-gradient(135deg, #ff7e47, #ea580c)'
+                  : 'rgba(255, 255, 255, 0.3)',
                 color: '#ffffff',
-                fontWeight: 700,
-                fontSize: '0.72rem',
+                fontWeight: 800,
+                fontSize: isHovered ? '0.85rem' : '0.72rem',
                 flexShrink: 0,
                 transition: 'all 0.35s cubic-bezier(0.16, 1, 0.3, 1)',
-                transform: isHovered ? 'translateX(2px)' : 'translateX(0)',
-                boxShadow: isHovered ? '0 2px 8px rgba(255, 107, 53, 0.5)' : 'none',
+                transform: isHovered ? 'translateX(3px) scale(1.08)' : 'translateX(0)',
+                boxShadow: isHovered ? '0 4px 14px rgba(234, 88, 12, 0.7)' : 'none',
               }}
             >
               →

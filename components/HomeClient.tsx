@@ -835,6 +835,7 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
                 city={dest.city}
                 country={dest.country}
                 hotels={dest.hotels}
+                index={index}
                 isLast={index === allDestinations.length - 1}
               />
             ))}
