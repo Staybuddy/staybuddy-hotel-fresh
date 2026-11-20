@@ -3,24 +3,20 @@ dotenv.config({ path: '.env.local' });
 import { db } from '../lib/firebaseAdmin';
 import { sendBookingConfirmationEmail, sendPartnerNotificationEmail, sendPaymentAuditEmail } from '../lib/email';
 
-async function resendEmailsForGvpBooking() {
-  console.log("Fetching latest booking (SB-034)...");
-  
-  let bSnap: any;
-  const qSnap = await db.collection('bookings').where('bookingId', '==', 'SB-034').limit(1).get();
-  if (!qSnap.empty) {
-    bSnap = qSnap.docs[0];
-  } else {
-    // Fallback to SB-033
-    bSnap = await db.collection('bookings').doc('y8uYX35hbghIzLh4HtCJ').get();
+async function sendForBooking(bookingIdOrDocId: string) {
+  let docSnap = await db.collection('bookings').doc(bookingIdOrDocId).get();
+  if (!docSnap.exists) {
+    const qSnap = await db.collection('bookings').where('bookingId', '==', bookingIdOrDocId).limit(1).get();
+    if (!qSnap.empty) {
+      docSnap = qSnap.docs[0];
+    } else {
+      console.error(`Booking ${bookingIdOrDocId} not found.`);
+      return;
+    }
   }
 
-  if (!bSnap || !bSnap.exists) {
-    throw new Error("Target booking not found");
-  }
-
-  const bData = bSnap.data() as any;
-  const populatedBooking = { _id: bSnap.id, ...bData };
+  const bData = docSnap.data() as any;
+  const populatedBooking = { _id: docSnap.id, ...bData };
 
   // Fetch hotel details
   if (bData.hotelId) {
@@ -39,48 +35,43 @@ async function resendEmailsForGvpBooking() {
     }
   }
 
-  console.log("Booking Loaded:", {
-    bookingId: populatedBooking.bookingId,
-    hotelName: populatedBooking.hotelId?.name,
-    hotelCity: populatedBooking.hotelId?.city,
-    partnerEmail: populatedBooking.hotelId?.contactEmail || populatedBooking.hotelId?.partnerEmail,
-    guestName: populatedBooking.guestName,
-    guestEmail: populatedBooking.guestEmail,
-    totalPrice: populatedBooking.totalPrice,
-    totalPartnerPrice: populatedBooking.totalPartnerPrice,
-  });
+  console.log(`\n============================================================`);
+  console.log(`Processing Booking ${populatedBooking.bookingId || populatedBooking._id}`);
+  console.log(`Hotel: ${populatedBooking.hotelId?.name} (${populatedBooking.hotelId?.city})`);
+  console.log(`Guest: ${populatedBooking.guestName} (${populatedBooking.guestEmail})`);
+  console.log(`Room Summary: ${populatedBooking.roomSummary}`);
 
-  console.log("\n==========================================");
-  console.log("1. Dispatching Client / Guest Confirmation Email...");
-  console.log(`Recipient: ${populatedBooking.guestEmail}`);
-  await sendBookingConfirmationEmail(populatedBooking);
-  console.log("✓ Guest confirmation email dispatched successfully.");
-
-  console.log("\n==========================================");
-  console.log("2. Dispatching Hotel Partner Notification Email...");
   const partnerEmail = (populatedBooking.hotelId?.contactEmail || populatedBooking.hotelId?.partnerEmail || 'chinmainaidukotta@gmail.com').trim();
-  console.log(`Recipient: ${partnerEmail}`);
-  await sendPartnerNotificationEmail(populatedBooking, partnerEmail);
-  console.log("✓ Partner notification email dispatched successfully.");
-
-  console.log("\n==========================================");
-  console.log("3. Dispatching Admin Payment Audit Alert...");
   const adminEmail = process.env.ADMIN_AUDIT_EMAIL || 'staybuddyhotels@gmail.com';
-  console.log(`Recipient: ${adminEmail}`);
+
+  console.log(`\n1. Sending Client Confirmation Email to: ${populatedBooking.guestEmail}...`);
+  await sendBookingConfirmationEmail(populatedBooking);
+
+  console.log(`2. Sending Hotel Partner Alert Email to: ${partnerEmail}...`);
+  await sendPartnerNotificationEmail(populatedBooking, partnerEmail);
+
+  console.log(`3. Sending Admin Audit Alert Email to: ${adminEmail}...`);
   await sendPaymentAuditEmail(populatedBooking, {
     paymentId: bData.razorpayPaymentId || 'pay_U2TMWunpZ3GQFU',
     orderId: bData.razorpayOrderId || 'order_U2TMHbRpz8zWRV',
     paymentMethod: bData.paymentMethod || 'razorpay',
     source: 'resend_audit'
   });
-  console.log("✓ Admin payment audit email dispatched successfully.");
 
-  console.log("\n==========================================");
-  console.log("All 3 emails have been successfully sent via Gmail SMTP!");
+  console.log(`✓ Completed all 3 emails for ${populatedBooking.bookingId}`);
 }
 
-resendEmailsForGvpBooking().then(() => process.exit(0)).catch(err => {
-  console.error("Error resending emails:", err);
+async function main() {
+  // Send for SB-033 (the earlier booking made on Hotel GVP)
+  await sendForBooking('SB-033');
+  // Also send for SB-034
+  await sendForBooking('SB-034');
+}
+
+main().then(() => {
+  console.log('\nAll bookings processed and sent successfully via Gmail SMTP!');
+  process.exit(0);
+}).catch(e => {
+  console.error('Error:', e);
   process.exit(1);
 });
-
