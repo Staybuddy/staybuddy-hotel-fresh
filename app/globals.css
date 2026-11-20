@@ -1080,16 +1080,16 @@ tbody tr:hover { background: var(--bg-secondary); }
   background: rgba(0,0,0,0.5);
   z-index: 999;
 }
-/* City Destination Cards Responsive Sizing - 100% Synchronized Mobile & Desktop */
+/* City Destination Cards Responsive Sizing - Sleek, Compact & Rounded (Shorted Height) */
 .city-dest-card-link {
-  width: 210px;
+  width: 215px;
   display: block;
 }
 .city-dest-card {
   position: relative;
   width: 100%;
-  height: 250px;
-  border-radius: 20px;
+  height: 190px;
+  border-radius: 24px;
   overflow: hidden;
   background-color: #1e293b;
   contain: paint layout;
@@ -1155,17 +1155,17 @@ tbody tr:hover { background: var(--bg-secondary); }
 
 @media (max-width: 768px) {
   .city-dest-card-link {
-    width: 185px;
+    width: 175px;
   }
   .city-dest-card {
-    height: 240px;
-    border-radius: 18px;
+    height: 165px;
+    border-radius: 22px;
   }
   .city-dest-card img,
   .city-dest-card img.city-dest-card-img {
-    height: 240px !important;
-    min-height: 240px !important;
-    max-height: 240px !important;
+    height: 165px !important;
+    min-height: 165px !important;
+    max-height: 165px !important;
     width: 100% !important;
     object-fit: cover !important;
   }

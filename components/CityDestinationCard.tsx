@@ -151,7 +151,7 @@ export default function CityDestinationCard({
             position: 'absolute',
             inset: 0,
             background:
-              'linear-gradient(to top, rgba(0, 0, 0, 0.82) 0%, rgba(0, 0, 0, 0.25) 22%, transparent 32%)',
+              'linear-gradient(to top, rgba(0, 0, 0, 0.86) 0%, rgba(0, 0, 0, 0.28) 28%, transparent 44%)',
             zIndex: 2,
             pointerEvents: 'none',
           }}
@@ -161,22 +161,22 @@ export default function CityDestinationCard({
         <div
           style={{
             position: 'absolute',
-            top: '10px',
-            right: '10px',
+            top: '8px',
+            right: '8px',
             zIndex: 3,
             background: 'rgba(15, 23, 42, 0.78)',
             backdropFilter: 'blur(8px)',
             WebkitBackdropFilter: 'blur(8px)',
             border: isHovered ? '1.5px solid rgba(240, 100, 59, 0.75)' : '1px solid rgba(255, 255, 255, 0.35)',
             color: '#ffffff',
-            fontSize: '0.72rem',
+            fontSize: '0.67rem',
             fontWeight: 700,
-            padding: '3px 10px',
+            padding: '2px 8px',
             borderRadius: '9999px',
             letterSpacing: '0.02em',
-            boxShadow: isHovered ? '0 4px 12px rgba(240, 100, 59, 0.35)' : '0 2px 6px rgba(0,0,0,0.3)',
+            boxShadow: isHovered ? '0 3px 10px rgba(240, 100, 59, 0.35)' : '0 2px 6px rgba(0,0,0,0.3)',
             transition: 'all 0.35s cubic-bezier(0.16, 1, 0.3, 1)',
-            transform: isHovered ? 'scale(1.06)' : 'scale(1)',
+            transform: isHovered ? 'scale(1.05)' : 'scale(1)',
             display: 'inline-flex',
             alignItems: 'center',
           }}
@@ -192,7 +192,7 @@ export default function CityDestinationCard({
             bottom: 0,
             left: 0,
             right: 0,
-            padding: '12px 14px',
+            padding: '8px 12px',
             zIndex: 3,
             textAlign: 'left',
           }}
@@ -200,7 +200,7 @@ export default function CityDestinationCard({
           <div
             style={{
               fontWeight: 800,
-              fontSize: '1.25rem',
+              fontSize: '1.12rem',
               color: '#ffffff',
               lineHeight: 1.15,
               whiteSpace: 'nowrap',
@@ -216,9 +216,9 @@ export default function CityDestinationCard({
 
           <div
             style={{
-              fontSize: '0.74rem',
+              fontSize: '0.7rem',
               color: 'rgba(255, 255, 255, 0.95)',
-              marginTop: '3px',
+              marginTop: '2px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
@@ -243,19 +243,19 @@ export default function CityDestinationCard({
                 display: 'inline-flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                width: isHovered ? '26px' : '20px',
-                height: isHovered ? '26px' : '20px',
+                width: isHovered ? '24px' : '18px',
+                height: isHovered ? '24px' : '18px',
                 borderRadius: '9999px',
                 background: isHovered
                   ? 'linear-gradient(135deg, #f0643b, #de532b)'
                   : 'rgba(255, 255, 255, 0.3)',
                 color: '#ffffff',
                 fontWeight: 800,
-                fontSize: isHovered ? '0.85rem' : '0.72rem',
+                fontSize: isHovered ? '0.78rem' : '0.66rem',
                 flexShrink: 0,
                 transition: 'all 0.35s cubic-bezier(0.16, 1, 0.3, 1)',
                 transform: isHovered ? 'translateX(3px) scale(1.08)' : 'translateX(0)',
-                boxShadow: isHovered ? '0 4px 12px rgba(240, 100, 59, 0.55)' : 'none',
+                boxShadow: isHovered ? '0 4px 10px rgba(240, 100, 59, 0.55)' : 'none',
               }}
             >
               →
