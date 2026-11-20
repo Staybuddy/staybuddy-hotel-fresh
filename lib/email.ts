@@ -32,11 +32,43 @@ async function getTransporter() {
   return transporter;
 }
 
+export function getRoomCategoryDisplay(booking: any): string {
+  if (booking.roomSummary) {
+    return booking.roomSummary;
+  }
+  if (Array.isArray(booking.selectedRooms) && booking.selectedRooms.length > 0) {
+    return booking.selectedRooms
+      .map((sr: any) => `${sr.quantity > 1 ? `${sr.quantity} × ` : ''}${sr.roomType || 'Standard Room'}`)
+      .join(', ');
+  }
+  if (typeof booking.roomId === 'object' && booking.roomId?.type) {
+    return `${booking.rooms ? `${booking.rooms} × ` : ''}${booking.roomId.type}`;
+  }
+  if (booking.roomType) {
+    return `${booking.rooms ? `${booking.rooms} × ` : ''}${booking.roomType}`;
+  }
+  return 'Standard Room';
+}
+
+export function getDirectionsUrl(hotel: any, hotelName: string, hotelCity: string): string {
+  if (hotel && typeof hotel === 'object') {
+    if (hotel.coordinates?.lat && hotel.coordinates?.lng) {
+      return `https://www.google.com/maps/dir/?api=1&destination=${hotel.coordinates.lat},${hotel.coordinates.lng}`;
+    }
+    if (hotel.address) {
+      return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(`${hotel.name || hotelName}, ${hotel.address}`)}`;
+    }
+  }
+  return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(`${hotelName} ${hotelCity}`)}`;
+}
+
 export async function sendBookingConfirmationEmail(booking: any) {
   const { customerId, hotelId, checkIn, checkOut, totalPrice, _id, guestEmail, guestName } = booking;
   
   const hotelName = (typeof hotelId === 'object' && hotelId?.name) ? hotelId.name : (booking.hotelName || 'StayBuddy Hotel');
   const hotelCity = (typeof hotelId === 'object' && hotelId?.city) ? hotelId.city : (booking.hotelCity || '');
+  const roomCategory = getRoomCategoryDisplay(booking);
+  const directionsUrl = getDirectionsUrl(hotelId, hotelName, hotelCity);
 
   const checkInStr = new Date(checkIn).toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
   const checkOutStr = new Date(checkOut).toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
@@ -56,7 +88,6 @@ export async function sendBookingConfirmationEmail(booking: any) {
     html: `
       <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 650px; margin: 0 auto; border: 1px solid #e5e7eb; border-radius: 12px; overflow: hidden; background-color: #ffffff; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
         
-        {/* Header */}
         <div style="background-color: #ea580c; padding: 30px; text-align: center; color: white;">
           <h1 style="margin: 0; font-size: 28px; letter-spacing: -0.5px; font-weight: 800;">StayBuddy</h1>
           <p style="margin: 8px 0 0 0; opacity: 0.9; font-size: 16px;">Tax Invoice & Booking Confirmation</p>
@@ -66,7 +97,6 @@ export async function sendBookingConfirmationEmail(booking: any) {
           <p style="font-size: 16px; color: #374151; margin-top: 0;">Dear <strong>${recipientName}</strong>,</p>
           <p style="font-size: 15px; color: #4b5563; line-height: 1.5;">Thank you for choosing StayBuddy. Your reservation at <strong>${hotelName}</strong> is confirmed. Below is your official tax invoice for this booking.</p>
           
-          {/* Invoice Summary Cards */}
           <div style="display: flex; gap: 16px; margin: 24px 0;">
             <div style="flex: 1; background: #fff7ed; padding: 16px; border-radius: 8px; border: 1px solid #ffedd5;">
               <p style="margin: 0; font-size: 12px; text-transform: uppercase; color: #c2410c; font-weight: 700;">Booking ID</p>
@@ -78,11 +108,24 @@ export async function sendBookingConfirmationEmail(booking: any) {
             </div>
           </div>
 
-          {/* Details Table */}
           <table style="width: 100%; border-collapse: collapse; margin-bottom: 32px; font-size: 14px;">
             <tr>
-              <td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb; color: #6b7280; width: 40%;">Hotel Name</td>
+              <td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb; color: #6b7280; width: 38%;">Hotel Name</td>
               <td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb; color: #1f2937; font-weight: 600; text-align: right;">${hotelName}${hotelCity ? `, ${hotelCity}` : ''}</td>
+            </tr>
+            <tr>
+              <td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb; color: #6b7280;">Hotel Directions</td>
+              <td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb; text-align: right;">
+                <a href="${directionsUrl}" target="_blank" style="display: inline-block; background-color: #fff7ed; color: #ea580c; border: 1.5px solid #fdba74; padding: 5px 12px; border-radius: 6px; font-size: 12px; font-weight: 700; text-decoration: none;">
+                  🗺️ Get Directions →
+                </a>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb; color: #6b7280;">Room Category</td>
+              <td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb; color: #111827; font-weight: 700; text-align: right;">
+                <span style="background: #f1f5f9; color: #0f172a; padding: 4px 10px; border-radius: 6px; font-size: 13px;">${roomCategory}</span>
+              </td>
             </tr>
             <tr>
               <td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb; color: #6b7280;">Check-in Date</td>
@@ -96,9 +139,14 @@ export async function sendBookingConfirmationEmail(booking: any) {
               <td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb; color: #6b7280;">Duration & Guests</td>
               <td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb; color: #1f2937; font-weight: 600; text-align: right;">${booking.nights || 1} Night(s), ${booking.guests || 1} Guest(s)</td>
             </tr>
+            ${booking.occupancySummary ? `
+            <tr>
+              <td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb; color: #6b7280;">Occupancy Breakdown</td>
+              <td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb; color: #1f2937; font-weight: 600; text-align: right;">${booking.occupancySummary}</td>
+            </tr>
+            ` : ''}
           </table>
           
-          {/* Billing Section */}
           <h3 style="margin: 0 0 16px 0; font-size: 18px; color: #111827; border-bottom: 2px solid #ea580c; padding-bottom: 8px; display: inline-block;">Billing Details</h3>
           
           <table style="width: 100%; border-collapse: collapse; background: #f9fafb; border-radius: 8px; overflow: hidden; font-size: 15px;">
@@ -147,6 +195,7 @@ export async function sendPartnerNotificationEmail(booking: any, partnerEmail: s
 
   const hotelName = (typeof hotelId === 'object' && hotelId?.name) ? hotelId.name : (booking.hotelName || 'StayBuddy Hotel');
   const hotelCity = (typeof hotelId === 'object' && hotelId?.city) ? hotelId.city : (booking.hotelCity || '');
+  const roomCategory = getRoomCategoryDisplay(booking);
 
   const checkInStr = new Date(checkIn).toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
   const checkOutStr = new Date(checkOut).toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
@@ -154,7 +203,7 @@ export async function sendPartnerNotificationEmail(booking: any, partnerEmail: s
   const mailOptions = {
     from: process.env.EMAIL_FROM || 'StayBuddy <noreply@staybuddy.com>',
     to: partnerEmail,
-    subject: `New Booking Alert: ${hotelName}`,
+    subject: `New Booking Alert: ${hotelName} - ${roomCategory}`,
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #eaeaea; border-radius: 8px; overflow: hidden;">
         <div style="background-color: #10b981; padding: 24px; text-align: center; color: white;">
@@ -164,12 +213,13 @@ export async function sendPartnerNotificationEmail(booking: any, partnerEmail: s
           <p>Hi Partner,</p>
           <p>You have a new confirmed booking at <strong>${hotelName}</strong>${hotelCity ? ` (${hotelCity})` : ''}!</p>
           
-          <div style="background-color: #f9fafb; padding: 16px; border-radius: 8px; margin: 24px 0; border: 1px solid #e5e7eb;">
+          <div style="background-color: #f9fafb; padding: 18px; border-radius: 8px; margin: 24px 0; border: 1px solid #e5e7eb;">
             <h3 style="margin-top: 0; color: #1f2937;">Booking Summary</h3>
             <p style="margin: 8px 0;"><strong>Booking ID:</strong> ${booking.bookingId || _id}</p>
             <p style="margin: 8px 0;"><strong>Guest Name:</strong> ${guestName || 'Guest'}</p>
             ${guestPhone ? `<p style="margin: 8px 0;"><strong>Guest Phone:</strong> ${guestPhone}</p>` : ''}
-            ${occupancySummary ? `<p style="margin: 8px 0;"><strong>Room & Occupancy:</strong> ${occupancySummary}</p>` : ''}
+            <p style="margin: 8px 0;"><strong>Room Category:</strong> <span style="background: #d1fae5; color: #065f46; padding: 3px 8px; border-radius: 4px; font-weight: 700;">${roomCategory}</span></p>
+            ${occupancySummary ? `<p style="margin: 8px 0;"><strong>Occupancy Breakdown:</strong> ${occupancySummary}</p>` : ''}
             <p style="margin: 8px 0;"><strong>Check-in:</strong> ${checkInStr}</p>
             <p style="margin: 8px 0;"><strong>Check-out:</strong> ${checkOutStr}</p>
             <p style="margin: 8px 0;"><strong>Duration:</strong> ${nights} Night(s)</p>
@@ -213,6 +263,7 @@ export async function sendPaymentAuditEmail(
   const hotelIdDisplay = hotelDoc?.hotelId || hotelDoc?._id || booking.hotelIdDisplay || booking.hotelId || 'N/A';
   const hotelName = hotelDoc?.name || booking.hotelName || 'StayBuddy Hotel';
   const hotelCity = hotelDoc?.city || '';
+  const roomCategory = getRoomCategoryDisplay(booking);
   const bookingDisplayId = bookingId || booking.bookingCode || _id;
   const formattedAmount = `₹${Number(totalPrice || 0).toLocaleString('en-IN')}`;
   const timestamp = new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', dateStyle: 'full', timeStyle: 'medium' });
@@ -246,6 +297,10 @@ export async function sendPaymentAuditEmail(
               <tr>
                 <td style="padding: 6px 0; color: #4b5563; font-weight: 600;">Booking ID:</td>
                 <td style="padding: 6px 0; color: #047857; font-weight: 800; font-size: 16px;">${bookingDisplayId}</td>
+              </tr>
+              <tr>
+                <td style="padding: 6px 0; color: #4b5563; font-weight: 600;">Room Category:</td>
+                <td style="padding: 6px 0; color: #0f172a; font-weight: 800; font-size: 15px;">${roomCategory}</td>
               </tr>
               <tr>
                 <td style="padding: 6px 0; color: #4b5563; font-weight: 600;">Amount Received:</td>
@@ -287,6 +342,10 @@ export async function sendPaymentAuditEmail(
             <tr>
               <td style="padding: 10px 14px; border-bottom: 1px solid #e5e7eb; color: #6b7280;">Guest Contact</td>
               <td style="padding: 10px 14px; border-bottom: 1px solid #e5e7eb; color: #111827; font-weight: 500;">${guestPhone || 'N/A'} | ${guestEmail || customerId?.email || 'N/A'}</td>
+            </tr>
+            <tr>
+              <td style="padding: 10px 14px; border-bottom: 1px solid #e5e7eb; color: #6b7280;">Room Category</td>
+              <td style="padding: 10px 14px; border-bottom: 1px solid #e5e7eb; color: #111827; font-weight: 700;">${roomCategory}</td>
             </tr>
             <tr>
               <td style="padding: 10px 14px; border-bottom: 1px solid #e5e7eb; color: #6b7280;">Stay Duration</td>

@@ -4,11 +4,19 @@ import { db } from '../lib/firebaseAdmin';
 import { sendBookingConfirmationEmail, sendPartnerNotificationEmail, sendPaymentAuditEmail } from '../lib/email';
 
 async function resendEmailsForGvpBooking() {
-  console.log("Fetching booking SB-033 / Hotel GVP...");
+  console.log("Fetching latest booking (SB-034)...");
   
-  const bSnap = await db.collection('bookings').doc('y8uYX35hbghIzLh4HtCJ').get();
-  if (!bSnap.exists) {
-    throw new Error("Booking y8uYX35hbghIzLh4HtCJ not found");
+  let bSnap: any;
+  const qSnap = await db.collection('bookings').where('bookingId', '==', 'SB-034').limit(1).get();
+  if (!qSnap.empty) {
+    bSnap = qSnap.docs[0];
+  } else {
+    // Fallback to SB-033
+    bSnap = await db.collection('bookings').doc('y8uYX35hbghIzLh4HtCJ').get();
+  }
+
+  if (!bSnap || !bSnap.exists) {
+    throw new Error("Target booking not found");
   }
 
   const bData = bSnap.data() as any;
@@ -75,3 +83,4 @@ resendEmailsForGvpBooking().then(() => process.exit(0)).catch(err => {
   console.error("Error resending emails:", err);
   process.exit(1);
 });
+

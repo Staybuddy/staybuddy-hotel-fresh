@@ -100,6 +100,21 @@ export async function reconcileBookingPayment(bookingId: string, options: Paymen
     }
   }
 
+  // Fetch room details if roomSummary is not present
+  if (updatedBookingData.roomId && !updatedBookingData.roomSummary) {
+    try {
+      const rSnap = await db.collection('rooms').doc(updatedBookingData.roomId).get();
+      if (rSnap.exists) {
+        populatedBooking.roomId = { _id: rSnap.id, ...rSnap.data() };
+        if (!populatedBooking.roomSummary) {
+          populatedBooking.roomSummary = rSnap.data()?.type || 'Standard Room';
+        }
+      }
+    } catch (e) {
+      console.warn('Error fetching room for payment reconciliation:', e);
+    }
+  }
+
   // Send confirmation emails
   try {
     sendBookingConfirmationEmail(populatedBooking).catch(err => {
