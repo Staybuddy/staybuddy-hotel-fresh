@@ -123,14 +123,10 @@ export async function reconcileBookingPayment(bookingId: string, options: Paymen
       // When an admin adds a property and enters a specific hotel email in Partner Extranet,
       // the partner booking alert must ONLY be sent to that designated hotel email (contactEmail / partnerEmail).
       // StayBuddy admin emails must NEVER receive the hotel partner notification (Admin already receives sendPaymentAuditEmail).
-      if (hotel.contactEmail && typeof hotel.contactEmail === 'string' && hotel.contactEmail.includes('@')) {
-        notificationEmails.add(hotel.contactEmail.trim().toLowerCase());
-      }
-      if (hotel.partnerEmail && typeof hotel.partnerEmail === 'string' && hotel.partnerEmail.includes('@')) {
-        notificationEmails.add(hotel.partnerEmail.trim().toLowerCase());
-      }
-      if (hotel.email && typeof hotel.email === 'string' && hotel.email.includes('@')) {
-        notificationEmails.add(hotel.email.trim().toLowerCase());
+      // Dedicated hotel email assigned by admin / partner in Extranet:
+      const designatedPartnerEmail = (hotel.contactEmail || hotel.partnerEmail || hotel.email || '').trim().toLowerCase();
+      if (designatedPartnerEmail && designatedPartnerEmail.includes('@') && !designatedPartnerEmail.includes('staybuddy')) {
+        notificationEmails.add(designatedPartnerEmail);
       }
 
       // Fallback: If no dedicated hotel email was configured, look up partner user account,
@@ -160,13 +156,13 @@ export async function reconcileBookingPayment(bookingId: string, options: Paymen
         }
       }
 
-      // Strict Isolation: Strip onboarding executive email & staybuddy admin email
-      // Hotel partner notifications must ONLY go to the actual hotel partner's email.
+      // If an onboarding executive / staff member onboarded the property on behalf of someone else,
+      // don't send hotel partner alerts to that separate staff email (unless the staff email is the designated partner email itself).
       if (hotel.onboardedBy) {
         const staffEmail = typeof hotel.onboardedBy === 'string' 
           ? hotel.onboardedBy.trim().toLowerCase() 
           : (hotel.onboardedBy.email ? hotel.onboardedBy.email.trim().toLowerCase() : null);
-        if (staffEmail) {
+        if (staffEmail && staffEmail !== designatedPartnerEmail) {
           notificationEmails.delete(staffEmail);
         }
       }
