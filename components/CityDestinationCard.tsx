@@ -51,6 +51,14 @@ export default function CityDestinationCard({
   return (
     <Link
       href={`/hotels?city=${encodeURIComponent(canonicalCity)}`}
+      onClick={() => {
+        try {
+          const saved = localStorage.getItem('staybuddy_last_search');
+          const p = saved ? JSON.parse(saved) : {};
+          p.location = canonicalCity;
+          localStorage.setItem('staybuddy_last_search', JSON.stringify(p));
+        } catch (_) {}
+      }}
       className="city-dest-card-link"
       draggable={false}
       onDragStart={(e) => e.preventDefault()}

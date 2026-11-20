@@ -90,6 +90,7 @@ function HotelSearch() {
     const tom = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
     const tomStr = `${tom.getFullYear()}-${String(tom.getMonth() + 1).padStart(2, '0')}-${String(tom.getDate()).padStart(2, '0')}`;
 
+    const urlCity = (searchParams.get('city') || searchParams.get('location') || '').trim();
     const paramIn = searchParams.get('checkIn');
     const validIn = (paramIn && paramIn >= todayStr) ? paramIn : (paramIn ? todayStr : '');
     const paramOut = searchParams.get('checkOut');
@@ -97,7 +98,7 @@ function HotelSearch() {
 
     setFilters(p => ({
       ...p,
-      city: searchParams.has('city') ? (searchParams.get('city') || '') : p.city,
+      city: searchParams.has('city') || searchParams.has('location') ? urlCity : p.city,
       checkIn: searchParams.has('checkIn') ? validIn : p.checkIn,
       checkOut: searchParams.has('checkOut') ? validOut : p.checkOut,
       category: searchParams.has('category') ? (searchParams.get('category') || '') : (searchParams.get('collection') === 'premium' ? 'premium' : p.category),
@@ -118,36 +119,37 @@ function HotelSearch() {
       const tom = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
       const tomStr = `${tom.getFullYear()}-${String(tom.getMonth() + 1).padStart(2, '0')}-${String(tom.getDate()).padStart(2, '0')}`;
 
-      const hasUrl = searchParams.has('adults') || searchParams.has('checkIn');
-      if (!hasUrl) {
-        const saved = localStorage.getItem('staybuddy_last_search');
-        if (saved) {
-          const p = JSON.parse(saved);
-          if (p && typeof p === 'object') {
-            const safeA = Math.max(1, Number(p.adults) || 1);
-            const safeR = Math.min(safeA, Math.max(1, Number(p.rooms) || 1));
-            const validIn = (p.checkIn && p.checkIn >= todayStr) ? p.checkIn : todayStr;
-            let validOut = (p.checkOut && p.checkOut > validIn) ? p.checkOut : '';
-            if (!validOut) {
-              const [y, m, d] = validIn.split('-').map(Number);
-              const nextD = new Date(y, m - 1, d + 1);
-              validOut = `${nextD.getFullYear()}-${String(nextD.getMonth() + 1).padStart(2, '0')}-${String(nextD.getDate()).padStart(2, '0')}`;
-            }
+      // If URL specified city (e.g. ?city=Delhi), that city is authoritative and MUST NOT be overwritten by localStorage
+      const urlCity = (searchParams.get('city') || searchParams.get('location') || '').trim();
+      const hasUrlCity = Boolean(urlCity);
 
-            setFilters(prev => ({
-              ...prev,
-              city: p.location || prev.city,
-              checkIn: validIn,
-              checkOut: validOut,
-              adults: safeA,
-              rooms: safeR,
-              children: Number(p.children) || prev.children,
-            }));
+      const saved = localStorage.getItem('staybuddy_last_search');
+      if (saved) {
+        const p = JSON.parse(saved);
+        if (p && typeof p === 'object') {
+          const safeA = Math.max(1, Number(p.adults) || 1);
+          const safeR = Math.min(safeA, Math.max(1, Number(p.rooms) || 1));
+          const validIn = (p.checkIn && p.checkIn >= todayStr) ? p.checkIn : todayStr;
+          let validOut = (p.checkOut && p.checkOut > validIn) ? p.checkOut : '';
+          if (!validOut) {
+            const [y, m, d] = validIn.split('-').map(Number);
+            const nextD = new Date(y, m - 1, d + 1);
+            validOut = `${nextD.getFullYear()}-${String(nextD.getMonth() + 1).padStart(2, '0')}-${String(nextD.getDate()).padStart(2, '0')}`;
           }
+
+          setFilters(prev => ({
+            ...prev,
+            city: hasUrlCity ? urlCity : (prev.city || p.location || ''),
+            checkIn: searchParams.has('checkIn') ? prev.checkIn : validIn,
+            checkOut: searchParams.has('checkOut') ? prev.checkOut : validOut,
+            adults: searchParams.has('adults') ? prev.adults : safeA,
+            rooms: searchParams.has('rooms') ? prev.rooms : safeR,
+            children: searchParams.has('children') ? prev.children : (Number(p.children) || prev.children),
+          }));
         }
       }
     } catch (_) {}
-  }, []);
+  }, [searchParams]);
 
   useEffect(() => {
     try {
@@ -782,7 +784,8 @@ function HotelSearch() {
                             alt={hotel.name} 
                             fill 
                             priority={index < 2} 
-                            style={{ objectFit: 'cover', objectPosition: 'center center' }} 
+                            className="hotel-cover-img"
+                            style={{ objectFit: 'cover', objectPosition: 'center center', width: '100%', height: '100%' }} 
                             sizes="(max-width: 900px) 100vw, 340px" 
                           />
                         ) : (

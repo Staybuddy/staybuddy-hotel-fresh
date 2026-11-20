@@ -652,7 +652,7 @@ tbody tr:hover { background: var(--bg-secondary); }
     box-sizing: border-box !important;
   }
   
-  img:not(.city-dest-card-img), video, canvas {
+  img:not(.city-dest-card-img):not(.hotel-cover-img):not(.hotel-horizontal-img img), video, canvas {
     max-width: 100% !important;
     height: auto !important;
   }
@@ -1749,7 +1749,14 @@ tbody tr:hover { background: var(--bg-secondary); }
   position: relative;
   overflow: hidden;
   flex-shrink: 0;
-  background: #0f172a;
+  background: #f1f5f9;
+}
+.hotel-horizontal-img img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  object-position: center center !important;
+  display: block !important;
 }
 .hotel-horizontal-details {
   flex: 1;
@@ -1827,14 +1834,21 @@ tbody tr:hover { background: var(--bg-secondary); }
   .hotel-horizontal-img {
     width: 100% !important;
     min-width: 100% !important;
-    height: 275px !important;
-    min-height: 275px !important;
-    max-height: 320px !important;
+    height: 220px !important;
+    min-height: 220px !important;
+    max-height: 240px !important;
     aspect-ratio: auto !important;
-    background: #0f172a !important;
+    background: #f1f5f9 !important;
     border-radius: 14px 14px 0 0 !important;
     position: relative !important;
     overflow: hidden !important;
+  }
+  .hotel-horizontal-img img {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
+    object-position: center center !important;
+    display: block !important;
   }
   .hotel-horizontal-details {
     border-right: none !important;

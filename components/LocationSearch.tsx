@@ -186,6 +186,41 @@ export default function LocationSearch({ city, onChange, placeholder = "Search d
             <div style={{ fontSize: variant === 'compact' ? '0.95rem' : '1.1rem', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.2 }}>{query || 'Select Destination'}</div>
             <div style={{ fontSize: variant === 'compact' ? '0.7rem' : '0.75rem', color: '#64748b', marginTop: variant === 'compact' ? 0 : 2 }}>India</div>
           </div>
+          {Boolean(query) && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setQuery('');
+                onChange('');
+                try {
+                  const saved = localStorage.getItem('staybuddy_last_search');
+                  if (saved) {
+                    const p = JSON.parse(saved);
+                    delete p.location;
+                    localStorage.setItem('staybuddy_last_search', JSON.stringify(p));
+                  }
+                } catch (_) {}
+              }}
+              title="Clear destination"
+              style={{
+                background: '#f1f5f9',
+                border: 'none',
+                cursor: 'pointer',
+                width: variant === 'compact' ? 24 : 28,
+                height: variant === 'compact' ? 24 : 28,
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: '#64748b',
+                fontSize: '0.75rem',
+                fontWeight: 800
+              }}
+            >
+              ✕
+            </button>
+          )}
           <button
             type="button"
             onClick={(e) => { e.stopPropagation(); getCurrentLocation(); }}
@@ -271,6 +306,34 @@ export default function LocationSearch({ city, onChange, placeholder = "Search d
                     outline: 'none'
                   }}
                 />
+                {Boolean(query) && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setQuery('');
+                      setResults({ hotels: [], cities: [] });
+                      if (inputRef.current) inputRef.current.focus();
+                    }}
+                    title="Clear"
+                    style={{
+                      background: '#e2e8f0',
+                      border: 'none',
+                      cursor: 'pointer',
+                      width: 28,
+                      height: 28,
+                      borderRadius: '50%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: '#475569',
+                      fontSize: '0.8rem',
+                      fontWeight: 800,
+                      marginRight: 8
+                    }}
+                  >
+                    ✕
+                  </button>
+                )}
               </div>
 
               <div style={{ marginTop: 28, fontSize: '0.75rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.1em', display: 'flex', alignItems: 'center', gap: 6 }}>
