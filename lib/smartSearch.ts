@@ -135,3 +135,4 @@ export function calculateSmartScore(query: string, target: string): number {
 
   return maxTokenScore;
 }
+
