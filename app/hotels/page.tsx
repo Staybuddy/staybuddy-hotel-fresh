@@ -85,11 +85,21 @@ function HotelSearch() {
   }
 
   useEffect(() => {
+    const now = new Date();
+    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    const tom = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+    const tomStr = `${tom.getFullYear()}-${String(tom.getMonth() + 1).padStart(2, '0')}-${String(tom.getDate()).padStart(2, '0')}`;
+
+    const paramIn = searchParams.get('checkIn');
+    const validIn = (paramIn && paramIn >= todayStr) ? paramIn : (paramIn ? todayStr : '');
+    const paramOut = searchParams.get('checkOut');
+    const validOut = (paramOut && (!validIn || paramOut > validIn)) ? paramOut : (paramOut ? tomStr : '');
+
     setFilters(p => ({
       ...p,
       city: searchParams.has('city') ? (searchParams.get('city') || '') : p.city,
-      checkIn: searchParams.has('checkIn') ? (searchParams.get('checkIn') || '') : p.checkIn,
-      checkOut: searchParams.has('checkOut') ? (searchParams.get('checkOut') || '') : p.checkOut,
+      checkIn: searchParams.has('checkIn') ? validIn : p.checkIn,
+      checkOut: searchParams.has('checkOut') ? validOut : p.checkOut,
       category: searchParams.has('category') ? (searchParams.get('category') || '') : (searchParams.get('collection') === 'premium' ? 'premium' : p.category),
       propertyType: searchParams.has('propertyType') ? (searchParams.get('propertyType') || '') : p.propertyType,
       minRating: searchParams.has('starRating') ? (searchParams.get('starRating') || '') : (searchParams.has('minRating') ? (searchParams.get('minRating') || '') : p.minRating),
@@ -103,6 +113,11 @@ function HotelSearch() {
 
   useEffect(() => {
     try {
+      const now = new Date();
+      const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+      const tom = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+      const tomStr = `${tom.getFullYear()}-${String(tom.getMonth() + 1).padStart(2, '0')}-${String(tom.getDate()).padStart(2, '0')}`;
+
       const hasUrl = searchParams.has('adults') || searchParams.has('checkIn');
       if (!hasUrl) {
         const saved = localStorage.getItem('staybuddy_last_search');
@@ -111,11 +126,19 @@ function HotelSearch() {
           if (p && typeof p === 'object') {
             const safeA = Math.max(1, Number(p.adults) || 1);
             const safeR = Math.min(safeA, Math.max(1, Number(p.rooms) || 1));
+            const validIn = (p.checkIn && p.checkIn >= todayStr) ? p.checkIn : todayStr;
+            let validOut = (p.checkOut && p.checkOut > validIn) ? p.checkOut : '';
+            if (!validOut) {
+              const [y, m, d] = validIn.split('-').map(Number);
+              const nextD = new Date(y, m - 1, d + 1);
+              validOut = `${nextD.getFullYear()}-${String(nextD.getMonth() + 1).padStart(2, '0')}-${String(nextD.getDate()).padStart(2, '0')}`;
+            }
+
             setFilters(prev => ({
               ...prev,
               city: p.location || prev.city,
-              checkIn: p.checkIn || prev.checkIn,
-              checkOut: p.checkOut || prev.checkOut,
+              checkIn: validIn,
+              checkOut: validOut,
               adults: safeA,
               rooms: safeR,
               children: Number(p.children) || prev.children,
@@ -751,29 +774,17 @@ function HotelSearch() {
                     style={{ textDecoration: 'none', color: 'inherit', width: '100%', WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation' }}
                   >
                     <div className="hotel-horizontal-card">
-                      {/* Image / Gallery - Smart Full Building Display */}
+                      {/* Image / Gallery - Fully covered smartly */}
                       <div className="hotel-horizontal-img">
                         {hotel.images?.[0] ? (
-                          <>
-                            {/* Ambient blurred backdrop so portrait photos fill full container with matching colors */}
-                            <Image 
-                              src={hotel.images[0]} 
-                              alt="" 
-                              fill 
-                              aria-hidden="true"
-                              style={{ objectFit: 'cover', filter: 'blur(20px)', transform: 'scale(1.15)', opacity: 0.55 }} 
-                              sizes="(max-width: 900px) 100vw, 340px" 
-                            />
-                            {/* Sharp foreground image: displays COMPLETE building and full photo without any cutoffs */}
-                            <Image 
-                              src={hotel.images[0]} 
-                              alt={hotel.name} 
-                              fill 
-                              priority={index < 2} 
-                              style={{ objectFit: 'contain', objectPosition: 'center' }} 
-                              sizes="(max-width: 900px) 100vw, 340px" 
-                            />
-                          </>
+                          <Image 
+                            src={hotel.images[0]} 
+                            alt={hotel.name} 
+                            fill 
+                            priority={index < 2} 
+                            style={{ objectFit: 'cover', objectPosition: 'center center' }} 
+                            sizes="(max-width: 900px) 100vw, 340px" 
+                          />
                         ) : (
                           <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg, var(--brand-100), var(--brand-200))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '3rem' }}>🏨</div>
                         )}

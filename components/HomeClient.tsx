@@ -47,24 +47,46 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
   // Synchronize search criteria with localStorage so choices (e.g. 1 adult, custom dates) persist across page transitions
   useEffect(() => {
     try {
+      const now = new Date();
+      const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+      const tom = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+      const tomStr = `${tom.getFullYear()}-${String(tom.getMonth() + 1).padStart(2, '0')}-${String(tom.getDate()).padStart(2, '0')}`;
+
       const saved = localStorage.getItem('staybuddy_last_search');
       if (saved) {
         const p = JSON.parse(saved);
         if (p && typeof p === 'object') {
           const safeA = Math.max(1, Number(p.adults) || 1);
           const safeR = Math.min(safeA, Math.max(1, Number(p.rooms) || 1));
+          
+          // Strict check: if saved checkIn is in the past, reset strictly to today & tomorrow
+          const validCheckIn = (p.checkIn && p.checkIn >= todayStr) ? p.checkIn : todayStr;
+          let validCheckOut = (p.checkOut && p.checkOut > validCheckIn) ? p.checkOut : '';
+          if (!validCheckOut) {
+            const [y, m, d] = validCheckIn.split('-').map(Number);
+            const nextD = new Date(y, m - 1, d + 1);
+            validCheckOut = `${nextD.getFullYear()}-${String(nextD.getMonth() + 1).padStart(2, '0')}-${String(nextD.getDate()).padStart(2, '0')}`;
+          }
+
           setSearchData(prev => ({
             ...prev,
             propertyType: p.propertyType || prev.propertyType,
             location: p.location || prev.location,
-            checkIn: p.checkIn || prev.checkIn,
-            checkOut: p.checkOut || prev.checkOut,
+            checkIn: validCheckIn,
+            checkOut: validCheckOut,
             adults: safeA,
             rooms: safeR,
             children: Number(p.children) || 0,
           }));
+          return;
         }
       }
+      // If no saved search, default checkIn to today and checkOut to tomorrow
+      setSearchData(prev => ({
+        ...prev,
+        checkIn: prev.checkIn && prev.checkIn >= todayStr ? prev.checkIn : todayStr,
+        checkOut: prev.checkOut && prev.checkOut > todayStr ? prev.checkOut : tomStr,
+      }));
     } catch (_) {}
   }, []);
 

@@ -21,7 +21,100 @@ export interface TransitHubsResult {
   metroOrLandmark: TransitItem | null;
 }
 
+// Known cities with bounding coordinates & maximum radius
+export const CITY_COORDINATES: Array<{ city: string; lat: number; lng: number; radiusKm: number }> = [
+  { city: 'Vijayawada', lat: 16.5062, lng: 80.6480, radiusKm: 35 },
+  { city: 'Guntur', lat: 16.3067, lng: 80.4365, radiusKm: 30 },
+  { city: 'Visakhapatnam', lat: 17.6868, lng: 83.2185, radiusKm: 40 },
+  { city: 'Tirupati', lat: 13.6288, lng: 79.4192, radiusKm: 35 },
+  { city: 'Rajahmundry', lat: 17.0005, lng: 81.8040, radiusKm: 35 },
+  { city: 'Hyderabad', lat: 17.3850, lng: 78.4867, radiusKm: 60 },
+  { city: 'Bangalore', lat: 12.9716, lng: 77.5946, radiusKm: 60 },
+  { city: 'Chennai', lat: 13.0827, lng: 80.2707, radiusKm: 55 },
+  { city: 'Mumbai', lat: 19.0760, lng: 72.8777, radiusKm: 60 },
+  { city: 'Pune', lat: 18.5204, lng: 73.8567, radiusKm: 45 },
+  { city: 'Delhi', lat: 28.6139, lng: 77.2090, radiusKm: 65 },
+  { city: 'Kolkata', lat: 22.5726, lng: 88.3639, radiusKm: 45 },
+  { city: 'Goa', lat: 15.2993, lng: 74.1240, radiusKm: 55 },
+  { city: 'Jaipur', lat: 26.9124, lng: 75.7873, radiusKm: 45 },
+  { city: 'Ahmedabad', lat: 23.0225, lng: 72.5714, radiusKm: 45 },
+  { city: 'Kochi', lat: 9.9312, lng: 76.2673, radiusKm: 45 },
+  { city: 'Varanasi', lat: 25.3176, lng: 82.9739, radiusKm: 40 },
+  { city: 'Lucknow', lat: 26.8467, lng: 80.9462, radiusKm: 45 },
+  { city: 'Chandigarh', lat: 30.7333, lng: 76.7794, radiusKm: 40 },
+  { city: 'Agra', lat: 27.1767, lng: 78.0081, radiusKm: 35 },
+  { city: 'Amritsar', lat: 31.6340, lng: 74.8723, radiusKm: 35 },
+];
+
+export const CITIES_WITH_METRO = new Set([
+  'delhi', 'ncr', 'mumbai', 'bangalore', 'bengaluru', 'hyderabad', 'chennai', 'kolkata', 'pune', 'jaipur', 'ahmedabad', 'kochi', 'lucknow'
+]);
+
+export function haversineDistanceKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371; // Earth radius in km
+  const dLat = (lat2 - lat1) * (Math.PI / 180);
+  const dLon = (lon2 - lon1) * (Math.PI / 180);
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  const roadWindingFactor = 1.25;
+  const distance = R * c * roadWindingFactor;
+  return Math.round(distance * 10) / 10;
+}
+
+export function detectCityFromCoordinates(lat: number, lng: number): string | null {
+  if (isNaN(lat) || isNaN(lng) || (lat === 0 && lng === 0)) return null;
+  let closestCity: string | null = null;
+  let minDistance = Infinity;
+
+  for (const c of CITY_COORDINATES) {
+    const dist = haversineDistanceKm(lat, lng, c.lat, c.lng);
+    if (dist <= c.radiusKm && dist < minDistance) {
+      minDistance = dist;
+      closestCity = c.city;
+    }
+  }
+  return closestCity;
+}
+
 export const TRANSIT_DATABASE: TransitPoint[] = [
+  // --- VIJAYAWADA ---
+  { name: 'Vijayawada Junction Railway Station', type: 'railway', lat: 16.5186, lng: 80.6200, city: 'Vijayawada' },
+  { name: 'Pandit Nehru Bus Station (PNBS)', type: 'bus', lat: 16.5086, lng: 80.6175, city: 'Vijayawada' },
+  { name: 'Vijayawada International Airport (Gannavaram / VGA)', type: 'airport', lat: 16.5304, lng: 80.7968, city: 'Vijayawada' },
+  { name: 'SS Convention Centre (MG Road / Labbipet)', type: 'landmark', lat: 16.5008, lng: 80.6534, city: 'Vijayawada' },
+  { name: 'Kanaka Durga Temple & Indrakeeladri', type: 'landmark', lat: 16.5152, lng: 80.6056, city: 'Vijayawada' },
+  { name: 'Benz Circle Commercial Hub', type: 'landmark', lat: 16.4998, lng: 80.6545, city: 'Vijayawada' },
+  { name: 'Trendset Mall & Multiplex', type: 'landmark', lat: 16.5002, lng: 80.6578, city: 'Vijayawada' },
+  { name: 'PVP Square Mall & Cinepolis', type: 'landmark', lat: 16.5057, lng: 80.6475, city: 'Vijayawada' },
+
+  // --- GUNTUR ---
+  { name: 'Guntur Junction Railway Station', type: 'railway', lat: 16.2974, lng: 80.4438, city: 'Guntur' },
+  { name: 'NTR Central Bus Station (Guntur)', type: 'bus', lat: 16.3050, lng: 80.4485, city: 'Guntur' },
+  { name: 'Vijayawada International Airport (VGA)', type: 'airport', lat: 16.5304, lng: 80.7968, city: 'Guntur' },
+  { name: 'Brindavan Gardens Commercial Center', type: 'landmark', lat: 16.3120, lng: 80.4350, city: 'Guntur' },
+
+  // --- VISAKHAPATNAM ---
+  { name: 'Visakhapatnam Junction Railway Station', type: 'railway', lat: 17.7214, lng: 83.2906, city: 'Visakhapatnam' },
+  { name: 'Dwaraka Central RTC Bus Complex', type: 'bus', lat: 17.7268, lng: 83.3082, city: 'Visakhapatnam' },
+  { name: 'Visakhapatnam International Airport (VTZ)', type: 'airport', lat: 17.7211, lng: 83.2245, city: 'Visakhapatnam' },
+  { name: 'RK Beach & Submarine Museum Promenade', type: 'landmark', lat: 17.7126, lng: 83.3283, city: 'Visakhapatnam' },
+  { name: 'Jagadamba Junction Commercial Center', type: 'landmark', lat: 17.7145, lng: 83.3022, city: 'Visakhapatnam' },
+
+  // --- TIRUPATI ---
+  { name: 'Tirupati Main Railway Station', type: 'railway', lat: 13.6288, lng: 79.4192, city: 'Tirupati' },
+  { name: 'Tirupati Central RTC Bus Station', type: 'bus', lat: 13.6264, lng: 79.4230, city: 'Tirupati' },
+  { name: 'Tirupati International Airport (Renigunta / TIR)', type: 'airport', lat: 13.6325, lng: 79.5433, city: 'Tirupati' },
+  { name: 'Alipiri Footpath Gate & Indiranagar Hub', type: 'landmark', lat: 13.6496, lng: 79.3995, city: 'Tirupati' },
+
+  // --- RAJAHMUNDRY ---
+  { name: 'Rajahmundry Railway Station (RJY)', type: 'railway', lat: 16.9912, lng: 81.7758, city: 'Rajahmundry' },
+  { name: 'Rajahmundry Central RTC Complex', type: 'bus', lat: 17.0085, lng: 81.7850, city: 'Rajahmundry' },
+  { name: 'Rajahmundry Airport (Madhurapudi / RJA)', type: 'airport', lat: 17.1106, lng: 81.8197, city: 'Rajahmundry' },
+  { name: 'Godavari Ghat & Pushkar Ghat Promenade', type: 'landmark', lat: 17.0010, lng: 81.7695, city: 'Rajahmundry' },
+
   // --- HYDERABAD ---
   { name: 'Secunderabad Railway Station', type: 'railway', lat: 17.4344, lng: 78.5015, city: 'Hyderabad' },
   { name: 'Hyderabad Deccan Railway Station (Nampally)', type: 'railway', lat: 17.3924, lng: 78.4697, city: 'Hyderabad' },
@@ -115,28 +208,25 @@ export const TRANSIT_DATABASE: TransitPoint[] = [
   { name: 'Kashi Vishwanath Temple & Dashashwamedh Ghat', type: 'landmark', lat: 25.3109, lng: 83.0107, city: 'Varanasi' }
 ];
 
-function haversineDistanceKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
-  const R = 6371; // Earth radius in km
-  const dLat = (lat2 - lat1) * (Math.PI / 180);
-  const dLon = (lon2 - lon1) * (Math.PI / 180);
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) *
-    Math.sin(dLon / 2) * Math.sin(dLon / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  const roadWindingFactor = 1.25;
-  const distance = R * c * roadWindingFactor;
-  return Math.round(distance * 10) / 10;
-}
-
 export function getTransitDistancesForHotel(hotel: any): TransitItem[] {
   if (!hotel) return [];
 
-  // 1. If hotel already has stored transitHubs
+  const rawLat = parseFloat(hotel.coordinates?.lat || hotel.lat || '');
+  const rawLng = parseFloat(hotel.coordinates?.lng || hotel.lng || '');
+  const hasCoordinates = !isNaN(rawLat) && !isNaN(rawLng) && rawLat !== 0 && rawLng !== 0;
+
+  // Auto-detect city from coordinates if city is ambiguous or missing
+  const detectedCityFromCoords = hasCoordinates ? detectCityFromCoordinates(rawLat, rawLng) : null;
+  const rawCity = (detectedCityFromCoords || hotel.city || hotel.location || '').toLowerCase().trim();
+  const cityCap = detectedCityFromCoords || hotel.city || 'Central';
+  const isMetroCity = CITIES_WITH_METRO.has(rawCity);
+
+  // 1. If hotel already has stored transitHubs, sanitize out-of-bounds items
   if (hotel.transitHubs) {
     const th = hotel.transitHubs;
     const items: TransitItem[] = [];
-    if (th.railway) {
+
+    if (th.railway && Number(th.railway.distanceKm) <= 40) {
       items.push({
         type: 'railway',
         icon: '🚆',
@@ -145,7 +235,8 @@ export function getTransitDistancesForHotel(hotel: any): TransitItem[] {
         durationMins: th.railway.durationMins
       });
     }
-    if (th.bus) {
+
+    if (th.bus && Number(th.bus.distanceKm) <= 35) {
       items.push({
         type: 'bus',
         icon: '🚌',
@@ -154,7 +245,8 @@ export function getTransitDistancesForHotel(hotel: any): TransitItem[] {
         durationMins: th.bus.durationMins
       });
     }
-    if (th.airport) {
+
+    if (th.airport && Number(th.airport.distanceKm) <= 75) {
       items.push({
         type: 'airport',
         icon: '✈️',
@@ -163,70 +255,78 @@ export function getTransitDistancesForHotel(hotel: any): TransitItem[] {
         durationMins: th.airport.durationMins
       });
     }
-    if (th.metroOrLandmark || th.metro) {
-      const m = th.metroOrLandmark || th.metro;
-      items.push({
-        type: m.type || 'metro',
-        icon: m.type === 'landmark' ? '📍' : '🚇',
-        name: m.name,
-        distanceKm: m.distanceKm || 4.5,
-        durationMins: m.durationMins
-      });
+
+    // Strictly validate 4th item (metro or landmark):
+    // Must NOT be from another city (e.g. Ameerpet in Vijayawada!) and must be <= 25 km
+    const m = th.metroOrLandmark || th.metro;
+    if (m && Number(m.distanceKm) <= 28) {
+      const isMismatchedMetro = m.type === 'metro' && !isMetroCity;
+      if (!isMismatchedMetro) {
+        items.push({
+          type: m.type || 'metro',
+          icon: m.type === 'landmark' ? '📍' : '🚇',
+          name: m.name,
+          distanceKm: m.distanceKm || 4.5,
+          durationMins: m.durationMins
+        });
+      }
     }
 
-    if (items.length >= 2) {
+    // If all items are valid within city radius, return them
+    if (items.length === 4) {
       return items;
     }
   }
 
-  // 2. Compute dynamically from hotel's coordinates or city
-  const lat = parseFloat(hotel.coordinates?.lat || hotel.lat || '');
-  const lng = parseFloat(hotel.coordinates?.lng || hotel.lng || '');
-  const hasCoordinates = !isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0;
-
-  const cityName = (hotel.city || hotel.location || '').toLowerCase().trim();
-
-  // Find candidate points
-  let candidatePoints = TRANSIT_DATABASE;
-  let matchingCityPoints = TRANSIT_DATABASE.filter(p => p.city && cityName.includes(p.city.toLowerCase()));
-  if (matchingCityPoints.length > 0) {
-    candidatePoints = matchingCityPoints;
+  // 2. Compute strictly within city boundary
+  let candidatePoints = TRANSIT_DATABASE.filter(p => p.city && rawCity.includes(p.city.toLowerCase()));
+  if (candidatePoints.length === 0) {
+    // Check if detected from coordinates
+    if (detectedCityFromCoords) {
+      candidatePoints = TRANSIT_DATABASE.filter(p => p.city && p.city.toLowerCase() === detectedCityFromCoords.toLowerCase());
+    }
   }
 
-  // Helper to find nearest point of a given type
-  const findNearest = (type: TransitPoint['type'], fallbackDefault: { name: string; dist: number }) => {
+  // Helper to find nearest point of a given type strictly within maximum radius
+  const findNearestInCity = (
+    type: TransitPoint['type'],
+    maxAllowedKm: number,
+    fallbackName: string,
+    fallbackDist: number,
+    icon: string
+  ): TransitItem => {
     let nearest: TransitItem | null = null;
     let minDistance = Infinity;
 
     for (const p of candidatePoints) {
       if (p.type === type) {
         const dist = hasCoordinates
-          ? haversineDistanceKm(lat, lng, p.lat, p.lng)
-          : fallbackDefault.dist;
-        if (dist < minDistance) {
+          ? haversineDistanceKm(rawLat, rawLng, p.lat, p.lng)
+          : fallbackDist;
+        if (dist <= maxAllowedKm && dist < minDistance) {
           minDistance = dist;
           nearest = {
             type,
             name: p.name,
             distanceKm: Math.max(0.8, dist),
-            icon: type === 'railway' ? '🚆' : type === 'bus' ? '🚌' : type === 'airport' ? '✈️' : '🚇'
+            icon
           };
         }
       }
     }
 
-    // Fallback to all database points if no city match
+    // Check national database ONLY if distance is within tight city radius
     if (!nearest && hasCoordinates) {
       for (const p of TRANSIT_DATABASE) {
         if (p.type === type) {
-          const dist = haversineDistanceKm(lat, lng, p.lat, p.lng);
-          if (dist < minDistance) {
+          const dist = haversineDistanceKm(rawLat, rawLng, p.lat, p.lng);
+          if (dist <= maxAllowedKm && dist < minDistance) {
             minDistance = dist;
             nearest = {
               type,
               name: p.name,
               distanceKm: Math.max(0.8, dist),
-              icon: type === 'railway' ? '🚆' : type === 'bus' ? '🚌' : type === 'airport' ? '✈️' : '🚇'
+              icon
             };
           }
         }
@@ -236,22 +336,30 @@ export function getTransitDistancesForHotel(hotel: any): TransitItem[] {
     if (!nearest) {
       nearest = {
         type,
-        name: fallbackDefault.name,
-        distanceKm: fallbackDefault.dist,
-        icon: type === 'railway' ? '🚆' : type === 'bus' ? '🚌' : type === 'airport' ? '✈️' : '🚇'
+        name: fallbackName,
+        distanceKm: fallbackDist,
+        icon
       };
     }
 
     return nearest;
   };
 
-  // City-specific fallback defaults if city or coords are unknown
-  const cityCap = hotel.city || 'Central';
-  const railway = findNearest('railway', { name: `${cityCap} Junction Railway Station`, dist: 4.5 });
-  const bus = findNearest('bus', { name: `${cityCap} Central Bus Terminus`, dist: 4.5 });
-  const airport = findNearest('airport', { name: `${cityCap} International Airport`, dist: 16.5 });
-  const metroOrLandmark = findNearest('metro', { name: `${cityCap} Metro Interchange`, dist: 3.5 });
+  const railway = findNearestInCity('railway', 35, `${cityCap} Junction Railway Station`, 4.5, '🚆');
+  const bus = findNearestInCity('bus', 30, `${cityCap} Central Bus Terminus`, 4.5, '🚌');
+  const airport = findNearestInCity('airport', 65, `${cityCap} International Airport`, 16.5, '✈️');
 
-  return [railway, bus, airport, metroOrLandmark];
+  // 4th item: ONLY search for metro if city has a metro system
+  let fourthItem: TransitItem;
+  if (isMetroCity) {
+    fourthItem = findNearestInCity('metro', 25, `${cityCap} Central Metro Station`, 3.5, '🚇');
+  } else {
+    // In non-metro cities (e.g. Vijayawada), show prominent local landmark / convention center!
+    const defaultLandmark = rawCity.includes('vijayawada') 
+      ? 'SS Convention Centre (MG Road / Labbipet)' 
+      : `${cityCap} Central Commercial Center`;
+    fourthItem = findNearestInCity('landmark', 25, defaultLandmark, 3.2, '📍');
+  }
+
+  return [railway, bus, airport, fourthItem];
 }
-

@@ -7,6 +7,7 @@ import Logo from '@/components/Logo';
 import DateRangePicker from '@/components/DateRangePicker';
 import { compressImage } from '@/lib/imageUtils';
 import { parseCoordinates } from '@/lib/coordinates';
+import { detectCityFromCoordinates } from '@/lib/transitHubs';
 import PartnerExtranetIntroModal from '@/components/PartnerExtranetIntroModal';
 import OnboardingExecutiveCard from '@/components/OnboardingExecutiveCard';
 import OnboardingTrainingVideoModal from '@/components/OnboardingTrainingVideoModal';
@@ -252,7 +253,15 @@ export default function PartnerDashboard() {
   function handleCoordinateInput(val: string) {
     const parsed = parseCoordinates(val);
     if (parsed) {
-      setHotelForm(p => ({ ...p, lat: parsed.lat, lng: parsed.lng }));
+      const latNum = Number(parsed.lat);
+      const lngNum = Number(parsed.lng);
+      const detected = (!isNaN(latNum) && !isNaN(lngNum)) ? detectCityFromCoordinates(latNum, lngNum) : null;
+      setHotelForm(p => ({ 
+        ...p, 
+        lat: parsed.lat, 
+        lng: parsed.lng,
+        ...(detected && (!p.city || p.city === '') ? { city: detected } : {})
+      }));
     } else {
       const trimmed = val.trim();
       if (!trimmed) {
@@ -260,7 +269,15 @@ export default function PartnerDashboard() {
       } else {
         const parts = trimmed.split(/[,\s;/|]+/).map(s => s.trim()).filter(Boolean);
         if (parts.length >= 2) {
-          setHotelForm(p => ({ ...p, lat: parts[0], lng: parts[1] }));
+          const latNum = Number(parts[0]);
+          const lngNum = Number(parts[1]);
+          const detected = (!isNaN(latNum) && !isNaN(lngNum)) ? detectCityFromCoordinates(latNum, lngNum) : null;
+          setHotelForm(p => ({ 
+            ...p, 
+            lat: parts[0], 
+            lng: parts[1],
+            ...(detected && (!p.city || p.city === '') ? { city: detected } : {})
+          }));
         } else if (parts.length === 1) {
           setHotelForm(p => ({ ...p, lat: parts[0] }));
         }

@@ -20,10 +20,22 @@ export default function DateRangePicker({ checkIn, checkOut, onChange, onClose, 
   const [hoverDate, setHoverDate] = useState<Date | null>(null);
 
   useEffect(() => {
-    setLocalIn(checkIn || '');
-    setLocalOut(checkOut || '');
-    if (checkIn) {
-      const parts = checkIn.split('-').map(Number);
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+
+    let safeIn = checkIn || '';
+    let safeOut = checkOut || '';
+    if (safeIn && safeIn < todayStr) {
+      safeIn = todayStr;
+      const tom = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+      safeOut = `${tom.getFullYear()}-${String(tom.getMonth() + 1).padStart(2, '0')}-${String(tom.getDate()).padStart(2, '0')}`;
+      onChange(safeIn, safeOut);
+    }
+    setLocalIn(safeIn);
+    setLocalOut(safeOut);
+    if (safeIn) {
+      const parts = safeIn.split('-').map(Number);
       if (parts.length === 3) {
         setCurrentMonth(new Date(parts[0], parts[1] - 1, 1));
       }
@@ -156,15 +168,16 @@ export default function DateRangePicker({ checkIn, checkOut, onChange, onClose, 
             if (!day) return <div key={i} />;
 
             const isPast = day < today;
-            const isCheckIn = checkInDate && day.getTime() === checkInDate.getTime();
-            const isCheckOut = checkOutDate && day.getTime() === checkOutDate.getTime();
+            const isCheckIn = !isPast && Boolean(checkInDate && day.getTime() === checkInDate.getTime());
+            const isCheckOut = !isPast && Boolean(checkOutDate && day.getTime() === checkOutDate.getTime());
             
             // Preview range while hovering
             const isHoverRange = Boolean(
+              !isPast &&
               checkInDate && !checkOutDate && hoverDate && hoverDate > checkInDate &&
               day > checkInDate && day < hoverDate
             );
-            const isBetween = Boolean(checkInDate && checkOutDate && day > checkInDate && day < checkOutDate);
+            const isBetween = Boolean(!isPast && checkInDate && checkOutDate && day > checkInDate && day < checkOutDate);
             const isSelected = isCheckIn || isCheckOut;
 
             let bg = 'transparent';

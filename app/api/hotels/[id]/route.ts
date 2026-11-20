@@ -8,6 +8,11 @@ import { getDateStr, getStayNights, isHotelBlockedForDates, getRoomBlockedCountF
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const resolvedParams = await params;
+    const rawId = (resolvedParams.id || '').trim();
+    let decodedId = rawId;
+    try {
+      decodedId = decodeURIComponent(rawId).trim();
+    } catch (_) {}
 
     // Ultra-fast In-Memory Cache (60s TTL)
     const cacheKey = `hotel_detail_${request.url}`;
@@ -22,35 +27,22 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     }
     
     // Check if the id is a document ID
-    const hotelDoc = await db.collection('hotels').doc(resolvedParams.id).get();
+    let hotelDoc = await db.collection('hotels').doc(decodedId).get();
+    if (!hotelDoc.exists && rawId !== decodedId) {
+      hotelDoc = await db.collection('hotels').doc(rawId).get();
+    }
     let hotel: any = null;
 
     if (hotelDoc.exists) {
-      hotel = { _id: hotelDoc.id, ...hotelDoc.data() };
+      hotel = { ...hotelDoc.data(), _id: hotelDoc.id, id: hotelDoc.id };
     } else {
-      // It might be a string MongoDB ID or we might have indexed it by _id in Firestore
-      const snapshot = await db.collection('hotels').where('_id', '==', resolvedParams.id).limit(1).get();
-      if (!snapshot.empty) {
-        hotel = { _id: snapshot.docs[0].id, ...snapshot.docs[0].data() };
-      }
-    }
-
-    if (!hotel) {
-      const snapHotelId = await db.collection('hotels').where('hotelId', '==', resolvedParams.id).limit(1).get();
-      if (!snapHotelId.empty) {
-        hotel = { _id: snapHotelId.docs[0].id, ...snapHotelId.docs[0].data() };
-      }
-    }
-    if (!hotel) {
-      const snapId = await db.collection('hotels').where('id', '==', resolvedParams.id).limit(1).get();
-      if (!snapId.empty) {
-        hotel = { _id: snapId.docs[0].id, ...snapId.docs[0].data() };
-      }
-    }
-    if (!hotel) {
-      const snapSlug = await db.collection('hotels').where('slug', '==', resolvedParams.id).limit(1).get();
-      if (!snapSlug.empty) {
-        hotel = { _id: snapSlug.docs[0].id, ...snapSlug.docs[0].data() };
+      const searchIds = Array.from(new Set([decodedId, rawId].filter(Boolean)));
+      for (const field of ['_id', 'id', 'hotelId', 'slug']) {
+        const snapshot = await db.collection('hotels').where(field, 'in', searchIds).limit(1).get();
+        if (!snapshot.empty) {
+          hotel = { ...snapshot.docs[0].data(), _id: snapshot.docs[0].id, id: snapshot.docs[0].id };
+          break;
+        }
       }
     }
 
@@ -96,7 +88,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
           ? hr.photos
           : (Array.isArray(matchingColl?.photos) && matchingColl.photos.length > 0)
           ? matchingColl.photos
-          : (Array.isArray(hotel.images) ? hotel.images.slice(0, 1) : []);
+          : [];
 
         // Rates: prioritize live Partner Extranet CRM prices from collRooms
         const pSingle = Number(matchingColl?.priceSingle) > 0

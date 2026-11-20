@@ -112,18 +112,29 @@ export default function HotelDetailPage() {
   };
 
   const getStoredDate = (field: 'checkIn' | 'checkOut') => {
+    const now = new Date();
+    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    const tom = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+    const tomStr = `${tom.getFullYear()}-${String(tom.getMonth() + 1).padStart(2, '0')}-${String(tom.getDate()).padStart(2, '0')}`;
+
     const fromUrl = searchParams.get(field);
-    if (fromUrl) return fromUrl;
+    if (fromUrl) {
+      if (field === 'checkIn' && fromUrl < todayStr) return todayStr;
+      return fromUrl;
+    }
     if (typeof window !== "undefined") {
       try {
         const saved = localStorage.getItem("staybuddy_last_search");
         if (saved) {
           const p = JSON.parse(saved);
-          if (p && p[field]) return p[field];
+          if (p && p[field]) {
+            if (field === 'checkIn' && p[field] < todayStr) return todayStr;
+            return p[field];
+          }
         }
       } catch (_) {}
     }
-    return "";
+    return field === 'checkIn' ? todayStr : tomStr;
   };
 
   const initialAdults = getStoredAdults();
@@ -261,7 +272,13 @@ export default function HotelDetailPage() {
   useEffect(() => {
     if (searchParamsInitialized.current) return;
     searchParamsInitialized.current = true;
-    const checkInParam = searchParams.get("checkIn");
+    const now = new Date();
+    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    const tom = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+    const tomStr = `${tom.getFullYear()}-${String(tom.getMonth() + 1).padStart(2, '0')}-${String(tom.getDate()).padStart(2, '0')}`;
+
+    let checkInParam = searchParams.get("checkIn");
+    if (checkInParam && checkInParam < todayStr) checkInParam = todayStr;
     let checkOutParam = searchParams.get("checkOut");
     if (checkInParam && checkOutParam && checkInParam >= checkOutParam) {
       const parts = checkInParam.split('-').map(Number);
@@ -277,8 +294,8 @@ export default function HotelDetailPage() {
       const safeR = Math.min(safeA, Math.max(1, isNaN(rawR) ? 1 : rawR));
       setBookingData(p => ({
         ...p,
-        checkIn: checkInParam || p.checkIn,
-        checkOut: checkOutParam || p.checkOut,
+        checkIn: checkInParam || (p.checkIn && p.checkIn >= todayStr ? p.checkIn : todayStr),
+        checkOut: checkOutParam || (p.checkOut && (!checkInParam || p.checkOut > checkInParam) ? p.checkOut : tomStr),
         adults: safeA,
         rooms: safeR,
         children: searchParams.has("children") ? parseInt(searchParams.get("children") as string, 10) : p.children,
@@ -495,9 +512,24 @@ export default function HotelDetailPage() {
       const query = (inDate && outDate) 
         ? `?checkIn=${encodeURIComponent(inDate)}&checkOut=${encodeURIComponent(outDate)}` 
         : '';
-      const res = await fetch(`/api/hotels/${id}${query}`);
+      const hotelId = Array.isArray(id) ? id[0] : id;
+      if (!hotelId) return;
+      const res = await fetch(`/api/hotels/${encodeURIComponent(hotelId)}${query}`);
       const data = await res.json();
-      setHotel(data.hotel);
+      if (res.ok && data?.hotel) {
+        setHotel(data.hotel);
+      } else if (query) {
+        // Fallback retry without date query parameters if dates were constrained
+        const retryRes = await fetch(`/api/hotels/${encodeURIComponent(hotelId)}`);
+        if (retryRes.ok) {
+          const retryData = await retryRes.json();
+          if (retryData?.hotel) {
+            setHotel(retryData.hotel);
+            data.rooms = retryData.rooms || data.rooms || [];
+            data.reviews = retryData.reviews || data.reviews || [];
+          }
+        }
+      }
       const incomingRooms = data.rooms || [];
       // Always sort rooms by price ascending for active occupancy (lowest occupancy rate / cheapest room first)
       const sortedRooms = [...incomingRooms].sort((a: any, b: any) => {

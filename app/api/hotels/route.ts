@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
     }
     
     const snapshot = await hotelsRef.get();
-    let hotels = snapshot.docs.map((doc: any) => ({ _id: doc.id, ...doc.data() }));
+    let hotels = snapshot.docs.map((doc: any) => ({ ...doc.data(), _id: doc.id, id: doc.id }));
 
     // Helper: compute accurate star rating (1-5) for any property
     const getHotelStar = (h: any): number => {
