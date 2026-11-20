@@ -40,7 +40,10 @@ async function getFeaturedHotels() {
       .map(doc => ({ _id: doc.id, ...doc.data() }) as any)
       .filter((h: any) => !isHotelBlockedForDates(h, blocksByHotelId[h._id] || [], [todayStr], false).blocked);
     hotels.sort((a, b) => (b.avgRating || 0) - (a.avgRating || 0));
-    hotels = hotels.slice(0, 6);
+    // Prioritize approved 4-star and 5-star premier hotels so Flagship showcases always have real premier inventory
+    const premierHotels = hotels.filter((h: any) => (Number(h.starRating) >= 4 || h.category === 'premium' || h.category === 'luxury'));
+    const otherHotels = hotels.filter((h: any) => !(Number(h.starRating) >= 4 || h.category === 'premium' || h.category === 'luxury'));
+    hotels = [...premierHotels, ...otherHotels].slice(0, 15);
     const hotelIds = hotels.map((h: any) => h._id).filter(Boolean);
 
     // Batch-load rooms and active bookings concurrently in parallel

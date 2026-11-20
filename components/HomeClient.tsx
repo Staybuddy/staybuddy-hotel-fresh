@@ -1406,17 +1406,18 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
       />
 
 
-      {/* ===== HOTEL COLLECTIONS CARDS (Original 3 Categories - Clean & Separate) ===== */}
+      {/* ===== HOTEL COLLECTIONS CARDS (Premier 4 & 5 Star, Luxury Chains, Resorts & Heritage) ===== */}
       <section className="container" style={{ marginBottom: '26px' }}>
         <style>{`
           .home-collections-grid {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 20px;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 18px;
           }
-          @media (max-width: 900px) {
+          @media (max-width: 1100px) {
             .home-collections-grid {
               grid-template-columns: repeat(2, 1fr);
+              gap: 16px;
             }
           }
           @media (max-width: 768px) {
@@ -1447,7 +1448,7 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
         `}</style>
         <div className="home-collections-grid">
           
-          {/* Card 1 - Curated Collections: Premium Hotel Groups (3, 4 & 5 Star Premier Properties) */}
+          {/* Card 1 - Curated Collections: Premium Hotel Groups */}
           <Link href="/hotels?category=premium" className="home-collections-card" style={{ textDecoration: 'none', color: 'inherit', display: 'flex' }}>
             <div style={{
               background: 'linear-gradient(135deg, var(--brand-50), var(--brand-100))',
@@ -1477,7 +1478,37 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
             </div>
           </Link>
 
-          {/* Card 2 - Trending: Beachfront Resorts */}
+          {/* Card 2 - Premier Luxury: 4 & 5 Star Hotels */}
+          <Link href="/hotels?starRating=4,5" className="home-collections-card" style={{ textDecoration: 'none', color: 'inherit', display: 'flex' }}>
+            <div style={{
+              background: 'linear-gradient(135deg, #fff7ed, #ffedd5)',
+              borderRadius: 'var(--radius-xl)', padding: 'var(--space-6)',
+              border: '1.5px solid #fed7aa', position: 'relative', overflow: 'hidden',
+              display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
+              width: '100%', cursor: 'pointer',
+              transition: 'transform 0.25s ease, box-shadow 0.25s ease'
+            }}
+            onMouseEnter={e => {
+              (e.currentTarget as HTMLElement).style.transform = 'translateY(-4px)';
+              (e.currentTarget as HTMLElement).style.boxShadow = '0 16px 32px rgba(240, 100, 59, 0.18)';
+            }}
+            onMouseLeave={e => {
+              (e.currentTarget as HTMLElement).style.transform = 'translateY(0)';
+              (e.currentTarget as HTMLElement).style.boxShadow = 'none';
+            }}>
+              <div style={{ position: 'absolute', right: '5%', bottom: '-10%', fontSize: '6rem', opacity: 0.1, pointerEvents: 'none' }}>⭐</div>
+              <div style={{ position: 'relative', zIndex: 1, marginBottom: 24 }}>
+                <div style={{ display: 'inline-block', background: 'white', color: '#c2410c', padding: '4px 10px', borderRadius: 'var(--radius-full)', fontSize: '0.75rem', fontWeight: 800, marginBottom: 12, textTransform: 'uppercase', border: '1px solid #fed7aa', boxShadow: '0 2px 6px rgba(234, 88, 12, 0.1)' }}>Premier Luxury</div>
+                <h3 style={{ color: '#7c2d12', marginBottom: 8, fontSize: '1.4rem' }}>4 & 5 Star Hotels</h3>
+                <p style={{ color: '#9a3412', fontSize: '0.95rem', margin: 0, opacity: 0.9 }}>Book elite 4-star and 5-star premier stays with world-class hospitality.</p>
+              </div>
+              <div style={{ color: '#ea580c', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4, position: 'relative', zIndex: 1 }}>
+                Explore 4★ & 5★ Stays →
+              </div>
+            </div>
+          </Link>
+
+          {/* Card 3 - Trending: Beachfront Resorts */}
           <Link href="/hotels?propertyType=Resort" className="home-collections-card" style={{ textDecoration: 'none', color: 'inherit', display: 'flex' }}>
             <div style={{
               background: 'linear-gradient(135deg, #f0fdfa, #ccfbf1)',
@@ -1507,7 +1538,7 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
             </div>
           </Link>
 
-          {/* Card 3 - Experiences: Heritage Stays */}
+          {/* Card 4 - Experiences: Heritage Stays */}
           <Link href="/hotels?minRating=5" className="home-collections-card" style={{ textDecoration: 'none', color: 'inherit', display: 'flex' }}>
             <div style={{
               background: 'linear-gradient(135deg, #fef3c7, #fde68a)',
