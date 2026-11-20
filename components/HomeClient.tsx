@@ -772,42 +772,50 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
               extendedContent={showStickySearch ? renderSearchBar() : null}
             />
 
-            {/* HERO SECTION WITH INLINE PROPERTY TYPES */}
-            <div style={{ background: 'var(--bg-secondary)', padding: '24px 0 0 0', marginTop: '-8px' }}>
-              <div className="container hero-section-container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '0 16px' }}>
+            {/* HERO BANNER SECTION (MakeMyTrip Style) */}
+            <div 
+              className="hero-banner-container"
+              style={{ 
+                position: 'relative',
+                background: `linear-gradient(180deg, rgba(15, 23, 42, 0.42) 0%, rgba(15, 23, 42, 0.7) 100%), url('/images/hero-banner.jpg') center 35% / cover no-repeat`,
+                padding: searchData.propertyType ? '32px 0 40px 0' : '44px 0 48px 0',
+                marginTop: '-8px',
+                transition: 'padding 0.3s ease',
+                overflow: 'hidden',
+                boxShadow: 'inset 0 -20px 30px -10px rgba(0,0,0,0.2)'
+              }}
+            >
+              <div className="container hero-section-container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '0 16px', position: 'relative', zIndex: 10 }}>
+                {/* Floating Property Selector */}
                 {renderPropertySelector(false)}
+
+                {/* SEARCH BAR SECTION - OPENS ON SELECTION */}
+                <div style={{
+                  width: '100%',
+                  maxHeight: searchData.propertyType ? '1000px' : '0px',
+                  opacity: searchData.propertyType ? 1 : 0,
+                  overflow: searchData.propertyType ? 'visible' : 'hidden',
+                  transition: 'max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s ease-in-out',
+                  position: 'relative',
+                  zIndex: 50
+                }}>
+                  {searchData.propertyType && renderSearchBar()}
+                  {searchError && (
+                    <div style={{ marginTop: 12, color: 'white', background: '#ef4444', padding: '6px 16px', borderRadius: 'var(--radius-full)', fontSize: '0.9rem', fontWeight: 600, animation: 'fadeIn 0.3s ease', textAlign: 'center', width: 'fit-content', margin: '12px auto 0' }}>
+                      {searchError}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </>
         );
       })()}
 
-      {/* SEARCH BAR SECTION - ONLY OPENS ON USER CLICK */}
-      <div style={{
-        maxHeight: searchData.propertyType ? '1000px' : '0px',
-        opacity: searchData.propertyType ? 1 : 0,
-        overflow: searchData.propertyType ? 'visible' : 'hidden',
-        transition: 'max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s ease-in-out',
-        background: 'var(--bg-secondary)',
-        position: 'relative',
-        zIndex: 100
-      }}>
-        <section style={{ padding: searchData.propertyType ? '12px 0 24px 0' : '0' }}>
-          <div className="container hero-section-container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '0 16px' }}>
-            {searchData.propertyType && renderSearchBar()}
-            {searchError && (
-              <div style={{ marginTop: 12, color: 'white', background: '#ef4444', padding: '6px 16px', borderRadius: 'var(--radius-full)', fontSize: '0.9rem', fontWeight: 600, animation: 'fadeIn 0.3s ease' }}>
-                {searchError}
-              </div>
-            )}
-          </div>
-        </section>
-      </div>
-
       {/* ===== TRENDING DESTINATIONS ===== */}
-      <section style={{ padding: '14px 0 10px', background: 'var(--bg-secondary)', userSelect: 'none', WebkitUserSelect: 'none' }}>
+      <section style={{ padding: '24px 0 10px', background: 'var(--bg-secondary)', userSelect: 'none', WebkitUserSelect: 'none' }}>
         <div className="container" style={{ userSelect: 'none', WebkitUserSelect: 'none' }}>
-          <div style={{ textAlign: 'center', marginBottom: 18, userSelect: 'none', WebkitUserSelect: 'none' }}>
+          <div style={{ textAlign: 'left', marginBottom: 18, userSelect: 'none', WebkitUserSelect: 'none' }}>
             <div style={{ display: 'inline-block', background: 'var(--brand-50)', color: 'var(--brand-700)', padding: '3px 12px', borderRadius: 'var(--radius-full)', fontSize: '0.75rem', fontWeight: 700, marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em', userSelect: 'none', WebkitUserSelect: 'none' }}>Popular Destinations</div>
             <h2 style={{ fontSize: '1.8rem', margin: 0, userSelect: 'none', WebkitUserSelect: 'none' }}>Trending <span style={{ color: 'var(--brand-600)' }}>Right Now</span></h2>
             <p style={{ color: 'var(--text-secondary)', marginTop: 4, fontSize: '0.9rem', userSelect: 'none', WebkitUserSelect: 'none' }}>Top-rated destinations loved by millions of travelers</p>
