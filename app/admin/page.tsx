@@ -49,7 +49,19 @@ export default function AdminDashboard() {
     invoiceDate: getLocalDateString() 
   });
   const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState({ totalHotels: 0, pendingHotels: 0, pendingPartners: 0, totalBookings: 0, totalRevenue: 0, totalProfit: 0, totalUsers: 0 });
+  const [stats, setStats] = useState({ 
+    totalHotels: 0, 
+    pendingHotels: 0, 
+    pendingPartners: 0, 
+    totalBookings: 0, 
+    totalRevenue: 0, 
+    totalB2bCost: 0,
+    grossProfit: 0,
+    totalGst: 0,
+    totalProfit: 0, 
+    gstRate: 5,
+    totalUsers: 0 
+  });
   const [approveLoading, setApproveLoading] = useState<string | null>(null);
   const [hasNewBookings, setHasNewBookings] = useState(false);
   const [selectedInvoiceHotel, setSelectedInvoiceHotel] = useState<any>(null);
@@ -255,37 +267,56 @@ export default function AdminDashboard() {
       setTaxInvoices(inv);
       setOnboardingStaff(s);
 
-      const revenue = b.filter((bk: any) => bk.paymentStatus === 'paid').reduce((s: number, bk: any) => s + bk.totalPrice, 0);
+      const paidBookings = b.filter((bk: any) => bk.paymentStatus === 'paid');
+      const revenue = paidBookings.reduce((s: number, bk: any) => s + (Number(bk.totalPrice) || 0), 0);
       
-      // Calculate profit based on margin of each hotel (using base price)
-      let profit = 0;
-      b.filter((bk: any) => bk.paymentStatus === 'paid').forEach((bk: any) => {
-        const hotel = h.find((htl: any) => htl._id === bk.hotelId?._id || htl._id === bk.hotelId);
-        const margin = hotel?.marginPercentage || 0;
-        
-        const nights = bk.noOfNights || 1;
-        const rooms = bk.noOfRooms || 1;
-        const perRoomNightInclusive = bk.totalPrice / (nights * rooms);
-        let gstPercentage = 0;
-        if (perRoomNightInclusive >= 7500) {
-          gstPercentage = 18;
-        } else if (perRoomNightInclusive >= 1000) {
-          gstPercentage = 5;
-        } else {
-          gstPercentage = 0;
-        }
-        const basePrice = bk.totalPrice / (1 + gstPercentage / 100);
+      let totalB2bCost = 0;
+      let totalGrossProfit = 0;
+      let totalGstOnProfit = 0;
+      let totalActualProfit = 0;
+      let dominantGstRate = 5;
 
-        profit += (basePrice * margin) / 100;
+      paidBookings.forEach((bk: any) => {
+        const b2c = Number(bk.totalPrice) || 0;
+        const hotel = h.find((htl: any) => htl._id === (bk.hotelId?._id || bk.hotelId));
+        const margin = Number(hotel?.marginPercentage) || 15;
+
+        // B2B cost paid to the partner
+        const b2b = Number(bk.totalPartnerPrice) > 0 
+          ? Number(bk.totalPartnerPrice) 
+          : (Number(bk.partnerPricePerNight) > 0 ? Number(bk.partnerPricePerNight) * (Number(bk.nights) || 1) * (Number(bk.rooms) || 1) : 0);
+        const finalB2b = b2b > 0 ? b2b : Math.round(b2c / (1 + margin / 100));
+
+        // Gross Profit = B2C Price - B2B Cost
+        const gross = Math.max(0, b2c - finalB2b);
+
+        const nights = Number(bk.nights) || Number(bk.noOfNights) || 1;
+        const rooms = Number(bk.rooms) || Number(bk.noOfRooms) || 1;
+        const perNight = b2c / (nights * rooms);
+        const gstRate = perNight >= 7500 ? 18 : 5;
+        dominantGstRate = gstRate;
+
+        // GST payable from profit
+        const gstPaid = Math.round(gross * (gstRate / (100 + gstRate)));
+        const actualNet = Math.max(0, gross - gstPaid);
+
+        totalB2bCost += finalB2b;
+        totalGrossProfit += gross;
+        totalGstOnProfit += gstPaid;
+        totalActualProfit += actualNet;
       });
 
       setStats({
         totalHotels: h.filter((x: any) => x.status === 'approved').length,
         pendingHotels: h.filter((x: any) => x.status === 'pending').length,
         pendingPartners: p.filter((x: any) => x.partnerStatus === 'pending').length,
-        totalBookings: b.filter((bk: any) => (bk.status === 'confirmed' || bk.status === 'completed') && bk.paymentStatus === 'paid').length,
+        totalBookings: paidBookings.length,
         totalRevenue: revenue,
-        totalProfit: profit,
+        totalB2bCost: totalB2bCost,
+        grossProfit: totalGrossProfit,
+        totalGst: totalGstOnProfit,
+        totalProfit: totalActualProfit,
+        gstRate: dominantGstRate,
         totalUsers: u.length,
       });
     } catch (e) { console.error(e); }
@@ -653,8 +684,16 @@ export default function AdminDashboard() {
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 20, marginBottom: 40 }}>
                 {[
-                  { label: 'Total Revenue (GMV)', value: `₹${stats.totalRevenue.toLocaleString()}`, icon: '💰', color: '#f59e0b', bg: '#fffbeb' },
-                  { label: 'StayBuddy Profit', value: `₹${stats.totalProfit.toLocaleString()}`, icon: '📈', color: '#10b981', bg: '#ecfdf5' },
+                  { label: 'Total Revenue (GMV)', value: `₹${stats.totalRevenue.toLocaleString()}`, icon: '💰', color: '#f59e0b', bg: '#fffbeb', subtitle: 'Collected from Guests (B2C)' },
+                  { 
+                    label: 'StayBuddy Profit', 
+                    value: `₹${stats.totalProfit.toLocaleString()}`, 
+                    icon: '📈', 
+                    color: '#10b981', 
+                    bg: '#ecfdf5',
+                    badge: 'Actual Net Profit',
+                    subtitle: `Gross: ₹${stats.grossProfit.toLocaleString()} (B2C - B2B) • GST (${stats.gstRate}%): -₹${stats.totalGst.toLocaleString()}`
+                  },
                   { label: 'Active Properties', value: stats.totalHotels, icon: '🏨', color: '#3b82f6', bg: '#eff6ff' },
                   { label: 'Total Bookings', value: stats.totalBookings, icon: '📋', color: '#8b5cf6', bg: '#f5f3ff' },
                   { 
@@ -682,9 +721,17 @@ export default function AdminDashboard() {
                     }}
                   >
                     <div style={{ width: 64, height: 64, borderRadius: 16, background: s.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2rem' }}>{s.icon}</div>
-                    <div>
-                      <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>{s.label}</div>
-                      <div style={{ fontSize: '1.8rem', fontWeight: 800, color: '#0f172a' }}>{s.value}</div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                        <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{s.label}</div>
+                        {s.badge && (
+                          <span style={{ fontSize: '0.68rem', fontWeight: 800, background: '#ecfdf5', color: '#047857', border: '1px solid #a7f3d0', padding: '2px 6px', borderRadius: 4 }}>{s.badge}</span>
+                        )}
+                      </div>
+                      <div style={{ fontSize: '1.8rem', fontWeight: 900, color: '#0f172a' }}>{s.value}</div>
+                      {s.subtitle && (
+                        <div style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 600, marginTop: 4 }}>{s.subtitle}</div>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -1755,57 +1802,60 @@ export default function AdminDashboard() {
                 {approvedHotels.map(h => {
                   const propertyBookings = bookings.filter(b => (b.hotelId?._id === h._id || b.hotelId === h._id) && b.paymentStatus === 'paid');
                   let propertyGmv = 0;
-                  let totalBasePrice = 0;
-                  let totalGstAmount = 0;
+                  let propertyB2c = 0;
+                  let propertyB2b = 0;
+                  let propertyGross = 0;
+                  let propertyGst = 0;
+                  let propertyNet = 0;
+                  let propGstRate = 5;
 
-                  propertyBookings.forEach(b => {
-                    propertyGmv += b.totalPrice;
-                    const nights = b.noOfNights || 1;
-                    const rooms = b.noOfRooms || 1;
-                    const perRoomNightInclusive = b.totalPrice / (nights * rooms);
-                    let gstPercentage = 0;
-                    if (perRoomNightInclusive >= 7500) {
-                      gstPercentage = 18;
-                    } else if (perRoomNightInclusive >= 1000) {
-                      gstPercentage = 5;
-                    } else {
-                      gstPercentage = 0;
-                    }
-                    const basePrice = b.totalPrice / (1 + gstPercentage / 100);
-                    totalBasePrice += basePrice;
-                    totalGstAmount += (b.totalPrice - basePrice);
+                  propertyBookings.forEach((b: any) => {
+                    const b2c = Number(b.totalPrice) || 0;
+                    const margin = Number(h.marginPercentage) || 15;
+                    const b2b = Number(b.totalPartnerPrice) > 0 ? Number(b.totalPartnerPrice) : Math.round(b2c / (1 + margin / 100));
+                    const gross = Math.max(0, b2c - b2b);
+                    const nights = Number(b.nights) || Number(b.noOfNights) || 1;
+                    const rooms = Number(b.rooms) || Number(b.noOfRooms) || 1;
+                    const perRoomNightInclusive = b2c / (nights * rooms);
+                    const rate = perRoomNightInclusive >= 7500 ? 18 : 5;
+                    propGstRate = rate;
+                    const gst = Math.round(gross * (rate / (100 + rate)));
+                    const net = Math.max(0, gross - gst);
+
+                    propertyB2c += b2c;
+                    propertyB2b += b2b;
+                    propertyGross += gross;
+                    propertyGst += gst;
+                    propertyNet += net;
                   });
-
-                  const margin = h.marginPercentage || 0;
-                  const propertyProfit = (totalBasePrice * margin) / 100;
-                  const b2bPrice = totalBasePrice - propertyProfit;
 
                   return (
                     <div key={h._id} style={{ background: 'white', borderRadius: 16, padding: 24, boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
                         <div>
                           <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#0f172a' }}>{h.name}</h3>
-                          <div style={{ fontSize: '0.85rem', color: '#64748b', marginTop: 4 }}>Margin: {margin}% • {propertyBookings.length} Bookings</div>
+                          <div style={{ fontSize: '0.85rem', color: '#64748b', marginTop: 4 }}>Margin: {h.marginPercentage || 15}% • {propertyBookings.length} Bookings</div>
                         </div>
                         <div style={{ width: 48, height: 48, borderRadius: 12, background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem', border: '1px solid #e2e8f0' }}>🧾</div>
                       </div>
 
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 24 }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 14, marginBottom: 24 }}>
                         <div style={{ background: '#f8fafc', padding: '16px', borderRadius: 12, border: '1px solid #e2e8f0' }}>
-                          <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', marginBottom: 6, letterSpacing: '0.05em' }}>B2C Price (Guest Paid)</div>
-                          <div style={{ fontSize: '1.4rem', fontWeight: 900, color: '#0f172a' }}>₹{Math.round(propertyGmv).toLocaleString()}</div>
+                          <div style={{ fontSize: '0.72rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', marginBottom: 6, letterSpacing: '0.05em' }}>B2C (Guest Paid)</div>
+                          <div style={{ fontSize: '1.3rem', fontWeight: 900, color: '#0f172a' }}>₹{Math.round(propertyB2c).toLocaleString()}</div>
                         </div>
                         <div style={{ background: '#eff6ff', padding: '16px', borderRadius: 12, border: '1px solid #bfdbfe' }}>
-                          <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#1d4ed8', textTransform: 'uppercase', marginBottom: 6, letterSpacing: '0.05em' }}>B2B Price (Payout)</div>
-                          <div style={{ fontSize: '1.4rem', fontWeight: 900, color: '#1d4ed8' }}>₹{Math.round(b2bPrice).toLocaleString()}</div>
+                          <div style={{ fontSize: '0.72rem', fontWeight: 800, color: '#1d4ed8', textTransform: 'uppercase', marginBottom: 6, letterSpacing: '0.05em' }}>B2B Cost (Payout)</div>
+                          <div style={{ fontSize: '1.3rem', fontWeight: 900, color: '#1d4ed8' }}>₹{Math.round(propertyB2b).toLocaleString()}</div>
                         </div>
                         <div style={{ background: '#fef3c7', padding: '16px', borderRadius: 12, border: '1px solid #fde68a' }}>
-                          <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#d97706', textTransform: 'uppercase', marginBottom: 6, letterSpacing: '0.05em' }}>GST Amount</div>
-                          <div style={{ fontSize: '1.4rem', fontWeight: 900, color: '#d97706' }}>₹{Math.round(totalGstAmount).toLocaleString()}</div>
+                          <div style={{ fontSize: '0.72rem', fontWeight: 800, color: '#d97706', textTransform: 'uppercase', marginBottom: 6, letterSpacing: '0.05em' }}>GST Paid ({propGstRate}%)</div>
+                          <div style={{ fontSize: '1.3rem', fontWeight: 900, color: '#d97706' }}>₹{Math.round(propertyGst).toLocaleString()}</div>
                         </div>
                         <div style={{ background: '#ecfdf5', padding: '16px', borderRadius: 12, border: '1px solid #a7f3d0' }}>
-                          <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#059669', textTransform: 'uppercase', marginBottom: 6, letterSpacing: '0.05em' }}>StayBuddy Profit</div>
-                          <div style={{ fontSize: '1.4rem', fontWeight: 900, color: '#059669' }}>₹{Math.round(propertyProfit).toLocaleString()}</div>
+                          <div style={{ fontSize: '0.72rem', fontWeight: 800, color: '#059669', textTransform: 'uppercase', marginBottom: 6, letterSpacing: '0.05em' }}>Actual Profit (Net)</div>
+                          <div style={{ fontSize: '1.3rem', fontWeight: 900, color: '#059669' }}>₹{Math.round(propertyNet).toLocaleString()}</div>
+                          <div style={{ fontSize: '0.68rem', color: '#64748b', marginTop: 2 }}>Gross: ₹{Math.round(propertyGross).toLocaleString()}</div>
                         </div>
                       </div>
 
@@ -1814,17 +1864,16 @@ export default function AdminDashboard() {
                           <h4 style={{ fontSize: '0.85rem', fontWeight: 700, color: '#475569', marginBottom: 12 }}>Booking Breakdown</h4>
                           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                             {propertyBookings.map((bk: any) => {
-                              const nights = Math.ceil((new Date(bk.checkOut).getTime() - new Date(bk.checkIn).getTime()) / (1000 * 3600 * 24)) || 1;
-                              const rooms = bk.rooms || 1;
-                              const perRoomNightInclusive = bk.totalPrice / (nights * rooms);
-                              let gstP = 0;
-                              if (perRoomNightInclusive >= 7500) gstP = 18;
-                              else if (perRoomNightInclusive >= 1000) gstP = 5;
-                              
-                              const bkBase = bk.totalPrice / (1 + gstP / 100);
-                              const bkGst = bk.totalPrice - bkBase;
-                              const bkProfit = (bkBase * margin) / 100;
-                              const bkB2b = bkBase - bkProfit;
+                              const b2c = Number(bk.totalPrice) || 0;
+                              const margin = Number(h.marginPercentage) || 15;
+                              const bkB2b = Number(bk.totalPartnerPrice) > 0 ? Number(bk.totalPartnerPrice) : Math.round(b2c / (1 + margin / 100));
+                              const gross = Math.max(0, b2c - bkB2b);
+                              const nights = Number(bk.nights) || Number(bk.noOfNights) || 1;
+                              const rooms = Number(bk.rooms) || Number(bk.noOfRooms) || 1;
+                              const perRoomNightInclusive = b2c / (nights * rooms);
+                              const gstP = perRoomNightInclusive >= 7500 ? 18 : 5;
+                              const bkGst = Math.round(gross * (gstP / (100 + gstP)));
+                              const bkProfit = Math.max(0, gross - bkGst);
                               
                               return (
                                 <div key={bk._id} style={{ display: 'grid', gridTemplateColumns: '1fr auto auto auto', gap: 16, padding: '10px 12px', background: '#f8fafc', borderRadius: 8, border: '1px solid #e2e8f0', alignItems: 'center', fontSize: '0.8rem' }}>
@@ -1835,14 +1884,14 @@ export default function AdminDashboard() {
                                   </div>
                                   <div style={{ textAlign: 'right' }}>
                                     <div style={{ color: '#64748b', fontSize: '0.65rem', fontWeight: 800, textTransform: 'uppercase', marginBottom: 2 }}>B2C / B2B</div>
-                                    <div style={{ fontWeight: 700, color: '#0f172a' }}>₹{Math.round(bk.totalPrice).toLocaleString()} <span style={{ color: '#cbd5e1', fontWeight: 400 }}>|</span> <span style={{ color: '#1d4ed8' }}>₹{Math.round(bkB2b).toLocaleString()}</span></div>
+                                    <div style={{ fontWeight: 700, color: '#0f172a' }}>₹{Math.round(b2c).toLocaleString()} <span style={{ color: '#cbd5e1', fontWeight: 400 }}>|</span> <span style={{ color: '#1d4ed8' }}>₹{Math.round(bkB2b).toLocaleString()}</span></div>
                                   </div>
                                   <div style={{ textAlign: 'right' }}>
                                     <div style={{ color: '#64748b', fontSize: '0.65rem', fontWeight: 800, textTransform: 'uppercase', marginBottom: 2 }}>GST ({gstP}%)</div>
                                     <div style={{ fontWeight: 700, color: '#d97706' }}>₹{Math.round(bkGst).toLocaleString()}</div>
                                   </div>
                                   <div style={{ textAlign: 'right' }}>
-                                    <div style={{ color: '#64748b', fontSize: '0.65rem', fontWeight: 800, textTransform: 'uppercase', marginBottom: 2 }}>Profit</div>
+                                    <div style={{ color: '#64748b', fontSize: '0.65rem', fontWeight: 800, textTransform: 'uppercase', marginBottom: 2 }}>Actual Profit</div>
                                     <div style={{ fontWeight: 700, color: '#059669' }}>₹{Math.round(bkProfit).toLocaleString()}</div>
                                   </div>
                                 </div>
