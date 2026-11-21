@@ -71,6 +71,8 @@ export default async function InvoicePage({ params }: { params: Promise<{ id: st
     noOfGuests: guestsCount,
     tariffPerNight,
     basePrice,
+    couponCode: booking.couponCode || null,
+    discountAmount: Number(booking.discountAmount || booking.couponDiscount || 0),
     gstAmount,
     cgstAmount,
     sgstAmount,

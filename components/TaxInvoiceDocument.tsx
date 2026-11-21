@@ -23,6 +23,8 @@ export interface TaxInvoiceData {
   noOfGuests: number;
   tariffPerNight: number;
   basePrice: number;
+  couponCode?: string;
+  discountAmount?: number;
   gstAmount: number;
   cgstAmount: number;
   sgstAmount: number;
@@ -290,6 +292,12 @@ export default function TaxInvoiceDocument({ data }: { data: TaxInvoiceData }) {
                 <span style={{ color: '#475569', fontWeight: 700, fontSize: '12px' }}>Taxable Value:</span>
                 <strong style={{ color: '#0f172a', fontSize: '15px', fontWeight: 800 }}>₹{formatCurrency(data.basePrice)}</strong>
               </div>
+              {Number(data.discountAmount) > 0 && (
+                <div style={{ gridColumn: 'span 2', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#f0fdf4', padding: '9px 12px', borderRadius: 6, marginTop: 4, border: '1px solid #bbf7d0' }}>
+                  <span style={{ color: '#15803d', fontWeight: 700, fontSize: '12px' }}>Discount ({data.couponCode || 'FIRST150'}):</span>
+                  <strong style={{ color: '#15803d', fontSize: '14px', fontWeight: 800 }}>-₹{formatCurrency(data.discountAmount || 0)}</strong>
+                </div>
+              )}
             </div>
           </div>
 
@@ -328,6 +336,17 @@ export default function TaxInvoiceDocument({ data }: { data: TaxInvoiceData }) {
                     <td style={{ padding: '10px 14px', borderBottom: '1px solid #e2e8f0', color: '#475569', fontWeight: 600 }}>Total Taxable Value</td>
                     <td style={{ padding: '10px 14px', borderBottom: '1px solid #e2e8f0', textAlign: 'right', fontWeight: 700, color: '#0f172a' }}>₹{formatCurrency(data.basePrice)}</td>
                   </tr>
+
+                  {Number(data.discountAmount) > 0 && (
+                    <tr style={{ backgroundColor: '#f0fdf4' }}>
+                      <td style={{ padding: '9px 14px', borderBottom: '1px solid #e2e8f0', color: '#15803d', fontWeight: 700 }}>
+                        Discount (Coupon: {data.couponCode || 'FIRST150'})
+                      </td>
+                      <td style={{ padding: '9px 14px', borderBottom: '1px solid #e2e8f0', textAlign: 'right', color: '#15803d', fontWeight: 800 }}>
+                        -₹{formatCurrency(data.discountAmount || 0)}
+                      </td>
+                    </tr>
+                  )}
                   
                   {data.isInterState ? (
                     <tr>

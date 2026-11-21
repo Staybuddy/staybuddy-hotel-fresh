@@ -63,6 +63,8 @@ export default async function TaxInvoicePage({ params }: { params: Promise<{ id:
     noOfGuests,
     tariffPerNight,
     basePrice,
+    couponCode: inv.couponCode || null,
+    discountAmount: Number(inv.discountAmount || inv.couponDiscount || 0),
     gstAmount,
     cgstAmount,
     sgstAmount,

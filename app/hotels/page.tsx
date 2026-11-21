@@ -296,6 +296,17 @@ function HotelSearch() {
       });
     }
 
+    // Client-side max price filter (e.g. Hotels under 1,199)
+    if (filters.maxPrice) {
+      const maxP = parseFloat(filters.maxPrice);
+      if (!isNaN(maxP) && maxP > 0) {
+        list = list.filter((h: any) => {
+          const p = Number(h.startingPrice || h.price || 0);
+          return p > 0 && p <= maxP;
+        });
+      }
+    }
+
     if (filters.sortBy === 'newest') {
       return list.sort((a, b) => {
         const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;

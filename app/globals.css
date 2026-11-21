@@ -65,20 +65,19 @@ textarea,
   -webkit-touch-callout: default !important;
 }
 
-/* 2. Lock page bounds to prevent horizontal screen overflow & mobile zooming */
+/* 2. Lock page bounds to prevent horizontal screen overflow while keeping position:sticky active */
 html, body {
   width: 100%;
   max-width: 100%;
   margin: 0;
   padding: 0;
-  overflow-x: hidden !important;
+  overflow-x: clip !important;
   position: relative;
-  touch-action: pan-x pan-y;
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
 }
 
-/* Prevent iOS Safari / mobile browser auto-zoom on inputs */
+/* Prevent iOS Safari / mobile browser auto-zoom on inputs without breaking sticky header */
 @media screen and (max-width: 768px) {
   input, select, textarea {
     font-size: 16px !important;
