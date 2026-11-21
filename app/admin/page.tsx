@@ -2388,6 +2388,7 @@ export default function AdminDashboard() {
 
         return (
           <div
+            className="audit-modal-backdrop"
             style={{
               position: 'fixed',
               inset: 0,
@@ -2403,19 +2404,95 @@ export default function AdminDashboard() {
           >
             <style dangerouslySetInnerHTML={{__html: `
               @media print {
-                body * { visibility: hidden !important; }
-                #printable-audit-card, #printable-audit-card * { visibility: visible !important; }
+                @page {
+                  size: A4 portrait;
+                  margin: 10mm 10mm 12mm 10mm;
+                }
+                html, body {
+                  background: #ffffff !important;
+                  height: auto !important;
+                  min-height: 100% !important;
+                  overflow: visible !important;
+                  margin: 0 !important;
+                  padding: 0 !important;
+                  -webkit-print-color-adjust: exact !important;
+                  print-color-adjust: exact !important;
+                  color-adjust: exact !important;
+                }
+                body * {
+                  visibility: hidden !important;
+                }
+                .audit-modal-backdrop, .audit-modal-backdrop * {
+                  visibility: visible !important;
+                }
+                .audit-modal-backdrop {
+                  position: static !important;
+                  inset: auto !important;
+                  z-index: auto !important;
+                  background: transparent !important;
+                  backdrop-filter: none !important;
+                  padding: 0 !important;
+                  margin: 0 !important;
+                  display: block !important;
+                  width: 100% !important;
+                  height: auto !important;
+                  min-height: auto !important;
+                  overflow: visible !important;
+                }
                 #printable-audit-card {
-                  position: absolute !important;
-                  left: 0 !important;
-                  top: 0 !important;
+                  position: static !important;
+                  left: auto !important;
+                  top: auto !important;
                   width: 100% !important;
                   max-width: 100% !important;
+                  height: auto !important;
+                  min-height: auto !important;
+                  max-height: none !important;
+                  overflow: visible !important;
                   box-shadow: none !important;
                   border: none !important;
-                  padding: 10px !important;
+                  border-radius: 0 !important;
+                  margin: 0 !important;
+                  padding: 0 !important;
+                  display: block !important;
                 }
-                .audit-no-print { display: none !important; }
+                .audit-header-sticky {
+                  position: static !important;
+                  top: auto !important;
+                  border-radius: 0 !important;
+                  padding: 0 0 14px 0 !important;
+                  border-bottom: 2px solid #0f172a !important;
+                  background: transparent !important;
+                }
+                .audit-content-body {
+                  padding: 14px 0 0 0 !important;
+                  overflow: visible !important;
+                  display: flex !important;
+                  flex-direction: column !important;
+                  gap: 14px !important;
+                }
+                .audit-keep-together {
+                  break-inside: avoid !important;
+                  page-break-inside: avoid !important;
+                }
+                .audit-kpi-grid {
+                  display: grid !important;
+                  grid-template-columns: repeat(5, 1fr) !important;
+                  gap: 8px !important;
+                }
+                .audit-split-grid {
+                  display: grid !important;
+                  grid-template-columns: 1fr 1fr !important;
+                  gap: 12px !important;
+                }
+                .audit-reconcile-grid {
+                  display: grid !important;
+                  grid-template-columns: 1fr 1fr !important;
+                  gap: 12px !important;
+                }
+                .audit-no-print {
+                  display: none !important;
+                }
               }
             `}} />
 
@@ -2437,7 +2514,7 @@ export default function AdminDashboard() {
               onClick={e => e.stopPropagation()}
             >
               {/* Top Header */}
-              <div style={{
+              <div className="audit-header-sticky" style={{
                 padding: '24px 28px',
                 borderBottom: '1px solid #f1f5f9',
                 display: 'flex',
@@ -2539,9 +2616,9 @@ export default function AdminDashboard() {
               </div>
 
               {/* Modal Body */}
-              <div style={{ padding: '24px 28px', display: 'flex', flexDirection: 'column', gap: 24 }}>
+              <div className="audit-content-body" style={{ padding: '24px 28px', display: 'flex', flexDirection: 'column', gap: 24 }}>
                 {/* Property & Stay Overview Banner */}
-                <div style={{
+                <div className="audit-keep-together" style={{
                   background: '#f8fafc',
                   border: '1px solid #e2e8f0',
                   borderRadius: 16,
@@ -2598,7 +2675,7 @@ export default function AdminDashboard() {
 
                 {/* Optional Coupon Applied Banner (Funded from Margin) */}
                 {(b.couponCode || Number(b.discountAmount || b.couponDiscount || 0) > 0) && (
-                  <div style={{
+                  <div className="audit-keep-together" style={{
                     background: '#f0fdf4',
                     border: '1.5px solid #86efac',
                     borderRadius: 14,
@@ -2636,7 +2713,7 @@ export default function AdminDashboard() {
                 )}
 
                 {/* 5-Column High-Level KPI Summary Cards */}
-                <div style={{
+                <div className="audit-keep-together audit-kpi-grid" style={{
                   display: 'grid',
                   gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
                   gap: 12
@@ -2673,7 +2750,7 @@ export default function AdminDashboard() {
                 </div>
 
                 {/* Side-by-Side In-Depth Cost & Price Breakdown */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 20 }}>
+                <div className="audit-keep-together audit-split-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 20 }}>
                   {/* B2B Partner Payout Card */}
                   <div style={{
                     background: '#ffffff',
@@ -2768,7 +2845,7 @@ export default function AdminDashboard() {
                 </div>
 
                 {/* Tax Reconciliation & Net Profit P&L Box */}
-                <div style={{
+                <div className="audit-keep-together" style={{
                   background: 'linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%)',
                   borderRadius: 18,
                   border: '1px solid #e2e8f0',
@@ -2781,7 +2858,7 @@ export default function AdminDashboard() {
                     </h3>
                   </div>
 
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 20 }}>
+                  <div className="audit-reconcile-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 20 }}>
                     {/* GST Balance Table */}
                     <div style={{ background: 'white', padding: '16px 18px', borderRadius: 12, border: '1px solid #e2e8f0' }}>
                       <div style={{ fontSize: '0.8rem', fontWeight: 800, color: '#c2410c', textTransform: 'uppercase', marginBottom: 12 }}>
@@ -2850,7 +2927,16 @@ export default function AdminDashboard() {
 
                   <div style={{ display: 'flex', gap: 10 }}>
                     <button
-                      onClick={() => window.print()}
+                      onClick={() => {
+                        const card = document.getElementById('printable-audit-card');
+                        if (card) {
+                          card.scrollTop = 0;
+                        }
+                        window.scrollTo(0, 0);
+                        setTimeout(() => {
+                          window.print();
+                        }, 120);
+                      }}
                       style={{
                         padding: '10px 18px',
                         background: '#f8fafc',
