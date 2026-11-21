@@ -1415,7 +1415,7 @@ export default function HotelDetailPage() {
 
   const bottomBarButtonLabel = useMemo(() => {
     if (bookingStep === 1) {
-      const payAmount = currentPricing?.totalAmount || bottomBarPrice;
+      const payAmount = bottomBarPrice;
       return bookingLoading ? "PROCESSING..." : `PROCEED TO PAY ₹${payAmount.toLocaleString('en-IN')}`;
     }
     const displayRoom = selectedRoomsList[0]?.room || selectedRoom;
@@ -1437,6 +1437,7 @@ export default function HotelDetailPage() {
     selectedRoom,
     currentPricing?.totalAmount,
     bottomBarPrice,
+    couponDiscount,
   ]);
 
   if (loading)
@@ -5677,7 +5678,7 @@ export default function HotelDetailPage() {
                               borderRadius: "var(--radius-sm)",
                             }}
                           >
-                            ₹{currentPricing.totalAmount.toLocaleString()}
+                            ₹{bottomBarPrice.toLocaleString('en-IN')}
                           </span>
                         </>
                       )}
@@ -6626,7 +6627,7 @@ export default function HotelDetailPage() {
         <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0, flex: 1, paddingRight: 10 }}>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
             <span style={{ fontSize: '1.45rem', fontWeight: 900, color: '#ff6b35', lineHeight: 1.1, letterSpacing: '-0.02em' }}>
-              ₹{(bookingStep === 1 ? (currentPricing.totalAmount || bottomBarPrice) : bottomBarPrice).toLocaleString('en-IN')}
+              ₹{bottomBarPrice.toLocaleString('en-IN')}
             </span>
           </div>
           <div style={{ fontSize: '0.73rem', color: bookingStep === 1 ? '#86efac' : 'rgba(255, 255, 255, 0.72)', fontWeight: bookingStep === 1 ? 700 : 500, marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>

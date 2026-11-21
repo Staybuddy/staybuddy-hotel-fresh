@@ -327,10 +327,8 @@ export async function POST(request: NextRequest) {
     const basePartnerPrice = partnerPricing ? Math.round(partnerPricing.basePricePerNight / requestedRooms) : clientPrice;
     const totalPartnerPrice = partnerPricing ? partnerPricing.priceAfterDiscount : pricing.priceAfterDiscount;
 
-    // The 5% discount is deducted strictly from StayBuddy margin (Partner receives their exact totalPartnerPrice)
-    const discountedBase = Math.max(0, pricing.basePricePerNight - couponDiscount);
-    const discountedGst = Math.round(discountedBase * 0.05);
-    const totalPrice = couponDiscount > 0 ? (discountedBase + discountedGst) : pricing.totalAmount;
+    // The discount is deducted strictly from StayBuddy margin (Partner receives their exact totalPartnerPrice)
+    const totalPrice = couponDiscount > 0 ? Math.max(0, pricing.totalAmount - couponDiscount) : pricing.totalAmount;
 
     const rawStaybuddyProfit = pricing.priceAfterDiscount - (partnerPricing ? partnerPricing.priceAfterDiscount : pricing.priceAfterDiscount);
     const staybuddyProfit = Math.max(0, rawStaybuddyProfit - couponDiscount);
