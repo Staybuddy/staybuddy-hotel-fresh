@@ -117,27 +117,34 @@ export async function reconcileBookingPayment(bookingId: string, options: Paymen
 
   // Send confirmation emails
   try {
-    sendBookingConfirmationEmail(populatedBooking).catch(err => {
-      console.error('Failed to send booking confirmation email:', err);
-    });
+    const emailPromises: Promise<any>[] = [];
 
-    // Send internal audit email to StayBuddy accounts team
-    sendPaymentAuditEmail(populatedBooking, {
-      paymentId: options.paymentId,
-      orderId: options.orderId,
-      paymentMethod: options.paymentMethod,
-      source: options.source
-    }).catch(err => {
-      console.error('Failed to send payment audit email:', err);
-    });
+    // 1. Client Booking Confirmation & Tax Invoice Email
+    emailPromises.push(
+      sendBookingConfirmationEmail(populatedBooking)
+        .then(() => console.log(`[Reconcile] Client confirmation email sent to ${populatedBooking.guestEmail}`))
+        .catch(err => console.error('[Reconcile] Failed to send client confirmation email:', err))
+    );
 
+    // 2. Admin Payment Audit Email (to StayBuddy Admin)
+    emailPromises.push(
+      sendPaymentAuditEmail(populatedBooking, {
+        paymentId: options.paymentId,
+        orderId: options.orderId,
+        paymentMethod: options.paymentMethod,
+        source: options.source
+      })
+        .then(() => console.log(`[Reconcile] Admin audit email sent to ${process.env.ADMIN_AUDIT_EMAIL || 'staybuddyhotels@gmail.com'}`))
+        .catch(err => console.error('[Reconcile] Failed to send admin audit email:', err))
+    );
+
+    // 3. Hotel Partner Notification Email (Strictly to the hotel's assigned partner/contact email)
     if (hotel) {
       const notificationEmails = new Set<string>();
       
       // Strict Partner Email Notification:
-      // When an admin adds a property and enters a specific hotel email in Partner Extranet,
+      // When an admin adds a property and enters a specific hotel email in Partner Extranet / CRM,
       // the partner booking alert must ONLY be sent to that designated hotel email (contactEmail / partnerEmail).
-      // StayBuddy admin emails must NEVER receive the hotel partner notification (Admin already receives sendPaymentAuditEmail).
       // Dedicated hotel email assigned by admin / partner in Extranet:
       const designatedPartnerEmail = (hotel.contactEmail || hotel.partnerEmail || hotel.email || '').trim().toLowerCase();
       if (designatedPartnerEmail && designatedPartnerEmail.includes('@') && !designatedPartnerEmail.includes('staybuddy')) {
@@ -186,11 +193,16 @@ export async function reconcileBookingPayment(bookingId: string, options: Paymen
       console.log(`[Reconcile] Dispatching hotel partner notification to ${notificationEmails.size} email(s):`, Array.from(notificationEmails));
 
       notificationEmails.forEach(email => {
-        sendPartnerNotificationEmail(populatedBooking, email).catch(err => {
-          console.error(`Failed to send partner notification email to ${email}:`, err);
-        });
+        emailPromises.push(
+          sendPartnerNotificationEmail(populatedBooking, email)
+            .then(() => console.log(`[Reconcile] Partner notification email sent to ${email}`))
+            .catch(err => console.error(`[Reconcile] Failed to send partner notification email to ${email}:`, err))
+        );
       });
     }
+
+    // Await all 3 emails so serverless function does not terminate before SMTP finishes
+    await Promise.allSettled(emailPromises);
   } catch (emailErr) {
     console.error('Email dispatch error in payment reconciliation:', emailErr);
   }
