@@ -206,13 +206,13 @@ export async function GET(request: NextRequest) {
 
     hotels = hotels.sort((a: any, b: any) => (b.avgRating || 0) - (a.avgRating || 0));
     
+    const maxPriceParam = searchParams.get('maxPrice') ? parseFloat(searchParams.get('maxPrice')!) : null;
     const page = parseInt(searchParams.get('page') || '1');
-    const total = hotels.length;
     const skip = (page - 1) * limitParam;
-    const paginatedHotels = hotels.slice(skip, skip + limitParam);
 
-    // 2. High-Performance Batch Loading: Query rooms & bookings in single operations
-    const hotelIds = paginatedHotels.map((h: any) => h._id).filter(Boolean);
+    // When filtering by maxPrice (e.g. Hotels under 1,199), inspect all candidate hotels
+    const candidateHotels = maxPriceParam !== null ? hotels : hotels.slice(skip, skip + limitParam);
+    const hotelIds = candidateHotels.map((h: any) => h._id).filter(Boolean);
 
     const roomsByHotelId: Record<string, any[]> = {};
     if (hotelIds.length > 0) {
@@ -251,7 +251,7 @@ export async function GET(request: NextRequest) {
     }
 
     // 3. Instant In-Memory Aggregation: 0ms per hotel instead of 100ms
-    const hotelsWithPrices = paginatedHotels.map((hotel: any) => {
+    const hotelsWithPrices = candidateHotels.map((hotel: any) => {
       let collRooms = roomsByHotelId[hotel._id] || [];
       let rooms: any[] = [];
       if (hotel.rooms && Array.isArray(hotel.rooms) && hotel.rooms.length > 0) {
@@ -389,17 +389,29 @@ export async function GET(request: NextRequest) {
       return { ...hotel, images: hotelImages, startingPrice, startingB2BPrice, roomsLeft, _blockedOutAllRooms: status !== 'all' && rooms.length > 0 && maxBlockedRoomsOnStay > 0 && roomsLeft <= 0 };
     });
 
-    const filteredHotelsWithPrices = hotelsWithPrices
+    let filteredHotelsWithPrices = hotelsWithPrices
       .filter((h: any) => !h._blockedOutAllRooms)
       .map(({ _blockedOutAllRooms, ...rest }: any) => rest);
-    const blockedOutDelta = hotelsWithPrices.length - filteredHotelsWithPrices.length;
-    const adjustedTotal = Math.max(0, total - blockedOutDelta);
+
+    if (maxPriceParam !== null) {
+      filteredHotelsWithPrices = filteredHotelsWithPrices.filter((h: any) => 
+        Number(h.startingPrice) > 0 && Number(h.startingPrice) <= maxPriceParam
+      );
+    }
+
+    const adjustedTotal = maxPriceParam !== null 
+      ? filteredHotelsWithPrices.length 
+      : Math.max(0, hotels.length - (hotelsWithPrices.length - filteredHotelsWithPrices.length));
+
+    const finalPaginatedHotels = maxPriceParam !== null 
+      ? filteredHotelsWithPrices.slice(skip, skip + limitParam) 
+      : filteredHotelsWithPrices;
 
     const responsePayload = {
-      hotels: filteredHotelsWithPrices,
+      hotels: finalPaginatedHotels,
       total: adjustedTotal,
       page,
-      pages: Math.ceil(adjustedTotal / limitParam),
+      pages: Math.max(1, Math.ceil(adjustedTotal / limitParam)),
     };
 
     setCached(cacheKey, responsePayload, 30);

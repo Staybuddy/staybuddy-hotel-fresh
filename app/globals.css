@@ -65,14 +65,24 @@ textarea,
   -webkit-touch-callout: default !important;
 }
 
-/* 2. Lock page bounds to prevent horizontal screen overflow */
+/* 2. Lock page bounds to prevent horizontal screen overflow & mobile zooming */
 html, body {
   width: 100%;
   max-width: 100%;
   margin: 0;
   padding: 0;
-  overflow-x: clip !important;
+  overflow-x: hidden !important;
   position: relative;
+  touch-action: pan-x pan-y;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+/* Prevent iOS Safari / mobile browser auto-zoom on inputs */
+@media screen and (max-width: 768px) {
+  input, select, textarea {
+    font-size: 16px !important;
+  }
 }
 
 /* 3. Make all media elements automatically shrink to fit small screens */

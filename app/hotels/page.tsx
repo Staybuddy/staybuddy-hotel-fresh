@@ -40,6 +40,7 @@ function HotelSearch() {
     guests: searchParams.get('guests') || '1',
     category: searchParams.get('category') || (searchParams.get('collection') === 'premium' ? 'premium' : ''),
     propertyType: searchParams.get('propertyType') || '',
+    maxPrice: searchParams.get('maxPrice') || '',
     minRating: searchParams.get('starRating') || searchParams.get('minRating') || '',
     starRating: searchParams.get('starRating') || searchParams.get('minRating') || '',
     sortBy: 'rating',
@@ -93,6 +94,7 @@ function HotelSearch() {
       if (filters.children) q.set('children', filters.children.toString());
       if (filters.category) q.set('category', filters.category);
       if (filters.propertyType) q.set('propertyType', filters.propertyType);
+      if (filters.maxPrice) q.set('maxPrice', filters.maxPrice);
       const activeRating = filters.starRating || filters.minRating;
       if (activeRating) q.set('starRating', activeRating);
 
@@ -132,6 +134,7 @@ function HotelSearch() {
       checkOut: searchParams.has('checkOut') ? validOut : p.checkOut,
       category: searchParams.has('category') ? (searchParams.get('category') || '') : (searchParams.get('collection') === 'premium' ? 'premium' : ''),
       propertyType: searchParams.has('propertyType') ? (searchParams.get('propertyType') || '') : '',
+      maxPrice: searchParams.has('maxPrice') ? (searchParams.get('maxPrice') || '') : p.maxPrice,
       minRating: searchParams.has('starRating') ? (searchParams.get('starRating') || '') : (searchParams.has('minRating') ? (searchParams.get('minRating') || '') : ''),
       starRating: searchParams.has('starRating') ? (searchParams.get('starRating') || '') : (searchParams.has('minRating') ? (searchParams.get('minRating') || '') : ''),
       rooms: searchParams.has('rooms') ? parseInt(searchParams.get('rooms') as string, 10) : p.rooms,
@@ -200,6 +203,7 @@ function HotelSearch() {
     if (filters.city) params.set('city', filters.city);
     if (filters.category) params.set('category', filters.category);
     if (filters.propertyType) params.set('propertyType', filters.propertyType);
+    if (filters.maxPrice) params.set('maxPrice', filters.maxPrice);
     const activeRating = filters.starRating || filters.minRating;
     if (activeRating) {
       params.set('starRating', activeRating);
@@ -783,12 +787,47 @@ function HotelSearch() {
         {/* Hotel Grid */}
         <div className="hotels-content-wrapper" style={{ flex: 1, minWidth: 0, width: '100%' }}>
           {/* Results header */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-5)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-5)', flexWrap: 'wrap', gap: 12 }}>
             <div>
-              <h2 style={{ fontSize: '1.25rem', marginBottom: 2 }}>
-                {filters.city ? `Hotels in ${filters.city}` : 'All Hotels'}
-              </h2>
-              <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                <h2 style={{ fontSize: '1.25rem', margin: 0 }}>
+                  {filters.maxPrice === '1199' 
+                    ? (filters.city ? `Hotels under ₹1,199 in ${filters.city}` : 'Hotels Under ₹1,199')
+                    : (filters.city ? `Hotels in ${filters.city}` : 'All Hotels')}
+                </h2>
+                {filters.maxPrice && (
+                  <span style={{
+                    background: '#fff7ed',
+                    border: '1px solid #fdba74',
+                    color: '#c2410c',
+                    padding: '3px 10px',
+                    borderRadius: 20,
+                    fontSize: '0.78rem',
+                    fontWeight: 800,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 6
+                  }}>
+                    💸 Under ₹{Number(filters.maxPrice).toLocaleString('en-IN')} (Pocket Friendly)
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setFilters(p => ({ ...p, maxPrice: '' }));
+                        try {
+                          const url = new URL(window.location.href);
+                          url.searchParams.delete('maxPrice');
+                          window.history.replaceState(null, '', url.toString());
+                        } catch (_) {}
+                      }}
+                      style={{ background: 'none', border: 'none', color: '#ea580c', cursor: 'pointer', fontWeight: 900, padding: 0 }}
+                      title="Clear price filter"
+                    >
+                      ✕
+                    </button>
+                  </span>
+                )}
+              </div>
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', marginTop: 4 }}>
                 {loading ? 'Searching...' : `${sortedHotels.length} ${sortedHotels.length === 1 ? 'property' : 'properties'} found`}
               </p>
             </div>

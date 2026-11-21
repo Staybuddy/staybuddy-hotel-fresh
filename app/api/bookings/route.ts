@@ -288,13 +288,13 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    // Resolve Coupon Discount (Flat 5% on 1st booking, funded from StayBuddy margin)
+    // Resolve Coupon Discount (Flat ₹150 on 1st booking, funded from StayBuddy margin)
     let couponCode = body.couponCode ? String(body.couponCode).trim().toUpperCase() : null;
     let couponDiscount = 0;
     let isFirstBookingDiscount = false;
 
-    if (couponCode === 'FIRST5' || couponCode === 'STAYBUDDY5' || couponCode === 'STAYBUDDY20') {
-      const discountPercent = couponCode === 'STAYBUDDY20' ? 20 : 5;
+    if (couponCode === 'FIRST150' || couponCode === 'FIRST5' || couponCode === 'STAY150' || couponCode === 'STAYBUDDY150' || couponCode === 'STAYBUDDY5' || couponCode === 'STAYBUDDY20') {
+      const isPercent20 = couponCode === 'STAYBUDDY20';
       const cleanEmail = guestEmail ? String(guestEmail).trim().toLowerCase() : '';
 
       let isEligible = true;
@@ -316,7 +316,9 @@ export async function POST(request: NextRequest) {
       }
 
       if (isEligible) {
-        couponDiscount = Math.round(pricing.basePricePerNight * (discountPercent / 100));
+        couponDiscount = isPercent20 
+          ? Math.round(pricing.basePricePerNight * 0.20)
+          : Math.min(pricing.totalAmount, 150);
         isFirstBookingDiscount = true;
       } else {
         couponCode = null;

@@ -871,15 +871,15 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
         </div>
       </section>
 
-      {/* ===== LIMITED TIME OFFER / FIRST BOOKING 5% DISCOUNT BANNER ===== */}
+      {/* ===== LIMITED TIME OFFER / FIRST BOOKING ₹150 DISCOUNT BANNER ===== */}
       <section className="container" style={{ margin: '20px auto' }}>
         <div 
           onClick={() => {
             try {
-              localStorage.setItem('staybuddy_claimed_coupon', 'FIRST5');
-              localStorage.setItem('staybuddy_coupon', 'FIRST5');
+              localStorage.setItem('staybuddy_claimed_coupon', 'FIRST150');
+              localStorage.setItem('staybuddy_coupon', 'FIRST150');
             } catch (e) {}
-            router.push('/hotels?coupon=FIRST5');
+            router.push('/hotels?coupon=FIRST150');
           }}
           style={{
             background: 'linear-gradient(135deg, #f59e0b 0%, #ea580c 50%, #d97706 100%)',
@@ -912,9 +912,9 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
               <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'rgba(255,255,255,0.22)', backdropFilter: 'blur(4px)', color: 'white', padding: '4px 12px', borderRadius: 'var(--radius-full)', fontSize: '0.78rem', fontWeight: 800, marginBottom: 12, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                 <span>⚡</span> Limited Time Offer
               </div>
-              <h2 style={{ color: 'white', marginBottom: 8, fontSize: '1.8rem', fontWeight: 900, textShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>Flat 5% Off On Your 1st Booking!</h2>
+              <h2 style={{ color: 'white', marginBottom: 8, fontSize: '1.8rem', fontWeight: 900, textShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>Flat ₹150 Off On Your 1st Booking!</h2>
               <p style={{ color: 'rgba(255,255,255,0.95)', fontSize: '1.02rem', margin: 0, lineHeight: 1.5 }}>
-                Use coupon <span style={{ background: 'rgba(255,255,255,0.25)', border: '1px dashed rgba(255,255,255,0.7)', padding: '2px 8px', borderRadius: 6, fontWeight: 900, letterSpacing: '0.04em' }}>FIRST5</span> — automatically applied at checkout from StayBuddy margin!
+                Use coupon <span style={{ background: 'rgba(255,255,255,0.25)', border: '1px dashed rgba(255,255,255,0.7)', padding: '2px 8px', borderRadius: 6, fontWeight: 900, letterSpacing: '0.04em' }}>FIRST150</span> — automatically applied at checkout from StayBuddy margin!
               </p>
             </div>
             
@@ -933,7 +933,19 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
 
       {/* ===== BUDGET STAYS CARD ===== */}
       <section className="container" style={{ marginBottom: '22px' }}>
-        <Link href="/hotels?maxPrice=1199" style={{ textDecoration: 'none' }}>
+        <Link 
+          href="/hotels?maxPrice=1199" 
+          style={{ textDecoration: 'none' }}
+          onClick={() => {
+            try {
+              const saved = localStorage.getItem('staybuddy_last_search');
+              if (saved) {
+                const p = JSON.parse(saved);
+                localStorage.setItem('staybuddy_last_search', JSON.stringify({ ...p, location: '' }));
+              }
+            } catch (e) {}
+          }}
+        >
           <div style={{
             position: 'relative',
             borderRadius: 'var(--radius-xl)',
@@ -2061,7 +2073,7 @@ function FeaturedSpotlightHotel({ hotel, isWishlisted }: { hotel: any, isWishlis
             {/* Urgency tag */}
             <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#fff7ed', border: '1px solid #fed7aa', color: '#c2410c', fontSize: '0.82rem', fontWeight: 700, padding: '5px 12px', borderRadius: '8px', marginBottom: 20 }}>
               <span>🔥</span>
-              <span>Special Offer: Save flat 5% on your 1st booking with coupon FIRST5</span>
+              <span>Special Offer: Save flat ₹150 on your 1st booking with coupon FIRST150</span>
             </div>
           </div>
 

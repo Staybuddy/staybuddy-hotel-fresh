@@ -512,8 +512,8 @@ export default function HotelDetailPage() {
       const data = await res.json();
       if (data.valid) {
         setAppliedCoupon(data.code);
-        setCouponDiscount(Number(data.discountAmount) || Math.round(basePrice * 0.05));
-        setCouponSuccess(data.message || `🎉 ${data.discountPercentage}% Discount Applied!`);
+        setCouponDiscount(Number(data.discountAmount) || 150);
+        setCouponSuccess(data.message || `🎉 Flat ₹150 Off Discount Applied!`);
         try {
           localStorage.setItem("staybuddy_claimed_coupon", data.code);
           localStorage.setItem("staybuddy_coupon", data.code);
@@ -542,13 +542,13 @@ export default function HotelDetailPage() {
     } catch (e) {}
   };
 
-  // Auto-apply FIRST5 when user enters review step if coupon was claimed
+  // Auto-apply FIRST150 when user enters review step if coupon was claimed
   useEffect(() => {
     if (bookingStep === 1 && !appliedCoupon) {
       const urlCoupon = searchParams.get("coupon");
       const savedCoupon = typeof window !== 'undefined' ? (localStorage.getItem("staybuddy_coupon") || localStorage.getItem("staybuddy_claimed_coupon")) : null;
       const target = (urlCoupon || savedCoupon || couponCodeInput || "").trim().toUpperCase();
-      if (target === "FIRST5" || target === "STAYBUDDY5") {
+      if (target === "FIRST150" || target === "FIRST5" || target === "STAYBUDDY150" || target === "STAYBUDDY5") {
         applyCouponCode(target);
       }
     }
@@ -3942,7 +3942,7 @@ export default function HotelDetailPage() {
                     >
                       <span style={{ fontSize: "1.2rem" }}>🚆</span>
                       <div style={{ fontSize: "0.8rem", color: "#166534", lineHeight: 1.4 }}>
-                        <span style={{ fontWeight: 800 }}>First Stay Offer:</span> Save flat 5% on 1st booking with coupon{" "}
+                        <span style={{ fontWeight: 800 }}>First Stay Offer:</span> Save flat ₹150 on 1st booking with coupon{" "}
                         <span
                           style={{
                             fontWeight: 800,
@@ -3952,7 +3952,7 @@ export default function HotelDetailPage() {
                             borderRadius: "4px",
                           }}
                         >
-                          FIRST5
+                          FIRST150
                         </span>
                       </div>
                     </div>
@@ -5328,7 +5328,7 @@ export default function HotelDetailPage() {
                           }}
                         >
                           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                            <span>⚡ 1st Booking Discount (5% Off)</span>
+                            <span>⚡ 1st Booking Discount (Flat ₹150 Off)</span>
                             <span style={{ fontSize: "0.7rem", background: "#dcfce7", color: "#15803d", padding: "2px 6px", borderRadius: 4, fontWeight: 800 }}>
                               {appliedCoupon}
                             </span>
@@ -5431,8 +5431,8 @@ export default function HotelDetailPage() {
                         <button
                           type="button"
                           onClick={() => {
-                            setCouponCodeInput("FIRST5");
-                            applyCouponCode("FIRST5");
+                            setCouponCodeInput("FIRST150");
+                            applyCouponCode("FIRST150");
                           }}
                           style={{
                             fontSize: "0.78rem",
@@ -5444,7 +5444,7 @@ export default function HotelDetailPage() {
                             textDecoration: "underline",
                           }}
                         >
-                          Apply FIRST5
+                          Apply FIRST150
                         </button>
                       )}
                     </div>
@@ -5469,7 +5469,7 @@ export default function HotelDetailPage() {
                               Coupon {appliedCoupon} Applied!
                             </div>
                             <div style={{ fontSize: "0.75rem", color: "#15803d", marginTop: 2 }}>
-                              Flat 5% Off (-₹{couponDiscount.toLocaleString("en-IN")}) • Funded by StayBuddy Margin
+                              Flat ₹150 Off (-₹{couponDiscount.toLocaleString("en-IN")}) • Funded by StayBuddy Margin
                             </div>
                           </div>
                         </div>
@@ -5500,7 +5500,7 @@ export default function HotelDetailPage() {
                               setCouponCodeInput(e.target.value.toUpperCase());
                               setCouponError("");
                             }}
-                            placeholder="HAVE A COUPON CODE? (e.g. FIRST5)"
+                            placeholder="HAVE A COUPON CODE? (e.g. FIRST150)"
                             style={{
                               flex: 1,
                               minWidth: 0,
@@ -5538,8 +5538,8 @@ export default function HotelDetailPage() {
                         {/* Quick 1st booking prompt */}
                         <div
                           onClick={() => {
-                            setCouponCodeInput("FIRST5");
-                            applyCouponCode("FIRST5");
+                            setCouponCodeInput("FIRST150");
+                            applyCouponCode("FIRST150");
                           }}
                           style={{
                             marginTop: 10,
@@ -5555,7 +5555,7 @@ export default function HotelDetailPage() {
                           }}
                         >
                           <span style={{ color: "#c2410c", fontWeight: 700 }}>
-                            ⚡ First time on StayBuddy? Tap to apply <strong>FIRST5</strong> for 5% off!
+                            ⚡ First time on StayBuddy? Tap to apply <strong>FIRST150</strong> for flat ₹150 off!
                           </span>
                           <span style={{ color: "#ea580c", fontWeight: 800 }}>APPLY ›</span>
                         </div>

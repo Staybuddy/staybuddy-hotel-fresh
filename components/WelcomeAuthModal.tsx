@@ -244,7 +244,7 @@ export default function WelcomeAuthModal() {
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                   <span style={{ fontSize: '0.85rem', fontWeight: 900, color: '#9a3412' }}>
-                    Flat 5% OFF First Stay
+                    Flat ₹150 OFF First Stay
                   </span>
                   <span
                     style={{
@@ -257,7 +257,7 @@ export default function WelcomeAuthModal() {
                       letterSpacing: '0.04em',
                     }}
                   >
-                    FIRST5
+                    FIRST150
                   </span>
                 </div>
                 <div style={{ fontSize: '0.72rem', color: '#7c2d12', marginTop: 1 }}>

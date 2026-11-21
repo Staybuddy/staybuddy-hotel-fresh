@@ -15,9 +15,9 @@ export async function POST(request: NextRequest) {
     const cleanCode = String(code).trim().toUpperCase();
     const cleanEmail = email ? String(email).trim().toLowerCase() : '';
 
-    // Flat 5% First Booking Coupon
-    if (cleanCode === 'FIRST5' || cleanCode === 'STAYBUDDY5' || cleanCode === 'STAYBUDDY20') {
-      const discountPercent = cleanCode === 'STAYBUDDY20' ? 20 : 5;
+    // Flat ₹150 First Booking Coupon (FIRST150)
+    if (cleanCode === 'FIRST150' || cleanCode === 'FIRST5' || cleanCode === 'STAY150' || cleanCode === 'STAYBUDDY150' || cleanCode === 'STAYBUDDY5' || cleanCode === 'STAYBUDDY20') {
+      const isPercent20 = cleanCode === 'STAYBUDDY20';
 
       if (cleanEmail) {
         // Check if customer already has any confirmed or completed bookings with this email
@@ -37,15 +37,18 @@ export async function POST(request: NextRequest) {
       }
 
       const numBase = Math.max(0, Number(basePrice) || 0);
-      const discountAmount = Math.round(numBase * (discountPercent / 100));
+      const discountAmount = isPercent20 ? Math.round(numBase * 0.20) : Math.min(numBase > 0 ? numBase : 150, 150);
 
       return NextResponse.json({
         valid: true,
-        code: cleanCode,
-        discountPercentage: discountPercent,
+        code: cleanCode === 'FIRST5' ? 'FIRST150' : cleanCode,
+        discountType: isPercent20 ? 'percentage' : 'flat',
+        discountPercentage: isPercent20 ? 20 : 0,
         discountAmount,
         fundedBy: 'StayBuddy Margin',
-        message: `🎉 Flat ${discountPercent}% First Booking Discount Applied! (Funded directly from StayBuddy margin)`
+        message: isPercent20 
+          ? `🎉 Flat 20% First Booking Discount Applied! (Funded from StayBuddy margin)` 
+          : `🎉 Flat ₹150 Off On Your 1st Booking Applied! (Funded directly from StayBuddy margin)`
       });
     }
 
