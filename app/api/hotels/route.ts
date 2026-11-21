@@ -4,7 +4,7 @@ import { db } from '@/lib/firebaseAdmin';
 import { applyMarginToRoom, getRoomPriceForOccupancy } from '@/lib/occupancyPricing';
 import { getCached, setCached, invalidateCache } from '@/lib/cache';
 import { getStayNights, isHotelBlockedForDates, getRoomBlockedCountForNight } from '@/lib/inventoryBlocks';
-import { calculateSmartScore } from '@/lib/smartSearch';
+import { calculateSmartScore, getSignificantTokens, cleanText } from '@/lib/smartSearch';
 
 export async function GET(request: NextRequest) {
   try {
@@ -87,28 +87,55 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // Smart AI Memory Filter: handles city, area, hotel name, phonetic variations & typos
+    // Smart AI Memory Filter: handles city, area, hotel name, multi-token combinations, phonetic variations & typos
     if (city) {
+      const cityClean = cleanText(city);
       const cityLower = city.toLowerCase().trim();
+      const cityTokens = getSignificantTokens(city);
+
       hotels = hotels
         .map((h: any) => {
+          const hName = (h.name || '').trim();
+          const hCity = (h.city || '').trim();
+          const hArea = (h.area || '').trim();
+          const hAddress = (h.address || '').trim();
+
           const score = Math.max(
-            calculateSmartScore(city, h.name || ''),
-            calculateSmartScore(city, h.city || ''),
-            calculateSmartScore(city, h.area || ''),
-            calculateSmartScore(city, h.address || '')
+            calculateSmartScore(city, hName),
+            calculateSmartScore(city, hCity),
+            calculateSmartScore(city, hArea),
+            calculateSmartScore(city, hAddress)
           );
-          return { ...h, smartScore: score };
+
+          const hNameLower = hName.toLowerCase();
+          const hCityLower = hCity.toLowerCase();
+          const hAreaLower = hArea.toLowerCase();
+          const hAddressLower = hAddress.toLowerCase();
+
+          // Substring match on trimmed text
+          const directMatch =
+            (hCityLower && (hCityLower.includes(cityLower) || cityLower.includes(hCityLower))) ||
+            (hAreaLower && (hAreaLower.includes(cityLower) || cityLower.includes(hAreaLower))) ||
+            (hNameLower && (hNameLower.includes(cityLower) || cityLower.includes(hNameLower))) ||
+            (hAddressLower && hAddressLower.includes(cityLower));
+
+          // Multi-token match: If query contains multiple words (e.g. "Vijayawada India" or "Hotel Minerva"), check tokens
+          const tokenMatch = cityTokens.some(token => {
+            if (!token || token.length < 2) return false;
+            return (
+              hCityLower.includes(token) ||
+              hAreaLower.includes(token) ||
+              hNameLower.includes(token) ||
+              calculateSmartScore(token, hCity) >= 70 ||
+              calculateSmartScore(token, hName) >= 70
+            );
+          });
+
+          return { ...h, smartScore: score, isTextMatched: directMatch || tokenMatch };
         })
         .filter((h: any) => {
-          if (h.smartScore >= 60) return true;
-          // Fallback to substring matching
-          return (
-            h.city?.toLowerCase().includes(cityLower) ||
-            h.area?.toLowerCase().includes(cityLower) ||
-            h.name?.toLowerCase().includes(cityLower) ||
-            cityLower.includes(h.city?.toLowerCase() || '')
-          );
+          if (h.smartScore >= 55) return true;
+          return Boolean(h.isTextMatched);
         })
         .sort((a: any, b: any) => (b.smartScore || 0) - (a.smartScore || 0));
     }

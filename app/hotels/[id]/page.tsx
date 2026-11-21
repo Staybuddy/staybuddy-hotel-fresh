@@ -269,67 +269,66 @@ export default function HotelDetailPage() {
     }
   }, [bookingData.adults, bookingData.rooms, occupancy]);
 
+  const isHydratedRef = useRef(false);
+
   useEffect(() => {
-    if (searchParamsInitialized.current) return;
-    searchParamsInitialized.current = true;
     const now = new Date();
     const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
     const tom = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
     const tomStr = `${tom.getFullYear()}-${String(tom.getMonth() + 1).padStart(2, '0')}-${String(tom.getDate()).padStart(2, '0')}`;
 
+    let parsedSaved: any = null;
+    try {
+      const saved = localStorage.getItem('staybuddy_last_search');
+      if (saved) parsedSaved = JSON.parse(saved);
+    } catch (_) {}
+
     let checkInParam = searchParams.get("checkIn");
+    if (!checkInParam && parsedSaved?.checkIn && parsedSaved.checkIn >= todayStr) {
+      checkInParam = parsedSaved.checkIn;
+    }
     if (checkInParam && checkInParam < todayStr) checkInParam = todayStr;
+
     let checkOutParam = searchParams.get("checkOut");
-    if (checkInParam && checkOutParam && checkInParam >= checkOutParam) {
+    if (!checkOutParam && parsedSaved?.checkOut) {
+      checkOutParam = parsedSaved.checkOut;
+    }
+    if (checkInParam && (!checkOutParam || checkInParam >= checkOutParam)) {
       const parts = checkInParam.split('-').map(Number);
       if (parts.length === 3) {
         const d = new Date(parts[0], parts[1] - 1, parts[2] + 1);
         checkOutParam = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
       }
     }
-    if (checkInParam || searchParams.has("adults") || searchParams.has("rooms")) {
-      const rawA = searchParams.has("adults") ? parseInt(searchParams.get("adults") as string, 10) : getStoredAdults();
-      const rawR = searchParams.has("rooms") ? parseInt(searchParams.get("rooms") as string, 10) : getStoredRooms(rawA);
-      const safeA = Math.max(1, isNaN(rawA) ? 1 : rawA);
-      const safeR = Math.min(safeA, Math.max(1, isNaN(rawR) ? 1 : rawR));
-      setBookingData(p => ({
-        ...p,
-        checkIn: checkInParam || (p.checkIn && p.checkIn >= todayStr ? p.checkIn : todayStr),
-        checkOut: checkOutParam || (p.checkOut && (!checkInParam || p.checkOut > checkInParam) ? p.checkOut : tomStr),
-        adults: safeA,
-        rooms: safeR,
-        children: searchParams.has("children") ? parseInt(searchParams.get("children") as string, 10) : p.children,
-      }));
-      setOccupancy(safeA === 1 ? "single" : safeA === 3 ? "triple" : "double");
-    }
+
+    const rawA = searchParams.has("adults")
+      ? parseInt(searchParams.get("adults") as string, 10)
+      : (parsedSaved?.adults ? Number(parsedSaved.adults) : getStoredAdults());
+    const rawR = searchParams.has("rooms")
+      ? parseInt(searchParams.get("rooms") as string, 10)
+      : (parsedSaved?.rooms ? Number(parsedSaved.rooms) : getStoredRooms(rawA));
+    const safeA = Math.max(1, isNaN(rawA) ? 1 : rawA);
+    const safeR = Math.min(safeA, Math.max(1, isNaN(rawR) ? 1 : rawR));
+
+    const finalCheckIn = checkInParam || (parsedSaved?.checkIn && parsedSaved.checkIn >= todayStr ? parsedSaved.checkIn : todayStr);
+    const finalCheckOut = checkOutParam || (parsedSaved?.checkOut && (!finalCheckIn || parsedSaved.checkOut > finalCheckIn) ? parsedSaved.checkOut : tomStr);
+
+    setBookingData(p => ({
+      ...p,
+      checkIn: finalCheckIn,
+      checkOut: finalCheckOut,
+      adults: safeA,
+      rooms: safeR,
+      children: searchParams.has("children")
+        ? parseInt(searchParams.get("children") as string, 10)
+        : (parsedSaved?.children !== undefined ? Number(parsedSaved.children) : p.children),
+    }));
+    setOccupancy(safeA === 1 ? "single" : safeA === 3 ? "triple" : "double");
+    isHydratedRef.current = true;
   }, [searchParams]);
 
-  // Synchronize with user's last chosen search criteria (e.g. from homepage or previous navigation)
   useEffect(() => {
-    try {
-      const hasUrlAdults = searchParams.has("adults");
-      const saved = localStorage.getItem('staybuddy_last_search');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (parsed && typeof parsed === 'object') {
-          const safeA = Math.max(1, Number(parsed.adults) || 1);
-          const safeR = Math.min(safeA, Math.max(1, Number(parsed.rooms) || 1));
-          if (!hasUrlAdults) {
-            setBookingData(prev => ({
-              ...prev,
-              adults: safeA,
-              rooms: safeR,
-              checkIn: prev.checkIn || parsed.checkIn || '',
-              checkOut: prev.checkOut || parsed.checkOut || '',
-            }));
-            setOccupancy(safeA === 1 ? "single" : safeA === 3 ? "triple" : "double");
-          }
-        }
-      }
-    } catch (_) {}
-  }, []);
-
-  useEffect(() => {
+    if (!isHydratedRef.current || !bookingData.checkIn) return;
     try {
       localStorage.setItem('staybuddy_last_search', JSON.stringify({
         checkIn: bookingData.checkIn,

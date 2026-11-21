@@ -307,6 +307,11 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
                 <LocationSearch 
                   city={searchData.location} 
                   hasError={validationErrorField === 'location' && !searchData.location.trim()}
+                  checkIn={searchData.checkIn}
+                  checkOut={searchData.checkOut}
+                  adults={searchData.adults}
+                  rooms={searchData.rooms}
+                  children={searchData.children}
                   onChange={c => {
                     setSearchData(p => ({ ...p, location: c }));
                     if (c && c.trim()) {
@@ -397,8 +402,16 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
 
               {mounted && showDatePicker && createPortal(
                 <div style={{ position: 'fixed', inset: 0, zIndex: 10000, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '16px' }}>
-                  <div style={{ position: 'absolute', inset: 0, background: 'rgba(15, 23, 42, 0.6)', backdropFilter: 'blur(4px)' }} onClick={() => setShowDatePicker(false)} />
-                  <div className="responsive-popup" style={{ position: 'relative', background: 'white', borderRadius: '24px', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)', maxWidth: '100%', maxHeight: '90vh', overflowY: 'auto' }}>
+                  <div
+                    style={{ position: 'absolute', inset: 0, background: 'rgba(15, 23, 42, 0.6)', backdropFilter: 'blur(4px)', touchAction: 'none' }}
+                    onClick={(e) => { e.stopPropagation(); setShowDatePicker(false); }}
+                    onTouchEnd={(e) => { e.preventDefault(); e.stopPropagation(); setShowDatePicker(false); }}
+                  />
+                  <div
+                    onClick={(e) => e.stopPropagation()}
+                    className="responsive-popup"
+                    style={{ position: 'relative', background: 'white', borderRadius: '24px', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)', maxWidth: '100%', maxHeight: '90vh', overflowY: 'auto', touchAction: 'manipulation' }}
+                  >
                      <DateRangePicker 
                        checkIn={searchData.checkIn} 
                        checkOut={searchData.checkOut}
@@ -459,8 +472,16 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
 
                 {mounted && showGuestPicker && createPortal(
                   <div style={{ position: 'fixed', inset: 0, zIndex: 10000, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '16px' }}>
-                    <div style={{ position: 'absolute', inset: 0, background: 'rgba(15, 23, 42, 0.6)', backdropFilter: 'blur(4px)' }} onClick={(e) => { e.stopPropagation(); setShowGuestPicker(false); }} />
-                    <div className="responsive-popup" onClick={e => e.stopPropagation()} style={{ position: 'relative', background: 'white', borderRadius: '24px', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)', padding: 'var(--space-5)', width: 320, maxWidth: '100%', cursor: 'default' }}>
+                    <div
+                      style={{ position: 'absolute', inset: 0, background: 'rgba(15, 23, 42, 0.6)', backdropFilter: 'blur(4px)', touchAction: 'none' }}
+                      onClick={(e) => { e.stopPropagation(); setShowGuestPicker(false); }}
+                      onTouchEnd={(e) => { e.preventDefault(); e.stopPropagation(); setShowGuestPicker(false); }}
+                    />
+                    <div
+                      className="responsive-popup"
+                      onClick={e => e.stopPropagation()}
+                      style={{ position: 'relative', background: 'white', borderRadius: '24px', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)', padding: 'var(--space-5)', width: 320, maxWidth: '100%', cursor: 'default', touchAction: 'manipulation' }}
+                    >
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                           <div>

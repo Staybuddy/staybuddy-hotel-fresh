@@ -81,6 +81,35 @@ function HotelSearch() {
     setHotelsValidationErrorField(null);
     setHotelsSearchError('');
     setPage(1);
+
+    // Synchronize to URL and localStorage immediately
+    try {
+      const q = new URLSearchParams();
+      if (filters.city.trim()) q.set('city', filters.city.trim());
+      if (filters.checkIn) q.set('checkIn', filters.checkIn);
+      if (filters.checkOut) q.set('checkOut', filters.checkOut);
+      if (filters.adults) q.set('adults', filters.adults.toString());
+      if (filters.rooms) q.set('rooms', filters.rooms.toString());
+      if (filters.children) q.set('children', filters.children.toString());
+      if (filters.category) q.set('category', filters.category);
+      if (filters.propertyType) q.set('propertyType', filters.propertyType);
+      const activeRating = filters.starRating || filters.minRating;
+      if (activeRating) q.set('starRating', activeRating);
+
+      if (typeof window !== 'undefined') {
+        const newUrl = `${window.location.pathname}?${q.toString()}`;
+        window.history.replaceState(null, '', newUrl);
+        localStorage.setItem('staybuddy_last_search', JSON.stringify({
+          location: filters.city.trim(),
+          checkIn: filters.checkIn,
+          checkOut: filters.checkOut,
+          adults: filters.adults,
+          rooms: filters.rooms,
+          children: filters.children,
+        }));
+      }
+    } catch (_) {}
+
     fetchHotels();
   }
 
@@ -101,14 +130,14 @@ function HotelSearch() {
       city: searchParams.has('city') || searchParams.has('location') ? urlCity : p.city,
       checkIn: searchParams.has('checkIn') ? validIn : p.checkIn,
       checkOut: searchParams.has('checkOut') ? validOut : p.checkOut,
-      category: searchParams.has('category') ? (searchParams.get('category') || '') : (searchParams.get('collection') === 'premium' ? 'premium' : p.category),
-      propertyType: searchParams.has('propertyType') ? (searchParams.get('propertyType') || '') : p.propertyType,
-      minRating: searchParams.has('starRating') ? (searchParams.get('starRating') || '') : (searchParams.has('minRating') ? (searchParams.get('minRating') || '') : p.minRating),
-      starRating: searchParams.has('starRating') ? (searchParams.get('starRating') || '') : (searchParams.has('minRating') ? (searchParams.get('minRating') || '') : p.starRating),
+      category: searchParams.has('category') ? (searchParams.get('category') || '') : (searchParams.get('collection') === 'premium' ? 'premium' : ''),
+      propertyType: searchParams.has('propertyType') ? (searchParams.get('propertyType') || '') : '',
+      minRating: searchParams.has('starRating') ? (searchParams.get('starRating') || '') : (searchParams.has('minRating') ? (searchParams.get('minRating') || '') : ''),
+      starRating: searchParams.has('starRating') ? (searchParams.get('starRating') || '') : (searchParams.has('minRating') ? (searchParams.get('minRating') || '') : ''),
       rooms: searchParams.has('rooms') ? parseInt(searchParams.get('rooms') as string, 10) : p.rooms,
       adults: searchParams.has('adults') ? parseInt(searchParams.get('adults') as string, 10) : p.adults,
       children: searchParams.has('children') ? parseInt(searchParams.get('children') as string, 10) : p.children,
-      sortBy: (searchParams.get('sort') || searchParams.get('sortBy') || p.sortBy) as string,
+      sortBy: (searchParams.get('sort') || searchParams.get('sortBy') || 'rating') as string,
     }));
   }, [searchParams]);
 
@@ -367,6 +396,11 @@ function HotelSearch() {
                 city={filters.city} 
                 variant="compact" 
                 hasError={hotelsValidationErrorField === 'city' && !filters.city.trim()}
+                checkIn={filters.checkIn}
+                checkOut={filters.checkOut}
+                adults={filters.adults}
+                rooms={filters.rooms}
+                children={filters.children}
                 onChange={c => {
                   setFilters(p => ({ ...p, city: c }));
                   if (c && c.trim()) {
@@ -469,8 +503,15 @@ function HotelSearch() {
               </div>
               {showGuestPicker && (
                 <>
-                  <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 999 }} onClick={() => setShowGuestPicker(false)} />
-                  <div style={{ position: 'absolute', top: '100%', right: 0, zIndex: 1000, marginTop: '8px', background: 'white', borderRadius: 'var(--radius-xl)', boxShadow: '0 20px 40px rgba(0,0,0,0.2)', border: '1px solid var(--border)' }}>
+                  <div
+                    style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 999, touchAction: 'none' }}
+                    onClick={(e) => { e.stopPropagation(); setShowGuestPicker(false); }}
+                    onTouchEnd={(e) => { e.preventDefault(); e.stopPropagation(); setShowGuestPicker(false); }}
+                  />
+                  <div
+                    onClick={(e) => e.stopPropagation()}
+                    style={{ position: 'absolute', top: '100%', right: 0, zIndex: 1000, marginTop: '8px', background: 'white', borderRadius: 'var(--radius-xl)', boxShadow: '0 20px 40px rgba(0,0,0,0.2)', border: '1px solid var(--border)', touchAction: 'manipulation' }}
+                  >
                     <GuestSelector
                       rooms={filters.rooms}
                       adults={filters.adults}
@@ -488,7 +529,7 @@ function HotelSearch() {
                 </>
               )}
             </div>
-            <button className="btn btn-primary hotels-search-btn" onClick={handleHotelsSearch} style={{ height: '54px', padding: '0 24px', flex: '0 0 auto' }}>
+            <button className="btn btn-primary hotels-search-btn" onClick={handleHotelsSearch} style={{ height: '54px', padding: '0 24px', flex: '0 0 auto', touchAction: 'manipulation' }}>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" /></svg>
               Search
             </button>
@@ -520,8 +561,15 @@ function HotelSearch() {
           {/* Date Picker Overlay */}
           {showDatePicker && (
             <>
-              <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 999 }} onClick={() => setShowDatePicker(false)} />
-              <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 1000, marginTop: '8px' }}>
+              <div
+                style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 999, touchAction: 'none' }}
+                onClick={(e) => { e.stopPropagation(); setShowDatePicker(false); }}
+                onTouchEnd={(e) => { e.preventDefault(); e.stopPropagation(); setShowDatePicker(false); }}
+              />
+              <div
+                onClick={(e) => e.stopPropagation()}
+                style={{ position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 1000, marginTop: '8px', touchAction: 'manipulation' }}
+              >
                 <div className="container" style={{ position: 'relative' }}>
                   <div style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', background: 'white', borderRadius: 'var(--radius-xl)', boxShadow: '0 20px 40px rgba(0,0,0,0.2)', padding: '16px', border: '1px solid var(--border)' }}>
                     <DateRangePicker

@@ -3,7 +3,8 @@
 const STOP_WORDS = new Set([
   'hotel', 'hotels', 'resort', 'resorts', 'inn', 'stay', 'stays',
   'grand', 'palace', 'international', 'suites', 'suite', 'lodge',
-  'the', 'by', 'at', 'in', 'and', '&'
+  'the', 'by', 'at', 'in', 'and', '&', 'india', 'ap', 'telangana',
+  'ts', 'state', 'city', 'district', 'near', 'road'
 ]);
 
 export function cleanText(str: string): string {

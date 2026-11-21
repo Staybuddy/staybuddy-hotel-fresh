@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 export const dynamic = 'force-dynamic';
 import { db } from '@/lib/firebaseAdmin';
 import { getCached, setCached } from '@/lib/cache';
-import { calculateSmartScore } from '@/lib/smartSearch';
+import { calculateSmartScore, getSignificantTokens } from '@/lib/smartSearch';
 
 const POPULAR_FALLBACK_CITIES = [
   'Mumbai', 'Goa', 'Delhi', 'Jaipur', 'Manali', 'Kerala', 'Hyderabad',
@@ -55,17 +55,32 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    const qTokens = getSignificantTokens(q);
+
     // Smart AI Hotel Matching (handles phonetic, typos, extra words like 'hotel', reverse order)
     const scoredHotels = (allHotels || [])
       .map((h: any) => {
-        const nameScore = calculateSmartScore(q, h.name || '');
-        const cityScore = calculateSmartScore(q, h.city || '');
-        const areaScore = calculateSmartScore(q, h.area || '');
-        const addressScore = calculateSmartScore(q, h.address || '');
-        const maxScore = Math.max(nameScore, cityScore * 0.9, areaScore * 0.9, addressScore * 0.8);
-        return { ...h, searchScore: maxScore };
+        const hName = (h.name || '').trim();
+        const hCity = (h.city || '').trim();
+        const hArea = (h.area || '').trim();
+        const hAddress = (h.address || '').trim();
+
+        const nameScore = calculateSmartScore(q, hName);
+        const cityScore = calculateSmartScore(q, hCity);
+        const areaScore = calculateSmartScore(q, hArea);
+        const addressScore = calculateSmartScore(q, hAddress);
+
+        let tokenBonus = 0;
+        if (qTokens.length > 0) {
+          const hCombined = `${hName} ${hCity} ${hArea} ${hAddress}`.toLowerCase();
+          const matchesAll = qTokens.every(tok => hCombined.includes(tok));
+          if (matchesAll) tokenBonus = 25;
+        }
+
+        const maxScore = Math.max(nameScore, cityScore * 0.9, areaScore * 0.9, addressScore * 0.8) + tokenBonus;
+        return { ...h, name: hName, city: hCity, area: hArea, searchScore: maxScore };
       })
-      .filter((h: any) => h.searchScore >= 60)
+      .filter((h: any) => h.searchScore >= 55)
       .sort((a: any, b: any) => b.searchScore - a.searchScore)
       .slice(0, 8);
 
@@ -78,14 +93,21 @@ export async function GET(request: NextRequest) {
 
     // Smart AI City Matching
     const candidateCities = Array.from(new Set([
-      ...(allHotels || []).map((h: any) => h.city),
-      ...(allHotels || []).map((h: any) => h.area),
+      ...(allHotels || []).map((h: any) => (h.city || '').trim()),
+      ...(allHotels || []).map((h: any) => (h.area || '').trim()),
       ...POPULAR_FALLBACK_CITIES,
     ].filter(Boolean)));
 
     const scoredCities = candidateCities
-      .map((c: string) => ({ city: c, score: calculateSmartScore(q, c) }))
-      .filter((c: any) => c.score >= 60)
+      .map((c: string) => {
+        const cTrimmed = c.trim();
+        let score = calculateSmartScore(q, cTrimmed);
+        if (qTokens.length > 0 && qTokens.some(tok => cTrimmed.toLowerCase().includes(tok))) {
+          score = Math.max(score, 75);
+        }
+        return { city: cTrimmed, score };
+      })
+      .filter((c: any) => c.score >= 55)
       .sort((a: any, b: any) => b.score - a.score)
       .slice(0, 5)
       .map((c: any) => c.city);

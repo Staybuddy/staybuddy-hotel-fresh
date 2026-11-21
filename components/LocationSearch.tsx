@@ -11,9 +11,27 @@ interface LocationSearchProps {
   dropdownRightOffset?: string;
   variant?: 'default' | 'compact';
   hasError?: boolean;
+  checkIn?: string;
+  checkOut?: string;
+  adults?: number;
+  rooms?: number;
+  children?: number;
 }
 
-export default function LocationSearch({ city, onChange, placeholder = "Search destination...", dropdownLeftOffset = "0px", dropdownRightOffset = "0px", variant = 'default', hasError = false }: LocationSearchProps) {
+export default function LocationSearch({
+  city,
+  onChange,
+  placeholder = "Search destination...",
+  dropdownLeftOffset = "0px",
+  dropdownRightOffset = "0px",
+  variant = 'default',
+  hasError = false,
+  checkIn,
+  checkOut,
+  adults,
+  rooms,
+  children,
+}: LocationSearchProps) {
   const router = useRouter();
   const [query, setQuery] = useState(city);
   const [results, setResults] = useState<{ hotels: any[], cities: string[] }>({ hotels: [], cities: [] });
@@ -93,22 +111,27 @@ export default function LocationSearch({ city, onChange, placeholder = "Search d
 
   const handleHotelSelect = (hotelId: string) => {
     setShowDropdown(false);
+    setIsModalOpen(false);
+    let s: any = null;
     try {
       const raw = localStorage.getItem('staybuddy_last_search');
-      if (raw) {
-        const s = JSON.parse(raw);
-        const p = new URLSearchParams();
-        if (s.checkIn) p.set('checkIn', s.checkIn);
-        if (s.checkOut) p.set('checkOut', s.checkOut);
-        if (s.adults) p.set('adults', String(s.adults));
-        if (s.rooms) p.set('rooms', String(s.rooms));
-        if (s.children) p.set('children', String(s.children));
-        const qs = p.toString();
-        router.push(`/hotels/${hotelId}${qs ? `?${qs}` : ''}`);
-        return;
-      }
+      if (raw) s = JSON.parse(raw);
     } catch (_) {}
-    router.push(`/hotels/${hotelId}`);
+
+    const cIn = checkIn || s?.checkIn;
+    const cOut = checkOut || s?.checkOut;
+    const a = adults || s?.adults;
+    const r = rooms || s?.rooms;
+    const ch = children !== undefined ? children : s?.children;
+
+    const p = new URLSearchParams();
+    if (cIn) p.set('checkIn', cIn);
+    if (cOut) p.set('checkOut', cOut);
+    if (a) p.set('adults', String(a));
+    if (r) p.set('rooms', String(r));
+    if (ch) p.set('children', String(ch));
+    const qs = p.toString();
+    router.push(`/hotels/${hotelId}${qs ? `?${qs}` : ''}`);
   };
 
   const getCurrentLocation = () => {
@@ -255,12 +278,23 @@ export default function LocationSearch({ city, onChange, placeholder = "Search d
       
       {mounted && isModalOpen && createPortal(
         <div style={{ position: 'fixed', inset: 0, zIndex: 10000, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '16px' }}>
-          <div style={{ position: 'absolute', inset: 0, background: 'rgba(15, 23, 42, 0.6)', backdropFilter: 'blur(4px)' }} onClick={() => setIsModalOpen(false)} />
-          <div style={{ position: 'relative', background: 'white', borderRadius: '24px', width: '100%', maxWidth: 500, maxHeight: '90vh', overflow: 'hidden', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)', display: 'flex', flexDirection: 'column' }}>
+          <div
+            style={{ position: 'absolute', inset: 0, background: 'rgba(15, 23, 42, 0.6)', backdropFilter: 'blur(4px)', touchAction: 'none' }}
+            onClick={(e) => { e.stopPropagation(); setIsModalOpen(false); }}
+            onTouchEnd={(e) => { e.preventDefault(); e.stopPropagation(); setIsModalOpen(false); }}
+          />
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{ position: 'relative', background: 'white', borderRadius: '24px', width: '100%', maxWidth: 500, maxHeight: '90vh', overflow: 'hidden', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)', display: 'flex', flexDirection: 'column', touchAction: 'manipulation' }}
+          >
             
             <div style={{ padding: '20px 24px', borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
               <h2 style={{ fontSize: '1.25rem', fontWeight: 800, margin: 0, color: '#0f172a' }}>Where do you want to go?</h2>
-              <button onClick={() => setIsModalOpen(false)} style={{ background: '#f1f5f9', border: 'none', cursor: 'pointer', color: '#64748b', width: 36, height: 36, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background 0.2s' }}>
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); setIsModalOpen(false); }}
+                style={{ background: '#f1f5f9', border: 'none', cursor: 'pointer', color: '#64748b', width: 36, height: 36, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background 0.2s', touchAction: 'manipulation' }}
+              >
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
               </button>
             </div>
