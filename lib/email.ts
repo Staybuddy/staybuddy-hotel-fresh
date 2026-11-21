@@ -200,6 +200,10 @@ export async function sendPartnerNotificationEmail(booking: any, partnerEmail: s
   const checkInStr = new Date(checkIn).toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
   const checkOutStr = new Date(checkOut).toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
   
+  // Format occupancy breakdown for partner with their pure B2B rate instead of client tariff
+  const partnerOccDisplay = booking.partnerOccupancySummary 
+    || (occupancySummary ? occupancySummary.replace(/@\s*₹[\d,]+/g, `@ ₹${Number(booking.partnerPricePerNight || 0).toLocaleString()}`) : '');
+
   const mailOptions = {
     from: process.env.EMAIL_FROM || 'StayBuddy <noreply@staybuddy.com>',
     to: partnerEmail,
@@ -219,7 +223,7 @@ export async function sendPartnerNotificationEmail(booking: any, partnerEmail: s
             <p style="margin: 8px 0;"><strong>Guest Name:</strong> ${guestName || 'Guest'}</p>
             ${guestPhone ? `<p style="margin: 8px 0;"><strong>Guest Phone:</strong> ${guestPhone}</p>` : ''}
             <p style="margin: 8px 0;"><strong>Room Category:</strong> <span style="background: #d1fae5; color: #065f46; padding: 3px 8px; border-radius: 4px; font-weight: 700;">${roomCategory}</span></p>
-            ${occupancySummary ? `<p style="margin: 8px 0;"><strong>Occupancy Breakdown:</strong> ${occupancySummary}</p>` : ''}
+            ${partnerOccDisplay ? `<p style="margin: 8px 0;"><strong>Occupancy Breakdown:</strong> ${partnerOccDisplay}</p>` : ''}
             <p style="margin: 8px 0;"><strong>Check-in:</strong> ${checkInStr}</p>
             <p style="margin: 8px 0;"><strong>Check-out:</strong> ${checkOutStr}</p>
             <p style="margin: 8px 0;"><strong>Duration:</strong> ${nights} Night(s)</p>
