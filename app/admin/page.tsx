@@ -71,6 +71,9 @@ export default function AdminDashboard() {
   const [adminRecheckingId, setAdminRecheckingId] = useState<string | null>(null);
   const [bookingTab, setBookingTab] = useState<'live' | 'pending'>('live');
   const [hotelTabFilter, setHotelTabFilter] = useState<'all' | 'approved' | 'pending'>('all');
+  const [hotelSearchQuery, setHotelSearchQuery] = useState('');
+  const [hotelTypeFilter, setHotelTypeFilter] = useState<'all' | 'extranet' | 'b2b'>('all');
+  const [hotelCityFilter, setHotelCityFilter] = useState<string>('all');
 
   // Hotel Onboarding Specialist Staff States
   const [onboardingStaff, setOnboardingStaff] = useState<any[]>([]);
@@ -581,6 +584,44 @@ export default function AdminDashboard() {
 
   const pendingHotels = hotels.filter(h => h.status === 'pending');
   const approvedHotels = hotels.filter(h => h.status === 'approved');
+
+  const distinctHotelCities = useMemo(() => {
+    const cities = new Set<string>();
+    hotels.forEach(h => {
+      if (h.city && typeof h.city === 'string' && h.city.trim().length > 0) {
+        cities.add(h.city.trim());
+      }
+    });
+    return Array.from(cities).sort();
+  }, [hotels]);
+
+  const filteredHotels = useMemo(() => {
+    let list = hotelTabFilter === 'all' ? hotels : hotelTabFilter === 'pending' ? pendingHotels : approvedHotels;
+
+    if (hotelTypeFilter === 'extranet') {
+      list = list.filter(h => h.isExtranet);
+    } else if (hotelTypeFilter === 'b2b') {
+      list = list.filter(h => !h.isExtranet);
+    }
+
+    if (hotelCityFilter !== 'all') {
+      list = list.filter(h => (h.city || '').trim().toLowerCase() === hotelCityFilter.toLowerCase());
+    }
+
+    if (hotelSearchQuery.trim()) {
+      const q = hotelSearchQuery.toLowerCase().trim();
+      list = list.filter(h =>
+        (h.name && h.name.toLowerCase().includes(q)) ||
+        (h.city && h.city.toLowerCase().includes(q)) ||
+        (h.hotelId && h.hotelId.toLowerCase().includes(q)) ||
+        (h._id && h._id.toLowerCase().includes(q)) ||
+        (h.address && h.address.toLowerCase().includes(q)) ||
+        (h.isExtranet ? 'extranet' : 'b2b partner').includes(q)
+      );
+    }
+
+    return list;
+  }, [hotels, pendingHotels, approvedHotels, hotelTabFilter, hotelTypeFilter, hotelCityFilter, hotelSearchQuery]);
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: '#f8fafc' }}>
@@ -1317,30 +1358,188 @@ export default function AdminDashboard() {
                 </div>
               )}
 
-              {/* Status Filter Tabs */}
-              <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
-                {[
-                  { id: 'all', label: `All Properties (${hotels.length})` },
-                  { id: 'approved', label: `Active (${approvedHotels.length})` },
-                  { id: 'pending', label: `Pending Requests (${pendingHotels.length})` }
-                ].map(tab => (
-                  <button
-                    key={tab.id}
-                    onClick={() => setHotelTabFilter(tab.id as any)}
-                    style={{
-                      padding: '8px 16px',
-                      borderRadius: 8,
-                      border: hotelTabFilter === tab.id ? '1px solid #2563eb' : '1px solid #cbd5e1',
-                      background: hotelTabFilter === tab.id ? '#2563eb' : 'white',
-                      color: hotelTabFilter === tab.id ? 'white' : '#475569',
-                      fontWeight: 600,
-                      fontSize: '0.875rem',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    {tab.label}
-                  </button>
-                ))}
+              {/* Status Filter Tabs & Smart Search Bar */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginBottom: 20 }}>
+                {/* Status Filter Tabs */}
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  {[
+                    { id: 'all', label: `All Properties (${hotels.length})` },
+                    { id: 'approved', label: `Active (${approvedHotels.length})` },
+                    { id: 'pending', label: `Pending Requests (${pendingHotels.length})` }
+                  ].map(tab => (
+                    <button
+                      key={tab.id}
+                      onClick={() => setHotelTabFilter(tab.id as any)}
+                      style={{
+                        padding: '8px 16px',
+                        borderRadius: 8,
+                        border: hotelTabFilter === tab.id ? '1px solid #2563eb' : '1px solid #cbd5e1',
+                        background: hotelTabFilter === tab.id ? '#2563eb' : 'white',
+                        color: hotelTabFilter === tab.id ? 'white' : '#475569',
+                        fontWeight: 600,
+                        fontSize: '0.875rem',
+                        cursor: 'pointer',
+                        transition: 'all 0.15s ease'
+                      }}
+                    >
+                      {tab.label}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Smart Search & Filter Control Bar */}
+                <div style={{
+                  background: 'white',
+                  borderRadius: 14,
+                  padding: '12px 16px',
+                  boxShadow: '0 2px 6px rgba(0,0,0,0.04)',
+                  border: '1px solid #e2e8f0',
+                  display: 'flex',
+                  alignItems: 'center',
+                  flexWrap: 'wrap',
+                  gap: 12,
+                  justifyContent: 'space-between'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1, minWidth: 260, flexWrap: 'wrap' }}>
+                    <div style={{ position: 'relative', flex: 1, minWidth: 240, maxWidth: 460 }}>
+                      <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', fontSize: '1rem', color: '#94a3b8', pointerEvents: 'none' }}>
+                        🔍
+                      </span>
+                      <input
+                        type="text"
+                        value={hotelSearchQuery}
+                        onChange={(e) => setHotelSearchQuery(e.target.value)}
+                        placeholder="Search property name, city, hotel ID (e.g. Minerva, SBHO-023)..."
+                        style={{
+                          width: '100%',
+                          padding: '9px 36px 9px 38px',
+                          borderRadius: 8,
+                          border: '1.5px solid #cbd5e1',
+                          fontSize: '0.88rem',
+                          color: '#0f172a',
+                          outline: 'none',
+                          background: '#f8fafc',
+                          transition: 'all 0.2s',
+                          boxSizing: 'border-box'
+                        }}
+                        onFocus={(e) => {
+                          e.target.style.background = '#ffffff';
+                          e.target.style.borderColor = '#2563eb';
+                          e.target.style.boxShadow = '0 0 0 3px rgba(37,99,235,0.12)';
+                        }}
+                        onBlur={(e) => {
+                          e.target.style.background = '#f8fafc';
+                          e.target.style.borderColor = '#cbd5e1';
+                          e.target.style.boxShadow = 'none';
+                        }}
+                      />
+                      {hotelSearchQuery && (
+                        <button
+                          type="button"
+                          onClick={() => setHotelSearchQuery('')}
+                          style={{
+                            position: 'absolute',
+                            right: 10,
+                            top: '50%',
+                            transform: 'translateY(-50%)',
+                            background: '#e2e8f0',
+                            border: 'none',
+                            borderRadius: '50%',
+                            width: 20,
+                            height: 20,
+                            fontSize: '0.75rem',
+                            color: '#64748b',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center'
+                          }}
+                          title="Clear search"
+                        >
+                          ✕
+                        </button>
+                      )}
+                    </div>
+
+                    {/* City Dropdown Filter */}
+                    {distinctHotelCities.length > 0 && (
+                      <select
+                        value={hotelCityFilter}
+                        onChange={(e) => setHotelCityFilter(e.target.value)}
+                        style={{
+                          padding: '9px 12px',
+                          borderRadius: 8,
+                          border: '1.5px solid #cbd5e1',
+                          fontSize: '0.85rem',
+                          fontWeight: 600,
+                          color: '#334155',
+                          background: 'white',
+                          cursor: 'pointer',
+                          outline: 'none'
+                        }}
+                      >
+                        <option value="all">📍 All Cities ({distinctHotelCities.length})</option>
+                        {distinctHotelCities.map(c => (
+                          <option key={c} value={c}>{c}</option>
+                        ))}
+                      </select>
+                    )}
+
+                    {/* Type Filter */}
+                    <select
+                      value={hotelTypeFilter}
+                      onChange={(e) => setHotelTypeFilter(e.target.value as any)}
+                      style={{
+                        padding: '9px 12px',
+                        borderRadius: 8,
+                        border: '1.5px solid #cbd5e1',
+                        fontSize: '0.85rem',
+                        fontWeight: 600,
+                        color: '#334155',
+                        background: 'white',
+                        cursor: 'pointer',
+                        outline: 'none'
+                      }}
+                    >
+                      <option value="all">🏷️ All Types</option>
+                      <option value="extranet">Extranet Listings</option>
+                      <option value="b2b">B2B Partner Direct</option>
+                    </select>
+                  </div>
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <span style={{
+                      fontSize: '0.8rem',
+                      fontWeight: 700,
+                      color: '#475569',
+                      background: '#f1f5f9',
+                      padding: '5px 12px',
+                      borderRadius: 8
+                    }}>
+                      Showing <strong>{filteredHotels.length}</strong> of {hotelTabFilter === 'all' ? hotels.length : hotelTabFilter === 'pending' ? pendingHotels.length : approvedHotels.length} Properties
+                    </span>
+                    {(hotelSearchQuery || hotelCityFilter !== 'all' || hotelTypeFilter !== 'all') && (
+                      <button
+                        onClick={() => {
+                          setHotelSearchQuery('');
+                          setHotelCityFilter('all');
+                          setHotelTypeFilter('all');
+                        }}
+                        style={{
+                          background: 'transparent',
+                          border: 'none',
+                          color: '#2563eb',
+                          fontSize: '0.82rem',
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                          textDecoration: 'underline'
+                        }}
+                      >
+                        Reset Filters
+                      </button>
+                    )}
+                  </div>
+                </div>
               </div>
 
               <div style={{ background: 'white', borderRadius: 16, boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)', overflowX: 'auto' }}>
@@ -1355,67 +1554,103 @@ export default function AdminDashboard() {
                     </tr>
                   </thead>
                   <tbody>
-                    {(hotelTabFilter === 'all' ? hotels : hotelTabFilter === 'pending' ? pendingHotels : approvedHotels).map(h => (
-                      <tr key={h._id} style={{ borderBottom: '1px solid #e2e8f0' }}>
-                        <td style={{ padding: '16px 24px', cursor: 'pointer' }} onClick={() => { setExtranetModal(h); setExtranetModalTab('property'); }}>
-                          <div style={{ fontWeight: 700, color: '#0f172a' }}>{h.name}</div>
-                          <div style={{ fontSize: '0.8rem', color: '#64748b' }}>{h.city}</div>
-                          <div style={{ fontSize: '0.75rem', color: '#8b5cf6', fontWeight: 600, marginTop: 4 }}>Hotel ID: {h.hotelId || h._id?.slice(-8)}</div>
-                        </td>
-                        <td style={{ padding: '16px 24px' }}>
-                          <span style={{ 
-                            padding: '4px 10px', 
-                            borderRadius: 12, 
-                            fontSize: '0.78rem', 
-                            fontWeight: 700,
-                            background: h.status === 'approved' ? '#dcfce7' : h.status === 'rejected' ? '#fee2e2' : '#fef3c7',
-                            color: h.status === 'approved' ? '#166534' : h.status === 'rejected' ? '#991b1b' : '#92400e'
-                          }}>
-                            {h.status === 'approved' ? '✅ Active' : h.status === 'rejected' ? '❌ Rejected' : '⏳ Pending'}
-                          </span>
-                        </td>
-                        <td style={{ padding: '16px 24px' }}>
-                          <span style={{ padding: '4px 8px', background: h.isExtranet ? '#ede9fe' : '#e0f2fe', color: h.isExtranet ? '#7c3aed' : '#0284c7', borderRadius: 4, fontSize: '0.8rem', fontWeight: 600 }}>
-                            {h.isExtranet ? 'Extranet' : 'B2B Partner'}
-                          </span>
-                        </td>
-                        <td style={{ padding: '16px 24px' }}>
-                          <input 
-                            type="number" 
-                            defaultValue={h.marginPercentage || 0} 
-                            onBlur={(e) => {
-                              const val = parseFloat(e.target.value);
-                              if (val !== h.marginPercentage) updateHotelStatus(h._id, { marginPercentage: val });
+                    {filteredHotels.length === 0 ? (
+                      <tr>
+                        <td colSpan={5} style={{ padding: '48px 24px', textAlign: 'center' }}>
+                          <div style={{ fontSize: '2.5rem', marginBottom: 10 }}>🔍</div>
+                          <div style={{ fontWeight: 800, fontSize: '1.05rem', color: '#0f172a', marginBottom: 4 }}>
+                            No properties found matching &ldquo;{hotelSearchQuery || 'selected filters'}&rdquo;
+                          </div>
+                          <div style={{ fontSize: '0.85rem', color: '#64748b', maxWidth: 440, margin: '0 auto 16px auto' }}>
+                            Try searching with a different property name, city (e.g. Vijayawada, Hyderabad), or Hotel ID (e.g. SBHO-023).
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setHotelSearchQuery('');
+                              setHotelCityFilter('all');
+                              setHotelTypeFilter('all');
+                              setHotelTabFilter('all');
                             }}
-                            style={{ width: 80, padding: '6px 12px', borderRadius: 6, border: '1px solid #cbd5e1', fontSize: '0.9rem', fontWeight: 600, color: '#0f172a' }}
-                          /> %
-                        </td>
-                        <td style={{ padding: '16px 24px', whiteSpace: 'nowrap' }}>
-                          {h.status === 'pending' && (
-                            <button 
-                              onClick={() => updateHotelStatus(h._id, { status: 'approved' })}
-                              disabled={approveLoading === h._id}
-                              style={{ marginRight: 8, padding: '6px 12px', background: '#16a34a', color: 'white', border: 'none', borderRadius: 6, fontSize: '0.85rem', fontWeight: 700, cursor: 'pointer' }}
-                            >
-                              {approveLoading === h._id ? 'Approving...' : '✓ Approve'}
-                            </button>
-                          )}
-                          <button 
-                            onClick={() => updateHotelStatus(h._id, { isExtranet: !h.isExtranet })}
-                            style={{ padding: '6px 12px', background: 'transparent', border: '1px solid #cbd5e1', borderRadius: 6, fontSize: '0.85rem', fontWeight: 600, color: '#475569', cursor: 'pointer' }}
+                            style={{
+                              padding: '8px 18px',
+                              background: '#2563eb',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: 8,
+                              fontSize: '0.85rem',
+                              fontWeight: 700,
+                              cursor: 'pointer',
+                              boxShadow: '0 2px 6px rgba(37,99,235,0.25)'
+                            }}
                           >
-                            Toggle Type
-                          </button>
-                          <button 
-                            onClick={() => deleteHotel(h._id)}
-                            disabled={approveLoading === h._id}
-                            style={{ marginLeft: 8, padding: '6px 12px', background: '#fff1f2', border: '1px solid #fecdd3', borderRadius: 6, fontSize: '0.85rem', fontWeight: 700, color: '#e11d48', cursor: 'pointer' }}
-                          >
-                            {approveLoading === h._id ? 'Deleting...' : '🗑️ Delete'}
+                            Clear All Filters & Show All Properties
                           </button>
                         </td>
                       </tr>
-                    ))}
+                    ) : (
+                      filteredHotels.map(h => (
+                        <tr key={h._id} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                          <td style={{ padding: '16px 24px', cursor: 'pointer' }} onClick={() => { setExtranetModal(h); setExtranetModalTab('property'); }}>
+                            <div style={{ fontWeight: 700, color: '#0f172a' }}>{h.name}</div>
+                            <div style={{ fontSize: '0.8rem', color: '#64748b' }}>{h.city}</div>
+                            <div style={{ fontSize: '0.75rem', color: '#8b5cf6', fontWeight: 600, marginTop: 4 }}>Hotel ID: {h.hotelId || h._id?.slice(-8)}</div>
+                          </td>
+                          <td style={{ padding: '16px 24px' }}>
+                            <span style={{ 
+                              padding: '4px 10px', 
+                              borderRadius: 12, 
+                              fontSize: '0.78rem', 
+                              fontWeight: 700,
+                              background: h.status === 'approved' ? '#dcfce7' : h.status === 'rejected' ? '#fee2e2' : '#fef3c7',
+                              color: h.status === 'approved' ? '#166534' : h.status === 'rejected' ? '#991b1b' : '#92400e'
+                            }}>
+                              {h.status === 'approved' ? '✅ Active' : h.status === 'rejected' ? '❌ Rejected' : '⏳ Pending'}
+                            </span>
+                          </td>
+                          <td style={{ padding: '16px 24px' }}>
+                            <span style={{ padding: '4px 8px', background: h.isExtranet ? '#ede9fe' : '#e0f2fe', color: h.isExtranet ? '#7c3aed' : '#0284c7', borderRadius: 4, fontSize: '0.8rem', fontWeight: 600 }}>
+                              {h.isExtranet ? 'Extranet' : 'B2B Partner'}
+                            </span>
+                          </td>
+                          <td style={{ padding: '16px 24px' }}>
+                            <input 
+                              type="number" 
+                              defaultValue={h.marginPercentage || 0} 
+                              onBlur={(e) => {
+                                const val = parseFloat(e.target.value);
+                                if (val !== h.marginPercentage) updateHotelStatus(h._id, { marginPercentage: val });
+                              }}
+                              style={{ width: 80, padding: '6px 12px', borderRadius: 6, border: '1px solid #cbd5e1', fontSize: '0.9rem', fontWeight: 600, color: '#0f172a' }}
+                            /> %
+                          </td>
+                          <td style={{ padding: '16px 24px', whiteSpace: 'nowrap' }}>
+                            {h.status === 'pending' && (
+                              <button 
+                                onClick={() => updateHotelStatus(h._id, { status: 'approved' })}
+                                disabled={approveLoading === h._id}
+                                style={{ marginRight: 8, padding: '6px 12px', background: '#16a34a', color: 'white', border: 'none', borderRadius: 6, fontSize: '0.85rem', fontWeight: 700, cursor: 'pointer' }}
+                              >
+                                {approveLoading === h._id ? 'Approving...' : '✓ Approve'}
+                              </button>
+                            )}
+                            <button 
+                              onClick={() => updateHotelStatus(h._id, { isExtranet: !h.isExtranet })}
+                              style={{ padding: '6px 12px', background: 'transparent', border: '1px solid #cbd5e1', borderRadius: 6, fontSize: '0.85rem', fontWeight: 600, color: '#475569', cursor: 'pointer' }}
+                            >
+                              Toggle Type
+                            </button>
+                            <button 
+                              onClick={() => deleteHotel(h._id)}
+                              disabled={approveLoading === h._id}
+                              style={{ marginLeft: 8, padding: '6px 12px', background: '#fff1f2', border: '1px solid #fecdd3', borderRadius: 6, fontSize: '0.85rem', fontWeight: 700, color: '#e11d48', cursor: 'pointer' }}
+                            >
+                              {approveLoading === h._id ? 'Deleting...' : '🗑️ Delete'}
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    )}
                   </tbody>
                 </table>
               </div>

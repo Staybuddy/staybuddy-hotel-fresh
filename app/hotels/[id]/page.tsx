@@ -61,6 +61,7 @@ export default function HotelDetailPage() {
   const [activeHeroIndex, setActiveHeroIndex] = useState(0);
   const [showGalleryModal, setShowGalleryModal] = useState(false);
   const [galleryViewMode, setGalleryViewMode] = useState<'grid' | 'single'>('grid');
+  const [galleryCategoryFilter, setGalleryCategoryFilter] = useState<'all' | 'rooms' | 'property'>('all');
   const [customGalleryPhotos, setCustomGalleryPhotos] = useState<Array<{ url: string; label: string }> | null>(null);
   const [galleryActiveIndex, setGalleryActiveIndex] = useState(0);
   const [isAutoPlaying, setIsAutoPlaying] = useState(false);
@@ -622,10 +623,10 @@ export default function HotelDetailPage() {
 
   const allPhotos = useMemo(() => {
     const list: Array<{ url: string; label: string }> = [
-      ...(Array.isArray(hotel?.images) ? hotel.images.map((url: string) => ({ url, label: 'Property Hero Photo' })) : []),
+      ...(Array.isArray(hotel?.images) ? hotel.images.map((url: string) => ({ url, label: 'Hotel & Exterior' })) : []),
       ...rooms.flatMap((r: any) => 
         Array.isArray(r.images) 
-          ? r.images.map((url: string) => ({ url, label: r.type || 'Room Photo' }))
+          ? r.images.map((url: string) => ({ url, label: r.type || 'Room' }))
           : []
       )
     ].filter((p: any) => typeof p.url === 'string' && p.url.trim().length > 0);
@@ -636,6 +637,14 @@ export default function HotelDetailPage() {
     });
     return Array.from(map.values());
   }, [hotel?.images, rooms]);
+
+  const roomPhotos = useMemo(() => {
+    return allPhotos.filter(p => p.label && p.label !== 'Hotel & Exterior' && p.label !== 'Property Hero Photo' && p.label !== 'Hotel Photo');
+  }, [allPhotos]);
+
+  const propertyPhotos = useMemo(() => {
+    return allPhotos.filter(p => !p.label || p.label === 'Hotel & Exterior' || p.label === 'Property Hero Photo' || p.label === 'Hotel Photo');
+  }, [allPhotos]);
 
   // Always sort rooms so lowest price / lowest occupancy room is first (e.g. Standard Room before Deluxe Room)
   const sortedRoomsList = useMemo(() => {
@@ -701,6 +710,13 @@ export default function HotelDetailPage() {
   const activePhotosList = useMemo(() => {
     return (customGalleryPhotos && customGalleryPhotos.length > 0) ? customGalleryPhotos : allPhotos;
   }, [customGalleryPhotos, allPhotos]);
+
+  const displayedGalleryPhotos = useMemo(() => {
+    if (customGalleryPhotos && customGalleryPhotos.length > 0) return customGalleryPhotos;
+    if (galleryCategoryFilter === 'rooms') return roomPhotos;
+    if (galleryCategoryFilter === 'property') return propertyPhotos;
+    return allPhotos;
+  }, [customGalleryPhotos, galleryCategoryFilter, allPhotos, roomPhotos, propertyPhotos]);
 
   const openPhotoViewer = (index: number = 0, customList?: Array<{ url: string; label: string }>, mode: 'grid' | 'single' = 'grid') => {
     const list = customList && customList.length > 0 ? customList : allPhotos;
@@ -6360,7 +6376,7 @@ export default function HotelDetailPage() {
                       {hotel?.name}
                     </h3>
                     <div style={{ fontSize: "0.75rem", color: "#94a3b8" }}>
-                      {activePhotosList.length} Photos • Tap any photo to view full size
+                      {displayedGalleryPhotos.length} Photos • Tap any photo to view full size
                     </div>
                   </div>
                 </div>
@@ -6387,15 +6403,55 @@ export default function HotelDetailPage() {
                 </button>
               </div>
 
-              {/* 2-Column Vertical Scrollable Grid (Matching Photo 4) */}
+              {/* Category Filter Chips for Grid Mode */}
+              {(!customGalleryPhotos || customGalleryPhotos.length === 0) && (
+                <div style={{
+                  display: "flex",
+                  gap: 8,
+                  padding: "10px 16px",
+                  overflowX: "auto",
+                  background: "rgba(8, 12, 22, 0.95)",
+                  borderBottom: "1px solid rgba(255, 255, 255, 0.08)",
+                  WebkitOverflowScrolling: "touch",
+                  scrollbarWidth: "none",
+                }}>
+                  {[
+                    { id: "all", label: `All Photos (${allPhotos.length})` },
+                    ...(roomPhotos.length > 0 ? [{ id: "rooms", label: `🛏️ Rooms & Suites (${roomPhotos.length})` }] : []),
+                    ...(propertyPhotos.length > 0 ? [{ id: "property", label: `🏨 Property & Amenities (${propertyPhotos.length})` }] : [])
+                  ].map((tab) => (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      onClick={() => setGalleryCategoryFilter(tab.id as any)}
+                      style={{
+                        padding: "6px 14px",
+                        borderRadius: 20,
+                        border: galleryCategoryFilter === tab.id ? "1.5px solid var(--brand-500, #ff5722)" : "1px solid rgba(255,255,255,0.2)",
+                        background: galleryCategoryFilter === tab.id ? "var(--brand-500, #ff5722)" : "rgba(255,255,255,0.08)",
+                        color: "white",
+                        fontWeight: 700,
+                        fontSize: "0.8rem",
+                        cursor: "pointer",
+                        whiteSpace: "nowrap",
+                        transition: "all 0.2s ease",
+                      }}
+                    >
+                      {tab.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* 2-Column Vertical Scrollable Grid with Clean Proportions */}
               <div
                 style={{
                   flex: 1,
                   overflowY: "auto",
-                  padding: "12px",
+                  padding: "16px 14px 40px 14px",
                   display: "grid",
                   gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-                  gap: "10px",
+                  gap: "12px",
                   maxWidth: 960,
                   width: "100%",
                   margin: "0 auto",
@@ -6403,76 +6459,129 @@ export default function HotelDetailPage() {
                   WebkitOverflowScrolling: "touch",
                 }}
               >
-                {activePhotosList.map((p, pIdx) => (
-                  <div
-                    key={`gallery-grid-photo-${pIdx}`}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setGalleryActiveIndex(pIdx);
-                      setGalleryViewMode('single');
-                    }}
-                    style={{
-                      position: "relative",
-                      width: "100%",
-                      aspectRatio: "4 / 3",
-                      borderRadius: 14,
-                      overflow: "hidden",
-                      cursor: "pointer",
-                      background: "#1e293b",
-                      border: "1px solid rgba(255, 255, 255, 0.1)",
-                      boxShadow: "0 4px 12px rgba(0,0,0,0.4)",
-                      transition: "transform 0.2s ease",
-                    }}
-                    onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(0.98)")}
-                    onMouseLeave={(e) => (e.currentTarget.style.transform = "none")}
-                  >
-                    <img
-                      src={p.url}
-                      alt={`${hotel?.name} photo ${pIdx + 1}`}
-                      loading="lazy"
-                      style={{
-                        width: "100%",
-                        height: "100%",
-                        objectFit: "cover",
-                        display: "block",
-                      }}
-                    />
+                {displayedGalleryPhotos.map((p, pIdx) => {
+                  const isRoom = p.label && p.label !== "Hotel & Exterior" && p.label !== "Property Hero Photo" && p.label !== "Hotel Photo";
+                  return (
                     <div
+                      key={`gallery-grid-photo-${pIdx}`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        const fullIdx = activePhotosList.findIndex((item) => item.url === p.url);
+                        setGalleryActiveIndex(fullIdx >= 0 ? fullIdx : pIdx);
+                        setGalleryViewMode("single");
+                      }}
                       style={{
-                        position: "absolute",
-                        bottom: 8,
-                        right: 8,
-                        background: "rgba(0,0,0,0.65)",
-                        backdropFilter: "blur(4px)",
-                        color: "white",
-                        padding: "3px 8px",
-                        borderRadius: 8,
-                        fontSize: "0.68rem",
-                        fontWeight: 700,
+                        position: "relative",
+                        width: "100%",
+                        aspectRatio: "16 / 10",
+                        borderRadius: 14,
+                        overflow: "hidden",
+                        cursor: "pointer",
+                        background: "#0f172a",
+                        border: "1px solid rgba(255, 255, 255, 0.12)",
+                        boxShadow: "0 4px 14px rgba(0,0,0,0.35)",
+                        transition: "transform 0.2s ease, border-color 0.2s ease",
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.transform = "scale(0.985)";
+                        e.currentTarget.style.borderColor = "rgba(255, 255, 255, 0.35)";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.transform = "none";
+                        e.currentTarget.style.borderColor = "rgba(255, 255, 255, 0.12)";
                       }}
                     >
-                      {pIdx + 1}/{activePhotosList.length}
-                    </div>
-                    {p.label && (
+                      <img
+                        src={p.url}
+                        alt={`${hotel?.name} photo ${pIdx + 1}`}
+                        loading="lazy"
+                        style={{
+                          width: "100%",
+                          height: "100%",
+                          objectFit: "cover",
+                          display: "block",
+                        }}
+                      />
+
+                      {/* Subtle Bottom Gradient for Counter Legibility */}
                       <div
                         style={{
                           position: "absolute",
-                          top: 8,
-                          left: 8,
-                          background: "rgba(0,0,0,0.6)",
-                          backdropFilter: "blur(4px)",
-                          color: "#f1f5f9",
-                          padding: "2px 8px",
-                          borderRadius: 8,
-                          fontSize: "0.65rem",
-                          fontWeight: 600,
+                          inset: 0,
+                          background: "linear-gradient(to top, rgba(0,0,0,0.55) 0%, transparent 45%, rgba(0,0,0,0.35) 100%)",
+                          pointerEvents: "none",
+                        }}
+                      />
+
+                      {/* Category Badge: Room Type or Featured (No repetitive Hero Photo spam) */}
+                      {isRoom ? (
+                        <div
+                          style={{
+                            position: "absolute",
+                            top: 8,
+                            left: 8,
+                            background: "rgba(15, 23, 42, 0.78)",
+                            backdropFilter: "blur(6px)",
+                            border: "1px solid rgba(255, 255, 255, 0.22)",
+                            color: "#f8fafc",
+                            padding: "3px 8px",
+                            borderRadius: 6,
+                            fontSize: "0.68rem",
+                            fontWeight: 700,
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 4,
+                            maxWidth: "85%",
+                            whiteSpace: "nowrap",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            boxShadow: "0 2px 4px rgba(0,0,0,0.3)",
+                          }}
+                        >
+                          <span>🛏️</span>
+                          <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>{p.label}</span>
+                        </div>
+                      ) : pIdx === 0 ? (
+                        <div
+                          style={{
+                            position: "absolute",
+                            top: 8,
+                            left: 8,
+                            background: "rgba(234, 88, 12, 0.9)",
+                            backdropFilter: "blur(6px)",
+                            color: "white",
+                            padding: "3px 8px",
+                            borderRadius: 6,
+                            fontSize: "0.68rem",
+                            fontWeight: 800,
+                            boxShadow: "0 2px 4px rgba(0,0,0,0.3)",
+                          }}
+                        >
+                          ⭐ Main Property
+                        </div>
+                      ) : null}
+
+                      {/* Bottom-right: Photo Number */}
+                      <div
+                        style={{
+                          position: "absolute",
+                          bottom: 8,
+                          right: 8,
+                          background: "rgba(0,0,0,0.65)",
+                          backdropFilter: "blur(6px)",
+                          border: "1px solid rgba(255, 255, 255, 0.15)",
+                          color: "white",
+                          padding: "2px 7px",
+                          borderRadius: 6,
+                          fontSize: "0.68rem",
+                          fontWeight: 700,
                         }}
                       >
-                        {p.label}
+                        {pIdx + 1}/{displayedGalleryPhotos.length}
                       </div>
-                    )}
-                  </div>
-                ))}
+                    </div>
+                  );
+                })}
               </div>
             </div>
           ) : (
