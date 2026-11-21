@@ -49,6 +49,11 @@ export const CURATED_CITY_PHOTOS: Record<string, CityPhotoInfo> = {
     landmark: 'Charminar & City of Pearls',
     state: 'Telangana',
   },
+  vijayawada: {
+    url: 'https://images.unsplash.com/photo-1590073242678-70ee3fc28e8e?auto=format&fit=crop&w=800&q=80',
+    landmark: 'Prakasam Barrage & Krishna River',
+    state: 'Andhra Pradesh',
+  },
   shamshabad: {
     url: '/images/destinations/hyderabad.jpg',
     landmark: 'Charminar & City of Pearls',
@@ -133,6 +138,19 @@ export const SUBURB_TO_CITY_MAP: Record<string, string> = {
   'miyapur': 'Hyderabad',
   'manikonda': 'Hyderabad',
   'somajiguda': 'Hyderabad',
+  'ranga reddy': 'Hyderabad',
+  'rangareddy': 'Hyderabad',
+
+  // Vijayawada & surrounding hubs
+  'patamata': 'Vijayawada',
+  'patamata lanka': 'Vijayawada',
+  'labbipet': 'Vijayawada',
+  'benz circle': 'Vijayawada',
+  'krishna lanka': 'Vijayawada',
+  'governorpet': 'Vijayawada',
+  'gunadala': 'Vijayawada',
+  'gannavaram': 'Vijayawada',
+  'kanuru': 'Vijayawada',
 
   // Mumbai & MMR
   'andheri': 'Mumbai',

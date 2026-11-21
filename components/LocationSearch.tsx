@@ -92,9 +92,7 @@ export default function LocationSearch({
   }, []);
 
   const POPULAR_DESTINATIONS = [
-    'Mumbai', 'Goa', 'Delhi', 'Jaipur', 'Manali', 'Kerala', 'Hyderabad',
-    'Bangalore', 'Udaipur', 'Ooty', 'Agra', 'Varanasi', 'Amritsar', 'Chennai',
-    'Kolkata', 'Pune', 'Shimla'
+    'Vijayawada', 'Hyderabad', 'Chennai', 'Kerala'
   ];
 
   useEffect(() => {
@@ -503,7 +501,7 @@ export default function LocationSearch({
         
               {/* Autocomplete Results */}
               <div style={{ marginTop: '12px' }}>
-                {(query.length < 2 ? ['Mumbai', 'Delhi', 'Bangalore', 'Goa', 'Hyderabad'] : results.cities).map(c => (
+                {(query.length < 2 ? ['Vijayawada', 'Hyderabad', 'Chennai', 'Kerala'] : results.cities).map(c => (
                   <div 
                     key={`city-${c}`}
                     onClick={() => { handleCitySelect(c); setIsModalOpen(false); }}

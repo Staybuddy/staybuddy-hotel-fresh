@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -576,12 +576,6 @@ export default function AdminDashboard() {
     fetchAll();
   }
 
-  if (status === 'loading' || loading) return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div className="spinner" style={{ width: 48, height: 48 }} />
-    </div>
-  );
-
   const pendingHotels = hotels.filter(h => h.status === 'pending');
   const approvedHotels = hotels.filter(h => h.status === 'approved');
 
@@ -622,6 +616,12 @@ export default function AdminDashboard() {
 
     return list;
   }, [hotels, pendingHotels, approvedHotels, hotelTabFilter, hotelTypeFilter, hotelCityFilter, hotelSearchQuery]);
+
+  if (status === 'loading' || loading) return (
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div className="spinner" style={{ width: 48, height: 48 }} />
+    </div>
+  );
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: '#f8fafc' }}>

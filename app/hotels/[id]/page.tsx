@@ -6330,11 +6330,11 @@ export default function HotelDetailPage() {
                 display: "flex",
                 flexDirection: "column",
                 overflow: "hidden",
-                background: "#080c16",
+                background: "#ffffff",
               }}
               onClick={(e) => e.stopPropagation()}
             >
-              {/* Sticky Top Header (Photo 4 style) */}
+              {/* Clean White Top Header */}
               <div
                 style={{
                   position: "sticky",
@@ -6343,25 +6343,25 @@ export default function HotelDetailPage() {
                   display: "flex",
                   justifyContent: "space-between",
                   alignItems: "center",
-                  padding: "14px 18px",
-                  background: "rgba(8, 12, 22, 0.95)",
-                  backdropFilter: "blur(12px)",
-                  borderBottom: "1px solid rgba(255, 255, 255, 0.12)",
+                  padding: "16px 24px",
+                  background: "#ffffff",
+                  borderBottom: "1px solid #e2e8f0",
+                  boxShadow: "0 1px 3px rgba(0,0,0,0.03)",
                 }}
               >
-                <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 14, minWidth: 0 }}>
                   <button
                     type="button"
                     onClick={closePhotoViewer}
                     style={{
-                      background: "rgba(255,255,255,0.12)",
+                      background: "#f1f5f9",
                       border: "none",
-                      color: "white",
-                      width: 38,
-                      height: 38,
+                      color: "#0f172a",
+                      width: 40,
+                      height: 40,
                       borderRadius: "50%",
                       cursor: "pointer",
-                      fontSize: "1.2rem",
+                      fontSize: "1.25rem",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
@@ -6372,11 +6372,11 @@ export default function HotelDetailPage() {
                     ←
                   </button>
                   <div style={{ minWidth: 0 }}>
-                    <h3 style={{ margin: 0, fontSize: "1.05rem", fontWeight: 800, color: "white", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                    <h3 style={{ margin: 0, fontSize: "1.15rem", fontWeight: 800, color: "#0f172a", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                       {hotel?.name}
                     </h3>
-                    <div style={{ fontSize: "0.75rem", color: "#94a3b8" }}>
-                      {displayedGalleryPhotos.length} Photos • Tap any photo to view full size
+                    <div style={{ fontSize: "0.8rem", color: "#64748b", marginTop: 2 }}>
+                      {allPhotos.length} Verified Photos • Tap any photo to view full size
                     </div>
                   </div>
                 </div>
@@ -6385,17 +6385,18 @@ export default function HotelDetailPage() {
                   type="button"
                   onClick={closePhotoViewer}
                   style={{
-                    background: "rgba(255,255,255,0.15)",
+                    background: "#f1f5f9",
                     border: "none",
-                    color: "white",
-                    width: 36,
-                    height: 36,
+                    color: "#64748b",
+                    width: 38,
+                    height: 38,
                     borderRadius: "50%",
                     cursor: "pointer",
-                    fontSize: "1.1rem",
+                    fontSize: "1.15rem",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
+                    transition: "all 0.2s",
                   }}
                   aria-label="Close"
                 >
@@ -6403,38 +6404,39 @@ export default function HotelDetailPage() {
                 </button>
               </div>
 
-              {/* Category Filter Chips for Grid Mode */}
+              {/* Clean Category Filter Chips */}
               {(!customGalleryPhotos || customGalleryPhotos.length === 0) && (
                 <div style={{
                   display: "flex",
-                  gap: 8,
-                  padding: "10px 16px",
+                  gap: 10,
+                  padding: "12px 24px",
                   overflowX: "auto",
-                  background: "rgba(8, 12, 22, 0.95)",
-                  borderBottom: "1px solid rgba(255, 255, 255, 0.08)",
+                  background: "#fafafa",
+                  borderBottom: "1px solid #e2e8f0",
                   WebkitOverflowScrolling: "touch",
                   scrollbarWidth: "none",
                 }}>
                   {[
                     { id: "all", label: `All Photos (${allPhotos.length})` },
-                    ...(roomPhotos.length > 0 ? [{ id: "rooms", label: `🛏️ Rooms & Suites (${roomPhotos.length})` }] : []),
-                    ...(propertyPhotos.length > 0 ? [{ id: "property", label: `🏨 Property & Amenities (${propertyPhotos.length})` }] : [])
+                    ...(propertyPhotos.length > 0 ? [{ id: "property", label: `Views & Exterior (${propertyPhotos.length})` }] : []),
+                    ...(roomPhotos.length > 0 ? [{ id: "rooms", label: `Rooms & Suites (${roomPhotos.length})` }] : [])
                   ].map((tab) => (
                     <button
                       key={tab.id}
                       type="button"
                       onClick={() => setGalleryCategoryFilter(tab.id as any)}
                       style={{
-                        padding: "6px 14px",
-                        borderRadius: 20,
-                        border: galleryCategoryFilter === tab.id ? "1.5px solid var(--brand-500, #ff5722)" : "1px solid rgba(255,255,255,0.2)",
-                        background: galleryCategoryFilter === tab.id ? "var(--brand-500, #ff5722)" : "rgba(255,255,255,0.08)",
-                        color: "white",
+                        padding: "7px 18px",
+                        borderRadius: 24,
+                        border: galleryCategoryFilter === tab.id ? "1.5px solid #0f172a" : "1px solid #cbd5e1",
+                        background: galleryCategoryFilter === tab.id ? "#0f172a" : "#ffffff",
+                        color: galleryCategoryFilter === tab.id ? "#ffffff" : "#475569",
                         fontWeight: 700,
-                        fontSize: "0.8rem",
+                        fontSize: "0.84rem",
                         cursor: "pointer",
                         whiteSpace: "nowrap",
                         transition: "all 0.2s ease",
+                        boxShadow: galleryCategoryFilter === tab.id ? "0 2px 6px rgba(15,23,42,0.2)" : "none",
                       }}
                     >
                       {tab.label}
@@ -6443,145 +6445,239 @@ export default function HotelDetailPage() {
                 </div>
               )}
 
-              {/* 2-Column Vertical Scrollable Grid with Clean Proportions */}
+              {/* Clean Responsive Multi-Column Photo Grid (Matching Photo 3) */}
               <div
                 style={{
                   flex: 1,
                   overflowY: "auto",
-                  padding: "16px 14px 40px 14px",
-                  display: "grid",
-                  gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-                  gap: "12px",
-                  maxWidth: 960,
+                  padding: "24px 20px 60px 20px",
+                  maxWidth: 1120,
                   width: "100%",
                   margin: "0 auto",
                   boxSizing: "border-box",
                   WebkitOverflowScrolling: "touch",
                 }}
               >
-                {displayedGalleryPhotos.map((p, pIdx) => {
-                  const isRoom = p.label && p.label !== "Hotel & Exterior" && p.label !== "Property Hero Photo" && p.label !== "Hotel Photo";
-                  return (
-                    <div
-                      key={`gallery-grid-photo-${pIdx}`}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        const fullIdx = activePhotosList.findIndex((item) => item.url === p.url);
-                        setGalleryActiveIndex(fullIdx >= 0 ? fullIdx : pIdx);
-                        setGalleryViewMode("single");
-                      }}
-                      style={{
-                        position: "relative",
-                        width: "100%",
-                        aspectRatio: "16 / 10",
-                        borderRadius: 14,
-                        overflow: "hidden",
-                        cursor: "pointer",
-                        background: "#0f172a",
-                        border: "1px solid rgba(255, 255, 255, 0.12)",
-                        boxShadow: "0 4px 14px rgba(0,0,0,0.35)",
-                        transition: "transform 0.2s ease, border-color 0.2s ease",
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.transform = "scale(0.985)";
-                        e.currentTarget.style.borderColor = "rgba(255, 255, 255, 0.35)";
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.transform = "none";
-                        e.currentTarget.style.borderColor = "rgba(255, 255, 255, 0.12)";
-                      }}
-                    >
-                      <img
-                        src={p.url}
-                        alt={`${hotel?.name} photo ${pIdx + 1}`}
-                        loading="lazy"
-                        style={{
-                          width: "100%",
-                          height: "100%",
-                          objectFit: "cover",
-                          display: "block",
-                        }}
-                      />
-
-                      {/* Subtle Bottom Gradient for Counter Legibility */}
+                {/* Mode 1: All Photos - Grouped by Views & Rooms */}
+                {galleryCategoryFilter === "all" && propertyPhotos.length > 0 && roomPhotos.length > 0 ? (
+                  <>
+                    {/* Section 1: Views / Exterior */}
+                    <div style={{ marginBottom: 36 }}>
+                      <h3 style={{ fontSize: "1.25rem", fontWeight: 800, color: "#0f172a", margin: "0 0 16px 0", letterSpacing: "-0.3px" }}>
+                        Views
+                      </h3>
                       <div
                         style={{
-                          position: "absolute",
-                          inset: 0,
-                          background: "linear-gradient(to top, rgba(0,0,0,0.55) 0%, transparent 45%, rgba(0,0,0,0.35) 100%)",
-                          pointerEvents: "none",
-                        }}
-                      />
-
-                      {/* Category Badge: Room Type or Featured (No repetitive Hero Photo spam) */}
-                      {isRoom ? (
-                        <div
-                          style={{
-                            position: "absolute",
-                            top: 8,
-                            left: 8,
-                            background: "rgba(15, 23, 42, 0.78)",
-                            backdropFilter: "blur(6px)",
-                            border: "1px solid rgba(255, 255, 255, 0.22)",
-                            color: "#f8fafc",
-                            padding: "3px 8px",
-                            borderRadius: 6,
-                            fontSize: "0.68rem",
-                            fontWeight: 700,
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 4,
-                            maxWidth: "85%",
-                            whiteSpace: "nowrap",
-                            overflow: "hidden",
-                            textOverflow: "ellipsis",
-                            boxShadow: "0 2px 4px rgba(0,0,0,0.3)",
-                          }}
-                        >
-                          <span>🛏️</span>
-                          <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>{p.label}</span>
-                        </div>
-                      ) : pIdx === 0 ? (
-                        <div
-                          style={{
-                            position: "absolute",
-                            top: 8,
-                            left: 8,
-                            background: "rgba(234, 88, 12, 0.9)",
-                            backdropFilter: "blur(6px)",
-                            color: "white",
-                            padding: "3px 8px",
-                            borderRadius: 6,
-                            fontSize: "0.68rem",
-                            fontWeight: 800,
-                            boxShadow: "0 2px 4px rgba(0,0,0,0.3)",
-                          }}
-                        >
-                          ⭐ Main Property
-                        </div>
-                      ) : null}
-
-                      {/* Bottom-right: Photo Number */}
-                      <div
-                        style={{
-                          position: "absolute",
-                          bottom: 8,
-                          right: 8,
-                          background: "rgba(0,0,0,0.65)",
-                          backdropFilter: "blur(6px)",
-                          border: "1px solid rgba(255, 255, 255, 0.15)",
-                          color: "white",
-                          padding: "2px 7px",
-                          borderRadius: 6,
-                          fontSize: "0.68rem",
-                          fontWeight: 700,
+                          display: "grid",
+                          gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
+                          gap: "16px",
                         }}
                       >
-                        {pIdx + 1}/{displayedGalleryPhotos.length}
+                        {propertyPhotos.map((p, pIdx) => {
+                          const fullIdx = allPhotos.findIndex((item) => item.url === p.url);
+                          return (
+                            <div
+                              key={`gallery-prop-${pIdx}`}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setGalleryActiveIndex(fullIdx >= 0 ? fullIdx : pIdx);
+                                setGalleryViewMode("single");
+                              }}
+                              style={{
+                                position: "relative",
+                                width: "100%",
+                                aspectRatio: "4 / 3",
+                                borderRadius: 14,
+                                overflow: "hidden",
+                                cursor: "pointer",
+                                background: "#f1f5f9",
+                                border: "1px solid #e2e8f0",
+                                boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
+                                transition: "transform 0.25s ease, box-shadow 0.25s ease",
+                              }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.transform = "translateY(-3px)";
+                                e.currentTarget.style.boxShadow = "0 8px 20px rgba(0,0,0,0.12)";
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.transform = "none";
+                                e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.05)";
+                              }}
+                            >
+                              <img
+                                src={p.url}
+                                alt={`${hotel?.name} view ${pIdx + 1}`}
+                                loading="lazy"
+                                style={{
+                                  width: "100%",
+                                  height: "100%",
+                                  objectFit: "cover",
+                                  display: "block",
+                                }}
+                              />
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
-                  );
-                })}
+
+                    {/* Section 2: Rooms & Suites */}
+                    <div>
+                      <h3 style={{ fontSize: "1.25rem", fontWeight: 800, color: "#0f172a", margin: "0 0 16px 0", letterSpacing: "-0.3px" }}>
+                        Rooms & Suites
+                      </h3>
+                      <div
+                        style={{
+                          display: "grid",
+                          gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
+                          gap: "16px",
+                        }}
+                      >
+                        {roomPhotos.map((p, pIdx) => {
+                          const fullIdx = allPhotos.findIndex((item) => item.url === p.url);
+                          return (
+                            <div
+                              key={`gallery-room-${pIdx}`}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setGalleryActiveIndex(fullIdx >= 0 ? fullIdx : pIdx);
+                                setGalleryViewMode("single");
+                              }}
+                              style={{
+                                position: "relative",
+                                width: "100%",
+                                aspectRatio: "4 / 3",
+                                borderRadius: 14,
+                                overflow: "hidden",
+                                cursor: "pointer",
+                                background: "#f1f5f9",
+                                border: "1px solid #e2e8f0",
+                                boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
+                                transition: "transform 0.25s ease, box-shadow 0.25s ease",
+                              }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.transform = "translateY(-3px)";
+                                e.currentTarget.style.boxShadow = "0 8px 20px rgba(0,0,0,0.12)";
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.transform = "none";
+                                e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.05)";
+                              }}
+                            >
+                              <img
+                                src={p.url}
+                                alt={`${hotel?.name} room ${pIdx + 1}`}
+                                loading="lazy"
+                                style={{
+                                  width: "100%",
+                                  height: "100%",
+                                  objectFit: "cover",
+                                  display: "block",
+                                }}
+                              />
+                              {p.label && (
+                                <div
+                                  style={{
+                                    position: "absolute",
+                                    bottom: 10,
+                                    left: 10,
+                                    background: "rgba(15, 23, 42, 0.8)",
+                                    backdropFilter: "blur(4px)",
+                                    color: "white",
+                                    padding: "3px 10px",
+                                    borderRadius: 6,
+                                    fontSize: "0.74rem",
+                                    fontWeight: 700,
+                                  }}
+                                >
+                                  🛏️ {p.label}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  /* Single Filter Mode */
+                  <div>
+                    <h3 style={{ fontSize: "1.25rem", fontWeight: 800, color: "#0f172a", margin: "0 0 16px 0", letterSpacing: "-0.3px" }}>
+                      {galleryCategoryFilter === "rooms" ? "Rooms & Suites" : galleryCategoryFilter === "property" ? "Views" : "All Photos"}
+                    </h3>
+                    <div
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
+                        gap: "16px",
+                      }}
+                    >
+                      {displayedGalleryPhotos.map((p, pIdx) => {
+                        const fullIdx = activePhotosList.findIndex((item) => item.url === p.url);
+                        return (
+                          <div
+                            key={`gallery-filter-${pIdx}`}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setGalleryActiveIndex(fullIdx >= 0 ? fullIdx : pIdx);
+                              setGalleryViewMode("single");
+                            }}
+                            style={{
+                              position: "relative",
+                              width: "100%",
+                              aspectRatio: "4 / 3",
+                              borderRadius: 14,
+                              overflow: "hidden",
+                              cursor: "pointer",
+                              background: "#f1f5f9",
+                              border: "1px solid #e2e8f0",
+                              boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
+                              transition: "transform 0.25s ease, box-shadow 0.25s ease",
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.transform = "translateY(-3px)";
+                              e.currentTarget.style.boxShadow = "0 8px 20px rgba(0,0,0,0.12)";
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.transform = "none";
+                              e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.05)";
+                            }}
+                          >
+                            <img
+                              src={p.url}
+                              alt={`${hotel?.name} photo ${pIdx + 1}`}
+                              loading="lazy"
+                              style={{
+                                width: "100%",
+                                height: "100%",
+                                objectFit: "cover",
+                                display: "block",
+                              }}
+                            />
+                            {p.label && p.label !== "Hotel & Exterior" && p.label !== "Property Hero Photo" && (
+                              <div
+                                style={{
+                                  position: "absolute",
+                                  bottom: 10,
+                                  left: 10,
+                                  background: "rgba(15, 23, 42, 0.8)",
+                                  backdropFilter: "blur(4px)",
+                                  color: "white",
+                                  padding: "3px 10px",
+                                  borderRadius: 6,
+                                  fontSize: "0.74rem",
+                                  fontWeight: 700,
+                                }}
+                              >
+                                🛏️ {p.label}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           ) : (

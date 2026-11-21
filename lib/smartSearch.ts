@@ -91,19 +91,22 @@ export function calculateSmartScore(query: string, target: string): number {
   const qSigJoined = qSig.join('');
   const tSigJoined = tSig.join('');
 
-  // 3. Significant joined tokens substring
-  if (tSigJoined.includes(qSigJoined) || qSigJoined.includes(tSigJoined)) return 88;
+  // 3. Significant joined tokens substring (minimum 3 characters to avoid false short matches)
+  if (qSigJoined.length >= 3 && (tSigJoined.includes(qSigJoined) || (qSigJoined.length >= 4 && qSigJoined.includes(tSigJoined)))) return 88;
 
   // 4. Phonetic normalization
   const qPh = normalizePhonetics(qSigJoined);
   const tPh = normalizePhonetics(tSigJoined);
   if (qPh === tPh) return 86;
-  if (tPh.includes(qPh) || qPh.includes(tPh)) return 83;
+  if (qPh.length >= 4 && (tPh.includes(qPh) || qPh.includes(tPh))) return 83;
 
-  // 5. Consonant skeleton
+  // 5. Consonant skeleton (requires at least 3 consonants to avoid matching single-letter skeletons like 'g' in 'goa')
   const qSkel = getConsonantSkeleton(qSigJoined);
   const tSkel = getConsonantSkeleton(tSigJoined);
-  if (qSkel && tSkel && (qSkel === tSkel || tSkel.includes(qSkel) || qSkel.includes(tSkel))) return 80;
+  if (qSkel && tSkel && qSkel.length >= 3 && tSkel.length >= 3) {
+    if (qSkel === tSkel) return 80;
+    if (qSkel.length >= 4 && (tSkel.includes(qSkel) || qSkel.includes(tSkel))) return 78;
+  }
 
   // 6. Token-level fuzzy cross matching
   let maxTokenScore = 0;

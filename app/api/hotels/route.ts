@@ -121,20 +121,20 @@ export async function GET(request: NextRequest) {
 
           // Multi-token match: If query contains multiple words (e.g. "Vijayawada India" or "Hotel Minerva"), check tokens
           const tokenMatch = cityTokens.some(token => {
-            if (!token || token.length < 2) return false;
+            if (!token || token.length < 3) return false;
             return (
               hCityLower.includes(token) ||
               hAreaLower.includes(token) ||
               hNameLower.includes(token) ||
-              calculateSmartScore(token, hCity) >= 70 ||
-              calculateSmartScore(token, hName) >= 70
+              calculateSmartScore(token, hCity) >= 75 ||
+              calculateSmartScore(token, hName) >= 75
             );
           });
 
           return { ...h, smartScore: score, isTextMatched: directMatch || tokenMatch };
         })
         .filter((h: any) => {
-          if (h.smartScore >= 55) return true;
+          if (h.smartScore >= 75) return true;
           return Boolean(h.isTextMatched);
         })
         .sort((a: any, b: any) => (b.smartScore || 0) - (a.smartScore || 0));

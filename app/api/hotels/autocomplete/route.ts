@@ -5,9 +5,7 @@ import { getCached, setCached } from '@/lib/cache';
 import { calculateSmartScore, getSignificantTokens } from '@/lib/smartSearch';
 
 const POPULAR_FALLBACK_CITIES = [
-  'Mumbai', 'Goa', 'Delhi', 'Jaipur', 'Manali', 'Kerala', 'Hyderabad',
-  'Bangalore', 'Udaipur', 'Ooty', 'Agra', 'Varanasi', 'Amritsar', 'Chennai',
-  'Kolkata', 'Pune', 'Shimla'
+  'Vijayawada', 'Hyderabad', 'Chennai', 'Kerala'
 ];
 
 export async function GET(request: NextRequest) {
@@ -80,7 +78,7 @@ export async function GET(request: NextRequest) {
         const maxScore = Math.max(nameScore, cityScore * 0.9, areaScore * 0.9, addressScore * 0.8) + tokenBonus;
         return { ...h, name: hName, city: hCity, area: hArea, searchScore: maxScore };
       })
-      .filter((h: any) => h.searchScore >= 55)
+      .filter((h: any) => h.searchScore >= 75)
       .sort((a: any, b: any) => b.searchScore - a.searchScore)
       .slice(0, 8);
 
@@ -88,7 +86,7 @@ export async function GET(request: NextRequest) {
       _id: h._id,
       name: h.name,
       city: h.city,
-      isAiMatch: h.searchScore >= 70 && !h.name?.toLowerCase().includes(qLower),
+      isAiMatch: h.searchScore >= 75 && !h.name?.toLowerCase().includes(qLower),
     }));
 
     // Smart AI City Matching
@@ -107,7 +105,7 @@ export async function GET(request: NextRequest) {
         }
         return { city: cTrimmed, score };
       })
-      .filter((c: any) => c.score >= 55)
+      .filter((c: any) => c.score >= 75)
       .sort((a: any, b: any) => b.score - a.score)
       .slice(0, 5)
       .map((c: any) => c.city);

@@ -18,16 +18,10 @@ import { adjustRoomsAndAdults, MAX_ADULTS_PER_ROOM } from '@/lib/occupancyPricin
 import FlagshipHotelStores from '@/components/FlagshipHotelStores';
 
 const DESTINATIONS = [
-  { city: 'Mumbai', country: 'India', hotels: 342 },
-  { city: 'Goa', country: 'India', hotels: 218 },
-  { city: 'Delhi', country: 'India', hotels: 485 },
-  { city: 'Jaipur', country: 'India', hotels: 196 },
-  { city: 'Manali', country: 'India', hotels: 87 },
-  { city: 'Kerala', country: 'India', hotels: 154 },
-  { city: 'Hyderabad', country: 'India', hotels: 310 },
-  { city: 'Bangalore', country: 'India', hotels: 290 },
-  { city: 'Udaipur', country: 'India', hotels: 142 },
-  { city: 'Ooty', country: 'India', hotels: 95 },
+  { city: 'Vijayawada', country: 'India', hotels: 10 },
+  { city: 'Hyderabad', country: 'India', hotels: 10 },
+  { city: 'Chennai', country: 'India', hotels: 4 },
+  { city: 'Kerala', country: 'India', hotels: 3 },
 ];
 
 const AMENITY_ICONS: Record<string, string> = {

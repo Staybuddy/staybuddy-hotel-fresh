@@ -876,11 +876,49 @@ function HotelSearch() {
               ))}
             </div>
           ) : sortedHotels.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '80px 20px', color: 'var(--text-muted)' }}>
-              <div style={{ fontSize: '3rem', marginBottom: 16 }}>🔍</div>
-              <h3>No hotels found</h3>
-              <p style={{ marginTop: 8 }}>Try adjusting your search or filters</p>
-              <button className="btn btn-primary" style={{ marginTop: 16 }} onClick={() => setFilters(p => ({ ...p, city: '', category: '', minRating: '', starRating: '', propertyType: '' }))}>Clear Filters</button>
+            <div style={{ textAlign: 'center', padding: '60px 20px', background: 'white', borderRadius: 16, border: '1px solid #e2e8f0', boxShadow: '0 4px 12px rgba(0,0,0,0.03)' }}>
+              <div style={{ fontSize: '3rem', marginBottom: 12 }}>🏨</div>
+              <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#0f172a' }}>
+                {filters.city ? `No hotels available in ${filters.city} right now` : 'No hotels found matching your criteria'}
+              </h3>
+              <p style={{ marginTop: 8, color: '#64748b', fontSize: '0.9rem', maxWidth: 460, margin: '8px auto 20px' }}>
+                StayBuddy currently operates exclusively in <strong>Vijayawada</strong>, <strong>Hyderabad</strong>, <strong>Chennai</strong>, and <strong>Kerala</strong>.
+              </p>
+              <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={() => {
+                    setFilters(p => ({ ...p, city: 'Vijayawada' }));
+                    const q = new URLSearchParams(window.location.search);
+                    q.set('city', 'Vijayawada');
+                    window.location.search = q.toString();
+                  }}
+                  style={{ padding: '8px 16px', fontSize: '0.88rem' }}
+                >
+                  📍 Explore Vijayawada Hotels
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={() => {
+                    setFilters(p => ({ ...p, city: 'Hyderabad' }));
+                    const q = new URLSearchParams(window.location.search);
+                    q.set('city', 'Hyderabad');
+                    window.location.search = q.toString();
+                  }}
+                  style={{ padding: '8px 16px', fontSize: '0.88rem', background: '#0284c7', borderColor: '#0284c7' }}
+                >
+                  📍 Explore Hyderabad Hotels
+                </button>
+                <button
+                  type="button"
+                  style={{ padding: '8px 16px', fontSize: '0.88rem', background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: 8, color: '#475569', fontWeight: 700, cursor: 'pointer' }}
+                  onClick={() => setFilters(p => ({ ...p, city: '', category: '', minRating: '', starRating: '', propertyType: '' }))}
+                >
+                  View All Available Hotels
+                </button>
+              </div>
             </div>
           ) : (
             <>
