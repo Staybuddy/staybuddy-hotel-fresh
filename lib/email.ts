@@ -50,6 +50,36 @@ export function getRoomCategoryDisplay(booking: any): string {
   return 'Standard Room';
 }
 
+export function getMealPlanDisplay(planCode: string = 'CP'): { code: string; label: string; badgeHtml: string } {
+  const code = (planCode || 'CP').toUpperCase().trim();
+  if (code === 'CP') {
+    return {
+      code: 'CP',
+      label: 'Room with Free Breakfast Included (CP)',
+      badgeHtml: '<span style="background: #ecfdf5; color: #047857; border: 1.5px solid #a7f3d0; padding: 4px 10px; border-radius: 6px; font-weight: 700; font-size: 0.9em; display: inline-block;">🍳 Room with Free Breakfast (CP)</span>'
+    };
+  }
+  if (code === 'MAP') {
+    return {
+      code: 'MAP',
+      label: 'Room with Breakfast & Dinner Included (MAP)',
+      badgeHtml: '<span style="background: #fef3c7; color: #b45309; border: 1.5px solid #fde68a; padding: 4px 10px; border-radius: 6px; font-weight: 700; font-size: 0.9em; display: inline-block;">🍽️ Room + Breakfast & Dinner (MAP)</span>'
+    };
+  }
+  if (code === 'AP') {
+    return {
+      code: 'AP',
+      label: 'Room with All Meals Included (AP)',
+      badgeHtml: '<span style="background: #eff6ff; color: #1d4ed8; border: 1.5px solid #bfdbfe; padding: 4px 10px; border-radius: 6px; font-weight: 700; font-size: 0.9em; display: inline-block;">🍱 Room with All Meals (AP)</span>'
+    };
+  }
+  return {
+    code: 'EP',
+    label: 'Room Only (EP)',
+    badgeHtml: '<span style="background: #f3f4f6; color: #4b5563; border: 1.5px solid #e5e7eb; padding: 4px 10px; border-radius: 6px; font-weight: 700; font-size: 0.9em; display: inline-block;">🛏️ Room Only (EP)</span>'
+  };
+}
+
 export function getDirectionsUrl(hotel: any, hotelName: string, hotelCity: string): string {
   if (hotel && typeof hotel === 'object') {
     if (hotel.coordinates?.lat && hotel.coordinates?.lng) {
@@ -68,6 +98,8 @@ export async function sendBookingConfirmationEmail(booking: any) {
   const hotelName = (typeof hotelId === 'object' && hotelId?.name) ? hotelId.name : (booking.hotelName || 'StayBuddy Hotel');
   const hotelCity = (typeof hotelId === 'object' && hotelId?.city) ? hotelId.city : (booking.hotelCity || '');
   const roomCategory = getRoomCategoryDisplay(booking);
+  const rawMealPlan = booking.ratePlan || (typeof booking.roomId === 'object' ? booking.roomId?.ratePlan : null) || 'CP';
+  const mealPlanInfo = getMealPlanDisplay(rawMealPlan);
   const directionsUrl = getDirectionsUrl(hotelId, hotelName, hotelCity);
 
   const checkInStr = new Date(checkIn).toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
@@ -125,6 +157,12 @@ export async function sendBookingConfirmationEmail(booking: any) {
               <td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb; color: #6b7280;">Room Category</td>
               <td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb; color: #111827; font-weight: 700; text-align: right;">
                 <span style="background: #f1f5f9; color: #0f172a; padding: 4px 10px; border-radius: 6px; font-size: 13px;">${roomCategory}</span>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb; color: #6b7280;">Meal Plan</td>
+              <td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb; text-align: right;">
+                ${mealPlanInfo.badgeHtml}
               </td>
             </tr>
             <tr>
@@ -204,6 +242,9 @@ export async function sendPartnerNotificationEmail(booking: any, partnerEmail: s
   const partnerOccDisplay = booking.partnerOccupancySummary 
     || (occupancySummary ? occupancySummary.replace(/@\s*₹[\d,]+/g, `@ ₹${Number(booking.partnerPricePerNight || 0).toLocaleString()}`) : '');
 
+  const rawMealPlan = booking.ratePlan || (typeof booking.roomId === 'object' ? booking.roomId?.ratePlan : null) || 'CP';
+  const mealPlanInfo = getMealPlanDisplay(rawMealPlan);
+
   const mailOptions = {
     from: process.env.EMAIL_FROM || 'StayBuddy <noreply@staybuddy.com>',
     to: partnerEmail,
@@ -223,6 +264,7 @@ export async function sendPartnerNotificationEmail(booking: any, partnerEmail: s
             <p style="margin: 8px 0;"><strong>Guest Name:</strong> ${guestName || 'Guest'}</p>
             ${guestPhone ? `<p style="margin: 8px 0;"><strong>Guest Phone:</strong> ${guestPhone}</p>` : ''}
             <p style="margin: 8px 0;"><strong>Room Category:</strong> <span style="background: #d1fae5; color: #065f46; padding: 3px 8px; border-radius: 4px; font-weight: 700;">${roomCategory}</span></p>
+            <p style="margin: 8px 0;"><strong>Meal Plan:</strong> ${mealPlanInfo.badgeHtml}</p>
             ${partnerOccDisplay ? `<p style="margin: 8px 0;"><strong>Occupancy Breakdown:</strong> ${partnerOccDisplay}</p>` : ''}
             <p style="margin: 8px 0;"><strong>Check-in:</strong> ${checkInStr}</p>
             <p style="margin: 8px 0;"><strong>Check-out:</strong> ${checkOutStr}</p>
