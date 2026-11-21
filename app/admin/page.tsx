@@ -3118,7 +3118,7 @@ export default function AdminDashboard() {
 
                           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(135px, 1fr))', gap: 12, marginBottom: 14 }}>
                             <div>
-                              <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 800, color: '#c2410c', marginBottom: 4 }}>Single Price (₹) *</label>
+                              <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 800, color: '#c2410c', marginBottom: 4 }}>Single B2B Price (₹) *</label>
                               <input 
                                 type="number" 
                                 placeholder="e.g. 1500" 
@@ -3127,8 +3127,10 @@ export default function AdminDashboard() {
                                   const updatedRooms = [...extranetModal.rooms];
                                   const valSgl = Number(e.target.value) || 0;
                                   updatedRooms[rIdx].priceSingle = valSgl;
+                                  updatedRooms[rIdx].b2bPriceSingle = valSgl;
                                   if (!updatedRooms[rIdx].priceDouble) {
                                     updatedRooms[rIdx].b2bPrice = valSgl;
+                                    updatedRooms[rIdx].b2bPriceDouble = valSgl;
                                   }
                                   setExtranetModal({...extranetModal, rooms: updatedRooms});
                                 }} 
@@ -3137,7 +3139,7 @@ export default function AdminDashboard() {
                               />
                             </div>
                             <div>
-                              <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 800, color: '#15803d', marginBottom: 4 }}>Double Price (₹) *</label>
+                              <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 800, color: '#15803d', marginBottom: 4 }}>Double B2B Price (₹) *</label>
                               <input 
                                 type="number" 
                                 placeholder="e.g. 2000" 
@@ -3146,7 +3148,10 @@ export default function AdminDashboard() {
                                   const updatedRooms = [...extranetModal.rooms];
                                   const valDbl = Number(e.target.value) || 0;
                                   updatedRooms[rIdx].priceDouble = valDbl;
+                                  updatedRooms[rIdx].b2bPriceDouble = valDbl;
                                   updatedRooms[rIdx].b2bPrice = valDbl || updatedRooms[rIdx].priceSingle || 0;
+                                  const numTrp = Number(updatedRooms[rIdx].priceTriple) || 0;
+                                  updatedRooms[rIdx].maxGuests = numTrp > 0 ? 3 : (valDbl > 0 ? 2 : 1);
                                   setExtranetModal({...extranetModal, rooms: updatedRooms});
                                 }} 
                                 style={{ width: '100%', padding: '9px 12px', borderRadius: 8, border: '1.5px solid #bbf7d0', background: '#f0fdf4', fontSize: '0.9rem', fontWeight: 700 }} 
@@ -3154,7 +3159,7 @@ export default function AdminDashboard() {
                               />
                             </div>
                             <div>
-                              <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#1e40af', marginBottom: 4 }}>Triple (3 Guests)</label>
+                              <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#1e40af', marginBottom: 4 }}>Triple B2B Price (₹)</label>
                               <input 
                                 type="number" 
                                 placeholder={room.priceTriple ? "e.g. 2500" : "+ Add 3-Occupancy"} 
@@ -3163,7 +3168,8 @@ export default function AdminDashboard() {
                                   const updatedRooms = [...extranetModal.rooms];
                                   const numTrp = Number(e.target.value) || 0;
                                   updatedRooms[rIdx].priceTriple = numTrp;
-                                  updatedRooms[rIdx].maxGuests = numTrp > 0 ? 3 : 2;
+                                  updatedRooms[rIdx].b2bPriceTriple = numTrp;
+                                  updatedRooms[rIdx].maxGuests = numTrp > 0 ? 3 : (Number(updatedRooms[rIdx].priceDouble) > 0 ? 2 : 1);
                                   setExtranetModal({...extranetModal, rooms: updatedRooms});
                                 }} 
                                 style={{ width: '100%', padding: '9px 12px', borderRadius: 8, border: room.priceTriple ? '1.5px solid #bfdbfe' : '1.5px dashed #fdba74', background: room.priceTriple ? '#eff6ff' : 'white', fontSize: '0.9rem', fontWeight: 700, color: '#1e40af' }} 

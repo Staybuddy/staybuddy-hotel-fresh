@@ -139,62 +139,57 @@ export function applyMarginToRoom(room: any, marginPercentage: number = 0) {
   if (!room) return room;
   const margin = Number(marginPercentage) || 0;
 
-  // Base rates: prioritize explicit partner B2B rates only if strictly positive;
-  // otherwise strictly preserve the partner's configured priceSingle, priceDouble, priceTriple
-  const rawSingle = Number(room.b2bPriceSingle) > 0
-    ? Number(room.b2bPriceSingle)
-    : (Number(room.priceSingle) || 0);
+  // The base B2B rates configured by the partner in CRM:
+  // These represent the exact net payout rates that StayBuddy pays the hotel partner.
+  const b2bSingle = Number(room.b2bPriceSingle) > 0 ? Number(room.b2bPriceSingle) : (Number(room.priceSingle) || 0);
+  const b2bDouble = Number(room.b2bPriceDouble) > 0 ? Number(room.b2bPriceDouble) : (Number(room.priceDouble) || 0);
+  const b2bTriple = Number(room.b2bPriceTriple) > 0 ? Number(room.b2bPriceTriple) : (Number(room.priceTriple) || 0);
 
-  const rawDouble = Number(room.b2bPriceDouble) > 0
-    ? Number(room.b2bPriceDouble)
-    : (Number(room.priceDouble) || 0);
-
-  const rawTriple = Number(room.b2bPriceTriple) > 0
-    ? Number(room.b2bPriceTriple)
-    : (Number(room.priceTriple) || 0);
-
-  const isLegacy = rawSingle === 0 && rawDouble === 0 && rawTriple === 0;
-  const rawFallback = isLegacy
-    ? (Number(room.b2bPrice) > 0 ? Number(room.b2bPrice) : (Number(room.price) || Number(room.clientPrice) || 0))
+  const isLegacy = b2bSingle === 0 && b2bDouble === 0 && b2bTriple === 0;
+  const b2bFallback = isLegacy
+    ? (Number(room.b2bPrice) || Number(room.price) || Number(room.clientPrice) || 0)
     : 0;
 
-  const maxGuests = rawTriple > 0 ? 3 : (rawDouble > 0 ? 2 : (rawSingle > 0 ? 1 : (Number(room.maxGuests) || 2)));
+  const maxGuests = b2bTriple > 0 ? 3 : (b2bDouble > 0 ? 2 : (b2bSingle > 0 ? 1 : (Number(room.maxGuests) || 2)));
   const bedType = maxGuests === 1 ? 'Single' : (room.bedType || 'Double');
 
   if (margin <= 0) {
     return {
       ...room,
-      b2bPriceSingle: rawSingle,
-      b2bPriceDouble: rawDouble,
-      b2bPriceTriple: rawTriple,
-      b2bPrice: rawFallback || (rawDouble || rawSingle || rawTriple),
-      priceSingle: rawSingle,
-      priceDouble: rawDouble,
-      priceTriple: rawTriple,
-      price: rawDouble || rawSingle || rawTriple || rawFallback,
-      clientPrice: rawDouble || rawSingle || rawTriple || rawFallback,
+      b2bPriceSingle: b2bSingle,
+      b2bPriceDouble: b2bDouble,
+      b2bPriceTriple: b2bTriple,
+      b2bPrice: b2bFallback || (b2bDouble || b2bSingle || b2bTriple),
+      priceSingle: b2bSingle,
+      priceDouble: b2bDouble,
+      priceTriple: b2bTriple,
+      price: b2bDouble || b2bSingle || b2bTriple || b2bFallback,
+      clientPrice: b2bDouble || b2bSingle || b2bTriple || b2bFallback,
       maxGuests,
       bedType,
     };
   }
 
+  // Client prices strictly have margin added on top of the B2B price:
   const mult = 1 + margin / 100;
-  const newSingle = rawSingle > 0 ? Math.round(rawSingle * mult) : 0;
-  const newDouble = rawDouble > 0 ? Math.round(rawDouble * mult) : 0;
-  const newTriple = rawTriple > 0 ? Math.round(rawTriple * mult) : 0;
-  const newFallback = rawFallback > 0 ? Math.round(rawFallback * mult) : (newDouble || newSingle || newTriple);
+  const clientSingle = b2bSingle > 0 ? Math.round(b2bSingle * mult) : 0;
+  const clientDouble = b2bDouble > 0 ? Math.round(b2bDouble * mult) : 0;
+  const clientTriple = b2bTriple > 0 ? Math.round(b2bTriple * mult) : 0;
+  const clientFallback = b2bFallback > 0 ? Math.round(b2bFallback * mult) : (clientDouble || clientSingle || clientTriple);
 
   return {
     ...room,
-    b2bPriceSingle: rawSingle,
-    b2bPriceDouble: rawDouble,
-    b2bPriceTriple: rawTriple,
-    b2bPrice: rawFallback || (rawDouble || rawSingle || rawTriple),
-    priceSingle: newSingle,
-    priceDouble: newDouble,
-    priceTriple: newTriple,
-    price: newDouble || newSingle || newTriple || newFallback,
-    clientPrice: newDouble || newSingle || newTriple || newFallback,
+    // Partner payout strictly retains the pure B2B price:
+    b2bPriceSingle: b2bSingle,
+    b2bPriceDouble: b2bDouble,
+    b2bPriceTriple: b2bTriple,
+    b2bPrice: b2bFallback || (b2bDouble || b2bSingle || b2bTriple),
+    // Client sees and pays the B2B price + margin:
+    priceSingle: clientSingle,
+    priceDouble: clientDouble,
+    priceTriple: clientTriple,
+    price: clientDouble || clientSingle || clientTriple || clientFallback,
+    clientPrice: clientDouble || clientSingle || clientTriple || clientFallback,
     maxGuests,
     bedType,
   };
