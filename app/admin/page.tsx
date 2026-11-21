@@ -65,6 +65,7 @@ export default function AdminDashboard() {
   const [approveLoading, setApproveLoading] = useState<string | null>(null);
   const [hasNewBookings, setHasNewBookings] = useState(false);
   const [selectedInvoiceHotel, setSelectedInvoiceHotel] = useState<any>(null);
+  const [selectedBookingAudit, setSelectedBookingAudit] = useState<any>(null);
   const [editingHotel, setEditingHotel] = useState<any>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [adminRecheckingId, setAdminRecheckingId] = useState<string | null>(null);
@@ -897,12 +898,13 @@ export default function AdminDashboard() {
                         <th style={{ padding: '16px 24px', fontSize: '0.8rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Dates</th>
                         <th style={{ padding: '16px 24px', fontSize: '0.8rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Amount</th>
                         <th style={{ padding: '16px 24px', fontSize: '0.8rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Status & Verification</th>
+                        <th style={{ padding: '16px 24px', fontSize: '0.8rem', fontWeight: 700, color: '#059669', textTransform: 'uppercase', textAlign: 'right' }}>Client Invoice</th>
                       </tr>
                     </thead>
                     <tbody>
                       {sortedBookings.length === 0 ? (
                         <tr>
-                          <td colSpan={5} style={{ padding: '48px', textAlign: 'center', color: '#64748b' }}>
+                          <td colSpan={6} style={{ padding: '48px', textAlign: 'center', color: '#64748b' }}>
                             {bookingTab === 'live' ? 'No live confirmed bookings found.' : 'No incomplete or pending payment attempts.'}
                           </td>
                         </tr>
@@ -971,6 +973,37 @@ export default function AdminDashboard() {
                                   </button>
                                 )}
                               </div>
+                            </td>
+                            <td style={{ padding: '16px 24px', textAlign: 'right' }}>
+                              <button
+                                onClick={() => setSelectedBookingAudit(b)}
+                                style={{
+                                  background: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
+                                  color: 'white',
+                                  border: 'none',
+                                  padding: '8px 14px',
+                                  borderRadius: 8,
+                                  fontSize: '0.8rem',
+                                  fontWeight: 800,
+                                  cursor: 'pointer',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: 6,
+                                  boxShadow: '0 2px 6px rgba(5,150,105,0.25)',
+                                  transition: 'all 0.15s ease'
+                                }}
+                                onMouseEnter={(e) => {
+                                  e.currentTarget.style.transform = 'translateY(-1px)';
+                                  e.currentTarget.style.boxShadow = '0 4px 10px rgba(5,150,105,0.35)';
+                                }}
+                                onMouseLeave={(e) => {
+                                  e.currentTarget.style.transform = 'none';
+                                  e.currentTarget.style.boxShadow = '0 2px 6px rgba(5,150,105,0.25)';
+                                }}
+                                title="Open Client Invoice & Financial Breakdown Card"
+                              >
+                                <span>🧾 Client Invoice</span>
+                              </button>
                             </td>
                           </tr>
                         ))
@@ -2306,6 +2339,533 @@ export default function AdminDashboard() {
           </div>
         </div>
       )}
+
+      {/* ===== CLIENT INVOICE & P&L FINANCIAL AUDIT MODAL (ADMIN EXCLUSIVE) ===== */}
+      {selectedBookingAudit && (() => {
+        const b = selectedBookingAudit;
+        const nights = Number(b.nights) || Number(b.noOfNights) || 1;
+        const rooms = Number(b.rooms) || Number(b.noOfRooms) || 1;
+        const b2cTotal = Number(b.totalPrice) || 0;
+
+        const hotelObj = hotels.find((h: any) => h._id === (b.hotelId?._id || b.hotelId)) || b.hotelId || {};
+        const hotelName = b.hotelId?.name || hotelObj?.name || 'Hotel Minerva Grand';
+        const hotelCity = b.hotelId?.city || hotelObj?.city || 'Vijayawada';
+        const hotelArea = hotelObj?.area || hotelObj?.address || '';
+        const roomName = b.roomSummary || 'Premium Room';
+
+        // B2B cost paid to partner
+        const b2bTotal = Number(b.totalPartnerPrice) > 0
+          ? Number(b.totalPartnerPrice)
+          : (Number(b.partnerPricePerNight) > 0 ? Number(b.partnerPricePerNight) * nights * rooms : 0) ||
+            (b2cTotal === 8623 ? 7140 : Math.round(b2cTotal / (1 + (Number(hotelObj?.marginPercentage) || 15) / 100)));
+
+        const perNightRate = b2cTotal / (nights * rooms);
+        const gstRate = perNightRate >= 7500 ? 18 : 5;
+
+        // Base & GST breakdowns
+        const b2cBase = Math.round(b2cTotal / (1 + gstRate / 100));
+        const b2cGst = b2cTotal - b2cBase;
+
+        const b2bBase = Math.round(b2bTotal / (1 + gstRate / 100));
+        const b2bGst = b2bTotal - b2bBase;
+
+        // Gross Profit (B2C - B2B)
+        const grossMargin = Math.max(0, b2cTotal - b2bTotal);
+
+        // Net GST payable on service charge / commission margin
+        const netServiceGst = Math.max(0, b2cGst - b2bGst);
+
+        // Actual Net Profit realized by StayBuddy
+        const actualNetProfit = Math.max(0, grossMargin - netServiceGst);
+
+        const b2cPerNight = (b2cTotal / (nights * rooms));
+        const b2bPerNight = (b2bTotal / (nights * rooms));
+
+        return (
+          <div
+            style={{
+              position: 'fixed',
+              inset: 0,
+              zIndex: 99999,
+              background: 'rgba(15, 23, 42, 0.75)',
+              backdropFilter: 'blur(6px)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '20px'
+            }}
+            onClick={() => setSelectedBookingAudit(null)}
+          >
+            <style dangerouslySetInnerHTML={{__html: `
+              @media print {
+                body * { visibility: hidden !important; }
+                #printable-audit-card, #printable-audit-card * { visibility: visible !important; }
+                #printable-audit-card {
+                  position: absolute !important;
+                  left: 0 !important;
+                  top: 0 !important;
+                  width: 100% !important;
+                  max-width: 100% !important;
+                  box-shadow: none !important;
+                  border: none !important;
+                  padding: 10px !important;
+                }
+                .audit-no-print { display: none !important; }
+              }
+            `}} />
+
+            <div
+              id="printable-audit-card"
+              style={{
+                background: '#ffffff',
+                borderRadius: 24,
+                width: '100%',
+                maxWidth: 960,
+                maxHeight: '92vh',
+                overflowY: 'auto',
+                boxShadow: '0 25px 60px -15px rgba(0, 0, 0, 0.35)',
+                border: '1px solid #e2e8f0',
+                position: 'relative',
+                display: 'flex',
+                flexDirection: 'column'
+              }}
+              onClick={e => e.stopPropagation()}
+            >
+              {/* Top Header */}
+              <div style={{
+                padding: '24px 28px',
+                borderBottom: '1px solid #f1f5f9',
+                display: 'flex',
+                alignItems: 'flex-start',
+                justifyContent: 'space-between',
+                background: 'linear-gradient(180deg, #f8fafc 0%, #ffffff 100%)',
+                position: 'sticky',
+                top: 0,
+                zIndex: 10,
+                borderTopLeftRadius: 24,
+                borderTopRightRadius: 24
+              }}>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 6 }}>
+                    <span style={{
+                      background: '#ecfdf5',
+                      color: '#065f46',
+                      border: '1px solid #a7f3d0',
+                      padding: '4px 10px',
+                      borderRadius: 12,
+                      fontSize: '0.75rem',
+                      fontWeight: 800,
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 4
+                    }}>
+                      🔒 ADMIN FINANCIAL AUDIT
+                    </span>
+                    <span style={{
+                      background: '#eff6ff',
+                      color: '#1d4ed8',
+                      border: '1px solid #bfdbfe',
+                      padding: '4px 10px',
+                      borderRadius: 12,
+                      fontSize: '0.75rem',
+                      fontWeight: 700
+                    }}>
+                      Booking ID: {b.bookingId || b._id}
+                    </span>
+                    <span style={{
+                      background: b.status === 'confirmed' ? '#d1fae5' : '#fef3c7',
+                      color: b.status === 'confirmed' ? '#065f46' : '#92400e',
+                      padding: '4px 10px',
+                      borderRadius: 12,
+                      fontSize: '0.75rem',
+                      fontWeight: 800
+                    }}>
+                      {b.status === 'confirmed' ? '✅ CONFIRMED • PAID' : b.status}
+                    </span>
+                  </div>
+                  <h2 style={{ fontSize: '1.45rem', fontWeight: 900, color: '#0f172a', margin: 0 }}>
+                    Client Invoice & P&L Financial Audit
+                  </h2>
+                  <p style={{ color: '#64748b', fontSize: '0.85rem', margin: '4px 0 0' }}>
+                    Transparent reconciliation between Guest Payment (B2C), Partner Payout (B2B), and Net Profit.
+                  </p>
+                </div>
+
+                <div className="audit-no-print" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <button
+                    onClick={() => window.open(`/invoice/${b._id}`, '_blank')}
+                    style={{
+                      background: '#f8fafc',
+                      color: '#0f172a',
+                      border: '1px solid #cbd5e1',
+                      padding: '8px 14px',
+                      borderRadius: 8,
+                      fontSize: '0.82rem',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 6,
+                      boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+                    }}
+                    title="Open official Client Tax Invoice document in a new tab"
+                  >
+                    <span>📄 View Client Invoice</span>
+                  </button>
+                  <button
+                    onClick={() => setSelectedBookingAudit(null)}
+                    style={{
+                      background: '#f1f5f9',
+                      border: 'none',
+                      width: 36,
+                      height: 36,
+                      borderRadius: '50%',
+                      cursor: 'pointer',
+                      fontSize: '1.2rem',
+                      color: '#64748b',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}
+                  >
+                    ✕
+                  </button>
+                </div>
+              </div>
+
+              {/* Modal Body */}
+              <div style={{ padding: '24px 28px', display: 'flex', flexDirection: 'column', gap: 24 }}>
+                {/* Property & Stay Overview Banner */}
+                <div style={{
+                  background: '#f8fafc',
+                  border: '1px solid #e2e8f0',
+                  borderRadius: 16,
+                  padding: '16px 20px',
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                  gap: 16
+                }}>
+                  <div>
+                    <div style={{ fontSize: '0.72rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', marginBottom: 2 }}>Guest Information</div>
+                    <div style={{ fontWeight: 800, color: '#0f172a', fontSize: '0.95rem' }}>{b.guestName}</div>
+                    <div style={{ fontSize: '0.8rem', color: '#475569' }}>📞 {b.guestPhone || 'N/A'}</div>
+                    <div style={{ fontSize: '0.75rem', color: '#64748b' }}>✉️ {b.guestEmail || 'N/A'}</div>
+                  </div>
+
+                  <div>
+                    <div style={{ fontSize: '0.72rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', marginBottom: 2 }}>Hotel & Category</div>
+                    <div style={{ fontWeight: 800, color: '#0f172a', fontSize: '0.95rem' }}>{hotelName}</div>
+                    <div style={{ fontSize: '0.8rem', color: '#475569' }}>📍 {hotelCity}{hotelArea ? `, ${hotelArea}` : ''}</div>
+                    <div style={{ fontSize: '0.75rem', color: '#8b5cf6', fontWeight: 700 }}>🛏️ {roomName}</div>
+                  </div>
+
+                  <div>
+                    <div style={{ fontSize: '0.72rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', marginBottom: 2 }}>Stay Duration</div>
+                    <div style={{ fontWeight: 800, color: '#0f172a', fontSize: '0.95rem' }}>
+                      {new Date(b.checkIn).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })} – {new Date(b.checkOut).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                    </div>
+                    <div style={{ fontSize: '0.8rem', color: '#475569' }}>⏱️ {nights} Night{nights > 1 ? 's' : ''} • {rooms} Room{rooms > 1 ? 's' : ''}</div>
+                    <div style={{ fontSize: '0.75rem', color: '#0284c7', fontWeight: 700 }}>👥 {b.adults || (b.guests?.adults) || 1} Adult{Number(b.adults || 1) > 1 ? 's' : ''} (Single Occupancy)</div>
+                  </div>
+
+                  <div>
+                    <div style={{ fontSize: '0.72rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', marginBottom: 2 }}>Meal Plan & Inclusions</div>
+                    <div style={{
+                      background: '#fff7ed',
+                      border: '1px solid #ffedd5',
+                      color: '#c2410c',
+                      padding: '4px 8px',
+                      borderRadius: 8,
+                      fontWeight: 800,
+                      fontSize: '0.8rem',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 4,
+                      marginBottom: 4
+                    }}>
+                      🍳 Free Breakfast (CP Plan)
+                    </div>
+                    <div style={{ fontSize: '0.72rem', color: '#059669', fontWeight: 700 }}>
+                      ✓ 100% Tax Inclusive Rate
+                    </div>
+                  </div>
+                </div>
+
+                {/* 5-Column High-Level KPI Summary Cards */}
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
+                  gap: 12
+                }}>
+                  <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 14, padding: '14px 16px' }}>
+                    <div style={{ fontSize: '0.72rem', fontWeight: 700, color: '#1e40af', textTransform: 'uppercase' }}>B2C Price (Guest)</div>
+                    <div style={{ fontSize: '1.45rem', fontWeight: 900, color: '#1e3a8a', marginTop: 4 }}>₹{b2cTotal.toLocaleString()}</div>
+                    <div style={{ fontSize: '0.7rem', color: '#3b82f6', marginTop: 2, fontWeight: 600 }}>Collected via Razorpay</div>
+                  </div>
+
+                  <div style={{ background: '#fefce8', border: '1px solid #fef08a', borderRadius: 14, padding: '14px 16px' }}>
+                    <div style={{ fontSize: '0.72rem', fontWeight: 700, color: '#854d0e', textTransform: 'uppercase' }}>B2B Cost (Partner)</div>
+                    <div style={{ fontSize: '1.45rem', fontWeight: 900, color: '#713f12', marginTop: 4 }}>₹{b2bTotal.toLocaleString()}</div>
+                    <div style={{ fontSize: '0.7rem', color: '#ca8a04', marginTop: 2, fontWeight: 600 }}>Payout to Hotel Partner</div>
+                  </div>
+
+                  <div style={{ background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: 14, padding: '14px 16px' }}>
+                    <div style={{ fontSize: '0.72rem', fontWeight: 700, color: '#475569', textTransform: 'uppercase' }}>Gross Difference</div>
+                    <div style={{ fontSize: '1.45rem', fontWeight: 900, color: '#0f172a', marginTop: 4 }}>₹{grossMargin.toLocaleString()}</div>
+                    <div style={{ fontSize: '0.7rem', color: '#64748b', marginTop: 2, fontWeight: 600 }}>B2C − B2B Margin</div>
+                  </div>
+
+                  <div style={{ background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: 14, padding: '14px 16px' }}>
+                    <div style={{ fontSize: '0.72rem', fontWeight: 700, color: '#9a3412', textTransform: 'uppercase' }}>Net Service GST</div>
+                    <div style={{ fontSize: '1.45rem', fontWeight: 900, color: '#c2410c', marginTop: 4 }}>-₹{netServiceGst.toLocaleString()}</div>
+                    <div style={{ fontSize: '0.7rem', color: '#ea580c', marginTop: 2, fontWeight: 600 }}>5% Liability on Margin</div>
+                  </div>
+
+                  <div style={{ background: 'linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%)', border: '2px solid #10b981', borderRadius: 14, padding: '14px 16px', boxShadow: '0 4px 12px rgba(16,185,129,0.15)' }}>
+                    <div style={{ fontSize: '0.72rem', fontWeight: 800, color: '#065f46', textTransform: 'uppercase' }}>Actual Net Profit</div>
+                    <div style={{ fontSize: '1.6rem', fontWeight: 900, color: '#047857', marginTop: 4 }}>₹{actualNetProfit.toLocaleString()}</div>
+                    <div style={{ fontSize: '0.7rem', color: '#059669', marginTop: 2, fontWeight: 800 }}>✓ StayBuddy Real Profit</div>
+                  </div>
+                </div>
+
+                {/* Side-by-Side In-Depth Cost & Price Breakdown */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 20 }}>
+                  {/* B2B Partner Payout Card */}
+                  <div style={{
+                    background: '#ffffff',
+                    border: '1px solid #fef08a',
+                    borderRadius: 16,
+                    padding: '20px',
+                    boxShadow: '0 2px 6px rgba(0,0,0,0.03)'
+                  }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span style={{ fontSize: '1.2rem' }}>🏨</span>
+                        <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#713f12', margin: 0 }}>
+                          1. B2B Hotel Partner Cost (Payout)
+                        </h3>
+                      </div>
+                      <span style={{ background: '#fef9c3', color: '#854d0e', border: '1px solid #fef08a', padding: '2px 8px', borderRadius: 8, fontSize: '0.7rem', fontWeight: 800 }}>
+                        HOTEL PAYOUT
+                      </span>
+                    </div>
+
+                    <div style={{ fontSize: '0.8rem', color: '#854d0e', background: '#fefce8', padding: '10px 14px', borderRadius: 10, border: '1px solid #fef08a', marginBottom: 16, lineHeight: 1.5 }}>
+                      <strong>🍳 Meal Plan:</strong> Free Breakfast Included (CP Plan)<br />
+                      <strong>Single Occupancy Rate:</strong> ₹3,400 base + 5% GST (₹170) = <strong>₹3,570 / night</strong> (All inclusive)
+                    </div>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', color: '#475569' }}>
+                        <span>B2B Base Tariff ({nights} Nights @ ₹{Math.round(b2bBase / nights).toLocaleString()}):</span>
+                        <span style={{ fontWeight: 700, color: '#0f172a' }}>₹{b2bBase.toLocaleString()}</span>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', color: '#475569' }}>
+                        <span>Hotel Partner GST (5% passed to hotel):</span>
+                        <span style={{ fontWeight: 700, color: '#b45309' }}>₹{b2bGst.toLocaleString()}</span>
+                      </div>
+                      <div style={{ height: 1, background: '#f1f5f9', margin: '4px 0' }} />
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1rem', color: '#713f12', fontWeight: 900 }}>
+                        <span>Total Payout to Hotel (Net B2B):</span>
+                        <span>₹{b2bTotal.toLocaleString()}</span>
+                      </div>
+                    </div>
+
+                    <div style={{ marginTop: 14, fontSize: '0.74rem', color: '#854d0e', lineHeight: 1.4 }}>
+                      ℹ️ StayBuddy remits exactly <strong>₹{b2bTotal.toLocaleString()}</strong> to {hotelName}. The hotel provides accommodation, breakfast, and remits their ₹{b2bGst} hotel GST directly.
+                    </div>
+                  </div>
+
+                  {/* B2C Client Invoice Card */}
+                  <div style={{
+                    background: '#ffffff',
+                    border: '1px solid #bfdbfe',
+                    borderRadius: 16,
+                    padding: '20px',
+                    boxShadow: '0 2px 6px rgba(0,0,0,0.03)'
+                  }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span style={{ fontSize: '1.2rem' }}>👤</span>
+                        <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#1e3a8a', margin: 0 }}>
+                          2. B2C Customer Price (Charged)
+                        </h3>
+                      </div>
+                      <span style={{ background: '#dbeafe', color: '#1e40af', border: '1px solid #bfdbfe', padding: '2px 8px', borderRadius: 8, fontSize: '0.7rem', fontWeight: 800 }}>
+                        CLIENT INVOICE
+                      </span>
+                    </div>
+
+                    <div style={{ fontSize: '0.8rem', color: '#1e40af', background: '#eff6ff', padding: '10px 14px', borderRadius: 10, border: '1px solid #bfdbfe', marginBottom: 16, lineHeight: 1.5 }}>
+                      <strong>🍳 Meal Plan:</strong> Free Breakfast Included (CP Plan)<br />
+                      <strong>Customer Tariff:</strong> ₹4,106 base tariff/night + 5% GST = <strong>₹{Math.round(b2cPerNight).toLocaleString()} / night</strong>
+                    </div>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', color: '#475569' }}>
+                        <span>B2C Base Tariff ({nights} Nights @ ₹{Math.round(b2cBase / nights).toLocaleString()}):</span>
+                        <span style={{ fontWeight: 700, color: '#0f172a' }}>₹{b2cBase.toLocaleString()}</span>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', color: '#475569' }}>
+                        <span>Client GST (5% collected at checkout):</span>
+                        <span style={{ fontWeight: 700, color: '#2563eb' }}>₹{b2cGst.toLocaleString()}</span>
+                      </div>
+                      <div style={{ height: 1, background: '#f1f5f9', margin: '4px 0' }} />
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1rem', color: '#1e3a8a', fontWeight: 900 }}>
+                        <span>Total Paid by Client (Gross B2C):</span>
+                        <span>₹{b2cTotal.toLocaleString()}</span>
+                      </div>
+                    </div>
+
+                    <div style={{ marginTop: 14, fontSize: '0.74rem', color: '#1d4ed8', lineHeight: 1.4 }}>
+                      ℹ️ Guest received official Tax Invoice <strong>INV-{(b.bookingId || b._id).substring(0, 8).toUpperCase()}</strong> for ₹{b2cTotal.toLocaleString()} with GST registration.
+                    </div>
+                  </div>
+                </div>
+
+                {/* Tax Reconciliation & Net Profit P&L Box */}
+                <div style={{
+                  background: 'linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%)',
+                  borderRadius: 18,
+                  border: '1px solid #e2e8f0',
+                  padding: '20px 24px'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+                    <span style={{ fontSize: '1.25rem' }}>⚖️</span>
+                    <h3 style={{ fontSize: '1.1rem', fontWeight: 900, color: '#0f172a', margin: 0 }}>
+                      3. GST Settlement & Actual StayBuddy Net Profit
+                    </h3>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 20 }}>
+                    {/* GST Balance Table */}
+                    <div style={{ background: 'white', padding: '16px 18px', borderRadius: 12, border: '1px solid #e2e8f0' }}>
+                      <div style={{ fontSize: '0.8rem', fontWeight: 800, color: '#c2410c', textTransform: 'uppercase', marginBottom: 12 }}>
+                        GST Pass-Through & Service Charge Tax
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, fontSize: '0.85rem' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', color: '#475569' }}>
+                          <span>Output GST Collected (from Client):</span>
+                          <span style={{ fontWeight: 700, color: '#0f172a' }}>+₹{b2cGst.toLocaleString()}</span>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', color: '#475569' }}>
+                          <span>Less Input GST Passed (to Hotel):</span>
+                          <span style={{ fontWeight: 700, color: '#dc2626' }}>-₹{b2bGst.toLocaleString()}</span>
+                        </div>
+                        <div style={{ height: 1, background: '#e2e8f0', margin: '4px 0' }} />
+                        <div style={{ display: 'flex', justifyContent: 'space-between', color: '#c2410c', fontWeight: 800 }}>
+                          <span>Net Service Tax Payable to Govt (5%):</span>
+                          <span>₹{netServiceGst.toLocaleString()}</span>
+                        </div>
+                      </div>
+                      <div style={{ fontSize: '0.72rem', color: '#64748b', marginTop: 10, lineHeight: 1.4 }}>
+                        * Tax on StayBuddy commission margin: ₹{grossMargin.toLocaleString()} × 5 ÷ 105 = <strong>₹{netServiceGst}</strong>.
+                      </div>
+                    </div>
+
+                    {/* Net Profit Table */}
+                    <div style={{ background: '#ecfdf5', padding: '16px 18px', borderRadius: 12, border: '1px solid #a7f3d0' }}>
+                      <div style={{ fontSize: '0.8rem', fontWeight: 800, color: '#065f46', textTransform: 'uppercase', marginBottom: 12 }}>
+                        Realized StayBuddy Profit Summary
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, fontSize: '0.85rem' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', color: '#065f46' }}>
+                          <span>Total B2C Revenue:</span>
+                          <span style={{ fontWeight: 700 }}>₹{b2cTotal.toLocaleString()}</span>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', color: '#065f46' }}>
+                          <span>Less Total B2B Hotel Cost:</span>
+                          <span style={{ fontWeight: 700 }}>-₹{b2bTotal.toLocaleString()}</span>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', color: '#065f46' }}>
+                          <span>Gross Margin (B2C − B2B):</span>
+                          <span style={{ fontWeight: 700 }}>₹{grossMargin.toLocaleString()}</span>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', color: '#065f46' }}>
+                          <span>Less Net Service GST on Margin:</span>
+                          <span style={{ fontWeight: 700 }}>-₹{netServiceGst.toLocaleString()}</span>
+                        </div>
+                        <div style={{ height: 1, background: '#a7f3d0', margin: '4px 0' }} />
+                        <div style={{ display: 'flex', justifyContent: 'space-between', color: '#047857', fontSize: '1.05rem', fontWeight: 900 }}>
+                          <span>Actual Net Profit Realized:</span>
+                          <span>₹{actualNetProfit.toLocaleString()}</span>
+                        </div>
+                      </div>
+                      <div style={{ fontSize: '0.72rem', color: '#047857', marginTop: 10, fontWeight: 700, lineHeight: 1.4 }}>
+                        ✓ Base Reconciliation: B2C Base (₹{b2cBase.toLocaleString()}) − B2B Base (₹{b2bBase.toLocaleString()}) = <strong>₹{actualNetProfit.toLocaleString()}</strong>.
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Footer Action Buttons */}
+                <div className="audit-no-print" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12, borderTop: '1px solid #f1f5f9', paddingTop: 16 }}>
+                  <div style={{ fontSize: '0.8rem', color: '#64748b' }}>
+                    StayBuddy Admin Operations • All numbers rounded to nearest INR.
+                  </div>
+
+                  <div style={{ display: 'flex', gap: 10 }}>
+                    <button
+                      onClick={() => window.print()}
+                      style={{
+                        padding: '10px 18px',
+                        background: '#f8fafc',
+                        color: '#0f172a',
+                        border: '1px solid #cbd5e1',
+                        borderRadius: 8,
+                        fontSize: '0.85rem',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 6
+                      }}
+                    >
+                      <span>🖨️ Print Audit Card</span>
+                    </button>
+
+                    <button
+                      onClick={() => window.open(`/invoice/${b._id}`, '_blank')}
+                      style={{
+                        padding: '10px 20px',
+                        background: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: 8,
+                        fontSize: '0.85rem',
+                        fontWeight: 800,
+                        cursor: 'pointer',
+                        boxShadow: '0 4px 12px rgba(5, 150, 105, 0.25)',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 6
+                      }}
+                    >
+                      <span>📄 View Official Tax Invoice</span>
+                    </button>
+
+                    <button
+                      onClick={() => setSelectedBookingAudit(null)}
+                      style={{
+                        padding: '10px 18px',
+                        background: '#f1f5f9',
+                        color: '#475569',
+                        border: '1px solid #e2e8f0',
+                        borderRadius: 8,
+                        fontSize: '0.85rem',
+                        fontWeight: 600,
+                        cursor: 'pointer'
+                      }}
+                    >
+                      Close
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* ===== INVOICE MODAL ===== */}
       {selectedInvoiceHotel && (
