@@ -60,6 +60,7 @@ export default function HotelDetailPage() {
   const [activeImg, setActiveImg] = useState(0);
   const [activeHeroIndex, setActiveHeroIndex] = useState(0);
   const [showGalleryModal, setShowGalleryModal] = useState(false);
+  const [galleryViewMode, setGalleryViewMode] = useState<'grid' | 'single'>('grid');
   const [customGalleryPhotos, setCustomGalleryPhotos] = useState<Array<{ url: string; label: string }> | null>(null);
   const [galleryActiveIndex, setGalleryActiveIndex] = useState(0);
   const [isAutoPlaying, setIsAutoPlaying] = useState(false);
@@ -567,6 +568,23 @@ export default function HotelDetailPage() {
       const data = await res.json();
       if (res.ok && data?.hotel) {
         setHotel(data.hotel);
+        try {
+          const raw = localStorage.getItem('staybuddy_recent_searches');
+          const list = raw ? JSON.parse(raw) : [];
+          const h = data.hotel;
+          const filtered = Array.isArray(list) ? list.filter((x: any) => x.id !== h._id && x.name?.toLowerCase() !== h.name?.toLowerCase()) : [];
+          filtered.unshift({
+            type: 'hotel',
+            id: h._id,
+            name: h.name,
+            city: h.city || '',
+            subtitle: `${h.city || 'India'} • ${h.starRating ? `${h.starRating}★ Hotel` : 'Verified Stay'}`,
+            image: h.images?.[0] || '',
+            price: h.startingPrice || h.price || 0,
+            timestamp: Date.now(),
+          });
+          localStorage.setItem('staybuddy_recent_searches', JSON.stringify(filtered.slice(0, 10)));
+        } catch (_) {}
       } else if (query) {
         // Fallback retry without date query parameters if dates were constrained
         const retryRes = await fetch(`/api/hotels/${encodeURIComponent(hotelId)}`);
@@ -684,11 +702,12 @@ export default function HotelDetailPage() {
     return (customGalleryPhotos && customGalleryPhotos.length > 0) ? customGalleryPhotos : allPhotos;
   }, [customGalleryPhotos, allPhotos]);
 
-  const openPhotoViewer = (index: number, customList?: Array<{ url: string; label: string }>) => {
+  const openPhotoViewer = (index: number = 0, customList?: Array<{ url: string; label: string }>, mode: 'grid' | 'single' = 'grid') => {
     const list = customList && customList.length > 0 ? customList : allPhotos;
     if (list.length === 0) return;
     setCustomGalleryPhotos(customList || null);
     setGalleryActiveIndex(Math.max(0, Math.min(index, list.length - 1)));
+    setGalleryViewMode(mode);
     setShowGalleryModal(true);
   };
 
@@ -6287,6 +6306,187 @@ export default function HotelDetailPage() {
           }}
           onClick={closePhotoViewer}
         >
+          {galleryViewMode === 'grid' ? (
+            <div
+              style={{
+                width: "100%",
+                height: "100%",
+                display: "flex",
+                flexDirection: "column",
+                overflow: "hidden",
+                background: "#080c16",
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Sticky Top Header (Photo 4 style) */}
+              <div
+                style={{
+                  position: "sticky",
+                  top: 0,
+                  zIndex: 60,
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  padding: "14px 18px",
+                  background: "rgba(8, 12, 22, 0.95)",
+                  backdropFilter: "blur(12px)",
+                  borderBottom: "1px solid rgba(255, 255, 255, 0.12)",
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
+                  <button
+                    type="button"
+                    onClick={closePhotoViewer}
+                    style={{
+                      background: "rgba(255,255,255,0.12)",
+                      border: "none",
+                      color: "white",
+                      width: 38,
+                      height: 38,
+                      borderRadius: "50%",
+                      cursor: "pointer",
+                      fontSize: "1.2rem",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      transition: "all 0.2s",
+                    }}
+                    aria-label="Back"
+                  >
+                    ←
+                  </button>
+                  <div style={{ minWidth: 0 }}>
+                    <h3 style={{ margin: 0, fontSize: "1.05rem", fontWeight: 800, color: "white", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                      {hotel?.name}
+                    </h3>
+                    <div style={{ fontSize: "0.75rem", color: "#94a3b8" }}>
+                      {activePhotosList.length} Photos • Tap any photo to view full size
+                    </div>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={closePhotoViewer}
+                  style={{
+                    background: "rgba(255,255,255,0.15)",
+                    border: "none",
+                    color: "white",
+                    width: 36,
+                    height: 36,
+                    borderRadius: "50%",
+                    cursor: "pointer",
+                    fontSize: "1.1rem",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                  aria-label="Close"
+                >
+                  ✕
+                </button>
+              </div>
+
+              {/* 2-Column Vertical Scrollable Grid (Matching Photo 4) */}
+              <div
+                style={{
+                  flex: 1,
+                  overflowY: "auto",
+                  padding: "12px",
+                  display: "grid",
+                  gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+                  gap: "10px",
+                  maxWidth: 960,
+                  width: "100%",
+                  margin: "0 auto",
+                  boxSizing: "border-box",
+                  WebkitOverflowScrolling: "touch",
+                }}
+              >
+                {activePhotosList.map((p, pIdx) => (
+                  <div
+                    key={`gallery-grid-photo-${pIdx}`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setGalleryActiveIndex(pIdx);
+                      setGalleryViewMode('single');
+                    }}
+                    style={{
+                      position: "relative",
+                      width: "100%",
+                      aspectRatio: "4 / 3",
+                      borderRadius: 14,
+                      overflow: "hidden",
+                      cursor: "pointer",
+                      background: "#1e293b",
+                      border: "1px solid rgba(255, 255, 255, 0.1)",
+                      boxShadow: "0 4px 12px rgba(0,0,0,0.4)",
+                      transition: "transform 0.2s ease",
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(0.98)")}
+                    onMouseLeave={(e) => (e.currentTarget.style.transform = "none")}
+                  >
+                    <img
+                      src={p.url}
+                      alt={`${hotel?.name} photo ${pIdx + 1}`}
+                      loading="lazy"
+                      style={{
+                        width: "100%",
+                        height: "100%",
+                        objectFit: "cover",
+                        display: "block",
+                      }}
+                    />
+                    <div
+                      style={{
+                        position: "absolute",
+                        bottom: 8,
+                        right: 8,
+                        background: "rgba(0,0,0,0.65)",
+                        backdropFilter: "blur(4px)",
+                        color: "white",
+                        padding: "3px 8px",
+                        borderRadius: 8,
+                        fontSize: "0.68rem",
+                        fontWeight: 700,
+                      }}
+                    >
+                      {pIdx + 1}/{activePhotosList.length}
+                    </div>
+                    {p.label && (
+                      <div
+                        style={{
+                          position: "absolute",
+                          top: 8,
+                          left: 8,
+                          background: "rgba(0,0,0,0.6)",
+                          backdropFilter: "blur(4px)",
+                          color: "#f1f5f9",
+                          padding: "2px 8px",
+                          borderRadius: 8,
+                          fontSize: "0.65rem",
+                          fontWeight: 600,
+                        }}
+                      >
+                        {p.label}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div
+              style={{
+                width: "100%",
+                height: "100%",
+                display: "flex",
+                flexDirection: "column",
+                overflow: "hidden",
+                position: "relative",
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
           {/* Floating Top Bar Overlay */}
           <div
             style={{
@@ -6305,6 +6505,28 @@ export default function HotelDetailPage() {
           >
             <div style={{ pointerEvents: "auto", display: "flex", flexDirection: "column", gap: 3, maxWidth: "60%" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setGalleryViewMode('grid');
+                  }}
+                  style={{
+                    background: "rgba(255,255,255,0.22)",
+                    border: "none",
+                    color: "white",
+                    borderRadius: 20,
+                    padding: "4px 10px",
+                    fontSize: "0.78rem",
+                    fontWeight: 700,
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 4,
+                  }}
+                >
+                  ← Grid View
+                </button>
                 <h3 style={{ margin: 0, fontSize: "0.95rem", fontWeight: 800, color: "white", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                   🏨 {hotel?.name}
                 </h3>
@@ -6617,6 +6839,8 @@ export default function HotelDetailPage() {
               })}
             </div>
           )}
+          </div>
+        )}
         </div>
       )}
 

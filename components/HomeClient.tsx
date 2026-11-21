@@ -43,6 +43,19 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
   const [searchError, setSearchError] = useState('');
   const [validationErrorField, setValidationErrorField] = useState<'location' | 'dates' | 'adults' | null>(null);
   const [userWishlistIds, setUserWishlistIds] = useState<string[]>([]);
+  const [recentItems, setRecentItems] = useState<any[]>([]);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem('staybuddy_recent_searches');
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setRecentItems(parsed.slice(0, 8));
+        }
+      }
+    } catch (_) {}
+  }, []);
 
   // Synchronize search criteria with localStorage so choices (e.g. 1 adult, custom dates) persist across page transitions
   useEffect(() => {
@@ -839,6 +852,115 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
           </>
         );
       })()}
+
+      {/* ===== RECENT SEARCHES & VIEWED PROPERTIES ===== */}
+      {recentItems.length > 0 && (
+        <section style={{ padding: '20px 0 10px', background: '#ffffff', borderBottom: '1px solid #f1f5f9' }}>
+          <div className="container">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14, flexWrap: 'wrap', gap: 8 }}>
+              <div>
+                <div style={{ display: 'inline-block', background: '#fff7ed', color: '#ea580c', padding: '3px 12px', borderRadius: 'var(--radius-full)', fontSize: '0.72rem', fontWeight: 800, marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  🕒 Pick Up Where You Left Off
+                </div>
+                <h2 style={{ fontSize: '1.5rem', margin: 0, fontWeight: 900, color: '#0f172a' }}>
+                  Recent <span style={{ color: 'var(--brand-600)' }}>Searches</span>
+                </h2>
+                <p style={{ color: '#64748b', fontSize: '0.85rem', margin: '2px 0 0' }}>
+                  Quickly jump back into hotels or destinations you recently explored
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  try {
+                    localStorage.removeItem('staybuddy_recent_searches');
+                    setRecentItems([]);
+                  } catch (_) {}
+                }}
+                style={{ background: 'none', border: 'none', color: '#94a3b8', fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer', padding: '6px 12px', borderRadius: 8 }}
+                title="Clear your recent search history"
+              >
+                Clear History ✕
+              </button>
+            </div>
+
+            <div
+              className="no-scrollbar"
+              style={{
+                display: 'flex', gap: 14, overflowX: 'auto',
+                padding: '4px 2px 14px', scrollSnapType: 'x mandatory',
+                WebkitOverflowScrolling: 'touch',
+                margin: '0 -4px'
+              }}
+            >
+              {recentItems.map((item, idx) => (
+                <div
+                  key={`home-recent-${item.id || item.name}-${idx}`}
+                  onClick={() => {
+                    if (item.type === 'hotel' && item.id) {
+                      router.push(`/hotels/${item.id}`);
+                    } else {
+                      router.push(`/hotels?city=${encodeURIComponent(item.name)}`);
+                    }
+                  }}
+                  style={{
+                    background: '#ffffff',
+                    borderRadius: 18,
+                    border: '1.5px solid #fed7aa',
+                    padding: 12,
+                    minWidth: 260,
+                    maxWidth: 290,
+                    flexShrink: 0,
+                    cursor: 'pointer',
+                    boxShadow: '0 4px 14px rgba(234, 88, 12, 0.08)',
+                    transition: 'all 0.2s ease',
+                    display: 'flex',
+                    gap: 12,
+                    alignItems: 'center',
+                    scrollSnapAlign: 'start'
+                  }}
+                  onMouseEnter={e => {
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                    e.currentTarget.style.boxShadow = '0 8px 22px rgba(234, 88, 12, 0.16)';
+                  }}
+                  onMouseLeave={e => {
+                    e.currentTarget.style.transform = 'none';
+                    e.currentTarget.style.boxShadow = '0 4px 14px rgba(234, 88, 12, 0.08)';
+                  }}
+                >
+                  {item.image ? (
+                    <img
+                      src={item.image}
+                      alt={item.name}
+                      style={{ width: 68, height: 68, borderRadius: 12, objectFit: 'cover', flexShrink: 0 }}
+                    />
+                  ) : (
+                    <div style={{ width: 68, height: 68, borderRadius: 12, background: '#fff7ed', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.8rem', flexShrink: 0 }}>
+                      {item.type === 'hotel' ? '🏨' : '📍'}
+                    </div>
+                  )}
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <div style={{ fontSize: '0.68rem', color: '#ea580c', fontWeight: 800, textTransform: 'uppercase' }}>
+                      {item.type === 'hotel' ? '🏨 Viewed Stay' : '📍 Destination'}
+                    </div>
+                    <div style={{ fontWeight: 800, fontSize: '0.92rem', color: '#0f172a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginTop: 2 }}>
+                      {item.name}
+                    </div>
+                    <div style={{ fontSize: '0.74rem', color: '#64748b', marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {item.city ? `${item.city}, India` : 'Tap to continue'}
+                    </div>
+                    {Number(item.price) > 0 && (
+                      <div style={{ fontSize: '0.85rem', fontWeight: 900, color: '#16a34a', marginTop: 4 }}>
+                        ₹{Number(item.price).toLocaleString('en-IN')} <span style={{ fontSize: '0.68rem', color: '#64748b', fontWeight: 500 }}>/ night</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* ===== TRENDING DESTINATIONS ===== */}
       <section style={{ padding: '24px 0 10px', background: 'var(--bg-secondary)', userSelect: 'none', WebkitUserSelect: 'none' }}>

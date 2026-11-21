@@ -38,12 +38,48 @@ export default function LocationSearch({
   const [loading, setLoading] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
   const [locating, setLocating] = useState(false);
+  const [recentSearches, setRecentSearches] = useState<any[]>([]);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     setQuery(city);
   }, [city]);
+
+  const loadRecentSearches = () => {
+    try {
+      const raw = localStorage.getItem('staybuddy_recent_searches');
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) {
+          setRecentSearches(parsed.slice(0, 4));
+        }
+      }
+    } catch (_) {}
+  };
+
+  const saveRecentSearch = (item: { type: 'hotel' | 'city'; id?: string; name: string; city?: string; image?: string; price?: number }) => {
+    try {
+      const raw = localStorage.getItem('staybuddy_recent_searches');
+      const list = raw ? JSON.parse(raw) : [];
+      const filtered = Array.isArray(list) ? list.filter((x: any) => x.id !== item.id && x.name?.toLowerCase() !== item.name?.toLowerCase()) : [];
+      filtered.unshift({
+        ...item,
+        timestamp: Date.now()
+      });
+      const sliced = filtered.slice(0, 10);
+      localStorage.setItem('staybuddy_recent_searches', JSON.stringify(sliced));
+      setRecentSearches(sliced.slice(0, 4));
+    } catch (_) {}
+  };
+
+  const clearRecentSearches = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      localStorage.removeItem('staybuddy_recent_searches');
+      setRecentSearches([]);
+    } catch (_) {}
+  };
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -107,11 +143,23 @@ export default function LocationSearch({
     setQuery(c);
     onChange(c);
     setShowDropdown(false);
+    saveRecentSearch({ type: 'city', name: c, city: c });
   };
 
-  const handleHotelSelect = (hotelId: string) => {
+  const handleHotelSelect = (hotelId: string, hotelObj?: any) => {
     setShowDropdown(false);
     setIsModalOpen(false);
+    const target = hotelObj || results.hotels.find((h: any) => h._id === hotelId);
+    if (target) {
+      saveRecentSearch({
+        type: 'hotel',
+        id: hotelId,
+        name: target.name,
+        city: target.city,
+        image: target.images?.[0] || '',
+        price: target.startingPrice || target.price || 0,
+      });
+    }
     let s: any = null;
     try {
       const raw = localStorage.getItem('staybuddy_last_search');
@@ -173,6 +221,12 @@ export default function LocationSearch({
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
+
+  useEffect(() => {
+    if (isModalOpen) {
+      loadRecentSearches();
+    }
+  }, [isModalOpen]);
 
   return (
     <>
@@ -370,7 +424,79 @@ export default function LocationSearch({
                 )}
               </div>
 
-              <div style={{ marginTop: 28, fontSize: '0.75rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.1em', display: 'flex', alignItems: 'center', gap: 6 }}>
+              {/* Recent Searches (Shown when input is empty & recent searches exist) */}
+              {query.length < 2 && recentSearches.length > 0 && (
+                <div style={{ marginTop: 22, marginBottom: 8 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                    <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#ea580c', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <span>🕒</span> RECENT SEARCHES
+                    </div>
+                    <button
+                      type="button"
+                      onClick={clearRecentSearches}
+                      style={{ background: 'none', border: 'none', color: '#94a3b8', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer', padding: '2px 6px' }}
+                    >
+                      Clear
+                    </button>
+                  </div>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    {recentSearches.map((item, idx) => (
+                      <div
+                        key={`recent-${item.id || item.name}-${idx}`}
+                        onClick={() => {
+                          if (item.type === 'hotel' && item.id) {
+                            handleHotelSelect(item.id, item);
+                          } else {
+                            handleCitySelect(item.name);
+                            setIsModalOpen(false);
+                          }
+                        }}
+                        style={{
+                          padding: '10px 14px',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 14,
+                          borderRadius: '14px',
+                          background: '#fff7ed',
+                          border: '1px solid #fed7aa',
+                          transition: 'all 0.2s'
+                        }}
+                        onMouseEnter={e => e.currentTarget.style.background = '#ffedd5'}
+                        onMouseLeave={e => e.currentTarget.style.background = '#fff7ed'}
+                      >
+                        <div style={{
+                          background: '#ffffff',
+                          width: 40,
+                          height: 40,
+                          borderRadius: '10px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: '1.2rem',
+                          flexShrink: 0,
+                          border: '1px solid #fed7aa',
+                          boxShadow: '0 2px 4px rgba(234, 88, 12, 0.08)'
+                        }}>
+                          {item.type === 'hotel' ? '🏨' : '📍'}
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0 }}>
+                          <span style={{ fontSize: '0.98rem', fontWeight: 800, color: '#0f172a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            {item.name}
+                          </span>
+                          <span style={{ fontSize: '0.75rem', color: '#c2410c', fontWeight: 600 }}>
+                            {item.type === 'hotel' ? `${item.city || 'India'} • Tap to reopen property` : 'Recent destination search'}
+                          </span>
+                        </div>
+                        <span style={{ fontSize: '0.85rem', color: '#ea580c', fontWeight: 800 }}>→</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div style={{ marginTop: query.length < 2 && recentSearches.length > 0 ? 16 : 28, fontSize: '0.75rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.1em', display: 'flex', alignItems: 'center', gap: 6 }}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline><polyline points="16 7 22 7 22 13"></polyline></svg>
                 {query.length < 2 ? 'POPULAR DESTINATIONS' : 'SEARCH RESULTS'}
               </div>
