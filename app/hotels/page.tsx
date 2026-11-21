@@ -575,7 +575,29 @@ function HotelSearch() {
                     <DateRangePicker
                       checkIn={filters.checkIn}
                       checkOut={filters.checkOut}
-                      onChange={(inDate, outDate) => setFilters(p => ({ ...p, checkIn: inDate, checkOut: outDate }))}
+                      onChange={(inDate, outDate) => {
+                        setFilters(p => ({ ...p, checkIn: inDate, checkOut: outDate }));
+                        if (inDate && outDate) {
+                          setHotelsValidationErrorField(null);
+                          setHotelsSearchError('');
+                          try {
+                            if (typeof window !== 'undefined') {
+                              const q = new URLSearchParams(window.location.search);
+                              q.set('checkIn', inDate);
+                              q.set('checkOut', outDate);
+                              window.history.replaceState(null, '', `${window.location.pathname}?${q.toString()}`);
+                              localStorage.setItem('staybuddy_last_search', JSON.stringify({
+                                location: filters.city.trim(),
+                                checkIn: inDate,
+                                checkOut: outDate,
+                                adults: filters.adults,
+                                rooms: filters.rooms,
+                                children: filters.children,
+                              }));
+                            }
+                          } catch (_) {}
+                        }
+                      }}
                       onClose={() => setShowDatePicker(false)}
                       activeSelection={activeDateSelection}
                       setActiveSelection={setActiveDateSelection}
@@ -820,7 +842,19 @@ function HotelSearch() {
                   <Link 
                     key={hotel._id} 
                     href={`/hotels/${hotel._id}${getQueryString()}`} 
-                    prefetch={true}
+                    prefetch={false}
+                    onClick={() => {
+                      try {
+                        localStorage.setItem('staybuddy_last_search', JSON.stringify({
+                          location: filters.city.trim(),
+                          checkIn: filters.checkIn,
+                          checkOut: filters.checkOut,
+                          adults: filters.adults,
+                          rooms: filters.rooms,
+                          children: filters.children,
+                        }));
+                      } catch (_) {}
+                    }}
                     style={{ textDecoration: 'none', color: 'inherit', width: '100%', WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation' }}
                   >
                     <div className="hotel-horizontal-card">

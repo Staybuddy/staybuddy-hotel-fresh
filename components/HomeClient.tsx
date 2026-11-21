@@ -420,6 +420,13 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
                          if (inDate && outDate) {
                            setValidationErrorField(null);
                            setSearchError('');
+                           try {
+                             localStorage.setItem('staybuddy_last_search', JSON.stringify({
+                               ...searchData,
+                               checkIn: inDate,
+                               checkOut: outDate
+                             }));
+                           } catch (_) {}
                          }
                        }}
                        onClose={() => setShowDatePicker(false)}
@@ -1945,6 +1952,7 @@ function FeaturedSpotlightHotel({ hotel, isWishlisted }: { hotel: any, isWishlis
   return (
     <Link
       href={buildHotelLinkWithSearch(hotel._id)}
+      prefetch={false}
       style={{ textDecoration: 'none', color: 'inherit', display: 'block', width: '100%' }}
     >
       <div className="card featured-spotlight-card" style={{ cursor: 'pointer' }}>
@@ -2113,7 +2121,7 @@ function HotelCard({ hotel, isWishlisted }: { hotel: any, isWishlisted?: boolean
   };
 
   return (
-    <Link href={buildHotelLinkWithSearch(hotel._id)} style={{ textDecoration: 'none' }}>
+    <Link href={buildHotelLinkWithSearch(hotel._id)} prefetch={false} style={{ textDecoration: 'none' }}>
       <div className="card card-hover hotel-card" style={{ height: '100%' }}>
         <div className="hotel-card-img-wrapper" style={{ position: 'relative', width: '100%', height: '220px' }}>
           {hotel.images?.[imgIndex] ? (

@@ -117,23 +117,43 @@ export default function HotelDetailPage() {
     const tom = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
     const tomStr = `${tom.getFullYear()}-${String(tom.getMonth() + 1).padStart(2, '0')}-${String(tom.getDate()).padStart(2, '0')}`;
 
-    const fromUrl = searchParams.get(field);
-    if (fromUrl) {
-      if (field === 'checkIn' && fromUrl < todayStr) return todayStr;
-      return fromUrl;
+    let fromUrl = searchParams.get(field);
+    if (typeof window !== "undefined") {
+      try {
+        const sp = new URLSearchParams(window.location.search);
+        const winVal = sp.get(field);
+        if (winVal) fromUrl = winVal;
+      } catch (_) {}
     }
+
+    let fromStorage = "";
     if (typeof window !== "undefined") {
       try {
         const saved = localStorage.getItem("staybuddy_last_search");
         if (saved) {
           const p = JSON.parse(saved);
-          if (p && p[field]) {
-            if (field === 'checkIn' && p[field] < todayStr) return todayStr;
-            return p[field];
-          }
+          if (p && p[field]) fromStorage = p[field];
         }
       } catch (_) {}
     }
+
+    // Prioritize future dates selected by the user in the search segment
+    if (fromStorage && fromStorage >= todayStr) {
+      if (!fromUrl || fromUrl < todayStr || (fromUrl === todayStr && fromStorage > todayStr)) {
+        return fromStorage;
+      }
+    }
+
+    if (fromUrl) {
+      if (field === 'checkIn' && fromUrl < todayStr) return todayStr;
+      return fromUrl;
+    }
+
+    if (fromStorage) {
+      if (field === 'checkIn' && fromStorage < todayStr) return todayStr;
+      return fromStorage;
+    }
+
     return field === 'checkIn' ? todayStr : tomStr;
   };
 
@@ -284,12 +304,28 @@ export default function HotelDetailPage() {
     } catch (_) {}
 
     let checkInParam = searchParams.get("checkIn");
-    if (!checkInParam && parsedSaved?.checkIn && parsedSaved.checkIn >= todayStr) {
-      checkInParam = parsedSaved.checkIn;
+    let checkOutParam = searchParams.get("checkOut");
+    if (typeof window !== "undefined") {
+      try {
+        const sp = new URLSearchParams(window.location.search);
+        const winIn = sp.get("checkIn");
+        const winOut = sp.get("checkOut");
+        if (winIn) checkInParam = winIn;
+        if (winOut) checkOutParam = winOut;
+      } catch (_) {}
+    }
+
+    // If user explicitly selected future dates in search segment (e.g. Dec dates), carry them forward!
+    if (parsedSaved?.checkIn && parsedSaved.checkIn >= todayStr) {
+      if (!checkInParam || checkInParam < todayStr || (checkInParam === todayStr && parsedSaved.checkIn > todayStr)) {
+        checkInParam = parsedSaved.checkIn;
+        if (parsedSaved.checkOut && parsedSaved.checkOut > parsedSaved.checkIn) {
+          checkOutParam = parsedSaved.checkOut;
+        }
+      }
     }
     if (checkInParam && checkInParam < todayStr) checkInParam = todayStr;
 
-    let checkOutParam = searchParams.get("checkOut");
     if (!checkOutParam && parsedSaved?.checkOut) {
       checkOutParam = parsedSaved.checkOut;
     }
@@ -382,16 +418,26 @@ export default function HotelDetailPage() {
       const raw = localStorage.getItem('staybuddy_pending_checkout') || sessionStorage.getItem('staybuddy_pending_checkout');
       if (raw) {
         const saved = JSON.parse(raw);
-        if (saved && (saved.hotelId === id || !saved.hotelId)) {
+        const isRecent = saved && saved.timestamp && (Date.now() - saved.timestamp < 15 * 60 * 1000);
+        if (saved && (saved.hotelId === id || !saved.hotelId) && isRecent) {
           if (saved.bookingData) {
-            setBookingData(prev => ({
-              ...prev,
-              ...saved.bookingData,
-              guestFirstName: session?.user ? ((session.user.name || '').split(' ')[0] || prev.guestFirstName) : (saved.bookingData.guestFirstName || prev.guestFirstName),
-              guestLastName: session?.user ? ((session.user.name || '').split(' ').slice(1).join(' ') || prev.guestLastName) : (saved.bookingData.guestLastName || prev.guestLastName),
-              guestEmail: session?.user?.email || saved.bookingData.guestEmail || prev.guestEmail,
-              guestPhone: (session?.user as any)?.phone || saved.bookingData.guestPhone || prev.guestPhone,
-            }));
+            setBookingData(prev => {
+              const now = new Date();
+              const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+              // Keep fresh future search dates if already selected
+              const preserveIn = (prev.checkIn && prev.checkIn > todayStr) ? prev.checkIn : saved.bookingData.checkIn;
+              const preserveOut = (prev.checkOut && preserveIn && prev.checkOut > preserveIn) ? prev.checkOut : saved.bookingData.checkOut;
+              return {
+                ...prev,
+                ...saved.bookingData,
+                checkIn: preserveIn,
+                checkOut: preserveOut,
+                guestFirstName: session?.user ? ((session.user.name || '').split(' ')[0] || prev.guestFirstName) : (saved.bookingData.guestFirstName || prev.guestFirstName),
+                guestLastName: session?.user ? ((session.user.name || '').split(' ').slice(1).join(' ') || prev.guestLastName) : (saved.bookingData.guestLastName || prev.guestLastName),
+                guestEmail: session?.user?.email || saved.bookingData.guestEmail || prev.guestEmail,
+                guestPhone: (session?.user as any)?.phone || saved.bookingData.guestPhone || prev.guestPhone,
+              };
+            });
           }
           if (saved.occupancy) setOccupancy(saved.occupancy);
           if (saved.selectedRoom) setSelectedRoom(saved.selectedRoom);
@@ -399,6 +445,10 @@ export default function HotelDetailPage() {
             setSelectedRoomsList(saved.selectedRoomsList);
           }
           setBookingStep(1);
+          localStorage.removeItem('staybuddy_pending_checkout');
+          sessionStorage.removeItem('staybuddy_pending_checkout');
+        } else if (raw && !isRecent) {
+          // Prune stale pending checkout from previous days
           localStorage.removeItem('staybuddy_pending_checkout');
           sessionStorage.removeItem('staybuddy_pending_checkout');
         }
@@ -1071,6 +1121,37 @@ export default function HotelDetailPage() {
       if (roomSection) roomSection.scrollIntoView({ behavior: "smooth" });
       return;
     }
+
+    // CRITICAL: Synchronize dates with search segment before opening review
+    const now = new Date();
+    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    let effectiveIn = bookingData.checkIn;
+    let effectiveOut = bookingData.checkOut;
+    if (typeof window !== "undefined") {
+      try {
+        const sp = new URLSearchParams(window.location.search);
+        const urlIn = sp.get("checkIn");
+        const urlOut = sp.get("checkOut");
+        if (urlIn && urlIn >= todayStr && urlOut && urlOut > urlIn) {
+          effectiveIn = urlIn;
+          effectiveOut = urlOut;
+        } else {
+          const rawLast = localStorage.getItem("staybuddy_last_search");
+          if (rawLast) {
+            const ls = JSON.parse(rawLast);
+            if (ls.checkIn && ls.checkIn >= todayStr && ls.checkOut && ls.checkOut > ls.checkIn) {
+              effectiveIn = ls.checkIn;
+              effectiveOut = ls.checkOut;
+            }
+          }
+        }
+      } catch (_) {}
+    }
+    if (effectiveIn !== bookingData.checkIn || effectiveOut !== bookingData.checkOut) {
+      setBookingData(p => ({ ...p, checkIn: effectiveIn, checkOut: effectiveOut }));
+      bookingData.checkIn = effectiveIn;
+      bookingData.checkOut = effectiveOut;
+    }
     if (targetRoom && targetRoom.availableRooms !== undefined && targetRoom.availableRooms <= 0) {
       alert("No rooms are available for the selected dates. Please choose different dates.");
       return;
@@ -1153,17 +1234,27 @@ export default function HotelDetailPage() {
   };
 
   const today = new Date().toISOString().split("T")[0];
-  const nights =
-    bookingData.checkIn && bookingData.checkOut
-      ? Math.max(
-          1,
-          Math.ceil(
-            (new Date(bookingData.checkOut).getTime() -
-              new Date(bookingData.checkIn).getTime()) /
-              86400000,
-          ),
-        )
-      : 1;
+  const nights = useMemo(() => {
+    if (bookingData.checkIn && bookingData.checkOut) {
+      const pIn = bookingData.checkIn.split('-').map(Number);
+      const pOut = bookingData.checkOut.split('-').map(Number);
+      if (pIn.length === 3 && pOut.length === 3) {
+        const dIn = new Date(pIn[0], pIn[1] - 1, pIn[2]);
+        const dOut = new Date(pOut[0], pOut[1] - 1, pOut[2]);
+        const diffDays = Math.round((dOut.getTime() - dIn.getTime()) / 86400000);
+        return Math.max(1, diffDays);
+      }
+      return Math.max(
+        1,
+        Math.ceil(
+          (new Date(bookingData.checkOut).getTime() -
+            new Date(bookingData.checkIn).getTime()) /
+            86400000,
+        ),
+      );
+    }
+    return 1;
+  }, [bookingData.checkIn, bookingData.checkOut]);
 
   const currentPricing = useMemo(() => {
     if (selectedRoomsList.length > 0) {
@@ -4075,14 +4166,16 @@ export default function HotelDetailPage() {
                             }}
                           >
                             {bookingData.checkIn
-                              ? new Date(
-                                  bookingData.checkIn,
-                                ).toLocaleDateString("en-GB", {
-                                  weekday: "short",
-                                  day: "numeric",
-                                  month: "short",
-                                  year: "numeric",
-                                })
+                              ? (() => {
+                                  const parts = bookingData.checkIn.split('-').map(Number);
+                                  const d = parts.length === 3 ? new Date(parts[0], parts[1] - 1, parts[2]) : new Date(bookingData.checkIn);
+                                  return d.toLocaleDateString("en-GB", {
+                                    weekday: "short",
+                                    day: "numeric",
+                                    month: "short",
+                                    year: "numeric",
+                                  });
+                                })()
                               : "-"}
                           </div>
                           <div
@@ -4139,14 +4232,16 @@ export default function HotelDetailPage() {
                             }}
                           >
                             {bookingData.checkOut
-                              ? new Date(
-                                  bookingData.checkOut,
-                                ).toLocaleDateString("en-GB", {
-                                  weekday: "short",
-                                  day: "numeric",
-                                  month: "short",
-                                  year: "numeric",
-                                })
+                              ? (() => {
+                                  const parts = bookingData.checkOut.split('-').map(Number);
+                                  const d = parts.length === 3 ? new Date(parts[0], parts[1] - 1, parts[2]) : new Date(bookingData.checkOut);
+                                  return d.toLocaleDateString("en-GB", {
+                                    weekday: "short",
+                                    day: "numeric",
+                                    month: "short",
+                                    year: "numeric",
+                                  });
+                                })()
                               : "-"}
                           </div>
                           <div
