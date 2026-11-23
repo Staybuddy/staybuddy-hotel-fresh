@@ -444,7 +444,11 @@ export default function HotelDetailPage() {
           if (saved.occupancy) setOccupancy(saved.occupancy);
           if (saved.selectedRoom) setSelectedRoom(saved.selectedRoom);
           if (saved.selectedRoomsList && saved.selectedRoomsList.length > 0) {
-            setSelectedRoomsList(saved.selectedRoomsList);
+            const restoredMap: Record<string, number> = {};
+            saved.selectedRoomsList.forEach((item: any) => {
+              if (item.room?._id) restoredMap[item.room._id] = item.quantity || 1;
+            });
+            if (Object.keys(restoredMap).length > 0) setSelectedRoomsMap(restoredMap);
           }
           setBookingStep(1);
           localStorage.removeItem('staybuddy_pending_checkout');
@@ -646,41 +650,43 @@ export default function HotelDetailPage() {
     return allPhotos.filter(p => !p.label || p.label === 'Hotel & Exterior' || p.label === 'Property Hero Photo' || p.label === 'Hotel Photo');
   }, [allPhotos]);
 
-  // Always sort rooms so lowest price / lowest occupancy room is first (e.g. Standard Room before Deluxe Room)
+  // Filter & sort rooms based on requested occupancy per room
   const sortedRoomsList = useMemo(() => {
-    return [...rooms].sort((a: any, b: any) => {
-      const suppA = isOccupancySupportedForRoom(a, bookingData.adults);
-      const suppB = isOccupancySupportedForRoom(b, bookingData.adults);
-      if (suppA && !suppB) return -1;
-      if (!suppA && suppB) return 1;
+    let list = [...rooms];
+    const occPerRoom = Math.ceil(bookingData.adults / Math.max(1, bookingData.rooms));
 
+    // STRICT USER REQUIREMENT:
+    // If user chooses 3 occupancy in adults, show ONLY rooms that offer 3 occupancy!
+    // Do NOT list double occupancy rooms! Show ONLY 3 occupancy rooms when 3 is selected!
+    if (occPerRoom === 3) {
+      list = list.filter((r: any) => isTripleOccupancyAvailable(r) || getRoomMaxOccupancy(r) >= 3);
+    } else if (bookingData.rooms === 1 && bookingData.adults === 2) {
+      // For 2 adults in 1 room, do not list single-only rooms that cannot accommodate 2 adults
+      list = list.filter((r: any) => isDoubleOccupancyAvailable(r) || isTripleOccupancyAvailable(r));
+    }
+
+    return list.sort((a: any, b: any) => {
       const pA = getRoomPriceForOccupancy(a, bookingData.adults) || a.priceSingle || a.priceDouble || a.price || 999999;
       const pB = getRoomPriceForOccupancy(b, bookingData.adults) || b.priceSingle || b.priceDouble || b.price || 999999;
       return Number(pA) - Number(pB);
     });
-  }, [rooms, bookingData.adults]);
+  }, [rooms, bookingData.adults, bookingData.rooms]);
 
   // Keep selected room in sync with sorted room list and active occupancy
   useEffect(() => {
     if (sortedRoomsList.length > 0) {
-      if (selectedRoom) {
-        // If current selected room only supports Triple occupancy, automatically align bookingData to 3 adults
-        if (bookingData.rooms === 1 && isTripleOccupancyAvailable(selectedRoom) && !isDoubleOccupancyAvailable(selectedRoom) && bookingData.adults !== 3) {
-          setOccupancy("triple");
-          setBookingData((p) => ({ ...p, adults: 3 }));
-          return;
-        }
+      const isCurrentInList = selectedRoom && sortedRoomsList.some((r) => r._id === selectedRoom._id);
+      if (!isCurrentInList) {
+        const bestRoom = sortedRoomsList[0];
+        setSelectedRoom(bestRoom);
+        setSelectedRoomsMap({ [bestRoom._id]: bookingData.rooms === 1 ? 1 : bookingData.rooms });
       }
-      const isCurrentValid = selectedRoom && isOccupancySupportedForRoom(selectedRoom, bookingData.adults);
-      if (!isCurrentValid) {
-        const bestRoom = sortedRoomsList.find((r: any) => isOccupancySupportedForRoom(r, bookingData.adults)) || sortedRoomsList[0];
-        if (bestRoom) {
-          setSelectedRoom(bestRoom);
-          setSelectedRoomsMap({ [bestRoom._id]: bookingData.rooms });
-        }
-      }
+    } else if (rooms.length > 0) {
+      // If no rooms support the requested occupancy, reset selection
+      setSelectedRoom(null);
+      setSelectedRoomsMap({});
     }
-  }, [sortedRoomsList, bookingData.adults, bookingData.rooms, selectedRoom]);
+  }, [sortedRoomsList, bookingData.adults, bookingData.rooms, selectedRoom, rooms.length]);
 
   // Clean description removing any raw bullet distances (distances are rendered in their own dedicated visual card)
   const cleanDescription = useMemo(() => {
@@ -798,6 +804,15 @@ export default function HotelDetailPage() {
   }, [selectedRoomsMap]);
 
   const selectedRoomsList = useMemo(() => {
+    if (bookingData.rooms === 1) {
+      const activeRoom = selectedRoom || sortedRoomsList[0] || rooms[0];
+      if (!activeRoom) return [];
+      return [{
+        room: activeRoom,
+        quantity: 1,
+        pricePerNight: getRoomPriceForOccupancy(activeRoom, bookingData.adults),
+      }];
+    }
     return rooms
       .filter((r) => (selectedRoomsMap[r._id] || 0) > 0)
       .map((r) => ({
@@ -808,7 +823,7 @@ export default function HotelDetailPage() {
           Math.min(3, Math.max(1, Math.round(bookingData.adults / Math.max(1, bookingData.rooms))))
         ),
       }));
-  }, [rooms, selectedRoomsMap, bookingData.adults, bookingData.rooms]);
+  }, [rooms, sortedRoomsList, selectedRoomsMap, bookingData.adults, bookingData.rooms, selectedRoom]);
 
   // Keep selectedRoom in sync with the first selected room
   useEffect(() => {
@@ -817,8 +832,14 @@ export default function HotelDetailPage() {
     }
   }, [selectedRoomsList]);
 
-  // If bookingData.rooms decreases, cap total selected rooms
+  // Enforce single room constraint or cap total rooms
   useEffect(() => {
+    if (bookingData.rooms === 1) {
+      if (selectedRoom) {
+        setSelectedRoomsMap({ [selectedRoom._id]: 1 });
+      }
+      return;
+    }
     setSelectedRoomsMap((prev) => {
       const total = Object.values(prev).reduce((a, b) => a + (b || 0), 0);
       if (total <= bookingData.rooms) return prev;
@@ -832,7 +853,7 @@ export default function HotelDetailPage() {
       }
       return next;
     });
-  }, [bookingData.rooms]);
+  }, [bookingData.rooms, selectedRoom]);
 
   const handleAddRoom = (room: any) => {
     if (!room) return;
@@ -1207,22 +1228,22 @@ export default function HotelDetailPage() {
       }
       return;
     }
-    if (room) {
-      if (bookingData.rooms === 1 || totalSelectedRoomsCount === 0) {
-        setSelectedRoomsMap({ [room._id]: bookingData.rooms });
-        setSelectedRoom(room);
-        if (bookingData.rooms === 1) {
-          if (isTripleOccupancyAvailable(room) && !isDoubleOccupancyAvailable(room)) {
-            setOccupancy("triple");
-            setBookingData((p) => ({ ...p, adults: 3, rooms: 1 }));
-            updateUrlParams({ adults: 3, rooms: 1 });
-          } else if (isSingleOccupancyAvailable(room) && !isDoubleOccupancyAvailable(room)) {
-            setOccupancy("single");
-            setBookingData((p) => ({ ...p, adults: 1, rooms: 1 }));
-            updateUrlParams({ adults: 1, rooms: 1 });
-          }
-        }
+    const effectiveRoom = room || targetRoom;
+    if (bookingData.rooms === 1 && effectiveRoom) {
+      setSelectedRoomsMap({ [effectiveRoom._id]: 1 });
+      setSelectedRoom(effectiveRoom);
+      if (isTripleOccupancyAvailable(effectiveRoom) && !isDoubleOccupancyAvailable(effectiveRoom)) {
+        setOccupancy("triple");
+        setBookingData((p) => ({ ...p, adults: 3, rooms: 1 }));
+        updateUrlParams({ adults: 3, rooms: 1 });
+      } else if (isSingleOccupancyAvailable(effectiveRoom) && !isDoubleOccupancyAvailable(effectiveRoom)) {
+        setOccupancy("single");
+        setBookingData((p) => ({ ...p, adults: 1, rooms: 1 }));
+        updateUrlParams({ adults: 1, rooms: 1 });
       }
+    } else if (room && totalSelectedRoomsCount === 0) {
+      setSelectedRoomsMap({ [room._id]: bookingData.rooms });
+      setSelectedRoom(room);
     }
     if (bookingData.rooms > 1 && totalSelectedRoomsCount < bookingData.rooms && !room) {
       const roomSection = document.getElementById("rooms-section");
@@ -1292,6 +1313,15 @@ export default function HotelDetailPage() {
   }, [bookingData.checkIn, bookingData.checkOut]);
 
   const currentPricing = useMemo(() => {
+    if (bookingData.rooms === 1) {
+      const activeRoom = selectedRoom || sortedRoomsList[0] || rooms[0];
+      return calculateBookingPricing(
+        activeRoom,
+        bookingData.adults,
+        1,
+        nights
+      );
+    }
     if (selectedRoomsList.length > 0) {
       return calculateMultiRoomPricing(
         selectedRoomsList,
@@ -1305,7 +1335,7 @@ export default function HotelDetailPage() {
       bookingData.rooms,
       nights
     );
-  }, [selectedRoomsList, selectedRoom, bookingData.adults, bookingData.rooms, nights]);
+  }, [selectedRoomsList, selectedRoom, sortedRoomsList, rooms, bookingData.adults, bookingData.rooms, nights]);
 
   // Sync wishlist status
   useEffect(() => {
@@ -1370,6 +1400,9 @@ export default function HotelDetailPage() {
       const rawTotal = currentPricing.totalAmount || lowestRoomPrice * nights;
       return Math.max(0, rawTotal - couponDiscount);
     }
+    if (bookingData.rooms === 1) {
+      return currentPricing.basePricePerNight || lowestRoomPrice;
+    }
     if (totalSelectedRoomsCount > 0 || selectedRoom) {
       return currentPricing.basePricePerNight || lowestRoomPrice;
     }
@@ -1380,6 +1413,7 @@ export default function HotelDetailPage() {
     lowestRoomPrice,
     totalSelectedRoomsCount,
     selectedRoom,
+    bookingData.rooms,
     nights,
     couponDiscount,
   ]);
@@ -2531,19 +2565,56 @@ export default function HotelDetailPage() {
                   </div>
                 )}
 
-                {rooms.length === 0 ? (
-                  <p
+                {sortedRoomsList.length === 0 ? (
+                  <div
                     style={{
-                      color: "var(--text-muted)",
+                      background: "#fff7ed",
+                      border: "1.5px solid #fed7aa",
+                      borderRadius: "var(--radius-lg)",
+                      padding: "24px 20px",
                       textAlign: "center",
-                      padding: "20px 0",
+                      margin: "16px 0",
                     }}
                   >
-                    No rooms available
-                  </p>
+                    <div style={{ fontSize: "2rem", marginBottom: 8 }}>🏨</div>
+                    <h4 style={{ fontSize: "1.1rem", fontWeight: 800, color: "#9a3412", marginBottom: 6 }}>
+                      {bookingData.adults === 3 ? "No 3-Occupancy Rooms Available" : "No Rooms Available"}
+                    </h4>
+                    <p style={{ color: "#7c2d12", fontSize: "0.88rem", maxWidth: 440, margin: "0 auto 16px", lineHeight: 1.5 }}>
+                      {bookingData.adults === 3
+                        ? "Rooms at this property accommodate a maximum of 2 guests per room. To stay here with 3 adults, please book 2 rooms or change your search to 2 guests."
+                        : "No rooms match your selected occupancy and dates. Please adjust dates or guest count."}
+                    </p>
+                    {bookingData.adults === 3 && (
+                      <div style={{ display: "flex", justifyContent: "center", gap: 10, flexWrap: "wrap" }}>
+                        <button
+                          type="button"
+                          className="btn btn-primary btn-sm"
+                          onClick={() => {
+                            setBookingData((p) => ({ ...p, rooms: 2, adults: 3 }));
+                            updateUrlParams({ rooms: 2, adults: 3 });
+                          }}
+                        >
+                          Book 2 Rooms for 3 Adults →
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-outline btn-sm"
+                          onClick={() => {
+                            setBookingData((p) => ({ ...p, rooms: 1, adults: 2 }));
+                            updateUrlParams({ rooms: 1, adults: 2 });
+                          }}
+                        >
+                          Switch to 2 Adults (1 Room)
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 ) : (
                   sortedRoomsList.map((room) => {
-                    const allocatedCount = selectedRoomsMap[room._id] || 0;
+                    const allocatedCount = bookingData.rooms === 1
+                      ? (selectedRoom?._id === room._id ? 1 : 0)
+                      : (selectedRoomsMap[room._id] || 0);
                     const unitPrice = getRoomPrice(room);
                     const isCardSelected = allocatedCount > 0 || (bookingData.rooms === 1 && selectedRoom?._id === room._id);
 
