@@ -101,6 +101,7 @@ function HotelSearch() {
       if (typeof window !== 'undefined') {
         const newUrl = `${window.location.pathname}?${q.toString()}`;
         window.history.replaceState(null, '', newUrl);
+        try { router.replace(newUrl, { scroll: false }); } catch (_) {}
         localStorage.setItem('staybuddy_last_search', JSON.stringify({
           location: filters.city.trim(),
           checkIn: filters.checkIn,
@@ -538,7 +539,10 @@ function HotelSearch() {
                           setHotelsSearchError('');
                         }
                       }}
-                      onClose={() => setShowGuestPicker(false)}
+                      onClose={() => {
+                        setShowGuestPicker(false);
+                        handleHotelsSearch();
+                      }}
                     />
                   </div>
                 </>

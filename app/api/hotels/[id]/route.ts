@@ -75,11 +75,13 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     let reviews: any[] = [];
     if (hotel.rooms && Array.isArray(hotel.rooms) && hotel.rooms.length > 0) {
       // Merge hotel.rooms with collRooms (Partner Extranet CRM rooms collection is primary source of truth)
-      rooms = hotel.rooms.map((hr: any) => {
+      const usedRoomIds = new Set<string>();
+      rooms = hotel.rooms.map((hr: any, rIdx: number) => {
+        // Find matching collection room by exact ID first, then by type if not already used
         const matchingColl = collRooms.find((cr: any) => 
           (cr._id && (cr._id === hr._id || cr._id === hr.id)) ||
           (cr.id && (cr.id === hr._id || cr.id === hr.id)) ||
-          (cr.type && hr.type && cr.type.toLowerCase().trim() === hr.type.toLowerCase().trim())
+          (cr.type && hr.type && cr.type.toLowerCase().trim() === hr.type.toLowerCase().trim() && !usedRoomIds.has(cr._id || cr.id))
         );
 
         // Strictly preserve room-specific photos uploaded by partner
@@ -109,13 +111,24 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         // Rate plan: prioritize explicit ratePlan if set, ensuring breakfast (CP) is honored
         const effectiveRatePlan = hr.ratePlan || matchingColl?.ratePlan || 'EP';
 
+        // Guarantee a unique, collision-free ID for EVERY room
+        let roomId = hr._id || hr.id;
+        if (!roomId && matchingColl && !usedRoomIds.has(matchingColl._id || matchingColl.id)) {
+          roomId = matchingColl._id || matchingColl.id;
+        }
+        if (!roomId || usedRoomIds.has(roomId)) {
+          roomId = `${hr._id || hr.id || matchingColl?._id || 'room'}_${effectiveRatePlan}_${rIdx}`;
+        }
+        usedRoomIds.add(roomId);
+
         return {
           ...hr,
           ...(matchingColl || {}),
           ...hr, // Hotel doc's hr is authoritative over stale collection fields!
           ratePlan: effectiveRatePlan,
           images: roomImgs,
-          _id: matchingColl?._id || hr._id || hr.id || `room_${Date.now()}`,
+          _id: roomId,
+          id: roomId,
           priceSingle: pSingle,
           priceDouble: pDouble,
           priceTriple: pTriple,

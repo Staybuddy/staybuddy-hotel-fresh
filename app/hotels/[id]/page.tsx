@@ -603,20 +603,27 @@ export default function HotelDetailPage() {
         }
       }
       const incomingRooms = data.rooms || [];
+      const seenIds = new Set<string>();
+      const uniqueIncomingRooms = incomingRooms.map((r: any, idx: number) => {
+        let uid = r._id || r.id;
+        if (!uid || seenIds.has(uid)) {
+          uid = `${r._id || r.id || 'room'}_${r.ratePlan || 'plan'}_${idx}`;
+        }
+        seenIds.add(uid);
+        return { ...r, _id: uid, id: uid };
+      });
       // Always sort rooms by price ascending for active occupancy (lowest occupancy rate / cheapest room first)
-      const sortedRooms = [...incomingRooms].sort((a: any, b: any) => {
+      const sortedRooms = [...uniqueIncomingRooms].sort((a: any, b: any) => {
         const pA = getRoomPriceForOccupancy(a, bookingData.adults) || a.priceSingle || a.priceDouble || a.price || 999999;
         const pB = getRoomPriceForOccupancy(b, bookingData.adults) || b.priceSingle || b.priceDouble || b.price || 999999;
         return Number(pA) - Number(pB);
       });
       setRooms(sortedRooms);
       setReviews(data.reviews || []);
-      if (sortedRooms.length > 0 && !selectedRoom) {
-        const bestRoom = sortedRooms.find((r: any) => isOccupancySupportedForRoom(r, bookingData.adults)) || sortedRooms[0];
-        if (bestRoom) {
-          setSelectedRoom(bestRoom);
-          setSelectedRoomsMap({ [bestRoom._id]: bookingData.rooms });
-        }
+      const bestRoom = sortedRooms.find((r: any) => isOccupancySupportedForRoom(r, bookingData.adults)) || sortedRooms[0];
+      if (bestRoom && (!selectedRoom || !isOccupancySupportedForRoom(selectedRoom, bookingData.adults))) {
+        setSelectedRoom(bestRoom);
+        setSelectedRoomsMap({ [bestRoom._id]: bookingData.rooms });
       }
     } catch (e) {
       console.error(e);
@@ -675,9 +682,11 @@ export default function HotelDetailPage() {
   // Keep selected room in sync with sorted room list and active occupancy
   useEffect(() => {
     if (sortedRoomsList.length > 0) {
-      const isCurrentInList = selectedRoom && sortedRoomsList.some((r) => r._id === selectedRoom._id);
-      if (!isCurrentInList) {
-        const bestRoom = sortedRoomsList[0];
+      const isCurrentValid = selectedRoom && 
+        sortedRoomsList.some((r) => r._id === selectedRoom._id) &&
+        isOccupancySupportedForRoom(selectedRoom, bookingData.adults);
+      if (!isCurrentValid) {
+        const bestRoom = sortedRoomsList.find((r) => isOccupancySupportedForRoom(r, bookingData.adults)) || sortedRoomsList[0];
         setSelectedRoom(bestRoom);
         setSelectedRoomsMap({ [bestRoom._id]: bookingData.rooms === 1 ? 1 : bookingData.rooms });
       }
