@@ -316,7 +316,7 @@ export default function AdminDashboard() {
 
       setStats({
         totalHotels: h.filter((x: any) => x.status === 'approved').length,
-        pendingHotels: h.filter((x: any) => x.status === 'pending').length,
+        pendingHotels: h.filter((x: any) => x.status === 'pending' || x.hasPendingRoomUpdates === true || (Array.isArray(x.rooms) && x.rooms.some((r: any) => r.approvalStatus === 'pending'))).length,
         pendingPartners: p.filter((x: any) => x.partnerStatus === 'pending').length,
         totalBookings: paidBookings.length,
         totalRevenue: revenue,
@@ -577,6 +577,7 @@ export default function AdminDashboard() {
   }
 
   const pendingHotels = hotels.filter(h => h.status === 'pending');
+  const hotelsWithPendingRooms = hotels.filter(h => h.status !== 'pending' && (h.hasPendingRoomUpdates === true || (Array.isArray(h.rooms) && h.rooms.some((r: any) => r.approvalStatus === 'pending'))));
   const approvedHotels = hotels.filter(h => h.status === 'approved');
 
   const distinctHotelCities = useMemo(() => {
@@ -1258,37 +1259,124 @@ export default function AdminDashboard() {
             );
           })()}
 
-          {/* ===== PARTNER REQUESTS (PROPERTIES) ===== */}
+          {/* ===== PARTNER & ONBOARDER REQUESTS (PROPERTIES & ROOMS) ===== */}
           {activeTab === 'requests' && (
             <div className="fade-in">
-              <h1 style={{ fontSize: '2rem', color: '#0f172a', marginBottom: 8 }}>Property Requests</h1>
-              <p style={{ color: '#64748b', marginBottom: 32 }}>Review, edit, and approve properties submitted by partners via the Extranet.</p>
+              <h1 style={{ fontSize: '2rem', color: '#0f172a', marginBottom: 8 }}>Property & Room Requests</h1>
+              <p style={{ color: '#64748b', marginBottom: 32 }}>Review, edit, and approve properties and room additions/edits submitted by partners & onboarding executives via the Extranet.</p>
               
-              {pendingHotels.length === 0 ? (
-                <div style={{ padding: '60px', textAlign: 'center', background: 'white', borderRadius: 16, border: '1px dashed #cbd5e1' }}>
-                  <div style={{ fontSize: '2rem', marginBottom: 16 }}>✅</div>
-                  <h3 style={{ fontSize: '1.2rem', color: '#0f172a' }}>All caught up!</h3>
-                  <p style={{ color: '#64748b' }}>No pending partner requests at the moment.</p>
-                </div>
-              ) : (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 24, width: '100%' }}>
-                  {pendingHotels.map(hotel => (
-                    <div key={hotel._id} style={{ background: 'white', borderRadius: 16, overflow: 'hidden', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' }}>
-                      <div style={{ height: 140, background: '#f1f5f9', backgroundImage: `url(${hotel.images?.[0] || 'https://via.placeholder.com/400x200'})`, backgroundSize: 'cover', backgroundPosition: 'center' }} />
-                      <div style={{ padding: 20 }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                          <h4 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#0f172a', marginBottom: 4 }}>{hotel.name}</h4>
-                          <span style={{ fontSize: '0.7rem', fontWeight: 700, background: '#fef3c7', color: '#d97706', padding: '2px 8px', borderRadius: 12 }}>NEW</span>
+              {/* SECTION 1: Pending Room & Inventory Updates */}
+              {hotelsWithPendingRooms.length > 0 && (
+                <div style={{ marginBottom: 40 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+                    <span style={{ fontSize: '1.4rem' }}>🛎️</span>
+                    <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
+                      Pending Room & Pricing Updates ({hotelsWithPendingRooms.length})
+                    </h3>
+                    <span style={{ background: '#fef3c7', color: '#b45309', padding: '2px 10px', borderRadius: 12, fontSize: '0.75rem', fontWeight: 800 }}>
+                      Action Required
+                    </span>
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: 20 }}>
+                    {hotelsWithPendingRooms.map(hotel => {
+                      const pendingRoomsList = (hotel.rooms || []).filter((r: any) => r.approvalStatus === 'pending' || hotel.hasPendingRoomUpdates);
+                      return (
+                        <div key={`pending-room-${hotel._id}`} style={{ background: 'white', borderRadius: 16, border: '1.5px solid #fed7aa', padding: 22, boxShadow: '0 4px 12px rgba(249,115,22,0.06)' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
+                            <div>
+                              <h4 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#0f172a', margin: '0 0 4px 0' }}>{hotel.name}</h4>
+                              <div style={{ fontSize: '0.82rem', color: '#64748b' }}>📍 {hotel.city} • Onboarded by: {typeof hotel.onboardedBy === 'object' ? (hotel.onboardedBy?.name || hotel.onboardedBy?.email) : (hotel.onboardedBy || 'Staff / Partner')}</div>
+                            </div>
+                            <span style={{ fontSize: '0.72rem', fontWeight: 800, background: '#ffedd5', color: '#c2410c', padding: '3px 10px', borderRadius: 12 }}>
+                              ROOM EDITS
+                            </span>
+                          </div>
+
+                          <div style={{ background: '#f8fafc', padding: '10px 14px', borderRadius: 10, marginBottom: 16, border: '1px solid #f1f5f9' }}>
+                            <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', marginBottom: 6 }}>Rooms in this update:</div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                              {(hotel.rooms || []).map((r: any, rIdx: number) => (
+                                <div key={r._id || r.id || rIdx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.82rem' }}>
+                                  <span style={{ fontWeight: 700, color: '#1e293b' }}>
+                                    🛏️ {r.type}
+                                    <span style={{ marginLeft: 6, fontSize: '0.74rem', color: r.ratePlan === 'CP' ? '#059669' : '#64748b', fontWeight: 800 }}>
+                                      {r.ratePlan === 'CP' ? '🍳 Free Breakfast (CP)' : r.ratePlan === 'MAP' ? '🍽️ MAP' : r.ratePlan === 'AP' ? '🍴 AP' : '☕ EP (Room Only)'}
+                                    </span>
+                                  </span>
+                                  <span style={{ fontWeight: 800, color: '#0f172a' }}>
+                                    ₹{r.b2bPriceDouble || r.priceDouble || r.b2bPrice || r.priceSingle || 0}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+
+                          <div style={{ display: 'flex', gap: 10 }}>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                updateHotelStatus(hotel._id, { approvePendingRooms: true, status: 'approved' });
+                                alert(`Room updates for ${hotel.name} approved and now live!`);
+                              }}
+                              disabled={approveLoading === hotel._id}
+                              style={{ flex: 1, padding: '10px', background: '#10b981', color: 'white', border: 'none', borderRadius: 8, fontWeight: 700, fontSize: '0.86rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, boxShadow: '0 2px 6px rgba(16,185,129,0.2)' }}
+                            >
+                              ✓ Approve Room Updates
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => openExtranetModal(hotel)}
+                              style={{ padding: '10px 14px', background: '#f8fafc', color: '#0f172a', border: '1px solid #cbd5e1', borderRadius: 8, fontWeight: 700, fontSize: '0.86rem', cursor: 'pointer' }}
+                            >
+                              📝 Review in Extranet
+                            </button>
+                          </div>
                         </div>
-                        <div style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: 16 }}>{hotel.city}, {hotel.country} • Partner: {hotel.partnerId?.name || 'Unknown'}</div>
-                        <button onClick={() => openReviewModal(hotel)} style={{ width: '100%', padding: '10px', background: '#f8fafc', color: '#0f172a', border: '1px solid #e2e8f0', borderRadius: 8, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, transition: 'all 0.2s' }} onMouseEnter={e => e.currentTarget.style.background = '#f1f5f9'} onMouseLeave={e => e.currentTarget.style.background = '#f8fafc'}>
-                          📝 Review & Edit
-                        </button>
-                      </div>
-                    </div>
-                  ))}
+                      );
+                    })}
+                  </div>
                 </div>
               )}
+
+              {/* SECTION 2: Pending Property Submissions */}
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+                  <span style={{ fontSize: '1.4rem' }}>🏨</span>
+                  <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
+                    New Property Submissions ({pendingHotels.length})
+                  </h3>
+                </div>
+
+                {pendingHotels.length === 0 && hotelsWithPendingRooms.length === 0 ? (
+                  <div style={{ padding: '60px', textAlign: 'center', background: 'white', borderRadius: 16, border: '1px dashed #cbd5e1' }}>
+                    <div style={{ fontSize: '2rem', marginBottom: 16 }}>✅</div>
+                    <h3 style={{ fontSize: '1.2rem', color: '#0f172a' }}>All caught up!</h3>
+                    <p style={{ color: '#64748b' }}>No pending partner or onboarder requests at the moment.</p>
+                  </div>
+                ) : pendingHotels.length === 0 ? (
+                  <div style={{ padding: '24px', textAlign: 'center', background: 'white', borderRadius: 12, border: '1px dashed #cbd5e1', color: '#64748b', fontSize: '0.9rem' }}>
+                    No new property onboarding submissions waiting.
+                  </div>
+                ) : (
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 24, width: '100%' }}>
+                    {pendingHotels.map(hotel => (
+                      <div key={hotel._id} style={{ background: 'white', borderRadius: 16, overflow: 'hidden', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' }}>
+                        <div style={{ height: 140, background: '#f1f5f9', backgroundImage: `url(${hotel.images?.[0] || 'https://via.placeholder.com/400x200'})`, backgroundSize: 'cover', backgroundPosition: 'center' }} />
+                        <div style={{ padding: 20 }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                            <h4 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#0f172a', marginBottom: 4 }}>{hotel.name}</h4>
+                            <span style={{ fontSize: '0.7rem', fontWeight: 700, background: '#fef3c7', color: '#d97706', padding: '2px 8px', borderRadius: 12 }}>NEW</span>
+                          </div>
+                          <div style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: 16 }}>{hotel.city}, {hotel.country} • Partner: {hotel.partnerId?.name || 'Unknown'}</div>
+                          <button onClick={() => openReviewModal(hotel)} style={{ width: '100%', padding: '10px', background: '#f8fafc', color: '#0f172a', border: '1px solid #e2e8f0', borderRadius: 8, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, transition: 'all 0.2s' }} onMouseEnter={e => e.currentTarget.style.background = '#f1f5f9'} onMouseLeave={e => e.currentTarget.style.background = '#f8fafc'}>
+                            📝 Review & Edit
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           )}
 
@@ -4155,7 +4243,47 @@ export default function AdminDashboard() {
                               />
                             </div>
                             <div>
-                              <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#64748b', marginBottom: 4 }}>Rate Plan</label>
+                              <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 800, color: '#334155', marginBottom: 6 }}>
+                                Meal / Rate Plan
+                              </label>
+                              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 8 }}>
+                                {[
+                                  { id: 'EP', label: '☕ EP (Room Only)', bg: '#f1f5f9', border: '#cbd5e1', color: '#475569' },
+                                  { id: 'CP', label: '🍳 CP (Free Breakfast)', bg: '#ecfdf5', border: '#10b981', color: '#047857' },
+                                  { id: 'MAP', label: '🍽️ MAP (Breakfast+Dinner)', bg: '#eff6ff', border: '#3b82f6', color: '#1d4ed8' },
+                                  { id: 'AP', label: '🍴 AP (All Meals)', bg: '#fef3c7', border: '#f59e0b', color: '#b45309' },
+                                ].map(plan => {
+                                  const isSel = (room.ratePlan || 'EP') === plan.id;
+                                  return (
+                                    <button
+                                      key={plan.id}
+                                      type="button"
+                                      onClick={() => {
+                                        const updatedRooms = [...extranetModal.rooms];
+                                        updatedRooms[rIdx].ratePlan = plan.id;
+                                        setExtranetModal({ ...extranetModal, rooms: updatedRooms });
+                                      }}
+                                      style={{
+                                        padding: '6px 12px',
+                                        borderRadius: 8,
+                                        border: isSel ? `2px solid ${plan.border}` : '1px solid #cbd5e1',
+                                        background: isSel ? plan.bg : '#ffffff',
+                                        color: isSel ? plan.color : '#64748b',
+                                        fontWeight: isSel ? 800 : 600,
+                                        fontSize: '0.82rem',
+                                        cursor: 'pointer',
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: 4,
+                                        boxShadow: isSel ? '0 2px 6px rgba(0,0,0,0.06)' : 'none',
+                                        transition: 'all 0.15s ease'
+                                      }}
+                                    >
+                                      {plan.label}
+                                    </button>
+                                  );
+                                })}
+                              </div>
                               <select 
                                 value={room.ratePlan || 'EP'} 
                                 onChange={e => {
@@ -4163,15 +4291,22 @@ export default function AdminDashboard() {
                                   updatedRooms[rIdx].ratePlan = e.target.value;
                                   setExtranetModal({...extranetModal, rooms: updatedRooms});
                                 }} 
-                                style={{ width: '100%', padding: '9px 12px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '0.9rem', fontWeight: 600 }}
+                                style={{ width: '100%', padding: '7px 10px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '0.84rem', fontWeight: 600, color: '#334155' }}
                               >
-                                <option value="EP">EP (Room Only)</option>
-                                <option value="CP">CP (Room + Breakfast)</option>
-                                <option value="MAP">MAP (Room + 2 Meals)</option>
-                                <option value="AP">AP (Room + All Meals)</option>
+                                <option value="EP">EP (Room Only - No Breakfast)</option>
+                                <option value="CP">CP (Room with Free Breakfast Included)</option>
+                                <option value="MAP">MAP (Room with Breakfast & Dinner)</option>
+                                <option value="AP">AP (Room with All Meals Included)</option>
                               </select>
                             </div>
                           </div>
+
+                          {/* Instant Feedback Badge for Meal Inclusions */}
+                          {(room.ratePlan === 'CP' || room.ratePlan === 'MAP' || room.ratePlan === 'AP') && (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#ecfdf5', border: '1px solid #a7f3d0', color: '#047857', padding: '6px 12px', borderRadius: 8, fontSize: '0.8rem', fontWeight: 800, marginBottom: 12 }}>
+                              <span>🍳 Free Breakfast Included for guests on this room (CP Plan)</span>
+                            </div>
+                          )}
 
                           <div style={{ fontSize: '0.75rem', color: '#64748b', background: '#f8fafc', padding: '6px 10px', borderRadius: 6, marginBottom: 14, border: '1px solid #f1f5f9' }}>
                             ℹ️ {room.priceTriple ? 'This room accommodates up to 3 guests.' : 'This room accommodates up to 2 guests only. If guests search for 3 adults in 1 room, this room cannot be booked. Enter Triple price to allow 3 guests.'}

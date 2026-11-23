@@ -163,10 +163,27 @@ export async function POST(request: NextRequest) {
       availableRooms: baseAlloc,
       extraInventoryToday: 0,
       isActive: true,
+      approvalStatus: 'pending',
       createdAt: new Date().toISOString()
     };
 
     await roomRef.set(newRoom);
+
+    // Sync to hotel document & flag pending approval for admin
+    const hotelRef = db.collection('hotels').doc(hotelId);
+    const hotelSnap = await hotelRef.get();
+    if (hotelSnap.exists) {
+      const hData = hotelSnap.data() || {};
+      const currentRooms = Array.isArray(hData.rooms) ? hData.rooms : [];
+      const updatedRooms = [...currentRooms, newRoom];
+      await hotelRef.update({
+        rooms: updatedRooms,
+        hasPendingRoomUpdates: true,
+        pendingRoomsCount: (hData.pendingRoomsCount || 0) + 1,
+        updatedAt: new Date().toISOString()
+      });
+    }
+
     return NextResponse.json({ room: newRoom }, { status: 201 });
   } catch (error) {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
@@ -262,7 +279,7 @@ export async function PUT(request: NextRequest) {
               }
               return hr;
             });
-            await hotelRef.update({ rooms: updatedRooms, updatedAt: new Date().toISOString() });
+            await hotelRef.update({ rooms: updatedRooms, hasPendingRoomUpdates: true, updatedAt: new Date().toISOString() });
           }
         }
       }

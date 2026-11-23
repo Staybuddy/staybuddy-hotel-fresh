@@ -2577,7 +2577,7 @@ export default function HotelDetailPage() {
                                   url,
                                   label: `${room.type} • Photo ${i + 1} of ${room.images.length}`,
                                 }));
-                                openPhotoViewer(0, roomPhotosList);
+                                openPhotoViewer(0, roomPhotosList, 'single');
                               }}
                               title="Click to view full photo gallery"
                             >
@@ -5916,7 +5916,7 @@ export default function HotelDetailPage() {
                       label: `${roomDetailsModal.type} • Photo ${i + 1} of ${roomDetailsModal.images.length}`,
                     }));
                     setRoomDetailsModal(null);
-                    openPhotoViewer(modalImageIndex, roomPhotosList);
+                    openPhotoViewer(modalImageIndex, roomPhotosList, 'single');
                   }}
                 >
                   <span>⤢ View Full Screen</span>
@@ -6373,10 +6373,12 @@ export default function HotelDetailPage() {
                   </button>
                   <div style={{ minWidth: 0 }}>
                     <h3 style={{ margin: 0, fontSize: "1.15rem", fontWeight: 800, color: "#0f172a", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                      {hotel?.name}
+                      {customGalleryPhotos && customGalleryPhotos.length > 0 && customGalleryPhotos[0]?.label
+                        ? `${hotel?.name} — ${customGalleryPhotos[0].label.split(' • ')[0]}`
+                        : hotel?.name}
                     </h3>
                     <div style={{ fontSize: "0.8rem", color: "#64748b", marginTop: 2 }}>
-                      {allPhotos.length} Verified Photos • Tap any photo to view full size
+                      {(customGalleryPhotos && customGalleryPhotos.length > 0 ? customGalleryPhotos.length : allPhotos.length)} Verified Photos • Tap any photo to view full size
                     </div>
                   </div>
                 </div>
@@ -6458,8 +6460,8 @@ export default function HotelDetailPage() {
                   WebkitOverflowScrolling: "touch",
                 }}
               >
-                {/* Mode 1: All Photos - Grouped by Views & Rooms */}
-                {galleryCategoryFilter === "all" && propertyPhotos.length > 0 && roomPhotos.length > 0 ? (
+                {/* Mode 1: All Photos - Grouped by Views & Rooms (Only when no custom room filter is active) */}
+                {(!customGalleryPhotos || customGalleryPhotos.length === 0) && galleryCategoryFilter === "all" && propertyPhotos.length > 0 && roomPhotos.length > 0 ? (
                   <>
                     {/* Section 1: Views / Exterior */}
                     <div style={{ marginBottom: 36 }}>
@@ -6486,11 +6488,11 @@ export default function HotelDetailPage() {
                               style={{
                                 position: "relative",
                                 width: "100%",
-                                aspectRatio: "4 / 3",
+                                aspectRatio: "16 / 10",
                                 borderRadius: 14,
                                 overflow: "hidden",
                                 cursor: "pointer",
-                                background: "#f1f5f9",
+                                background: "#0f172a",
                                 border: "1px solid #e2e8f0",
                                 boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
                                 transition: "transform 0.25s ease, box-shadow 0.25s ease",
@@ -6509,6 +6511,8 @@ export default function HotelDetailPage() {
                                 alt={`${hotel?.name} view ${pIdx + 1}`}
                                 loading="lazy"
                                 style={{
+                                  position: "absolute",
+                                  inset: 0,
                                   width: "100%",
                                   height: "100%",
                                   objectFit: "cover",
@@ -6546,11 +6550,11 @@ export default function HotelDetailPage() {
                               style={{
                                 position: "relative",
                                 width: "100%",
-                                aspectRatio: "4 / 3",
+                                aspectRatio: "16 / 10",
                                 borderRadius: 14,
                                 overflow: "hidden",
                                 cursor: "pointer",
-                                background: "#f1f5f9",
+                                background: "#0f172a",
                                 border: "1px solid #e2e8f0",
                                 boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
                                 transition: "transform 0.25s ease, box-shadow 0.25s ease",
@@ -6569,6 +6573,8 @@ export default function HotelDetailPage() {
                                 alt={`${hotel?.name} room ${pIdx + 1}`}
                                 loading="lazy"
                                 style={{
+                                  position: "absolute",
+                                  inset: 0,
                                   width: "100%",
                                   height: "100%",
                                   objectFit: "cover",
@@ -6600,10 +6606,16 @@ export default function HotelDetailPage() {
                     </div>
                   </>
                 ) : (
-                  /* Single Filter Mode */
+                  /* Single Filter or Scoped Room Photos Mode */
                   <div>
                     <h3 style={{ fontSize: "1.25rem", fontWeight: 800, color: "#0f172a", margin: "0 0 16px 0", letterSpacing: "-0.3px" }}>
-                      {galleryCategoryFilter === "rooms" ? "Rooms & Suites" : galleryCategoryFilter === "property" ? "Views" : "All Photos"}
+                      {customGalleryPhotos && customGalleryPhotos.length > 0
+                        ? `${customGalleryPhotos[0]?.label?.split(' • ')[0] || "Room"} Photos (${customGalleryPhotos.length})`
+                        : galleryCategoryFilter === "rooms"
+                        ? "Rooms & Suites"
+                        : galleryCategoryFilter === "property"
+                        ? "Views"
+                        : "All Photos"}
                     </h3>
                     <div
                       style={{
@@ -6625,11 +6637,11 @@ export default function HotelDetailPage() {
                             style={{
                               position: "relative",
                               width: "100%",
-                              aspectRatio: "4 / 3",
+                              aspectRatio: "16 / 10",
                               borderRadius: 14,
                               overflow: "hidden",
                               cursor: "pointer",
-                              background: "#f1f5f9",
+                              background: "#0f172a",
                               border: "1px solid #e2e8f0",
                               boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
                               transition: "transform 0.25s ease, box-shadow 0.25s ease",
@@ -6648,6 +6660,8 @@ export default function HotelDetailPage() {
                               alt={`${hotel?.name} photo ${pIdx + 1}`}
                               loading="lazy"
                               style={{
+                                position: "absolute",
+                                inset: 0,
                                 width: "100%",
                                 height: "100%",
                                 objectFit: "cover",

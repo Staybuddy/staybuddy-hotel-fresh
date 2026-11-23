@@ -103,9 +103,13 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
           ? Number(matchingColl.priceTriple)
           : Number(hr.priceTriple !== undefined && hr.priceTriple !== '' ? hr.priceTriple : (matchingColl?.priceTriple || 0)) || 0;
 
+        // Rate plan: prioritize explicit ratePlan if set, ensuring breakfast (CP) is honored
+        const effectiveRatePlan = hr.ratePlan || matchingColl?.ratePlan || 'EP';
+
         return {
           ...hr,
           ...(matchingColl || {}),
+          ratePlan: effectiveRatePlan,
           images: roomImgs,
           _id: matchingColl?._id || hr._id || hr.id || `room_${Date.now()}`,
           priceSingle: pSingle,
@@ -327,6 +331,8 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
         } else {
           const newRoomRef = db.collection('rooms').doc();
           const { _id: r_id, id: rId, ...rFields } = r;
+          r._id = newRoomRef.id;
+          r.id = newRoomRef.id;
           batch.set(newRoomRef, {
             ...rFields,
             _id: newRoomRef.id,
@@ -339,6 +345,16 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       await batch.commit().catch(console.error);
     }
     
+    // If admin is approving pending room changes
+    if (updateData.approvePendingRooms) {
+      updateData.hasPendingRoomUpdates = false;
+      updateData.pendingRoomsCount = 0;
+      if (Array.isArray(updateData.rooms)) {
+        updateData.rooms = updateData.rooms.map((r: any) => ({ ...r, approvalStatus: 'approved' }));
+      }
+      delete updateData.approvePendingRooms;
+    }
+
     await docRef.update(updateData);
     const updated = await docRef.get();
     
