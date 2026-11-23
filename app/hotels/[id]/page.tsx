@@ -620,11 +620,7 @@ export default function HotelDetailPage() {
       });
       setRooms(sortedRooms);
       setReviews(data.reviews || []);
-      const bestRoom = sortedRooms.find((r: any) => isOccupancySupportedForRoom(r, bookingData.adults)) || sortedRooms[0];
-      if (bestRoom && (!selectedRoom || !isOccupancySupportedForRoom(selectedRoom, bookingData.adults))) {
-        setSelectedRoom(bestRoom);
-        setSelectedRoomsMap({ [bestRoom._id]: bookingData.rooms });
-      }
+      // Customer must choose: do not auto-select any room on load or occupancy change!
     } catch (e) {
       console.error(e);
     } finally {
@@ -679,23 +675,18 @@ export default function HotelDetailPage() {
     });
   }, [rooms, bookingData.adults, bookingData.rooms]);
 
-  // Keep selected room in sync with sorted room list and active occupancy
+  // When occupancy changes or rooms update: if current selected room is invalid for the occupancy, reset it.
+  // Never auto-select: our job is only to show the rooms, customer explicitly chooses their preferred room!
   useEffect(() => {
-    if (sortedRoomsList.length > 0) {
-      const isCurrentValid = selectedRoom && 
-        sortedRoomsList.some((r) => r._id === selectedRoom._id) &&
+    if (selectedRoom) {
+      const isCurrentValid = sortedRoomsList.some((r) => r._id === selectedRoom._id) &&
         isOccupancySupportedForRoom(selectedRoom, bookingData.adults);
       if (!isCurrentValid) {
-        const bestRoom = sortedRoomsList.find((r) => isOccupancySupportedForRoom(r, bookingData.adults)) || sortedRoomsList[0];
-        setSelectedRoom(bestRoom);
-        setSelectedRoomsMap({ [bestRoom._id]: bookingData.rooms === 1 ? 1 : bookingData.rooms });
+        setSelectedRoom(null);
+        setSelectedRoomsMap({});
       }
-    } else if (rooms.length > 0) {
-      // If no rooms support the requested occupancy, reset selection
-      setSelectedRoom(null);
-      setSelectedRoomsMap({});
     }
-  }, [sortedRoomsList, bookingData.adults, bookingData.rooms, selectedRoom, rooms.length]);
+  }, [sortedRoomsList, bookingData.adults, bookingData.rooms]);
 
   // Clean description removing any raw bullet distances (distances are rendered in their own dedicated visual card)
   const cleanDescription = useMemo(() => {
@@ -814,12 +805,11 @@ export default function HotelDetailPage() {
 
   const selectedRoomsList = useMemo(() => {
     if (bookingData.rooms === 1) {
-      const activeRoom = selectedRoom || sortedRoomsList[0] || rooms[0];
-      if (!activeRoom) return [];
+      if (!selectedRoom) return [];
       return [{
-        room: activeRoom,
+        room: selectedRoom,
         quantity: 1,
-        pricePerNight: getRoomPriceForOccupancy(activeRoom, bookingData.adults),
+        pricePerNight: getRoomPriceForOccupancy(selectedRoom, bookingData.adults),
       }];
     }
     return rooms
@@ -832,14 +822,7 @@ export default function HotelDetailPage() {
           Math.min(3, Math.max(1, Math.round(bookingData.adults / Math.max(1, bookingData.rooms))))
         ),
       }));
-  }, [rooms, sortedRoomsList, selectedRoomsMap, bookingData.adults, bookingData.rooms, selectedRoom]);
-
-  // Keep selectedRoom in sync with the first selected room
-  useEffect(() => {
-    if (selectedRoomsList.length > 0) {
-      setSelectedRoom(selectedRoomsList[0].room);
-    }
-  }, [selectedRoomsList]);
+  }, [rooms, selectedRoomsMap, bookingData.adults, bookingData.rooms, selectedRoom]);
 
   // Enforce single room constraint or cap total rooms
   useEffect(() => {
@@ -1451,20 +1434,8 @@ export default function HotelDetailPage() {
       handleBooking();
       return;
     }
-    const displayRoom = selectedRoomsList[0]?.room || selectedRoom || (rooms && rooms.length > 0 ? rooms[0] : null);
-    if (!displayRoom) {
-      const roomsEl = document.getElementById("rooms-section");
-      if (roomsEl) roomsEl.scrollIntoView({ behavior: "smooth", block: "start" });
-      return;
-    }
-    if (bookingStep === 0 && bookingData.rooms === 1 && !isOccupancySupportedForRoom(displayRoom, bookingData.adults)) {
-      const occType = bookingData.adults === 3 ? 'triple' : bookingData.adults === 2 ? 'double' : 'single';
-      showTripleNotification(displayRoom?.type, undefined, occType);
-      const roomsEl = document.getElementById("rooms-section");
-      if (roomsEl) roomsEl.scrollIntoView({ behavior: "smooth", block: "start" });
-      return;
-    }
-    if (bookingData.rooms > 1 && totalSelectedRoomsCount < bookingData.rooms) {
+    const hasChosenRoom = bookingData.rooms === 1 ? Boolean(selectedRoom) : (totalSelectedRoomsCount >= bookingData.rooms);
+    if (!hasChosenRoom) {
       const roomsEl = document.getElementById("rooms-section");
       if (roomsEl) {
         roomsEl.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -1476,18 +1447,17 @@ export default function HotelDetailPage() {
       }
       return;
     }
+    const displayRoom = selectedRoomsList[0]?.room || selectedRoom;
+    if (bookingStep === 0 && bookingData.rooms === 1 && !isOccupancySupportedForRoom(displayRoom, bookingData.adults)) {
+      const occType = bookingData.adults === 3 ? 'triple' : bookingData.adults === 2 ? 'double' : 'single';
+      showTripleNotification(displayRoom?.type, undefined, occType);
+      const roomsEl = document.getElementById("rooms-section");
+      if (roomsEl) roomsEl.scrollIntoView({ behavior: "smooth", block: "start" });
+      return;
+    }
     if (displayRoom) {
       openReview(displayRoom);
       return;
-    }
-    const roomsEl = document.getElementById("rooms-section");
-    if (roomsEl) {
-      roomsEl.scrollIntoView({ behavior: "smooth", block: "start" });
-      const cards = document.querySelectorAll(".room-card-grid, .room-card");
-      cards.forEach((c) => {
-        c.classList.add("room-focus-pulse");
-        setTimeout(() => c.classList.remove("room-focus-pulse"), 1600);
-      });
     }
   };
 
@@ -1496,26 +1466,20 @@ export default function HotelDetailPage() {
       const payAmount = bottomBarPrice;
       return bookingLoading ? "PROCESSING..." : `PROCEED TO PAY ₹${payAmount.toLocaleString('en-IN')}`;
     }
-    const displayRoom = selectedRoomsList[0]?.room || selectedRoom;
-    if (bookingStep === 0 && bookingData.rooms === 1 && bookingData.adults === 3 && !(Number(displayRoom?.priceTriple) > 0)) {
-      return "🚫 NO TRIPLE OCCUPANCY";
+    const hasChosenRoom = bookingData.rooms === 1 ? Boolean(selectedRoom) : (totalSelectedRoomsCount >= bookingData.rooms);
+    if (!hasChosenRoom) {
+      return bookingData.rooms > 1
+        ? `SELECT ROOMS (${totalSelectedRoomsCount}/${bookingData.rooms})`
+        : "SELECT A ROOM →";
     }
-    if (bookingData.rooms > 1 && totalSelectedRoomsCount < bookingData.rooms) {
-      return `SELECT ROOM (${totalSelectedRoomsCount}/${bookingData.rooms})`;
-    }
-    if (totalSelectedRoomsCount > 0 || selectedRoom) {
-      return "CONTINUE TO BOOK →";
-    }
-    return "SELECT ROOM";
+    return "CONTINUE TO BOOK →";
   }, [
     bookingStep,
     bookingLoading,
     bookingData.rooms,
     totalSelectedRoomsCount,
     selectedRoom,
-    currentPricing?.totalAmount,
     bottomBarPrice,
-    couponDiscount,
   ]);
 
   if (loading)
@@ -7209,7 +7173,7 @@ export default function HotelDetailPage() {
         <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0, flex: 1, paddingRight: 10 }}>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
             <span style={{ fontSize: '1.45rem', fontWeight: 900, color: '#ff6b35', lineHeight: 1.1, letterSpacing: '-0.02em' }}>
-              ₹{bottomBarPrice.toLocaleString('en-IN')}
+              {(selectedRoom || totalSelectedRoomsCount > 0 || bookingStep === 1) ? `₹${bottomBarPrice.toLocaleString('en-IN')}` : `From ₹${lowestRoomPrice.toLocaleString('en-IN')}`}
             </span>
           </div>
           <div style={{ fontSize: '0.73rem', color: bookingStep === 1 ? '#86efac' : 'rgba(255, 255, 255, 0.72)', fontWeight: bookingStep === 1 ? 700 : 500, marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
