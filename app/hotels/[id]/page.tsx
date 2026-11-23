@@ -565,7 +565,7 @@ export default function HotelDetailPage() {
         : '';
       const hotelId = Array.isArray(id) ? id[0] : id;
       if (!hotelId) return;
-      const res = await fetch(`/api/hotels/${encodeURIComponent(hotelId)}${query}`);
+      const res = await fetch(`/api/hotels/${encodeURIComponent(hotelId)}${query}`, { cache: 'no-store' });
       const data = await res.json();
       if (res.ok && data?.hotel) {
         setHotel(data.hotel);
@@ -588,7 +588,7 @@ export default function HotelDetailPage() {
         } catch (_) {}
       } else if (query) {
         // Fallback retry without date query parameters if dates were constrained
-        const retryRes = await fetch(`/api/hotels/${encodeURIComponent(hotelId)}`);
+        const retryRes = await fetch(`/api/hotels/${encodeURIComponent(hotelId)}`, { cache: 'no-store' });
         if (retryRes.ok) {
           const retryData = await retryRes.json();
           if (retryData?.hotel) {

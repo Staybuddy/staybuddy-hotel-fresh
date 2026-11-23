@@ -3,8 +3,9 @@ import { db } from '@/lib/firebaseAdmin';
 import { applyMarginToRoom, getRoomPriceForOccupancy } from '@/lib/occupancyPricing';
 import { getDateStr, isHotelBlockedForDates } from '@/lib/inventoryBlocks';
 
-// ISR Edge Caching: Serve instantly (10-30ms TTFB) from Vercel Edge CDN, background revalidate every 60s
-export const revalidate = 60;
+// Always serve dynamic fresh inventory, rates & room details directly from Firestore
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 function withTimeout<T>(promise: Promise<T>, ms: number, fallback: T): Promise<T> {
   return Promise.race([

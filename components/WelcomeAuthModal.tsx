@@ -2,10 +2,12 @@
 
 import { useState, useEffect } from 'react';
 import { useSession, signIn } from 'next-auth/react';
+import { usePathname } from 'next/navigation';
 import Logo from '@/components/Logo';
 
 export default function WelcomeAuthModal() {
   const { data: session, status } = useSession();
+  const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
   const [emailInput, setEmailInput] = useState('');
   const [loadingEmail, setLoadingEmail] = useState(false);
@@ -13,8 +15,19 @@ export default function WelcomeAuthModal() {
   const [errorMessage, setErrorMessage] = useState('');
   const [successWelcome, setSuccessWelcome] = useState<string | null>(null);
 
+  const isRestrictedRoute = 
+    pathname?.startsWith('/admin') ||
+    pathname?.startsWith('/partner') ||
+    pathname?.startsWith('/invoice') ||
+    pathname?.startsWith('/tax-invoice') ||
+    pathname?.startsWith('/partner-agreement');
+
   useEffect(() => {
     if (typeof window === 'undefined') return;
+    if (isRestrictedRoute) {
+      setIsOpen(false);
+      return;
+    }
     if (status === 'authenticated') {
       setIsOpen(false);
       return;
@@ -31,7 +44,7 @@ export default function WelcomeAuthModal() {
     }, 200);
 
     return () => clearTimeout(timer);
-  }, [status]);
+  }, [status, isRestrictedRoute]);
 
   const handleDismiss = () => {
     try {
@@ -92,7 +105,7 @@ export default function WelcomeAuthModal() {
     }
   };
 
-  if (!isOpen || status === 'authenticated') {
+  if (!isOpen || status === 'authenticated' || isRestrictedRoute) {
     return null;
   }
 
@@ -113,6 +126,7 @@ export default function WelcomeAuthModal() {
         backdropFilter: 'blur(10px)',
         WebkitBackdropFilter: 'blur(10px)',
         animation: 'sbWelcomeFade 0.25s ease-out',
+        touchAction: 'manipulation',
       }}
       onClick={(e) => {
         if (e.target === e.currentTarget) {

@@ -565,6 +565,9 @@ export default function PartnerDashboard() {
       updatedBy: session?.user?.name || session?.user?.email || (isUserAdmin ? 'Admin' : 'Onboarder')
     };
     await fetch(`/api/hotels/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+    try {
+      localStorage.setItem('staybuddy_hotels_sync', String(Date.now()));
+    } catch (_) {}
     setApproveLoading(null);
     fetchData(false);
   }
@@ -573,7 +576,7 @@ export default function PartnerDashboard() {
     setExtranetModal(hotel);
     setExtranetModalTab('property');
     try {
-      const res = await fetch(`/api/hotels/${hotel._id}`);
+      const res = await fetch(`/api/hotels/${hotel._id}`, { cache: 'no-store' });
       const data = await res.json();
       if (data.hotel) {
         const fetchedRooms = data.rooms || [];

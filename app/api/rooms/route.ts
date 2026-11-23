@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { revalidatePath } from 'next/cache';
 import { db } from '@/lib/firebaseAdmin';
+import { invalidateCache } from '@/lib/cache';
 
 function getDateStr(d: Date | string | number): string {
   const date = new Date(d);
@@ -293,6 +295,15 @@ export async function PUT(request: NextRequest) {
       console.warn('Could not sync room update to hotel.rooms:', hSyncErr);
     }
     
+    invalidateCache();
+    try {
+      revalidatePath('/');
+      revalidatePath('/hotels');
+      if (currentRoom.hotelId) {
+        revalidatePath(`/hotels/${currentRoom.hotelId}`);
+      }
+    } catch (_) {}
+
     const updatedDoc = await roomRef.get();
     const room = { _id: updatedDoc.id, ...updatedDoc.data() };
 

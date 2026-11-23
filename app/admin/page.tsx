@@ -339,6 +339,9 @@ export default function AdminDashboard() {
       isAdminAction: true
     };
     await fetch(`/api/hotels/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+    try {
+      localStorage.setItem('staybuddy_hotels_sync', String(Date.now()));
+    } catch (_) {}
     setApproveLoading(null);
     fetchAll(false);
   }
@@ -351,6 +354,9 @@ export default function AdminDashboard() {
       if (!res.ok) {
         alert('Failed to delete property');
       }
+      try {
+        localStorage.setItem('staybuddy_hotels_sync', String(Date.now()));
+      } catch (_) {}
     } catch (err) {
       console.error(err);
       alert('Error deleting property');

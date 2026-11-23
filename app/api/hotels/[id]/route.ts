@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { revalidatePath } from 'next/cache';
 export const dynamic = 'force-dynamic';
 import { db } from '@/lib/firebaseAdmin';
 import { applyMarginToRoom } from '@/lib/occupancyPricing';
@@ -14,13 +15,15 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       decodedId = decodeURIComponent(rawId).trim();
     } catch (_) {}
 
-    // Ultra-fast In-Memory Cache (60s TTL)
+    // Ultra-fast In-Memory Cache (5s TTL for deduplication only, no client browser caching)
     const cacheKey = `hotel_detail_${request.url}`;
     const cachedResponse = getCached<any>(cacheKey);
     if (cachedResponse) {
       return NextResponse.json(cachedResponse, {
         headers: {
-          'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300',
+          'Cache-Control': 'no-cache, no-store, max-age=0, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0',
           'X-Cache': 'HIT',
         },
       });
@@ -439,6 +442,14 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     const updated = await docRef.get();
     
     invalidateCache();
+    try {
+      revalidatePath('/');
+      revalidatePath('/hotels');
+      revalidatePath(`/hotels/${docRef.id}`);
+      revalidatePath(`/hotels/${resolvedParams.id}`);
+    } catch (e) {
+      console.warn('revalidatePath note:', e);
+    }
 
     return NextResponse.json({ hotel: { _id: updated.id, ...updated.data() } });
   } catch (error) {

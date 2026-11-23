@@ -23,14 +23,14 @@ export default function SplashScreen() {
       return;
     }
 
-    // Snappy, silky-smooth fadeout
+    // Snappy, silky-smooth fadeout (fast 450ms for instant mobile responsiveness)
     const fadeTimer = setTimeout(() => {
       setFading(true);
-    }, 1100);
+    }, 450);
 
     const removeTimer = setTimeout(() => {
       setShow(false);
-    }, 1450);
+    }, 700);
 
     return () => {
       clearTimeout(fadeTimer);
@@ -42,6 +42,7 @@ export default function SplashScreen() {
 
   return (
     <div
+      onClick={() => setShow(false)}
       style={{
         position: 'fixed',
         top: 0,
@@ -55,7 +56,10 @@ export default function SplashScreen() {
         alignItems: 'center',
         justifyContent: 'center',
         opacity: fading ? 0 : 1,
-        transition: 'opacity 0.5s ease-out',
+        pointerEvents: fading ? 'none' : 'auto',
+        transition: 'opacity 0.25s ease-out',
+        cursor: 'pointer',
+        touchAction: 'manipulation',
       }}
     >
       {/* Brand Name */}

@@ -10,6 +10,15 @@
   -webkit-tap-highlight-color: transparent !important;
 }
 
+/* Instant 0ms mobile tap response, zero double-tap delay, and smooth touch gestures */
+html, body, button, a, input, select, textarea, [role="button"], .card, .room-card, .btn, .tab-btn {
+  touch-action: manipulation;
+}
+
+button, a, [role="button"], .clickable {
+  cursor: pointer;
+}
+
 /* Completely disable orange drag selection ghosting boxes across the site */
 ::selection {
   background: transparent !important;

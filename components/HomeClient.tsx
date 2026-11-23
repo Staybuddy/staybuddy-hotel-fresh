@@ -51,6 +51,46 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
     } catch (_) {}
   }, []);
 
+  // Active real-time synchronization with latest hotel prices and inventory
+  useEffect(() => {
+    let isSubscribed = true;
+
+    async function syncLiveHotels() {
+      try {
+        const res = await fetch('/api/hotels?limit=25', { cache: 'no-store' });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (isSubscribed && Array.isArray(data?.hotels) && data.hotels.length > 0) {
+          setHotels(data.hotels);
+        }
+      } catch (_) {}
+    }
+
+    const handleFocus = () => {
+      syncLiveHotels();
+    };
+
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === 'staybuddy_hotels_sync') {
+        syncLiveHotels();
+      }
+    };
+
+    window.addEventListener('focus', handleFocus);
+    window.addEventListener('storage', handleStorage);
+    const handleVis = () => {
+      if (document.visibilityState === 'visible') syncLiveHotels();
+    };
+    document.addEventListener('visibilitychange', handleVis);
+
+    return () => {
+      isSubscribed = false;
+      window.removeEventListener('focus', handleFocus);
+      window.removeEventListener('storage', handleStorage);
+      document.removeEventListener('visibilitychange', handleVis);
+    };
+  }, []);
+
   // Synchronize search criteria with localStorage so choices (e.g. 1 adult, custom dates) persist across page transitions
   useEffect(() => {
     try {
@@ -410,9 +450,8 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
               {mounted && showDatePicker && createPortal(
                 <div style={{ position: 'fixed', inset: 0, zIndex: 10000, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '16px' }}>
                   <div
-                    style={{ position: 'absolute', inset: 0, background: 'rgba(15, 23, 42, 0.6)', backdropFilter: 'blur(4px)', touchAction: 'none' }}
+                    style={{ position: 'absolute', inset: 0, background: 'rgba(15, 23, 42, 0.6)', backdropFilter: 'blur(4px)', touchAction: 'manipulation' }}
                     onClick={(e) => { e.stopPropagation(); setShowDatePicker(false); }}
-                    onTouchEnd={(e) => { e.preventDefault(); e.stopPropagation(); setShowDatePicker(false); }}
                   />
                   <div
                     onClick={(e) => e.stopPropagation()}
@@ -487,9 +526,8 @@ export default function HomeClient({ initialHotels, recentReviews = [] }: { init
                 {mounted && showGuestPicker && createPortal(
                   <div style={{ position: 'fixed', inset: 0, zIndex: 10000, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '16px' }}>
                     <div
-                      style={{ position: 'absolute', inset: 0, background: 'rgba(15, 23, 42, 0.6)', backdropFilter: 'blur(4px)', touchAction: 'none' }}
+                      style={{ position: 'absolute', inset: 0, background: 'rgba(15, 23, 42, 0.6)', backdropFilter: 'blur(4px)', touchAction: 'manipulation' }}
                       onClick={(e) => { e.stopPropagation(); setShowGuestPicker(false); }}
-                      onTouchEnd={(e) => { e.preventDefault(); e.stopPropagation(); setShowGuestPicker(false); }}
                     />
                     <div
                       className="responsive-popup"

@@ -1,11 +1,20 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import { usePathname } from 'next/navigation';
 
 export default function PwaRegister() {
+  const pathname = usePathname();
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [showBanner, setShowBanner] = useState(false);
   const [isStandalone, setIsStandalone] = useState(false);
+
+  const isRestrictedRoute = 
+    pathname?.startsWith('/admin') ||
+    pathname?.startsWith('/partner') ||
+    pathname?.startsWith('/invoice') ||
+    pathname?.startsWith('/tax-invoice') ||
+    pathname?.startsWith('/partner-agreement');
 
   useEffect(() => {
     // 1. Register Service Worker
@@ -67,20 +76,22 @@ export default function PwaRegister() {
     } catch (_) {}
   };
 
-  if (isStandalone || !showBanner || !deferredPrompt) {
+  if (isStandalone || !showBanner || !deferredPrompt || isRestrictedRoute) {
     return null;
   }
+
+  const isHotelDetail = pathname?.startsWith('/hotels/');
 
   return (
     <div
       style={{
         position: 'fixed',
-        bottom: 'max(16px, env(safe-area-inset-bottom))',
+        bottom: isHotelDetail ? 'max(90px, calc(env(safe-area-inset-bottom) + 90px))' : 'max(16px, env(safe-area-inset-bottom))',
         left: '16px',
         right: '16px',
         maxWidth: 480,
         margin: '0 auto',
-        zIndex: 19990,
+        zIndex: 10002,
         background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)',
         color: '#ffffff',
         padding: '12px 16px',

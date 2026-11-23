@@ -331,9 +331,8 @@ export default function LocationSearch({
       {mounted && isModalOpen && createPortal(
         <div style={{ position: 'fixed', inset: 0, zIndex: 10000, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '16px' }}>
           <div
-            style={{ position: 'absolute', inset: 0, background: 'rgba(15, 23, 42, 0.6)', backdropFilter: 'blur(4px)', touchAction: 'none' }}
+            style={{ position: 'absolute', inset: 0, background: 'rgba(15, 23, 42, 0.6)', backdropFilter: 'blur(4px)', touchAction: 'manipulation' }}
             onClick={(e) => { e.stopPropagation(); setIsModalOpen(false); }}
-            onTouchEnd={(e) => { e.preventDefault(); e.stopPropagation(); setIsModalOpen(false); }}
           />
           <div
             onClick={(e) => e.stopPropagation()}
