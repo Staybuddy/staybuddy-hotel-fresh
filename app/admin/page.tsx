@@ -333,7 +333,12 @@ export default function AdminDashboard() {
 
   async function updateHotelStatus(id: string, updates: any) {
     setApproveLoading(id);
-    await fetch(`/api/hotels/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(updates) });
+    const payload = {
+      ...updates,
+      isAdmin: true,
+      isAdminAction: true
+    };
+    await fetch(`/api/hotels/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
     setApproveLoading(null);
     fetchAll(false);
   }
@@ -1285,17 +1290,23 @@ export default function AdminDashboard() {
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
                             <div>
                               <h4 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#0f172a', margin: '0 0 4px 0' }}>{hotel.name}</h4>
-                              <div style={{ fontSize: '0.82rem', color: '#64748b' }}>📍 {hotel.city} • Onboarded by: {typeof hotel.onboardedBy === 'object' ? (hotel.onboardedBy?.name || hotel.onboardedBy?.email) : (hotel.onboardedBy || 'Staff / Partner')}</div>
+                              <div style={{ fontSize: '0.82rem', color: '#64748b' }}>📍 {hotel.city} • Submitted by: {hotel.pendingUpdatedBy || (typeof hotel.onboardedBy === 'object' ? (hotel.onboardedBy?.name || hotel.onboardedBy?.email) : (hotel.onboardedBy || 'Onboarder Staff'))}</div>
                             </div>
                             <span style={{ fontSize: '0.72rem', fontWeight: 800, background: '#ffedd5', color: '#c2410c', padding: '3px 10px', borderRadius: 12 }}>
-                              ROOM EDITS
+                              ACTION REQUIRED
                             </span>
                           </div>
+
+                          {hotel.pendingRoomChangesSummary && (
+                            <div style={{ background: '#fff7ed', border: '1px solid #fdba74', padding: '8px 12px', borderRadius: 8, fontSize: '0.82rem', fontWeight: 700, color: '#c2410c', marginBottom: 12 }}>
+                              ⚡ Onboarder Changes: {hotel.pendingRoomChangesSummary}
+                            </div>
+                          )}
 
                           <div style={{ background: '#f8fafc', padding: '10px 14px', borderRadius: 10, marginBottom: 16, border: '1px solid #f1f5f9' }}>
                             <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', marginBottom: 6 }}>Rooms in this update:</div>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                              {(hotel.rooms || []).map((r: any, rIdx: number) => (
+                              {(hotel.pendingRooms || hotel.rooms || []).map((r: any, rIdx: number) => (
                                 <div key={r._id || r.id || rIdx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.82rem' }}>
                                   <span style={{ fontWeight: 700, color: '#1e293b' }}>
                                     🛏️ {r.type}
@@ -1311,22 +1322,40 @@ export default function AdminDashboard() {
                             </div>
                           </div>
 
-                          <div style={{ display: 'flex', gap: 10 }}>
+                          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                             <button
                               type="button"
                               onClick={() => {
-                                updateHotelStatus(hotel._id, { approvePendingRooms: true, status: 'approved' });
-                                alert(`Room updates for ${hotel.name} approved and now live!`);
+                                updateHotelStatus(hotel._id, { 
+                                  approvePendingRooms: true, 
+                                  status: 'approved', 
+                                  rooms: hotel.pendingRooms || hotel.rooms,
+                                  isAdmin: true,
+                                  isAdminAction: true
+                                });
+                                alert(`Room updates for ${hotel.name} approved and now live on B2C!`);
                               }}
                               disabled={approveLoading === hotel._id}
-                              style={{ flex: 1, padding: '10px', background: '#10b981', color: 'white', border: 'none', borderRadius: 8, fontWeight: 700, fontSize: '0.86rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, boxShadow: '0 2px 6px rgba(16,185,129,0.2)' }}
+                              style={{ flex: 1, minWidth: 140, padding: '10px 14px', background: '#10b981', color: 'white', border: 'none', borderRadius: 8, fontWeight: 700, fontSize: '0.84rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, boxShadow: '0 2px 6px rgba(16,185,129,0.2)' }}
                             >
-                              ✓ Approve Room Updates
+                              ✓ Approve & Make Live
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (confirm('Reject these room changes submitted by the onboarder?')) {
+                                  updateHotelStatus(hotel._id, { rejectPendingRooms: true, isAdmin: true, isAdminAction: true });
+                                }
+                              }}
+                              disabled={approveLoading === hotel._id}
+                              style={{ padding: '10px 14px', background: '#fee2e2', color: '#dc2626', border: '1px solid #fecaca', borderRadius: 8, fontWeight: 700, fontSize: '0.84rem', cursor: 'pointer' }}
+                            >
+                              ✕ Reject
                             </button>
                             <button
                               type="button"
                               onClick={() => openExtranetModal(hotel)}
-                              style={{ padding: '10px 14px', background: '#f8fafc', color: '#0f172a', border: '1px solid #cbd5e1', borderRadius: 8, fontWeight: 700, fontSize: '0.86rem', cursor: 'pointer' }}
+                              style={{ padding: '10px 14px', background: '#f8fafc', color: '#0f172a', border: '1px solid #cbd5e1', borderRadius: 8, fontWeight: 700, fontSize: '0.84rem', cursor: 'pointer' }}
                             >
                               📝 Review in Extranet
                             </button>
@@ -3821,10 +3850,17 @@ export default function AdminDashboard() {
                 if (finalImgs.length === 0 && roomPhotos.length > 0) {
                   finalImgs = Array.from(new Set(roomPhotos));
                 }
-                const updatedPayload = { ...extranetModal, images: finalImgs };
+                const updatedPayload = { 
+                  ...extranetModal, 
+                  images: finalImgs,
+                  isAdmin: true,
+                  isAdminAction: true,
+                  hasPendingRoomUpdates: false,
+                  pendingRoomsCount: 0
+                };
                 updateHotelStatus(extranetModal._id, updatedPayload);
                 setExtranetModal(null);
-                alert('Property updated successfully!');
+                alert('Property updated successfully! Changes are live on B2C immediately.');
               }} style={{ display: 'flex', flexDirection: 'column', gap: 20, paddingBottom: 60 }}>
                 
                 {/* TAB 1: PROPERTY */}
@@ -4169,8 +4205,11 @@ export default function AdminDashboard() {
                             <button 
                               type="button" 
                               onClick={() => {
-                                const updatedRooms = extranetModal.rooms.filter((_: any, idx: number) => idx !== rIdx);
-                                setExtranetModal({...extranetModal, rooms: updatedRooms});
+                                const roomToDelete = extranetModal.rooms[rIdx];
+                                if (confirm(`Are you sure you want to permanently remove "${roomToDelete.type || 'this room'}"? It will be deleted immediately upon clicking Save Changes.`)) {
+                                  const updatedRooms = extranetModal.rooms.filter((_: any, idx: number) => idx !== rIdx);
+                                  setExtranetModal({...extranetModal, rooms: updatedRooms});
+                                }
                               }} 
                               style={{ color: '#ef4444', background: '#fee2e2', border: 'none', borderRadius: 6, padding: '4px 10px', cursor: 'pointer', fontSize: '0.78rem', fontWeight: 700 }}
                             >

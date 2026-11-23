@@ -109,6 +109,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         return {
           ...hr,
           ...(matchingColl || {}),
+          ...hr, // Hotel doc's hr is authoritative over stale collection fields!
           ratePlan: effectiveRatePlan,
           images: roomImgs,
           _id: matchingColl?._id || hr._id || hr.id || `room_${Date.now()}`,
@@ -117,17 +118,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
           priceTriple: pTriple,
         };
       });
-
-      // Add any collection rooms not already in hotel.rooms
-      collRooms.forEach((cr: any) => {
-        const already = rooms.some((r: any) => 
-          (r._id && r._id === cr._id) ||
-          (r.type && cr.type && r.type.toLowerCase().trim() === cr.type.toLowerCase().trim())
-        );
-        if (!already) {
-          rooms.push(cr);
-        }
-      });
+      // Do not re-add rooms from collRooms that were deleted by admin from hotel.rooms
     } else {
       rooms = collRooms;
     }
@@ -264,12 +255,14 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     }
 
     const responsePayload = { hotel, rooms, reviews };
-    setCached(cacheKey, responsePayload, 60);
+    setCached(cacheKey, responsePayload, 15);
 
     return NextResponse.json(responsePayload, {
       headers: {
-        'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300',
-        'X-Cache': 'MISS',
+        'Cache-Control': 'no-cache, no-store, max-age=0, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0',
+        'X-Cache': 'LIVE',
       },
     });
   } catch (error) {
@@ -315,19 +308,88 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       updateData.partnerName = nameVal;
     }
 
-    // If rooms are sent in the update, sync them with the rooms collection
+    const isAdmin = Boolean(body.isAdmin || body.isAdminAction || body.approvePendingRooms);
+    const isOnboarder = Boolean((body.isOnboarder || body.role === 'onboarder') && !isAdmin);
+
+    // If an onboarder or non-admin partner makes changes, store as pending approval and alert Admin
+    if (isOnboarder && updateData.rooms && Array.isArray(updateData.rooms)) {
+      const existingRooms = Array.isArray(docSnap.data()?.rooms) ? docSnap.data().rooms : [];
+      const liveRoomTypes = new Set(existingRooms.map((r: any) => (r.type || '').trim().toLowerCase()));
+      const newRoomTypes = new Set(updateData.rooms.map((r: any) => (r.type || '').trim().toLowerCase()));
+
+      const deletedRooms = existingRooms.filter((r: any) => !newRoomTypes.has((r.type || '').trim().toLowerCase()));
+      const addedRooms = updateData.rooms.filter((r: any) => !liveRoomTypes.has((r.type || '').trim().toLowerCase()));
+
+      const changeParts: string[] = [];
+      if (deletedRooms.length > 0) {
+        changeParts.push(`Removed: ${deletedRooms.map((r: any) => r.type).join(', ')}`);
+      }
+      if (addedRooms.length > 0) {
+        changeParts.push(`Added: ${addedRooms.map((r: any) => `${r.type} (${r.ratePlan === 'CP' ? 'CP Breakfast' : 'EP'})`).join(', ')}`);
+      }
+      if (changeParts.length === 0) {
+        changeParts.push('Updated pricing / inventory');
+      }
+      const summary = changeParts.join(' • ');
+
+      await docRef.update({
+        hasPendingRoomUpdates: true,
+        pendingRoomsCount: (docSnap.data()?.pendingRoomsCount || 0) + 1,
+        pendingRooms: updateData.rooms,
+        pendingRoomChangesSummary: summary,
+        pendingUpdatedBy: body.updatedBy || body.onboardedBy || 'Onboarder Executive',
+        pendingUpdatedAt: new Date().toISOString()
+      });
+
+      invalidateCache();
+      return NextResponse.json({ 
+        message: 'Changes submitted for Admin Approval',
+        pendingApproval: true,
+        summary 
+      });
+    }
+
+    // ADMIN ACTION or DIRECT APPROVAL:
+    // If rooms are sent in the update, sync them with the rooms collection and delete any removed rooms
     if (updateData.rooms && Array.isArray(updateData.rooms)) {
       const roomPhotos = updateData.rooms.flatMap((r: any) => Array.isArray(r.images) ? r.images : []).filter(Boolean);
       if ((!updateData.images || updateData.images.length === 0) && roomPhotos.length > 0) {
         updateData.images = Array.from(new Set(roomPhotos));
       }
+
+      // Check which room IDs are being kept
+      const keptRoomIds = new Set(
+        updateData.rooms
+          .map((r: any) => r._id || r.id)
+          .filter((id: any) => id && !String(id).startsWith('new_'))
+      );
+
       const batch = db.batch();
+
+      // Find all existing rooms in the collection for this hotel
+      const existingRoomsSnap = await db.collection('rooms')
+        .where('hotelId', 'in', [docRef.id, resolvedParams.id])
+        .get();
+
+      // Permanently delete any rooms from the collection that were removed by the Admin!
+      existingRoomsSnap.docs.forEach((rDoc: any) => {
+        if (!keptRoomIds.has(rDoc.id)) {
+          batch.delete(rDoc.ref);
+        }
+      });
+
       for (const r of updateData.rooms) {
         const roomId = r._id || r.id;
         if (roomId && !String(roomId).startsWith('new_')) {
           const rRef = db.collection('rooms').doc(String(roomId));
           const { _id: r_id, id: rId, ...rFields } = r;
-          batch.set(rRef, { ...rFields, hotelId: docRef.id, isActive: true, updatedAt: new Date().toISOString() }, { merge: true });
+          batch.set(rRef, { 
+            ...rFields, 
+            hotelId: docRef.id, 
+            isActive: true, 
+            approvalStatus: 'approved',
+            updatedAt: new Date().toISOString() 
+          }, { merge: true });
         } else {
           const newRoomRef = db.collection('rooms').doc();
           const { _id: r_id, id: rId, ...rFields } = r;
@@ -338,21 +400,39 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
             _id: newRoomRef.id,
             hotelId: docRef.id,
             isActive: true,
+            approvalStatus: 'approved',
             createdAt: new Date().toISOString()
           });
         }
       }
       await batch.commit().catch(console.error);
+
+      // Reset pending state since Admin applied it directly
+      updateData.hasPendingRoomUpdates = false;
+      updateData.pendingRoomsCount = 0;
+      updateData.pendingRoomChangesSummary = null;
+      updateData.pendingRooms = null;
+      updateData.rooms = updateData.rooms.map((r: any) => ({ ...r, approvalStatus: 'approved', isActive: true }));
     }
     
     // If admin is approving pending room changes
     if (updateData.approvePendingRooms) {
       updateData.hasPendingRoomUpdates = false;
       updateData.pendingRoomsCount = 0;
+      updateData.pendingRoomChangesSummary = null;
+      updateData.pendingRooms = null;
       if (Array.isArray(updateData.rooms)) {
-        updateData.rooms = updateData.rooms.map((r: any) => ({ ...r, approvalStatus: 'approved' }));
+        updateData.rooms = updateData.rooms.map((r: any) => ({ ...r, approvalStatus: 'approved', isActive: true }));
       }
       delete updateData.approvePendingRooms;
+    }
+
+    if (updateData.rejectPendingRooms) {
+      updateData.hasPendingRoomUpdates = false;
+      updateData.pendingRoomsCount = 0;
+      updateData.pendingRoomChangesSummary = null;
+      updateData.pendingRooms = null;
+      delete updateData.rejectPendingRooms;
     }
 
     await docRef.update(updateData);

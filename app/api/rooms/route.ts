@@ -153,6 +153,7 @@ export async function POST(request: NextRequest) {
     const effectiveBedType = guests === 1 ? 'Single' : (bedType || 'Double');
     const numTotal = totalRooms !== undefined && totalRooms !== '' ? Math.max(0, Number(totalRooms)) : 0;
     const baseAlloc = staybuddyAllocation !== undefined && staybuddyAllocation !== '' ? Math.max(0, Number(staybuddyAllocation)) : numTotal;
+    const isAdmin = Boolean(body.isAdmin || body.isAdminAction);
     const newRoom = {
       _id: roomRef.id,
       hotelId, type, description: description || '', 
@@ -163,13 +164,13 @@ export async function POST(request: NextRequest) {
       availableRooms: baseAlloc,
       extraInventoryToday: 0,
       isActive: true,
-      approvalStatus: 'pending',
+      approvalStatus: isAdmin ? 'approved' : 'pending',
       createdAt: new Date().toISOString()
     };
 
     await roomRef.set(newRoom);
 
-    // Sync to hotel document & flag pending approval for admin
+    // Sync to hotel document & flag pending approval for admin if onboarder
     const hotelRef = db.collection('hotels').doc(hotelId);
     const hotelSnap = await hotelRef.get();
     if (hotelSnap.exists) {
@@ -178,8 +179,8 @@ export async function POST(request: NextRequest) {
       const updatedRooms = [...currentRooms, newRoom];
       await hotelRef.update({
         rooms: updatedRooms,
-        hasPendingRoomUpdates: true,
-        pendingRoomsCount: (hData.pendingRoomsCount || 0) + 1,
+        hasPendingRoomUpdates: !isAdmin,
+        pendingRoomsCount: isAdmin ? 0 : (hData.pendingRoomsCount || 0) + 1,
         updatedAt: new Date().toISOString()
       });
     }
@@ -263,6 +264,7 @@ export async function PUT(request: NextRequest) {
 
     // Sync updated room fields directly into hotel.rooms embedded array if present
     try {
+      const isAdmin = Boolean(body.isAdmin || body.isAdminAction);
       if (currentRoom.hotelId) {
         const hotelRef = db.collection('hotels').doc(currentRoom.hotelId);
         const hotelSnap = await hotelRef.get();
@@ -275,11 +277,15 @@ export async function PUT(request: NextRequest) {
                 hr.id === roomId || 
                 (hr.type && currentRoom.type && hr.type.toLowerCase().trim() === currentRoom.type.toLowerCase().trim())
               ) {
-                return { ...hr, ...updateFields };
+                return { ...hr, ...updateFields, ...(isAdmin ? { approvalStatus: 'approved' } : {}) };
               }
               return hr;
             });
-            await hotelRef.update({ rooms: updatedRooms, hasPendingRoomUpdates: true, updatedAt: new Date().toISOString() });
+            await hotelRef.update({ 
+              rooms: updatedRooms, 
+              hasPendingRoomUpdates: !isAdmin, 
+              updatedAt: new Date().toISOString() 
+            });
           }
         }
       }

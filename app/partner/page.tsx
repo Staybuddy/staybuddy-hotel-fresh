@@ -457,6 +457,8 @@ export default function PartnerDashboard() {
     const dynamicMaxGuests = numTriple > 0 ? 3 : (numDouble > 0 ? 2 : (numSingle > 0 ? 1 : 2));
     const dynamicBedType = dynamicMaxGuests === 1 ? 'Single' : (roomForm.bedType || 'Double');
 
+    const isUserAdmin = Boolean((session?.user as any)?.role === 'admin' || session?.user?.email?.toLowerCase().includes('staybuddy'));
+
     const res = await fetch('/api/rooms', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -472,7 +474,8 @@ export default function PartnerDashboard() {
         totalRooms: roomForm.totalRooms !== '' ? Math.max(0, parseInt(roomForm.totalRooms) || 0) : 0, 
         staybuddyAllocation: roomForm.staybuddyAllocation !== '' ? Math.max(0, parseInt(roomForm.staybuddyAllocation) || 0) : 0,
         size: roomForm.size ? parseInt(roomForm.size) : undefined,
-        images: roomForm.images.split('\n').filter(i => i.trim() !== '')
+        images: roomForm.images.split('\n').filter(i => i.trim() !== ''),
+        isAdmin: isUserAdmin
       }),
     });
     if (res.ok) { setAddRoomModal(null); setRoomForm({ type: 'Standard', description: '', priceSingle: '', priceDouble: '', priceTriple: '', b2bPrice: '', ratePlan: 'EP', maxGuests: '3', bedType: 'Double', size: '', totalRooms: '0', staybuddyAllocation: '0', images: '' }); }
@@ -533,10 +536,11 @@ export default function PartnerDashboard() {
     setHotelRooms(newRooms);
     
     try {
+      const isUserAdmin = Boolean((session?.user as any)?.role === 'admin' || session?.user?.email?.toLowerCase().includes('staybuddy'));
       await fetch('/api/rooms', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ roomId: room._id, ...updates })
+        body: JSON.stringify({ roomId: room._id, ...updates, isAdmin: isUserAdmin })
       });
       // Refresh with current date view to keep smart availability in exact sync
       if (inventoryModal) {
@@ -551,7 +555,16 @@ export default function PartnerDashboard() {
 
   async function updateHotelStatus(id: string, updates: any) {
     setApproveLoading(id);
-    await fetch(`/api/hotels/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(updates) });
+    const isUserAdmin = Boolean((session?.user as any)?.role === 'admin' || session?.user?.email?.toLowerCase().includes('staybuddy'));
+    const isUserOnboarder = Boolean((session?.user as any)?.role === 'onboarder' || (session?.user as any)?.isOnboarder);
+    const payload = {
+      ...updates,
+      isAdmin: isUserAdmin,
+      isAdminAction: isUserAdmin,
+      isOnboarder: !isUserAdmin && isUserOnboarder,
+      updatedBy: session?.user?.name || session?.user?.email || (isUserAdmin ? 'Admin' : 'Onboarder')
+    };
+    await fetch(`/api/hotels/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
     setApproveLoading(null);
     fetchData(false);
   }
@@ -3741,9 +3754,14 @@ export default function PartnerDashboard() {
                   rooms: sanitizedRooms,
                   images: extranetModal.images || [] 
                 };
+                const isUserAdmin = Boolean((session?.user as any)?.role === 'admin' || session?.user?.email?.toLowerCase().includes('staybuddy'));
                 updateHotelStatus(extranetModal._id, updatedPayload);
                 setExtranetModal(null);
-                alert('Property updated successfully!');
+                if (isUserAdmin) {
+                  alert('Property & room updates saved successfully! Changes are live on B2C immediately.');
+                } else {
+                  alert('Changes submitted! Sent to Admin for review & approval.');
+                }
               }} style={{ display: 'flex', flexDirection: 'column', gap: 20, maxWidth: 960, margin: '0 auto', width: '100%', paddingBottom: 24 }}>
                 
                 {/* TAB 1: PROPERTY */}
@@ -4094,8 +4112,11 @@ export default function PartnerDashboard() {
                             <button 
                               type="button" 
                               onClick={() => {
-                                const updatedRooms = extranetModal.rooms.filter((_: any, idx: number) => idx !== rIdx);
-                                setExtranetModal({...extranetModal, rooms: updatedRooms});
+                                const roomToDelete = extranetModal.rooms[rIdx];
+                                if (confirm(`Are you sure you want to remove "${roomToDelete.type || 'this room'}"?`)) {
+                                  const updatedRooms = extranetModal.rooms.filter((_: any, idx: number) => idx !== rIdx);
+                                  setExtranetModal({...extranetModal, rooms: updatedRooms});
+                                }
                               }} 
                               style={{ color: '#ef4444', background: '#fee2e2', border: 'none', borderRadius: 6, padding: '4px 10px', cursor: 'pointer', fontSize: '0.78rem', fontWeight: 700 }}
                             >
