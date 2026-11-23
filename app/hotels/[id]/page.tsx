@@ -2623,15 +2623,20 @@ export default function HotelDetailPage() {
                         key={room._id}
                         className="room-card"
                         style={{
-                          border: `2px solid ${isCardSelected ? "var(--brand-500)" : "var(--border)"}`,
-                          borderRadius: "var(--radius-lg)",
-                          padding: "var(--space-4)",
-                          transition: "all 0.3s ease",
+                          border: `2px solid ${isCardSelected ? "var(--brand-500)" : "rgba(226, 232, 240, 0.85)"}`,
+                          borderRadius: "16px",
+                          padding: "16px",
+                          boxShadow: isCardSelected
+                            ? "0 10px 25px -5px rgba(234, 88, 12, 0.18), 0 0 0 1px rgba(234, 88, 12, 0.2)"
+                            : "0 2px 10px rgba(0, 0, 0, 0.04)",
+                          transition: "all 0.25s cubic-bezier(0.16, 1, 0.3, 1)",
                           cursor: "pointer",
                           display: "flex",
                           flexDirection: "column",
                           gap: "var(--space-4)",
-                          background: isCardSelected ? "var(--brand-50)" : "transparent",
+                          background: isCardSelected
+                            ? "linear-gradient(180deg, #fffaf5 0%, #ffffff 100%)"
+                            : "#ffffff",
                         }}
                         onClick={() => {
                           setRoomDetailsModal(room);
@@ -2658,9 +2663,54 @@ export default function HotelDetailPage() {
                                 fill
                                 style={{
                                   objectFit: "cover",
+                                  objectPosition: "center",
+                                  width: "100%",
+                                  height: "100%",
+                                  position: "absolute",
+                                  inset: 0,
                                 }}
                                 unoptimized
                               />
+                              {/* Top-left smart badge */}
+                              {room.ratePlan === 'CP' ? (
+                                <div
+                                  style={{
+                                    position: "absolute",
+                                    top: 8,
+                                    left: 8,
+                                    background: "rgba(16, 185, 129, 0.9)",
+                                    color: "white",
+                                    fontSize: "0.7rem",
+                                    fontWeight: 700,
+                                    padding: "3px 8px",
+                                    borderRadius: 6,
+                                    backdropFilter: "blur(4px)",
+                                    boxShadow: "0 2px 6px rgba(0,0,0,0.25)",
+                                    zIndex: 2,
+                                  }}
+                                >
+                                  🍳 Breakfast Included
+                                </div>
+                              ) : isTripleOccupancyAvailable(room) ? (
+                                <div
+                                  style={{
+                                    position: "absolute",
+                                    top: 8,
+                                    left: 8,
+                                    background: "rgba(15, 23, 42, 0.75)",
+                                    color: "white",
+                                    fontSize: "0.7rem",
+                                    fontWeight: 700,
+                                    padding: "3px 8px",
+                                    borderRadius: 6,
+                                    backdropFilter: "blur(4px)",
+                                    boxShadow: "0 2px 6px rgba(0,0,0,0.25)",
+                                    zIndex: 2,
+                                  }}
+                                >
+                                  👥 Max 3 Guests
+                                </div>
+                              ) : null}
                               {room.images.length > 1 && (
                                 <div
                                   style={{
@@ -2674,7 +2724,8 @@ export default function HotelDetailPage() {
                                     padding: "3px 8px",
                                     borderRadius: 6,
                                     backdropFilter: "blur(4px)",
-                                    boxShadow: "0 2px 8px rgba(0,0,0,0.3)"
+                                    boxShadow: "0 2px 8px rgba(0,0,0,0.3)",
+                                    zIndex: 2,
                                   }}
                                 >
                                   📷 {room.images.length} Photos
@@ -5911,11 +5962,13 @@ export default function HotelDetailPage() {
             {/* End-to-End Room Photo Hero (Edge-to-Edge with Zero Gaps) */}
             {roomDetailsModal.images && roomDetailsModal.images.length > 0 ? (
               <div
+                className="room-details-hero"
                 style={{
                   position: "relative",
                   width: "100%",
-                  height: "clamp(260px, 40vh, 420px)",
-                  background: "#0f172a",
+                  aspectRatio: "16 / 10",
+                  maxHeight: 380,
+                  background: "#f1f5f9",
                   overflow: "hidden",
                 }}
               >
@@ -5927,7 +5980,13 @@ export default function HotelDetailPage() {
                   sizes="(max-width: 768px) 100vw, 820px"
                   style={{
                     objectFit: "cover",
+                    objectPosition: "center",
+                    width: "100%",
+                    height: "100%",
+                    position: "absolute",
+                    inset: 0,
                   }}
+                  unoptimized
                 />
 
                 {/* Floating Glass Close Button */}

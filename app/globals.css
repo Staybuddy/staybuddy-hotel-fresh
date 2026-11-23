@@ -676,7 +676,7 @@ tbody tr:hover { background: var(--bg-secondary); }
     box-sizing: border-box !important;
   }
   
-  img:not(.city-dest-card-img):not(.hotel-cover-img):not(.hotel-horizontal-img img), video, canvas {
+  img:not(.city-dest-card-img):not(.hotel-cover-img):not(.hotel-horizontal-img img):not(.room-card-thumbnail img):not(.room-details-hero img):not([data-nimg="fill"]):not([style*="position: absolute"]):not([style*="position:absolute"]), video, canvas {
     max-width: 100% !important;
     height: auto !important;
   }
@@ -796,15 +796,38 @@ tbody tr:hover { background: var(--bg-secondary); }
 .room-card-thumbnail {
   position: relative;
   width: 100%;
-  height: 155px;
+  aspect-ratio: 16 / 10;
+  height: auto;
   min-width: 170px;
   max-width: 250px;
   border-radius: 14px;
   overflow: hidden;
   cursor: pointer;
   flex-shrink: 0;
-  box-shadow: 0 6px 16px rgba(0,0,0,0.1);
+  box-shadow: 0 4px 14px rgba(0,0,0,0.08);
   border: 1px solid rgba(0,0,0,0.06);
+  background: #f1f5f9;
+}
+
+.room-card-thumbnail img,
+.room-details-hero img {
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  max-width: none !important;
+  max-height: none !important;
+  object-fit: cover !important;
+  object-position: center !important;
+  display: block !important;
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.room-card-thumbnail:hover img {
+  transform: scale(1.04);
 }
 
 @media (max-width: 1024px) {
@@ -866,13 +889,13 @@ tbody tr:hover { background: var(--bg-secondary); }
     width: 100% !important;
     height: auto !important;
     aspect-ratio: 16 / 10 !important;
-    min-height: 210px !important;
-    max-height: 260px !important;
+    min-height: 0 !important;
+    max-height: none !important;
     min-width: 0 !important;
     max-width: 100% !important;
     border-radius: 14px !important;
     overflow: hidden !important;
-    background: #0f172a !important;
+    background: #f1f5f9 !important;
   }
   .room-card-info {
     width: 100% !important;
@@ -929,9 +952,10 @@ tbody tr:hover { background: var(--bg-secondary); }
     width: 100% !important;
     height: auto !important;
     aspect-ratio: 16 / 10 !important;
-    min-height: 210px !important;
-    max-height: 250px !important;
+    min-height: 0 !important;
+    max-height: none !important;
     border-radius: 14px !important;
+    background: #f1f5f9 !important;
   }
 }
 
