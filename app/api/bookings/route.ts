@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/firebaseAdmin';
-import { calculateBookingPricing, calculateMultiRoomPricing, applyMarginToRoom } from '@/lib/occupancyPricing';
+import { calculateBookingPricing, calculateMultiRoomPricing, applyMarginToRoom, getPureB2BRoomData } from '@/lib/occupancyPricing';
 import { getDateStr, getStayNights, isHotelBlockedForDates, getRoomBlockedCountForNight } from '@/lib/inventoryBlocks';
 
 export async function GET(request: NextRequest) {
@@ -240,7 +240,11 @@ export async function POST(request: NextRequest) {
       }
 
       pricing = calculateMultiRoomPricing(loadedRoomItems, requestedAdults, nights);
-      partnerPricing = calculateMultiRoomPricing(rawRoomItems, requestedAdults, nights);
+      partnerPricing = calculateMultiRoomPricing(
+        rawRoomItems.map(item => ({ room: getPureB2BRoomData(item.room), quantity: item.quantity })),
+        requestedAdults,
+        nights
+      );
     } else {
       // Single room booking (fallback)
       selectedRoomsPayload = [{ roomId, roomType: room.type, quantity: requestedRooms }];
@@ -279,7 +283,7 @@ export async function POST(request: NextRequest) {
       const rawRoomData = { ...room };
       const customerRoomData = applyMarginToRoom(rawRoomData, margin);
       pricing = calculateBookingPricing(customerRoomData, requestedAdults, requestedRooms, nights);
-      partnerPricing = calculateBookingPricing(rawRoomData, requestedAdults, requestedRooms, nights);
+      partnerPricing = calculateBookingPricing(getPureB2BRoomData(rawRoomData), requestedAdults, requestedRooms, nights);
     }
 
     if (!pricing || !pricing.canBook) {
@@ -407,6 +411,7 @@ export async function POST(request: NextRequest) {
       roomSummary: pricing.roomSummaryText || room.type,
       roomBreakdowns: pricing.roomBreakdowns,
       occupancySummary: pricing.summaryText,
+      partnerOccupancySummary: partnerPricing?.summaryText || null,
       checkIn: checkInDate.toISOString(), checkOut: checkOutDate.toISOString(),
       guests, nights, pricePerNight: clientPrice, totalPrice,
       partnerPricePerNight: basePartnerPrice, totalPartnerPrice,

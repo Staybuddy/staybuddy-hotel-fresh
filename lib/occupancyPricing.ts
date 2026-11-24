@@ -196,6 +196,32 @@ export function applyMarginToRoom(room: any, marginPercentage: number = 0) {
 }
 
 /**
+ * Transforms a room document into its pure B2B contract version.
+ * Maps priceSingle, priceDouble, priceTriple, and price strictly to the hotel partner's B2B contract rates.
+ * Guarantees that partner pricing calculations and payout notifications evaluate to the exact B2B rate without client markup.
+ */
+export function getPureB2BRoomData(room: any) {
+  if (!room) return room;
+  const bSingle = Number(room.b2bPriceSingle) > 0 ? Number(room.b2bPriceSingle) : (Number(room.priceSingle) || 0);
+  const bDouble = Number(room.b2bPriceDouble) > 0 ? Number(room.b2bPriceDouble) : (Number(room.priceDouble) || 0);
+  const bTriple = Number(room.b2bPriceTriple) > 0 ? Number(room.b2bPriceTriple) : (Number(room.priceTriple) || 0);
+  const bBase = Number(room.b2bPrice) || bDouble || bSingle || bTriple || Number(room.price) || 0;
+
+  return {
+    ...room,
+    b2bPriceSingle: bSingle,
+    b2bPriceDouble: bDouble,
+    b2bPriceTriple: bTriple,
+    b2bPrice: bBase,
+    priceSingle: bSingle,
+    priceDouble: bDouble,
+    priceTriple: bTriple,
+    price: bDouble || bSingle || bTriple || bBase,
+    clientPrice: bDouble || bSingle || bTriple || bBase,
+  };
+}
+
+/**
  * Returns the unit price for a given room for a specific occupancy (1, 2, or 3 adults).
  * If the occupancy is NOT supported (e.g. 2 guests when only single price was entered, or 3 guests when triple was not entered), returns 0.
  */

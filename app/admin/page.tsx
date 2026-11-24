@@ -289,10 +289,7 @@ export default function AdminDashboard() {
         const b2b = Number(bk.totalPartnerPrice) > 0 
           ? Number(bk.totalPartnerPrice) 
           : (Number(bk.partnerPricePerNight) > 0 ? Number(bk.partnerPricePerNight) * (Number(bk.nights) || 1) * (Number(bk.rooms) || 1) : 0);
-        const isMinervaBooking = 
-          b2c === 8623 || 
-          (hotel?.name || bk.hotelId?.name || '').toLowerCase().includes('minerva');
-        const defaultB2b = isMinervaBooking ? 7140 : Math.round(b2c / (1 + margin / 100));
+        const defaultB2b = Math.round(b2c / (1 + margin / 100));
         const finalB2b = b2b > 0 ? b2b : defaultB2b;
 
         // Gross Profit = B2C Price - B2B Cost
@@ -2710,17 +2707,16 @@ export default function AdminDashboard() {
         const b2cTotal = Number(b.totalPrice) || 0;
 
         const hotelObj = hotels.find((h: any) => h._id === (b.hotelId?._id || b.hotelId)) || b.hotelId || {};
-        const hotelName = b.hotelId?.name || hotelObj?.name || 'Hotel Minerva Grand';
-        const hotelCity = b.hotelId?.city || hotelObj?.city || 'Vijayawada';
+        const hotelName = b.hotelId?.name || hotelObj?.name || 'StayBuddy Partner Hotel';
+        const hotelCity = b.hotelId?.city || hotelObj?.city || '';
         const hotelArea = hotelObj?.area || hotelObj?.address || '';
-        const roomName = b.roomSummary || 'Premium Room';
+        const roomName = b.roomSummary || 'Standard Room';
 
         // B2B cost paid to partner
-        const isMinerva = b2cTotal === 8623 || (hotelName || '').toLowerCase().includes('minerva');
         const b2bTotal = Number(b.totalPartnerPrice) > 0
           ? Number(b.totalPartnerPrice)
           : (Number(b.partnerPricePerNight) > 0 ? Number(b.partnerPricePerNight) * nights * rooms : 0) ||
-            (isMinerva ? 7140 : Math.round(b2cTotal / (1 + (Number(hotelObj?.marginPercentage) || 15) / 100)));
+            Math.round(b2cTotal / (1 + (Number(hotelObj?.marginPercentage) || 15) / 100));
 
         const perNightRate = b2cTotal / (nights * rooms);
         const gstRate = perNightRate >= 7500 ? 18 : 5;
@@ -3131,7 +3127,7 @@ export default function AdminDashboard() {
 
                     <div style={{ fontSize: '0.8rem', color: '#854d0e', background: '#fefce8', padding: '10px 14px', borderRadius: 10, border: '1px solid #fef08a', marginBottom: 16, lineHeight: 1.5 }}>
                       <strong>🍳 Meal Plan:</strong> Free Breakfast Included (CP Plan)<br />
-                      <strong>Single Occupancy Rate:</strong> ₹3,400 base + 5% GST (₹170) = <strong>₹3,570 / night</strong> (All inclusive)
+                      <strong>B2B Occupancy Rate:</strong> ₹{Math.round(b2bBase / (nights * rooms)).toLocaleString()} base + {gstRate}% GST (₹{Math.round(b2bGst / (nights * rooms)).toLocaleString()}) = <strong>₹{Math.round(b2bTotal / (nights * rooms)).toLocaleString()} / night</strong> (B2B Net)
                     </div>
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>

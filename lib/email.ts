@@ -240,42 +240,144 @@ export async function sendPartnerNotificationEmail(booking: any, partnerEmail: s
   
   // Format occupancy breakdown for partner with their pure B2B rate instead of client tariff
   const partnerOccDisplay = booking.partnerOccupancySummary 
-    || (occupancySummary ? occupancySummary.replace(/@\s*₹[\d,]+/g, `@ ₹${Number(booking.partnerPricePerNight || 0).toLocaleString()}`) : '');
+    || (occupancySummary && Number(booking.partnerPricePerNight) > 0 
+        ? occupancySummary.replace(/@\s*₹[\d,]+/g, `@ ₹${Number(booking.partnerPricePerNight).toLocaleString()}`) 
+        : (occupancySummary || ''));
 
   const rawMealPlan = booking.ratePlan || (typeof booking.roomId === 'object' ? booking.roomId?.ratePlan : null) || 'CP';
   const mealPlanInfo = getMealPlanDisplay(rawMealPlan);
 
+  const safeNights = Number(nights) || 1;
+  const partnerPayout = Number(totalPartnerPrice) > 0 
+    ? Number(totalPartnerPrice) 
+    : (Number(booking.partnerPricePerNight) > 0 ? Number(booking.partnerPricePerNight) * safeNights : 0);
+  const nightlyPayout = Number(booking.partnerPricePerNight) > 0 
+    ? Number(booking.partnerPricePerNight) 
+    : (safeNights > 0 && partnerPayout > 0 ? Math.round(partnerPayout / safeNights) : 0);
+
+  const bookingIdDisplay = booking.bookingId || (typeof _id === 'string' ? _id.slice(-8).toUpperCase() : 'N/A');
+
   const mailOptions = {
     from: process.env.EMAIL_FROM || 'StayBuddy <noreply@staybuddy.com>',
     to: partnerEmail,
-    subject: `New Booking Alert: ${hotelName} - ${roomCategory}`,
+    subject: `New Booking Alert: ${hotelName} - ${roomCategory} (Payout: ₹${partnerPayout.toLocaleString()})`,
     html: `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #eaeaea; border-radius: 8px; overflow: hidden;">
-        <div style="background-color: #10b981; padding: 24px; text-align: center; color: white;">
-          <h1 style="margin: 0; font-size: 24px;">New Booking Alert</h1>
+      <div style="font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif; max-width: 640px; margin: 0 auto; border: 1px solid #e5e7eb; border-radius: 14px; overflow: hidden; background-color: #ffffff; box-shadow: 0 4px 12px rgba(0,0,0,0.06);">
+        <!-- StayBuddy Header in Official Brand Orange Theme -->
+        <div style="background: linear-gradient(135deg, #ea580c 0%, #c2410c 100%); padding: 28px 24px; text-align: center; color: white;">
+          <h1 style="margin: 0; font-size: 26px; font-weight: 800; letter-spacing: -0.5px;">StayBuddy</h1>
+          <p style="margin: 6px 0 0 0; opacity: 0.95; font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Partner Extranet • Confirmed Reservation Alert</p>
         </div>
-        <div style="padding: 24px;">
-          <p>Hi Partner,</p>
-          <p>You have a new confirmed booking at <strong>${hotelName}</strong>${hotelCity ? ` (${hotelCity})` : ''}!</p>
-          
-          <div style="background-color: #f9fafb; padding: 18px; border-radius: 8px; margin: 24px 0; border: 1px solid #e5e7eb;">
-            <h3 style="margin-top: 0; color: #1f2937;">Booking Summary</h3>
-            <p style="margin: 8px 0;"><strong>Booking ID:</strong> ${booking.bookingId || _id}</p>
-            <p style="margin: 8px 0;"><strong>Guest Name:</strong> ${guestName || 'Guest'}</p>
-            ${guestPhone ? `<p style="margin: 8px 0;"><strong>Guest Phone:</strong> ${guestPhone}</p>` : ''}
-            <p style="margin: 8px 0;"><strong>Room Category:</strong> <span style="background: #d1fae5; color: #065f46; padding: 3px 8px; border-radius: 4px; font-weight: 700;">${roomCategory}</span></p>
-            <p style="margin: 8px 0;"><strong>Meal Plan:</strong> ${mealPlanInfo.badgeHtml}</p>
-            ${partnerOccDisplay ? `<p style="margin: 8px 0;"><strong>Occupancy Breakdown:</strong> ${partnerOccDisplay}</p>` : ''}
-            <p style="margin: 8px 0;"><strong>Check-in:</strong> ${checkInStr}</p>
-            <p style="margin: 8px 0;"><strong>Check-out:</strong> ${checkOutStr}</p>
-            <p style="margin: 8px 0;"><strong>Duration:</strong> ${nights} Night(s)</p>
-            <hr style="border: 0; border-top: 1px solid #e5e7eb; margin: 16px 0;" />
-            <p style="margin: 8px 0; font-size: 1.1em; color: #059669;"><strong>Your Payout (B2B Price):</strong> ₹${(totalPartnerPrice || 0).toLocaleString()}</p>
+
+        <div style="padding: 28px 24px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <p style="margin: 0; font-size: 15px; color: #374151;">Dear <strong>${hotelName} Team</strong>,</p>
+            <span style="background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 700;">
+              ✓ Confirmed & Guaranteed
+            </span>
           </div>
+
+          <p style="font-size: 14px; color: #4b5563; line-height: 1.5; margin-top: 0;">
+            You have received a new confirmed reservation through StayBuddy. Please find the reservation breakdown and your <strong>guaranteed Net B2B Payout</strong> below:
+          </p>
           
-          <p>Please log in to your StayBuddy Partner Dashboard to view more details and prepare for the guest's arrival.</p>
-          <p>Thanks,</p>
-          <p>The StayBuddy Team</p>
+          <!-- Booking ID & Status Overview Card -->
+          <div style="display: flex; gap: 12px; margin: 18px 0;">
+            <div style="flex: 1; background: #fff7ed; padding: 14px; border-radius: 10px; border: 1px solid #ffedd5;">
+              <p style="margin: 0; font-size: 11px; text-transform: uppercase; color: #c2410c; font-weight: 800; letter-spacing: 0.05em;">Booking ID</p>
+              <p style="margin: 4px 0 0 0; font-size: 16px; font-weight: 700; color: #1f2937; font-family: monospace;">${bookingIdDisplay}</p>
+            </div>
+            <div style="flex: 1; background: #f8fafc; padding: 14px; border-radius: 10px; border: 1px solid #e2e8f0;">
+              <p style="margin: 0; font-size: 11px; text-transform: uppercase; color: #64748b; font-weight: 800; letter-spacing: 0.05em;">Property</p>
+              <p style="margin: 4px 0 0 0; font-size: 14px; font-weight: 700; color: #0f172a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${hotelName}</p>
+            </div>
+          </div>
+
+          <!-- Reservation Details Table -->
+          <table style="width: 100%; border-collapse: collapse; margin-bottom: 22px; font-size: 13.5px;">
+            <tr>
+              <td style="padding: 10px 0; border-bottom: 1px solid #f1f5f9; color: #64748b; width: 40%;">Guest Name</td>
+              <td style="padding: 10px 0; border-bottom: 1px solid #f1f5f9; color: #0f172a; font-weight: 700; text-align: right;">${guestName || 'Guest'}</td>
+            </tr>
+            ${guestPhone ? `
+            <tr>
+              <td style="padding: 10px 0; border-bottom: 1px solid #f1f5f9; color: #64748b;">Guest Contact</td>
+              <td style="padding: 10px 0; border-bottom: 1px solid #f1f5f9; color: #0f172a; font-weight: 600; text-align: right;">${guestPhone}</td>
+            </tr>
+            ` : ''}
+            <tr>
+              <td style="padding: 10px 0; border-bottom: 1px solid #f1f5f9; color: #64748b;">Room Category</td>
+              <td style="padding: 10px 0; border-bottom: 1px solid #f1f5f9; text-align: right;">
+                <span style="background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe; padding: 3px 8px; border-radius: 6px; font-weight: 700; font-size: 12px;">${roomCategory}</span>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding: 10px 0; border-bottom: 1px solid #f1f5f9; color: #64748b;">Meal Plan</td>
+              <td style="padding: 10px 0; border-bottom: 1px solid #f1f5f9; text-align: right;">${mealPlanInfo.badgeHtml}</td>
+            </tr>
+            ${partnerOccDisplay ? `
+            <tr>
+              <td style="padding: 10px 0; border-bottom: 1px solid #f1f5f9; color: #64748b;">Occupancy Rate</td>
+              <td style="padding: 10px 0; border-bottom: 1px solid #f1f5f9; color: #047857; font-weight: 700; text-align: right;">${partnerOccDisplay}</td>
+            </tr>
+            ` : ''}
+            <tr>
+              <td style="padding: 10px 0; border-bottom: 1px solid #f1f5f9; color: #64748b;">Check-In</td>
+              <td style="padding: 10px 0; border-bottom: 1px solid #f1f5f9; color: #0f172a; font-weight: 600; text-align: right;">${checkInStr}</td>
+            </tr>
+            <tr>
+              <td style="padding: 10px 0; border-bottom: 1px solid #f1f5f9; color: #64748b;">Check-Out</td>
+              <td style="padding: 10px 0; border-bottom: 1px solid #f1f5f9; color: #0f172a; font-weight: 600; text-align: right;">${checkOutStr}</td>
+            </tr>
+            <tr>
+              <td style="padding: 10px 0; border-bottom: 1px solid #f1f5f9; color: #64748b;">Duration</td>
+              <td style="padding: 10px 0; border-bottom: 1px solid #f1f5f9; color: #0f172a; font-weight: 700; text-align: right;">${safeNights} Night(s)</td>
+            </tr>
+          </table>
+
+          <!-- Guaranteed B2B Partner Payout Card in Theme -->
+          <div style="background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%); border: 2px solid #f59e0b; border-radius: 12px; padding: 18px 20px; margin: 24px 0;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+              <span style="font-size: 11px; text-transform: uppercase; font-weight: 800; color: #92400e; letter-spacing: 0.05em;">
+                🏨 Net Hotel Payout (Pure B2B Contract Rate)
+              </span>
+              <span style="background: #fde68a; color: #78350f; font-size: 11px; font-weight: 800; padding: 2px 8px; border-radius: 6px;">
+                B2B NET
+              </span>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: baseline; margin-top: 4px;">
+              <div>
+                <div style="font-size: 24px; font-weight: 900; color: #065f46;">₹${partnerPayout.toLocaleString()}</div>
+                ${nightlyPayout > 0 ? `
+                <div style="font-size: 12px; color: #78350f; font-weight: 600; margin-top: 2px;">
+                  Rate: ₹${nightlyPayout.toLocaleString()} / night × ${safeNights} night(s)
+                </div>
+                ` : ''}
+              </div>
+              <div style="text-align: right;">
+                <span style="background: #ecfdf5; border: 1.5px solid #10b981; color: #047857; padding: 4px 10px; border-radius: 8px; font-weight: 800; font-size: 12px;">
+                  100% Guaranteed
+                </span>
+              </div>
+            </div>
+
+            <div style="margin-top: 12px; padding-top: 10px; border-top: 1px dashed #fcd34d; font-size: 11.5px; color: #92400e; line-height: 1.45;">
+              ℹ️ <strong>Settlement Policy:</strong> For bookings made a week in advance, payout will be initiated at the time of check-in or earlier. Same-day bookings will be settled within 48 hours following successful guest arrival.
+            </div>
+          </div>
+
+          <!-- CTA Button -->
+          <div style="text-align: center; margin: 26px 0 16px 0;">
+            <a href="https://www.staybuddy.in/partner" target="_blank" style="display: inline-block; background: #ea580c; color: white; padding: 12px 28px; border-radius: 8px; font-weight: 700; text-decoration: none; font-size: 14px; box-shadow: 0 4px 10px rgba(234,88,12,0.25);">
+              Manage in Partner Extranet →
+            </a>
+          </div>
+
+          <p style="font-size: 12px; color: #9ca3af; text-align: center; margin-top: 24px; border-top: 1px solid #f1f5f9; padding-top: 16px;">
+            Need assistance? Reach StayBuddy Partner Support at <strong>staybuddyhotels@gmail.com</strong> or call <strong>+91 9989099436</strong>.<br />
+            © ${new Date().getFullYear()} StayBuddy Hospitality Network • www.staybuddy.in
+          </p>
         </div>
       </div>
     `,

@@ -72,6 +72,7 @@ export default function PartnerDashboard() {
   const [deleteHotelModal, setDeleteHotelModal] = useState<any>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [isLocating, setIsLocating] = useState(false);
+  const [selectedBookingModal, setSelectedBookingModal] = useState<any>(null);
 
   // ===== SMART INVENTORY & PROPERTY BLOCKING CRM STATES =====
   const [blockModalHotel, setBlockModalHotel] = useState<any>(null);
@@ -348,7 +349,12 @@ export default function PartnerDashboard() {
       setHotels(h);
       setBookings(confirmedBookings);
 
-      const revenue = confirmedBookings.filter((bk: any) => bk.paymentStatus === 'paid').reduce((sum: number, bk: any) => sum + (bk.totalPartnerPrice || bk.totalPrice || 0), 0);
+      const revenue = confirmedBookings.filter((bk: any) => bk.paymentStatus === 'paid').reduce((sum: number, bk: any) => {
+        const b2b = Number(bk.totalPartnerPrice) > 0 
+          ? Number(bk.totalPartnerPrice) 
+          : (Number(bk.partnerPricePerNight) > 0 ? Number(bk.partnerPricePerNight) * (Number(bk.nights) || 1) * (Number(bk.rooms) || 1) : Math.round(Number(bk.totalPrice || 0) / 1.15));
+        return sum + b2b;
+      }, 0);
       setStats({
         totalHotels: h.length,
         totalBookings: confirmedBookings.length,
@@ -1636,6 +1642,7 @@ export default function PartnerDashboard() {
                           <th style={{ padding: '16px 24px', fontWeight: 600, textAlign: 'center' }}>Nights</th>
                           <th style={{ padding: '16px 24px', fontWeight: 600 }}>Payout (B2B)</th>
                           <th style={{ padding: '16px 24px', fontWeight: 600 }}>Status</th>
+                          <th style={{ padding: '16px 24px', fontWeight: 600, textAlign: 'center' }}>Voucher</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -1652,7 +1659,16 @@ export default function PartnerDashboard() {
                             if (!b.guestName?.toLowerCase().includes(searchLower) && !b._id.toLowerCase().includes(searchLower)) return false;
                           }
                           return true;
-                        }).map(b => (
+                        }).map(b => {
+                          const nightsCount = Number(b.nights) || Number(b.noOfNights) || 1;
+                          const roomsCount = Number(b.rooms) || Number(b.noOfRooms) || 1;
+                          const b2bPayout = Number(b.totalPartnerPrice) > 0 
+                            ? Number(b.totalPartnerPrice) 
+                            : (Number(b.partnerPricePerNight) > 0 
+                                ? Number(b.partnerPricePerNight) * nightsCount * roomsCount 
+                                : Math.round(Number(b.totalPrice || 0) / 1.15));
+
+                          return (
                           <tr key={b._id} style={{ borderBottom: '1px solid var(--border)', transition: 'background var(--transition-fast)' }} onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-secondary)'} onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
                             <td style={{ padding: '16px 24px', fontSize: '0.75rem', color: 'var(--brand-600)', fontWeight: 600, fontFamily: 'monospace' }}>{b.bookingId || b._id.slice(-8)}</td>
                             <td style={{ padding: '16px 24px' }}>
@@ -1669,15 +1685,38 @@ export default function PartnerDashboard() {
                               <span style={{ color: 'var(--text-muted)' }}>to</span> {new Date(b.checkOut).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' })}
                             </td>
                             <td style={{ padding: '16px 24px', textAlign: 'center', fontSize: '0.875rem' }}>{b.nights}</td>
-                            <td style={{ padding: '16px 24px', fontWeight: 700, color: '#059669' }}>₹{(b.totalPartnerPrice || b.totalPrice || 0).toLocaleString()}</td>
+                            <td style={{ padding: '16px 24px', fontWeight: 700, color: '#059669' }}>₹{b2bPayout.toLocaleString()}</td>
                             <td style={{ padding: '16px 24px' }}>
                               <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                                 <span className={`badge ${b.status === 'confirmed' ? 'badge-success' : b.status === 'cancelled' ? 'badge-danger' : b.status === 'completed' ? 'badge-info' : 'badge-warning'}`} style={{ padding: '4px 8px', fontSize: '0.7rem' }}>{b.status}</span>
                                 <span className={`badge ${b.paymentStatus === 'paid' ? 'badge-success' : b.paymentStatus === 'refunded' ? 'badge-info' : 'badge-warning'}`} style={{ padding: '4px 8px', fontSize: '0.7rem' }}>{b.paymentStatus}</span>
                               </div>
                             </td>
+                            <td style={{ padding: '16px 24px', textAlign: 'center' }}>
+                              <button
+                                type="button"
+                                onClick={() => setSelectedBookingModal(b)}
+                                style={{
+                                  background: '#fff7ed',
+                                  color: '#ea580c',
+                                  border: '1.5px solid #fdba74',
+                                  padding: '6px 12px',
+                                  borderRadius: '8px',
+                                  fontSize: '0.76rem',
+                                  fontWeight: 700,
+                                  cursor: 'pointer',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: 5,
+                                  boxShadow: '0 1px 3px rgba(234,88,12,0.1)'
+                                }}
+                              >
+                                <span>📄</span> View Voucher
+                              </button>
+                            </td>
                           </tr>
-                        ))}
+                        );
+                        })}
                       </tbody>
                     </table>
                   </div>
@@ -5504,6 +5543,217 @@ export default function PartnerDashboard() {
           </div>
         </div>
       )}
+
+      {/* ===== STAYBUDDY THEMED PARTNER BOOKING VOUCHER & PAYOUT MODAL ===== */}
+      {selectedBookingModal && (() => {
+        const b = selectedBookingModal;
+        const nights = Number(b.nights) || Number(b.noOfNights) || 1;
+        const rooms = Number(b.rooms) || Number(b.noOfRooms) || 1;
+        const hotelName = b.hotelId?.name || 'StayBuddy Partner Hotel';
+        const hotelCity = b.hotelId?.city || '';
+        const roomType = b.roomSummary || b.roomId?.type || 'Standard Room';
+        const bookingIdDisplay = b.bookingId || (typeof b._id === 'string' ? b._id.slice(-8).toUpperCase() : 'N/A');
+        
+        const b2bPayout = Number(b.totalPartnerPrice) > 0 
+          ? Number(b.totalPartnerPrice) 
+          : (Number(b.partnerPricePerNight) > 0 
+              ? Number(b.partnerPricePerNight) * nights * rooms 
+              : Math.round(Number(b.totalPrice || 0) / 1.15));
+        
+        const nightlyPayout = Number(b.partnerPricePerNight) > 0 
+          ? Number(b.partnerPricePerNight) 
+          : (nights > 0 && b2bPayout > 0 ? Math.round(b2bPayout / (nights * rooms)) : 0);
+
+        const occDisplay = b.partnerOccupancySummary || (nightlyPayout > 0 ? `Rate @ ₹${nightlyPayout.toLocaleString()} / night` : '');
+
+        return (
+          <div
+            style={{
+              position: 'fixed',
+              inset: 0,
+              zIndex: 99999,
+              background: 'rgba(15, 23, 42, 0.75)',
+              backdropFilter: 'blur(6px)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '20px'
+            }}
+            onClick={(e) => { if (e.target === e.currentTarget) setSelectedBookingModal(null); }}
+          >
+            <div
+              style={{
+                background: '#ffffff',
+                borderRadius: 16,
+                maxWidth: 600,
+                width: '100%',
+                maxHeight: '92vh',
+                overflowY: 'auto',
+                boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+                border: '1px solid #e2e8f0',
+                display: 'flex',
+                flexDirection: 'column'
+              }}
+            >
+              {/* Header in StayBuddy Brand Orange */}
+              <div
+                style={{
+                  background: 'linear-gradient(135deg, #ea580c 0%, #c2410c 100%)',
+                  padding: '22px 24px',
+                  color: 'white',
+                  borderTopLeftRadius: 16,
+                  borderTopRightRadius: 16,
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center'
+                }}
+              >
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ fontSize: '1.3rem' }}>🏨</span>
+                    <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 800, letterSpacing: '-0.02em' }}>StayBuddy</h2>
+                  </div>
+                  <div style={{ fontSize: '0.78rem', opacity: 0.95, fontWeight: 600, marginTop: 4, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    Partner Extranet • Booking Voucher & Net Payout
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setSelectedBookingModal(null)}
+                  style={{
+                    background: 'rgba(255, 255, 255, 0.2)',
+                    border: 'none',
+                    color: 'white',
+                    width: 32,
+                    height: 32,
+                    borderRadius: '50%',
+                    cursor: 'pointer',
+                    fontSize: '1.1rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}
+                >
+                  ✕
+                </button>
+              </div>
+
+              {/* Body */}
+              <div style={{ padding: '22px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+                {/* Status & Booking ID Overview */}
+                <div style={{ display: 'flex', gap: 12 }}>
+                  <div style={{ flex: 1, background: '#fff7ed', padding: '12px 16px', borderRadius: 10, border: '1px solid #ffedd5' }}>
+                    <div style={{ fontSize: '0.72rem', color: '#c2410c', fontWeight: 800, textTransform: 'uppercase' }}>Booking ID</div>
+                    <div style={{ fontSize: '1.15rem', fontWeight: 800, color: '#1f2937', fontFamily: 'monospace', marginTop: 2 }}>{bookingIdDisplay}</div>
+                  </div>
+                  <div style={{ flex: 1, background: '#f8fafc', padding: '12px 16px', borderRadius: 10, border: '1px solid #e2e8f0' }}>
+                    <div style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 800, textTransform: 'uppercase' }}>Status</div>
+                    <div style={{ fontSize: '0.92rem', fontWeight: 800, color: '#047857', marginTop: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#10b981' }}></span>
+                      {b.status === 'confirmed' ? 'Confirmed & Secured' : b.status}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Details Card */}
+                <div style={{ border: '1px solid #e2e8f0', borderRadius: 12, overflow: 'hidden' }}>
+                  <div style={{ background: '#f8fafc', padding: '10px 16px', borderBottom: '1px solid #e2e8f0', fontWeight: 700, fontSize: '0.8rem', color: '#475569', textTransform: 'uppercase' }}>
+                    Reservation Information
+                  </div>
+                  <div style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 10, fontSize: '0.86rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <span style={{ color: '#64748b' }}>Hotel:</span>
+                      <span style={{ fontWeight: 700, color: '#0f172a' }}>{hotelName}{hotelCity ? `, ${hotelCity}` : ''}</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <span style={{ color: '#64748b' }}>Guest Name:</span>
+                      <span style={{ fontWeight: 700, color: '#0f172a' }}>{b.guestName || 'Guest'}</span>
+                    </div>
+                    {b.guestPhone && (
+                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <span style={{ color: '#64748b' }}>Guest Phone:</span>
+                        <span style={{ fontWeight: 600, color: '#0f172a' }}>{b.guestPhone}</span>
+                      </div>
+                    )}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ color: '#64748b' }}>Room Category:</span>
+                      <span style={{ background: '#eff6ff', color: '#1e40af', padding: '3px 8px', borderRadius: 6, fontWeight: 700, fontSize: '0.78rem' }}>{roomType}</span>
+                    </div>
+                    {occDisplay && (
+                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <span style={{ color: '#64748b' }}>Occupancy Rate:</span>
+                        <span style={{ color: '#047857', fontWeight: 700 }}>{occDisplay}</span>
+                      </div>
+                    )}
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <span style={{ color: '#64748b' }}>Stay Dates:</span>
+                      <span style={{ fontWeight: 600 }}>{new Date(b.checkIn).toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' })} to {new Date(b.checkOut).toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <span style={{ color: '#64748b' }}>Duration:</span>
+                      <span style={{ fontWeight: 700 }}>{nights} Night(s) • {rooms} Room(s)</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* B2B Partner Payout Card in StayBuddy Theme */}
+                <div style={{ background: 'linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)', border: '2px solid #f59e0b', borderRadius: 14, padding: '16px 18px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                    <span style={{ fontSize: '0.72rem', textTransform: 'uppercase', fontWeight: 800, color: '#92400e', letterSpacing: '0.05em' }}>
+                      🏨 Net Hotel Payout (Pure B2B Contract Rate)
+                    </span>
+                    <span style={{ background: '#fde68a', color: '#78350f', fontSize: '0.7rem', fontWeight: 800, padding: '2px 8px', borderRadius: 6 }}>
+                      B2B CONTRACT
+                    </span>
+                  </div>
+
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                    <div>
+                      <div style={{ fontSize: '1.65rem', fontWeight: 900, color: '#065f46' }}>₹{b2bPayout.toLocaleString()}</div>
+                      {nightlyPayout > 0 && (
+                        <div style={{ fontSize: '0.78rem', color: '#78350f', fontWeight: 600, marginTop: 2 }}>
+                          Rate: ₹{nightlyPayout.toLocaleString()} / night × {nights} night(s)
+                        </div>
+                      )}
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                      <span style={{ background: '#ecfdf5', border: '1.5px solid #10b981', color: '#047857', padding: '4px 10px', borderRadius: 8, fontWeight: 800, fontSize: '0.78rem' }}>
+                        100% Guaranteed Payout
+                      </span>
+                    </div>
+                  </div>
+
+                  <div style={{ marginTop: 12, paddingTop: 10, borderTop: '1px dashed #fcd34d', fontSize: '0.74rem', color: '#92400e', lineHeight: 1.45 }}>
+                    ℹ️ <strong>Settlement Policy:</strong> For standard advance bookings, payout is initiated at guest check-in or earlier. Same-day bookings are settled within 48 hours following arrival.
+                  </div>
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div style={{ padding: '14px 22px', borderTop: '1px solid #f1f5f9', background: '#f8fafc', display: 'flex', justifyContent: 'flex-end', borderBottomLeftRadius: 16, borderBottomRightRadius: 16 }}>
+                <button
+                  type="button"
+                  onClick={() => setSelectedBookingModal(null)}
+                  style={{
+                    padding: '8px 22px',
+                    borderRadius: 8,
+                    fontWeight: 700,
+                    fontSize: '0.85rem',
+                    background: '#ea580c',
+                    color: 'white',
+                    border: 'none',
+                    cursor: 'pointer',
+                    boxShadow: '0 2px 6px rgba(234,88,12,0.25)'
+                  }}
+                >
+                  Close Voucher
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
       {/* 4-STEP ONBOARDING TRAINING VIDEO MODAL */}
       <OnboardingTrainingVideoModal
         isOpen={isTrainingVideoOpen}
