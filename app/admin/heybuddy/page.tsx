@@ -85,9 +85,12 @@ export default function HeyBuddyPage() {
   const [listening, setListening] = useState(false);
   const [speaking, setSpeaking] = useState(true);
   const [isSpeakingNow, setIsSpeakingNow] = useState(false);
+  const [orbState, setOrbState] = useState<"" | "listening" | "speaking" | "thinking">("");
   const [language, setLanguage] = useState<"en" | "te">("en");
   const [command, setCommand] = useState("");
-  const [status, setStatus] = useState("● SYSTEM SYNCHRONIZED • \"DUDU, TELL ME\"");
+  const [statusText, setStatusText] = useState("Ready when you are");
+  const [substatusText, setSubstatusText] = useState("Microphone active • Say \"Hey Buddy\" or \"Dude unnava\"");
+  const [heardText, setHeardText] = useState("Your spoken request will appear here…");
   const [availableVoices, setAvailableVoices] = useState<SpeechSynthesisVoice[]>([]);
   const [recheckingBookingId, setRecheckingBookingId] = useState<string | null>(null);
 
@@ -110,7 +113,7 @@ export default function HeyBuddyPage() {
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       role: "HeyBuddy",
-      text: `Hi, ${adminName} ✨ I am HeyBuddy, your StayBuddy Executive AI. I speak both English and Telugu! Say "Hey Buddy" for "Dudu, tell me" or say "Dude unnava" for Telugu mode. Everything you ask scrolls right into your view!`,
+      text: `Hi, ${adminName}! I’m HeyBuddy, your StayBuddy AI concierge. I speak both English and Telugu! Say "Hey Buddy" for English ("Dudu, tell me") or "Dude unnava" for Telugu ("హా డ్యూడ్, ఉన్నాను!"). I am fully connected to your live bookings, hotels, revenue and WhatsApp dispatch.`,
       teluguText: `నమస్తే ${adminName} గారు! నేను స్టేబడ్డీ AI అసిస్టెంట్. 'Dude unnava' అంటే నేను తెలుగులో మాట్లాడుతాను.`,
       timestamp: "Just now"
     }
@@ -144,7 +147,9 @@ export default function HeyBuddyPage() {
   // DEEP SYSTEM SYNCHRONIZATION
   const syncCompleteSystem = useCallback(async () => {
     setSystemData(prev => ({ ...prev, syncing: true }));
-    setStatus("SYNCHRONIZING SYSTEM DATA...");
+    setOrbState("thinking");
+    setStatusText("Buddy is synchronizing...");
+    setSubstatusText("Connecting to StayBuddy bookings, hotels, invoices and partner extranet...");
 
     try {
       const [bookingsRes, hotelsRes, invoicesRes, partnersRes, usersRes, staffRes] = await Promise.allSettled([
@@ -174,11 +179,15 @@ export default function HeyBuddyPage() {
         syncing: false
       });
 
-      setStatus(language === "te" ? "● తెలుగు లైవ్ సింక్ పూర్తయింది" : "● FULLY SYNCHRONIZED • \"DUDU, TELL ME\"");
+      setOrbState(listeningRef.current ? "listening" : "");
+      setStatusText(listeningRef.current ? (language === "te" ? "డ్యూడ్, నేను వింటున్నాను" : "Hey Buddy is listening") : "Ready when you are");
+      setSubstatusText(language === "te" ? "మాట్లాడండి లేదా 'Dude unnava' అనండి" : "Say “Hey Buddy” or “Dude unnava”");
     } catch (err) {
       console.error("System sync error:", err);
       setSystemData(prev => ({ ...prev, syncing: false }));
-      setStatus("● SYSTEM READY");
+      setOrbState("");
+      setStatusText("Ready when you are");
+      setSubstatusText("StayBuddy system connected");
     }
   }, [language]);
 
@@ -207,7 +216,6 @@ export default function HeyBuddyPage() {
     if (!availableVoices.length) return null;
 
     if (preferTelugu) {
-      // Look for Telugu voice
       const teVoice = availableVoices.find(v => v.lang.startsWith("te"));
       if (teVoice) return teVoice;
     }
@@ -252,17 +260,18 @@ export default function HeyBuddyPage() {
     try {
       window.speechSynthesis.cancel();
       setIsSpeakingNow(true);
+      setOrbState("speaking");
+      setStatusText(language === "te" ? "డ్యూడ్, సమాధానం వినండి..." : "Buddy is speaking");
+      setSubstatusText("Listen to the response…");
 
       const hasTeluguVoice = availableVoices.some(v => v.lang.startsWith("te"));
       const isTeluguTarget = language === "te" || /[\u0C00-\u0C7F]/.test(text);
 
-      // If browser lacks Telugu voice, speak phonetically with en-IN female voice
       let textToSpeak = text;
       if (isTeluguTarget && !hasTeluguVoice && spokenTextTeluguAlternative) {
         textToSpeak = spokenTextTeluguAlternative;
       }
 
-      // Clean speech text
       const cleanText = textToSpeak
         .replace(/https?:\/\/\S+/g, "")
         .replace(/[*_#`~]/g, "")
@@ -285,13 +294,29 @@ export default function HeyBuddyPage() {
       utterance.rate = isTeluguTarget ? 0.94 : 0.98;
       utterance.pitch = isTeluguTarget ? 1.3 : 1.25;
 
-      utterance.onend = () => setIsSpeakingNow(false);
-      utterance.onerror = () => setIsSpeakingNow(false);
+      utterance.onend = () => {
+        setIsSpeakingNow(false);
+        if (listeningRef.current) {
+          setOrbState("listening");
+          setStatusText(language === "te" ? "డ్యూడ్, నేను వింటున్నాను" : "I’m listening");
+          setSubstatusText(language === "te" ? "మీ ప్రశ్నను చెప్పండి" : "Say “Hey Buddy” followed by your request.");
+        } else {
+          setOrbState("");
+          setStatusText("Ready when you are");
+          setSubstatusText("Tap Start listening to speak again.");
+        }
+      };
+
+      utterance.onerror = () => {
+        setIsSpeakingNow(false);
+        setOrbState(listeningRef.current ? "listening" : "");
+      };
 
       window.speechSynthesis.speak(utterance);
     } catch (e) {
       console.warn("Speech synthesis error:", e);
       setIsSpeakingNow(false);
+      setOrbState(listeningRef.current ? "listening" : "");
     }
   }
 
@@ -318,8 +343,6 @@ export default function HeyBuddyPage() {
       { role: "You", text: originalCommand, timestamp: "Just now" },
       { role: "HeyBuddy", text, teluguText, timestamp: "Just now", actionType, actionData }
     ]);
-
-    setStatus(language === "te" ? "● తెలుగు రెస్పాన్స్ సిద్ధం" : "● RESPONSE READY");
 
     if (language === "te" && teluguText) {
       speak(teluguText, phoneticTelugu || teluguText);
@@ -357,7 +380,9 @@ export default function HeyBuddyPage() {
   async function scanWebsite(): Promise<Finding[]> {
     setScanning(true);
     setScanDone(false);
-    setStatus("INSPECTING STAYBUDDY WEBSITE");
+    setOrbState("thinking");
+    setStatusText("Buddy is inspecting StayBuddy...");
+    setSubstatusText("Auditing homepage for accessibility, buttons and HTTP status...");
 
     const issues: Finding[] = [];
 
@@ -437,7 +462,9 @@ export default function HeyBuddyPage() {
     setFindings(issues);
     setScanning(false);
     setScanDone(true);
-    setStatus("SCAN COMPLETED");
+    setOrbState(listeningRef.current ? "listening" : "");
+    setStatusText("Inspection Completed");
+    setSubstatusText(`Found ${issues.length} diagnostics findings.`);
     scrollToActiveResult();
     return issues;
   }
@@ -468,7 +495,10 @@ export default function HeyBuddyPage() {
     const q = input.trim().toLowerCase();
     if (!q) return;
 
-    setStatus("PROCESSING INTELLIGENCE...");
+    setHeardText(input);
+    setOrbState("thinking");
+    setStatusText("Buddy is thinking");
+    setSubstatusText("Understanding your request…");
 
     // 0. TELUGU WAKE WORD DETECTION: "dude unava" / "dude unnava" / "dudu unnava"
     if (
@@ -480,8 +510,6 @@ export default function HeyBuddyPage() {
       q.includes("telugu")
     ) {
       setLanguage("te");
-      setStatus("● TELUGU MODE ACTIVE • డ్యూడ్, ఉన్నాను!");
-
       const teluguAns = "హా డ్యూడ్, ఉన్నాను! చెప్పండి, మీకు ఏం కావాలి? హోటల్స్, బుకింగ్స్, లేదా రెవెన్యూ వివరాలు చూడాలా?";
       const phonetic = "Haa dude, unnanu! Cheppandi, meeku em kavali? Hotels, bookings, leda revenue vivaraalu choodaala?";
 
@@ -499,7 +527,6 @@ export default function HeyBuddyPage() {
     // ENGLISH SWITCH
     if (q.includes("speak in english") || q.includes("switch to english")) {
       setLanguage("en");
-      setStatus("● ENGLISH MODE ACTIVE • \"DUDU, TELL ME\"");
       reply("Switched back to English! Dudu, tell me what you need.", input);
       return;
     }
@@ -750,71 +777,72 @@ export default function HeyBuddyPage() {
       const engine = new SpeechRecognition();
       engine.continuous = true;
       engine.interimResults = true;
-      // Recognition works for Indian English & bilingual Telugu inputs
       engine.lang = language === "te" ? "te-IN" : "en-IN";
 
       engine.onresult = (event: any) => {
+        let currentInterim = "";
         for (let i = event.resultIndex; i < event.results.length; i++) {
-          if (!event.results[i].isFinal) continue;
+          const t = event.results[i][0].transcript.trim();
+          if (event.results[i].isFinal) {
+            setHeardText(t);
 
-          const transcript = event.results[i][0].transcript.trim();
-          if (!transcript) continue;
-          const normalized = transcript.toLowerCase();
+            const normalized = t.toLowerCase();
 
-          // TELUGU WAKE WORD: "dude unava" / "dude unnava"
-          if (
-            normalized.includes("dude unava") ||
-            normalized.includes("dude unnava") ||
-            normalized.includes("dudu unava") ||
-            normalized.includes("dudu unnava") ||
-            normalized.includes("unnava")
-          ) {
-            setLanguage("te");
-            setStatus("● TELUGU ACTIVATED • \"డ్యూడ్, ఉన్నాను!\"");
-            const teluguGreet = "హా డ్యూడ్, ఉన్నాను! చెప్పండి, మీకు ఏం కావాలి?";
-            const teluguPhonetic = "Haa dude, unnanu! Cheppandi, meeku em kavali?";
-            speak(teluguGreet, teluguPhonetic);
-            setMessages(old => [
-              ...old,
-              { role: "You", text: transcript, timestamp: "Just now" },
-              { role: "HeyBuddy", text: "Yes Dude, I am here! What can I do for you?", teluguText: teluguGreet, timestamp: "Just now" }
-            ]);
-            scrollToActiveResult();
-            return;
-          }
-
-          // ENGLISH WAKE WORD: "hey buddy"
-          if (
-            normalized.includes("hey buddy") ||
-            normalized.includes("a buddy") ||
-            normalized.includes("hey body") ||
-            normalized.includes("dudu")
-          ) {
-            setStatus("HEYBUDDY: DUDU, TELL ME");
-            const afterWake = normalized.replace(/hey buddy|a buddy|hey body|dudu/gi, "").trim();
-
-            if (afterWake && afterWake.length > 2) {
-              execute(afterWake);
-            } else {
-              const wakeGreeting = "Dudu, tell me";
-              speak(wakeGreeting);
+            // TELUGU WAKE WORD: "dude unava" / "dude unnava"
+            if (
+              normalized.includes("dude unava") ||
+              normalized.includes("dude unnava") ||
+              normalized.includes("dudu unava") ||
+              normalized.includes("dudu unnava") ||
+              normalized.includes("unnava")
+            ) {
+              setLanguage("te");
+              const teluguGreet = "హా డ్యూడ్, ఉన్నాను! చెప్పండి, మీకు ఏం కావాలి?";
+              const teluguPhonetic = "Haa dude, unnanu! Cheppandi, meeku em kavali?";
+              speak(teluguGreet, teluguPhonetic);
               setMessages(old => [
                 ...old,
-                { role: "You", text: transcript, timestamp: "Just now" },
-                { role: "HeyBuddy", text: "Dudu, tell me! What can I do for you today?", timestamp: "Just now" }
+                { role: "You", text: t, timestamp: "Just now" },
+                { role: "HeyBuddy", text: "Yes Dude, I am here! What can I do for you?", teluguText: teluguGreet, timestamp: "Just now" }
               ]);
               scrollToActiveResult();
+              return;
+            }
+
+            // ENGLISH WAKE WORD: "hey buddy"
+            if (
+              normalized.includes("hey buddy") ||
+              normalized.includes("a buddy") ||
+              normalized.includes("hey body") ||
+              normalized.includes("dudu")
+            ) {
+              const afterWake = normalized.replace(/hey buddy|a buddy|hey body|dudu/gi, "").trim();
+
+              if (afterWake && afterWake.length > 2) {
+                execute(afterWake);
+              } else {
+                const wakeGreeting = "Dudu, tell me";
+                speak(wakeGreeting);
+                setMessages(old => [
+                  ...old,
+                  { role: "You", text: t, timestamp: "Just now" },
+                  { role: "HeyBuddy", text: "Dudu, tell me! What can I do for you today?", timestamp: "Just now" }
+                ]);
+                scrollToActiveResult();
+              }
+            } else {
+              execute(t);
             }
           } else {
-            // Direct command
-            execute(transcript);
+            currentInterim = t;
+            setHeardText(currentInterim);
           }
         }
       };
 
       engine.onerror = (e: any) => {
         if (e?.error === "not-allowed") {
-          setStatus("MICROPHONE ACCESS DENIED");
+          setStatusText("Microphone access denied");
         }
       };
 
@@ -836,10 +864,13 @@ export default function HeyBuddyPage() {
       listeningRef.current = true;
       engine.start();
       setListening(true);
-      setStatus(language === "te" ? "● తెలుగు లిజనింగ్ ఆన్ • \"డ్యూడ్, ఉన్నాను\"" : "● ACTIVATED & LISTENING • \"DUDU, TELL ME\"");
+      setOrbState("listening");
+      setStatusText(language === "te" ? "డ్యూడ్, నేను వింటున్నాను" : "I’m listening");
+      setSubstatusText(language === "te" ? "మాట్లాడండి లేదా 'Dude unnava' అనండి" : "Say “Hey Buddy” and then your request.");
     } catch (err) {
       listeningRef.current = false;
-      setStatus("MICROPHONE PAUSED");
+      setOrbState("");
+      setStatusText("Microphone paused");
     }
   }
 
@@ -853,7 +884,9 @@ export default function HeyBuddyPage() {
     recognition.current = null;
 
     setListening(false);
-    setStatus("VOICE ASSISTANT PAUSED");
+    setOrbState("");
+    setStatusText("Stopped");
+    setSubstatusText("Tap Start listening when you are ready.");
   }
 
   function sendCommand(e: React.FormEvent) {
@@ -891,22 +924,26 @@ export default function HeyBuddyPage() {
     };
   }, []);
 
+  const latestMessage = useMemo(() => {
+    return messages[messages.length - 1];
+  }, [messages]);
+
   const quickPrompts = [
     { label: "🗣️ 'Dude unnava' (Telugu)", query: "dude unnava" },
-    { label: "🔍 Find booking for Arif", query: "Find booking for Arif" },
-    { label: "⏳ Show pending bookings", query: "Show pending bookings" },
-    { label: "💰 Show revenue & profit audit", query: "Show revenue and platform profit audit" },
     { label: "🏨 Recommend best hotel in Goa", query: "Recommend best hotel in Goa" },
     { label: "🏨 Hotels in Vijayawada", query: "Recommend best hotel in Vijayawada" },
+    { label: "🔍 Find booking for Arif", query: "Find booking for Arif" },
+    { label: "⏳ Show pending bookings", query: "Show pending bookings" },
+    { label: "💰 Show revenue & profit", query: "Show revenue and platform profit audit" },
     { label: "💬 Send WhatsApp to guest", query: "Send WhatsApp confirmation to 9876543210 for GM Hotel Kosala" },
-    { label: "🔄 Sync entire database", query: "Sync entire database" }
+    { label: "🔍 Scan website for bugs", query: "Scan my website" }
   ];
 
   if (authStatus === "loading") {
     return (
-      <main className="min-h-screen bg-[#06111f] text-white flex flex-col items-center justify-center p-6">
-        <div className="w-16 h-16 border-4 border-sky-400 border-t-transparent rounded-full animate-spin mb-4"></div>
-        <div className="flex items-center gap-2 text-sky-300 text-xs tracking-[4px] uppercase font-bold">
+      <main className="min-h-screen bg-[#fffaf5] text-[#202027] flex flex-col items-center justify-center p-6">
+        <div className="w-16 h-16 border-4 border-[#ff7900] border-t-transparent rounded-full animate-spin mb-4"></div>
+        <div className="flex items-center gap-2 text-[#ff7900] text-xs tracking-[3px] uppercase font-bold">
           <ShieldCheck size={16} /> Authenticating StayBuddy Admin
         </div>
       </main>
@@ -916,25 +953,25 @@ export default function HeyBuddyPage() {
   const role = (session?.user as any)?.role;
   if (authStatus === "unauthenticated" || role !== "admin") {
     return (
-      <main className="min-h-screen bg-[#06111f] text-white flex items-center justify-center p-4">
-        <div className="bg-[#0b1c2d] border border-red-500/50 rounded-2xl p-8 max-w-md text-center shadow-2xl">
-          <div className="w-16 h-16 bg-red-950/60 border border-red-500/60 rounded-full flex items-center justify-center mx-auto mb-4 text-red-400">
+      <main className="min-h-screen bg-[#fffaf5] text-[#202027] flex items-center justify-center p-4">
+        <div className="bg-white border border-[#f0dfd0] rounded-3xl p-8 max-w-md text-center shadow-xl">
+          <div className="w-16 h-16 bg-[#fff0e2] border border-[#ff7900] rounded-2xl flex items-center justify-center mx-auto mb-4 text-[#ff7900]">
             <Lock size={28} />
           </div>
-          <h2 className="text-xl font-bold tracking-[4px] text-red-400 mb-2">ACCESS RESTRICTED</h2>
-          <p className="text-slate-300 text-xs leading-relaxed mb-6">
+          <h2 className="text-xl font-bold tracking-[3px] text-[#ff7900] mb-2">ACCESS RESTRICTED</h2>
+          <p className="text-[#777985] text-xs leading-relaxed mb-6">
             HeyBuddy AI is an executive intelligence console exclusively reserved for StayBuddy Super Administrators.
           </p>
           <div className="flex gap-3 justify-center">
             <Link
               href="/login?callbackUrl=/admin/heybuddy"
-              className="bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs px-5 py-2.5 rounded-xl transition"
+              className="bg-[#ff7900] hover:bg-[#e66c00] text-white font-bold text-xs px-5 py-2.5 rounded-xl transition shadow-md shadow-[#ff790044]"
             >
               Admin Sign In
             </Link>
             <Link
               href="/"
-              className="bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs px-5 py-2.5 rounded-xl transition"
+              className="bg-[#fff1e5] hover:bg-[#ffe4cc] text-[#a84c00] font-bold text-xs px-5 py-2.5 rounded-xl transition"
             >
               Return Home
             </Link>
@@ -945,663 +982,486 @@ export default function HeyBuddyPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#06111f] text-white p-4 md:p-8">
+    <div className="app">
       <style jsx global>{`
+        :root {
+          --orange: #ff7900;
+          --orange2: #ff9b36;
+          --ink: #202027;
+          --muted: #777985;
+          --paper: #fffaf5;
+          --line: #f0dfd0;
+        }
         * { box-sizing: border-box; }
-        body { margin: 0; background: #06111f; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-        button { cursor: pointer; }
-        button:disabled { opacity: .5; cursor: not-allowed; }
-        .panel { background: #0b1c2d; border: 1px solid #1e3d57; border-radius: 16px; }
+        body {
+          margin: 0;
+          background: radial-gradient(circle at 50% 0, #fff0df 0, #fffaf5 38%, #fff 100%);
+          color: var(--ink);
+          font-family: Inter, system-ui, -apple-system, Segoe UI, sans-serif;
+          min-height: 100vh;
+        }
+        button, input { font: inherit; }
+        .app { max-width: 1100px; margin: auto; padding: 24px; }
+        .top { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; }
+        .brand { display: flex; align-items: center; gap: 12px; font-weight: 850; font-size: 22px; letter-spacing: -.7px; text-decoration: none; color: inherit; }
+        .logo { width: 44px; height: 44px; border-radius: 15px; background: linear-gradient(135deg, var(--orange), #ffb15e); display: grid; place-items: center; color: white; font-size: 24px; box-shadow: 0 8px 22px #ff790044; }
+        .brand small { display: block; font-size: 10px; letter-spacing: 2px; color: var(--muted); font-weight: 700; margin-top: 2px; }
+        .pill { border: 1px solid var(--line); background: #fff; padding: 9px 13px; border-radius: 30px; color: #6d6d75; font-size: 12px; display: flex; align-items: center; gap: 8px; }
+        .pill b { color: #16844c; }
+        .hero { text-align: center; padding: 24px 0 16px; }
+        .eyebrow { color: var(--orange); font-size: 11px; font-weight: 850; letter-spacing: 2.4px; }
+        .hero h1 { font-size: clamp(28px, 4.5vw, 44px); letter-spacing: -1.5px; margin: 8px 0; font-weight: 850; }
+        .hero p { color: var(--muted); margin: 0 auto; max-width: 620px; line-height: 1.6; font-size: 14px; }
+        .layout { display: grid; grid-template-columns: 1.1fr .9fr; gap: 20px; margin-top: 20px; }
+        .panel { background: #ffffffd9; border: 1px solid var(--line); border-radius: 24px; padding: 22px; box-shadow: 0 15px 50px #7c3c1010; backdrop-filter: blur(10px); }
+        .assistant { min-height: 520px; display: flex; flex-direction: column; align-items: center; }
 
-        /* CRAZY HIGH-TECH AI ORB WITH SOUND WAVE RIPPLES */
-        .orb-wrapper {
-          position: relative;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          width: 220px;
-          height: 220px;
-          margin: 0 auto;
-        }
-        .orb-ripple {
-          position: absolute;
-          inset: 0;
-          border-radius: 50%;
-          border: 2px solid rgba(56, 189, 248, 0.4);
-          animation: ripple 2s cubic-bezier(0, 0.2, 0.8, 1) infinite;
-        }
-        .orb-ripple:nth-child(2) {
-          animation-delay: 0.6s;
-          border-color: rgba(167, 139, 250, 0.35);
-        }
-        .orb-ripple:nth-child(3) {
-          animation-delay: 1.2s;
-          border-color: rgba(52, 211, 153, 0.35);
-        }
-        @keyframes ripple {
-          0% { transform: scale(0.8); opacity: 0.9; }
-          100% { transform: scale(1.4); opacity: 0; }
-        }
-
+        /* ORB STYLING & ANIMATIONS */
+        .orb-wrap { height: 190px; display: grid; place-items: center; width: 100%; position: relative; }
         .orb {
-          width: 170px;
-          height: 170px;
+          width: 136px;
+          height: 136px;
           border-radius: 50%;
-          border: 2px solid #38bdf8;
-          display: grid;
-          place-items: center;
-          background: radial-gradient(circle, #0e3d64 0%, #06182c 60%, #030d17 100%);
-          box-shadow: 0 0 50px rgba(56, 189, 248, 0.4), inset 0 0 30px rgba(56, 189, 248, 0.3);
+          background: radial-gradient(circle at 35% 28%, #fff 0, #ffd3a5 17%, #ff9638 43%, #f36a00 72%, #c84a00 100%);
+          box-shadow: 0 0 0 13px #ff79000d, 0 0 0 28px #ff790008, 0 18px 55px #ff790055;
           position: relative;
-          z-index: 2;
-          transition: all 0.3s ease;
-        }
-        .orb.active {
-          animation: cyber-glow 1.4s ease-in-out infinite alternate;
-          border-color: #38bdf8;
-        }
-        .orb.speaking {
-          animation: cyber-glow-speaking 0.8s ease-in-out infinite alternate;
-          border-color: #34d399;
-          box-shadow: 0 0 60px rgba(52, 211, 153, 0.6), inset 0 0 35px rgba(52, 211, 153, 0.4);
-        }
-        @keyframes cyber-glow {
-          0% { box-shadow: 0 0 30px rgba(56, 189, 248, 0.3), inset 0 0 20px rgba(56, 189, 248, 0.2); }
-          100% { box-shadow: 0 0 65px rgba(56, 189, 248, 0.7), inset 0 0 40px rgba(56, 189, 248, 0.4); }
-        }
-        @keyframes cyber-glow-speaking {
-          0% { transform: scale(0.98); box-shadow: 0 0 40px rgba(52, 211, 153, 0.4); }
-          100% { transform: scale(1.05); box-shadow: 0 0 80px rgba(52, 211, 153, 0.8), 0 0 30px #38bdf8; }
-        }
-
-        .orb-inner {
-          width: 125px;
-          height: 125px;
-          border: 2px solid #60a5fa;
-          border-radius: 50%;
+          transition: transform .25s;
           display: grid;
           place-items: center;
-          color: #6cd1ff;
-          box-shadow: 0 0 25px rgba(56, 189, 248, 0.5);
-          background: rgba(6, 17, 31, 0.6);
         }
+        .orb:before, .orb:after {
+          content: "";
+          position: absolute;
+          inset: 13px;
+          border: 1px solid #ffffff80;
+          border-radius: 50%;
+          animation: spin 8s linear infinite;
+        }
+        .orb:after {
+          inset: -10px;
+          border: 1px dashed #ff9b3680;
+          animation: spin 15s linear infinite reverse;
+        }
+        .orb.listening { animation: pulse 1.3s ease-in-out infinite; }
+        .orb.speaking { animation: speak .45s ease-in-out infinite alternate; }
+        .orb.thinking { animation: think 1.1s ease-in-out infinite; }
 
-        /* LIVE AUDIO EQUALIZER BARS */
-        .equalizer-bars {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 4px;
-          height: 40px;
-        }
-        .eq-bar {
-          width: 4px;
-          background: #38bdf8;
-          border-radius: 4px;
-          animation: eq-bounce 0.6s ease-in-out infinite alternate;
-        }
-        .eq-bar:nth-child(1) { height: 12px; animation-delay: 0.1s; }
-        .eq-bar:nth-child(2) { height: 24px; animation-delay: 0.25s; background: #34d399; }
-        .eq-bar:nth-child(3) { height: 36px; animation-delay: 0.15s; background: #60a5fa; }
-        .eq-bar:nth-child(4) { height: 28px; animation-delay: 0.35s; background: #a78bfa; }
-        .eq-bar:nth-child(5) { height: 16px; animation-delay: 0.2s; background: #38bdf8; }
-        @keyframes eq-bounce {
-          0% { transform: scaleY(0.3); }
-          100% { transform: scaleY(1.2); }
-        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes pulse { 50% { transform: scale(1.09); box-shadow: 0 0 0 22px #ff790018, 0 0 0 42px #ff79000b, 0 18px 65px #ff790077; } }
+        @keyframes speak { to { transform: scale(1.13); } }
+        @keyframes think { 50% { filter: hue-rotate(15deg); transform: scale(.96); } }
 
-        /* HIGHLIGHTED RESPONSE CARD PULSE */
-        .active-response-highlight {
-          border-color: #38bdf8 !important;
-          box-shadow: 0 0 25px rgba(56, 189, 248, 0.35), inset 0 0 15px rgba(56, 189, 248, 0.1);
-          animation: card-pop 0.4s ease-out;
+        /* LIVE EQUALIZER BARS */
+        .eq-bars { display: flex; align-items: center; justify-content: center; gap: 3.5px; height: 32px; z-index: 5; }
+        .eq-b { width: 3.5px; background: white; border-radius: 3px; animation: eq-anim 0.5s ease-in-out infinite alternate; }
+        .eq-b:nth-child(1) { height: 10px; animation-delay: 0.1s; }
+        .eq-b:nth-child(2) { height: 20px; animation-delay: 0.25s; }
+        .eq-b:nth-child(3) { height: 30px; animation-delay: 0.15s; }
+        .eq-b:nth-child(4) { height: 22px; animation-delay: 0.35s; }
+        .eq-b:nth-child(5) { height: 12px; animation-delay: 0.2s; }
+        @keyframes eq-anim { 0% { transform: scaleY(0.4); } 100% { transform: scaleY(1.2); } }
+
+        .status { font-weight: 850; font-size: 19px; margin: 6px 0 2px; text-align: center; color: var(--ink); }
+        .substatus { font-size: 12px; color: var(--muted); text-align: center; min-height: 18px; font-weight: 500; }
+        .transcript {
+          margin: 14px 0 8px;
+          background: #fff8f1;
+          border: 1px solid #ffe4cc;
+          border-radius: 16px;
+          padding: 13px 15px;
+          width: 100%;
+          min-height: 75px;
+          color: #444;
+          font-size: 13px;
+          line-height: 1.5;
         }
-        @keyframes card-pop {
+        .transcript strong { color: var(--orange); display: block; font-size: 10px; letter-spacing: 1.4px; margin-bottom: 4px; font-weight: 850; }
+        .controls { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-top: 8px; }
+        .btn { border: 0; border-radius: 14px; padding: 12px 18px; font-weight: 800; cursor: pointer; transition: .2s; font-size: 13px; display: inline-flex; align-items: center; gap: 6px; }
+        .btn:active { transform: scale(.97); }
+        .primary { background: linear-gradient(135deg, var(--orange), #ff9c38); color: #fff; box-shadow: 0 8px 20px #ff790044; }
+        .secondary { background: #fff1e5; color: #a84c00; border: 1px solid #ffdfc2; }
+        .danger { background: #fff0f0; color: #b63b3b; border: 1px solid #ffdada; }
+        .hint { font-size: 11px; color: #92929a; text-align: center; margin-top: 12px; }
+
+        .side h3 { margin: 0 0 5px; font-size: 17px; font-weight: 850; }
+        .side .desc { font-size: 12px; color: var(--muted); margin: 0 0 15px; line-height: 1.5; }
+        .activity { display: flex; flex-direction: column; gap: 10px; }
+        .item { display: flex; gap: 12px; padding: 12px; border: 1px solid #f2e9e1; border-radius: 15px; background: #fff; }
+        .ico { width: 35px; height: 35px; flex: 0 0 35px; border-radius: 11px; background: #fff0e2; display: grid; place-items: center; color: var(--orange); font-size: 17px; }
+        .item b { display: block; font-size: 13px; color: var(--ink); }
+        .item span { font-size: 11px; color: var(--muted); line-height: 1.45; }
+
+        .section { margin-top: 16px; }
+        .section label { display: block; font-size: 11px; font-weight: 850; color: #777; margin-bottom: 7px; letter-spacing: 0.5px; }
+        .command { display: flex; gap: 8px; }
+        .command input { min-width: 0; flex: 1; border: 1px solid var(--line); border-radius: 13px; padding: 12px 14px; outline: none; background: #fff; }
+        .command input:focus { border-color: var(--orange); }
+
+        .tag { display: inline-block; background: #fff0e2; color: #b85a08; border-radius: 20px; padding: 4px 10px; font-size: 10px; font-weight: 800; margin: 4px 4px 0 0; }
+        .foot { text-align: center; color: #a0a0a5; font-size: 11px; padding: 24px 0 10px; }
+
+        /* CRAZY AUTO-SCROLL CARD HIGHLIGHT */
+        .card-highlight {
+          border-color: var(--orange) !important;
+          box-shadow: 0 0 25px rgba(255, 121, 0, 0.25);
+          animation: pop-card 0.4s ease-out;
+        }
+        @keyframes pop-card {
           0% { transform: translateY(6px); opacity: 0.8; }
           100% { transform: translateY(0); opacity: 1; }
         }
 
-        .finding { background: #102438; padding: 13px; border-radius: 9px; margin-top: 10px; }
-        .critical,.high { color: #ff7979; }
-        .medium { color: #ffca6b; }
-        .low { color: #8fcaff; }
-        .info { color: #59dfb0; }
+        @media(max-width: 860px) {
+          .layout { grid-template-columns: 1fr; }
+          .assistant { min-height: 480px; }
+        }
       `}</style>
 
-      {/* HEADER */}
-      <header className="flex flex-wrap items-center justify-between gap-4 border-b border-[#193750] pb-5">
-        <div className="flex items-center gap-3">
-          <div className="bg-[#102c49] border border-[#2676a8] rounded-xl p-3 text-sky-300">
-            <Bot size={26} />
-          </div>
-
+      {/* TOP HEADER */}
+      <header className="top">
+        <Link href="/admin" className="brand">
+          <div className="logo">✦</div>
           <div>
-            <div className="flex items-center gap-2">
-              <h1 className="font-bold tracking-[4px] text-xl">HEYBUDDY AI</h1>
-              <span className="bg-sky-950 text-sky-400 border border-sky-800 text-[10px] px-2.5 py-0.5 rounded-full font-mono flex items-center gap-1">
-                <Languages size={12} /> {language === "te" ? "TELUGU • తెలుగు" : "ENGLISH • \"DUDU, TELL ME\""}
-              </span>
-            </div>
-            <p className="text-[9px] tracking-[3px] text-sky-300 uppercase">
-              DEEP SYSTEM SYNC • VOICE SCROLL • FEMALE AI
-            </p>
+            staybuddy
+            <small>YOUR SMART TRAVEL PARTNER</small>
           </div>
-        </div>
-
-        <div className="flex items-center gap-3">
+        </Link>
+        <div className="flex items-center gap-2">
           <button
             onClick={() => {
-              const nextLang = language === "en" ? "te" : "en";
-              setLanguage(nextLang);
-              if (nextLang === "te") {
+              const next = language === "en" ? "te" : "en";
+              setLanguage(next);
+              if (next === "te") {
                 speak("డ్యూడ్, నేను తెలుగులో మాట్లాడుతాను. చెప్పండి!", "Dude, nenu Telugu lo maatlaaduthaanu. Cheppandi!");
               } else {
                 speak("Switched to English. Dudu, tell me!");
               }
             }}
-            className="flex items-center gap-1.5 bg-indigo-900/40 hover:bg-indigo-900/60 border border-indigo-600/60 text-indigo-300 text-xs px-3 py-2 rounded-xl transition font-bold"
+            className="pill hover:bg-orange-50 transition cursor-pointer font-bold text-xs"
           >
-            <Languages size={14} /> {language === "en" ? "Switch to Telugu (తెలుగు)" : "Switch to English"}
+            <Languages size={14} className="text-[#ff7900]" />
+            {language === "en" ? "Telugu Mode (తెలుగు)" : "English Mode"}
           </button>
-          <button
-            onClick={syncCompleteSystem}
-            disabled={systemData.syncing}
-            className="flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-sky-300 text-xs px-3 py-2 rounded-xl transition"
-            title="Re-sync all live data"
-          >
-            <RefreshCw size={13} className={systemData.syncing ? "animate-spin" : ""} />
-            {systemData.syncing ? "Syncing..." : "Sync Live DB"}
-          </button>
-          <Link
-            href="/admin"
-            className="flex items-center gap-2 bg-slate-800/80 hover:bg-slate-700 border border-slate-700 text-sky-300 text-xs px-4 py-2 rounded-xl transition"
-          >
-            <ArrowLeft size={14} /> Back to Admin Console
-          </Link>
+          <div className="pill">
+            ● <b>AI CONCIERGE</b> &nbsp; Admin Intelligence
+          </div>
         </div>
       </header>
 
-      {/* SYSTEM METRICS TICKER */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mt-4">
-        <div className="bg-[#0b1c2d] border border-slate-800 rounded-xl p-3 text-center">
-          <div className="text-[10px] text-slate-400 uppercase font-mono">Total Bookings</div>
-          <div className="text-base font-bold text-sky-400 mt-0.5">{systemData.bookings.length}</div>
-        </div>
-        <div className="bg-[#0b1c2d] border border-slate-800 rounded-xl p-3 text-center">
-          <div className="text-[10px] text-slate-400 uppercase font-mono">Properties</div>
-          <div className="text-base font-bold text-emerald-400 mt-0.5">{systemData.hotels.length}</div>
-        </div>
-        <div className="bg-[#0b1c2d] border border-slate-800 rounded-xl p-3 text-center">
-          <div className="text-[10px] text-slate-400 uppercase font-mono">Tax Invoices</div>
-          <div className="text-base font-bold text-amber-400 mt-0.5">{systemData.taxInvoices.length}</div>
-        </div>
-        <div className="bg-[#0b1c2d] border border-slate-800 rounded-xl p-3 text-center">
-          <div className="text-[10px] text-slate-400 uppercase font-mono">Hotel Partners</div>
-          <div className="text-base font-bold text-indigo-400 mt-0.5">{systemData.partners.length}</div>
-        </div>
-        <div className="bg-[#0b1c2d] border border-slate-800 rounded-xl p-3 text-center">
-          <div className="text-[10px] text-slate-400 uppercase font-mono">Registered Users</div>
-          <div className="text-base font-bold text-purple-400 mt-0.5">{systemData.users.length}</div>
-        </div>
-        <div className="bg-[#0b1c2d] border border-slate-800 rounded-xl p-3 text-center">
-          <div className="text-[10px] text-slate-400 uppercase font-mono">Onboarders</div>
-          <div className="text-base font-bold text-rose-400 mt-0.5">{systemData.onboardingStaff.length}</div>
-        </div>
-      </div>
+      {/* HERO SECTION */}
+      <section className="hero">
+        <div className="eyebrow">INTRODUCING YOUR PERSONAL AI CONCIERGE</div>
+        <h1>Meet <span style={{ color: "var(--orange)" }}>Hey Buddy.</span></h1>
+        <p>
+          Speak naturally in English or Telugu. Plan stays, manage bookings, check revenue, dispatch WhatsApp messages and inspect your site — all from one intelligent assistant.
+        </p>
+      </section>
 
-      {/* MYRA-STYLE EXECUTIVE BANNER */}
-      <div className="mt-4 bg-gradient-to-r from-[#0b1c2d] via-[#102c49] to-[#0b1c2d] border border-[#1e3d57] rounded-2xl p-5 shadow-xl flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <h2 className="text-2xl font-extrabold text-white">
-              Hi, <span className="text-sky-400">{adminName}</span> ✨
-            </h2>
-            <span className="bg-emerald-600/30 text-emerald-300 border border-emerald-500/40 text-[10px] px-2.5 py-0.5 rounded-full font-bold flex items-center gap-1">
-              <Sparkles size={11} /> TELUGU &amp; ENGLISH VOICE
-            </span>
-          </div>
-          <p className="text-slate-300 text-xs mt-1 max-w-xl leading-relaxed">
-            Say <strong className="text-emerald-400">&quot;Dude unnava&quot;</strong> for Telugu voice assistance (&quot;డ్యూడ్, ఉన్నాను!&quot;) or <strong className="text-sky-300">&quot;Hey Buddy&quot;</strong> for English (&quot;Dudu, tell me&quot;). Every result automatically scrolls directly into view!
-          </p>
-        </div>
+      {/* 2-COLUMN MAIN LAYOUT */}
+      <main className="layout">
 
-        <div className="flex items-center gap-2">
-          <button
-            onClick={listening ? stopListening : startListening}
-            className={`${listening ? "bg-rose-600 hover:bg-rose-500 ring-4 ring-rose-500/30 animate-pulse" : "bg-blue-600 hover:bg-blue-500"} px-5 py-2.5 rounded-xl flex items-center gap-2 font-bold text-xs tracking-wider transition shadow-lg shadow-blue-500/20 text-white`}
-          >
-            {listening ? <MicOff size={16} /> : <Mic size={16} />}
-            {listening ? "● ACTIVATED (PAUSE)" : "START LISTENING"}
-          </button>
-        </div>
-      </div>
-
-      {/* HERO VOICE ORB WITH CRAZY ANIMATIONS & EQUALIZER */}
-      <section className="text-center py-6 flex flex-col items-center">
-        <div className="orb-wrapper">
-          {/* Animated sound ripples */}
-          <div className="orb-ripple"></div>
-          <div className="orb-ripple"></div>
-          <div className="orb-ripple"></div>
-
-          <div className={`orb ${listening ? "active" : ""} ${isSpeakingNow ? "speaking" : ""}`}>
-            <div className="orb-inner">
+        {/* LEFT COLUMN: THE AI ASSISTANT ORB & VOICE CORE */}
+        <section className="panel assistant">
+          <div className="orb-wrap">
+            <div className={`orb ${orbState} ${isSpeakingNow ? "speaking" : ""}`}>
               {isSpeakingNow ? (
-                <div className="equalizer-bars">
-                  <div className="eq-bar"></div>
-                  <div className="eq-bar"></div>
-                  <div className="eq-bar"></div>
-                  <div className="eq-bar"></div>
-                  <div className="eq-bar"></div>
+                <div className="eq-bars">
+                  <div className="eq-b"></div>
+                  <div className="eq-b"></div>
+                  <div className="eq-b"></div>
+                  <div className="eq-b"></div>
+                  <div className="eq-b"></div>
                 </div>
               ) : (
-                <AudioLines size={55} className={listening ? "text-sky-300" : "text-slate-400"} />
+                <AudioLines size={48} className="text-white/80" />
               )}
             </div>
           </div>
-        </div>
 
-        <h2 className="text-2xl font-bold tracking-[6px] mt-4 flex items-center gap-2">
-          HEYBUDDY AI
-          {isSpeakingNow && (
-            <span className="text-xs tracking-normal bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 px-2 py-0.5 rounded-full font-sans animate-pulse font-normal">
-              {language === "te" ? "Speaking Telugu 🗣️" : "Speaking Female Voice 🗣️"}
-            </span>
-          )}
-        </h2>
+          <div className="status">{statusText}</div>
+          <div className="substatus">{substatusText}</div>
 
-        <p className="text-emerald-400 text-xs tracking-widest mt-2 font-mono font-bold">
-          {status}
-        </p>
-
-        <p className="text-slate-300 text-xs mt-1 font-medium">
-          {listening
-            ? '● Microphone active! Say "Dude unnava" for Telugu or "Hey Buddy" for English.'
-            : 'Click below to activate voice assistant.'}
-        </p>
-
-        <div className="flex gap-3 mt-4">
-          <button
-            onClick={listening ? stopListening : startListening}
-            className={`${listening ? "bg-rose-600 hover:bg-rose-500 ring-4 ring-rose-500/30 animate-pulse" : "bg-blue-600 hover:bg-blue-500"} px-6 py-3 rounded-xl flex items-center gap-2.5 font-bold text-xs tracking-wider transition shadow-lg shadow-blue-500/20 text-white`}
-          >
-            {listening ? <MicOff size={18} /> : <Mic size={18} />}
-            {listening ? "● ACTIVATED & LISTENING (CLICK TO PAUSE)" : "START LISTENING NOW"}
-          </button>
-
-          <button
-            onClick={() => {
-              setSpeaking(!speaking);
-              if (typeof window !== "undefined") window.speechSynthesis.cancel();
-            }}
-            title={speaking ? "Mute Voice" : "Unmute Voice"}
-            className="bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded-xl px-4 transition"
-          >
-            {speaking ? <Volume2 size={18} className="text-sky-400" /> : <VolumeX size={18} className="text-slate-400" />}
-          </button>
-        </div>
-      </section>
-
-      {/* DASHBOARD PANELS */}
-      <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-
-        {/* COMMAND CENTRE */}
-        <div className="panel p-5 flex flex-col justify-between">
-          <div>
-            <div className="flex justify-between items-center border-b border-slate-700 pb-4">
-              <h3 className="text-sm font-bold flex gap-2 items-center">
-                <Activity className="text-sky-400" size={18} />
-                COMMAND CENTRE
-              </h3>
-              <span className="text-sky-400 text-[10px] font-mono">
-                {language === "te" ? "తెలుగు మోడ్ ACTIVE" : "ENGLISH MODE ACTIVE"}
-              </span>
-            </div>
-
-            {/* QUICK PROMPTS CHIPS */}
-            <div className="py-3 border-b border-slate-800/80">
-              <div className="text-[11px] text-slate-400 mb-2 font-medium">Try asking any query (Auto-scrolls directly):</div>
-              <div className="flex flex-wrap gap-2">
-                {quickPrompts.map((item, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => execute(item.query)}
-                    className="bg-slate-800/90 hover:bg-slate-700 border border-slate-700/80 hover:border-sky-500 rounded-xl text-[11px] px-3 py-1.5 text-sky-200 transition text-left flex items-center gap-1.5"
-                  >
-                    {item.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* MESSAGES THREAD */}
-            <div className="min-h-[280px] max-h-[420px] overflow-y-auto py-4 space-y-4 pr-1">
-              {messages.map((message, index) => {
-                const isLatest = index === messages.length - 1;
-                return (
-                  <div
-                    key={index}
-                    id={isLatest ? "active-speaking-card" : undefined}
-                    className={`flex gap-3 border-b border-slate-800/80 pb-3 transition-all rounded-xl p-2 ${isLatest ? "active-response-highlight bg-[#07192b]/60" : ""}`}
-                  >
-                    <div className="text-sky-400 mt-0.5">
-                      {message.role === "You" ? <Mic size={16} /> : <Bot size={18} className="text-emerald-400" />}
-                    </div>
-
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <strong className={message.role === "You" ? "text-sky-300 text-xs" : "text-emerald-400 text-xs"}>
-                          {message.role === "HeyBuddy" ? (language === "te" ? "HeyBuddy (తెలుగు)" : "HeyBuddy (Female Voice)") : message.role}
-                        </strong>
-                        <span className="text-[10px] text-slate-500 font-mono">{message.timestamp || "Now"}</span>
-                      </div>
-
-                      {message.teluguText && (
-                        <p className="text-emerald-300 text-xs font-semibold leading-relaxed mt-1">
-                          {message.teluguText}
-                        </p>
-                      )}
-
-                      <p className="text-slate-200 text-xs leading-relaxed mt-1 whitespace-pre-line">
-                        {message.text}
-                      </p>
-
-                      {/* ACTION TYPE: SINGLE BOOKING DETAILS */}
-                      {message.actionType === "booking" && message.actionData?.booking && (
-                        <div className="mt-3 bg-[#071625] border border-sky-600/40 rounded-xl p-3.5 space-y-3 shadow-lg shadow-sky-500/10">
-                          <div className="flex justify-between items-center text-xs">
-                            <span className="font-bold text-sky-300">
-                              Booking #{message.actionData.booking.bookingId || message.actionData.booking._id.slice(0, 8)}
-                            </span>
-                            <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase ${message.actionData.booking.paymentStatus === "paid" ? "bg-emerald-950 text-emerald-400 border border-emerald-800" : "bg-amber-950 text-amber-400 border border-amber-800"}`}>
-                              {message.actionData.booking.paymentStatus || "unpaid"}
-                            </span>
-                          </div>
-
-                          <div className="grid grid-cols-2 gap-2 text-[11px] text-slate-300">
-                            <div>
-                              <span className="text-slate-400 block">Guest Name:</span>
-                              <strong className="text-white">{message.actionData.booking.guestName || message.actionData.booking.customerId?.name || "Guest"}</strong>
-                            </div>
-                            <div>
-                              <span className="text-slate-400 block">Phone:</span>
-                              <strong className="text-white">{message.actionData.booking.guestPhone || message.actionData.booking.customerId?.phone || "N/A"}</strong>
-                            </div>
-                            <div>
-                              <span className="text-slate-400 block">Property:</span>
-                              <strong className="text-white">{message.actionData.booking.hotelId?.name || "StayBuddy Hotel"}</strong>
-                            </div>
-                            <div>
-                              <span className="text-slate-400 block">Total Amount:</span>
-                              <strong className="text-emerald-400">₹{Number(message.actionData.booking.totalAmount || 0).toLocaleString("en-IN")}</strong>
-                            </div>
-                          </div>
-
-                          <div className="flex flex-wrap gap-2 pt-1 border-t border-slate-700/60">
-                            {message.actionData.whatsapp && (
-                              <a
-                                href={message.actionData.whatsapp.whatsappUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-bold px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition"
-                              >
-                                <MessageCircle size={13} /> WhatsApp Guest
-                              </a>
-                            )}
-                            <button
-                              onClick={() => recheckPayment(message.actionData.booking._id)}
-                              disabled={recheckingBookingId === message.actionData.booking._id}
-                              className="bg-sky-600 hover:bg-sky-500 text-white text-[11px] font-bold px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition"
-                            >
-                              <RefreshCw size={12} className={recheckingBookingId === message.actionData.booking._id ? "animate-spin" : ""} />
-                              Recheck Razorpay
-                            </button>
-                            <Link
-                              href="/admin?tab=bookings"
-                              className="bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] font-bold px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition"
-                            >
-                              View in Console →
-                            </Link>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* ACTION TYPE: LIST OF PENDING BOOKINGS */}
-                      {message.actionType === "bookings_list" && message.actionData?.bookings && (
-                        <div className="mt-3 space-y-2">
-                          {message.actionData.bookings.map((b: BookingItem) => (
-                            <div key={b._id} className="bg-[#071625] border border-slate-700/80 rounded-xl p-2.5 flex items-center justify-between gap-2 text-xs">
-                              <div>
-                                <div className="font-bold text-white">{b.guestName || b.customerId?.name || "Guest"}</div>
-                                <div className="text-[10px] text-slate-400 mt-0.5">
-                                  {b.hotelId?.name || "Hotel"} • ₹{Number(b.totalAmount || 0).toLocaleString("en-IN")} • <span className="text-amber-400 font-mono uppercase">{b.paymentStatus || "unpaid"}</span>
-                                </div>
-                              </div>
-                              <div className="flex gap-1.5">
-                                <button
-                                  onClick={() => recheckPayment(b._id)}
-                                  disabled={recheckingBookingId === b._id}
-                                  className="bg-sky-600 hover:bg-sky-500 text-white text-[10px] font-bold px-2.5 py-1 rounded-lg flex items-center gap-1 transition"
-                                >
-                                  Recheck
-                                </button>
-                                {b.guestPhone && (
-                                  <a
-                                    href={`https://wa.me/91${b.guestPhone.replace(/\D/g,"")}?text=${encodeURIComponent(`Hello ${b.guestName || "Guest"}, this is StayBuddy regarding your reservation. Please confirm your booking payment.`)}`}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-bold px-2 py-1 rounded-lg flex items-center gap-1 transition"
-                                  >
-                                    <MessageCircle size={12} />
-                                  </a>
-                                )}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-
-                      {/* ACTION TYPE: HOTELS RECOMMENDATION CARDS */}
-                      {message.actionType === "hotels" && message.actionData?.hotels && (
-                        <div className="mt-3 space-y-2.5">
-                          {message.actionData.hotels.map((hotel: HotelItem) => {
-                            const price = hotel.pricePerNight || hotel.rooms?.[0]?.price || 1811;
-                            return (
-                              <div key={hotel._id} className="bg-[#071524] border border-[#1e3d57] rounded-xl p-3 flex items-center justify-between gap-3 hover:border-sky-500/50 transition">
-                                <div className="flex items-center gap-3 min-w-0">
-                                  <div className="w-14 h-14 rounded-lg bg-slate-800 overflow-hidden flex-shrink-0 relative">
-                                    {hotel.images?.[0] ? (
-                                      <img src={hotel.images[0]} alt={hotel.name} className="w-full h-full object-cover" />
-                                    ) : (
-                                      <Hotel className="w-8 h-8 text-sky-400 m-auto mt-3" />
-                                    )}
-                                  </div>
-                                  <div className="min-w-0">
-                                    <div className="font-bold text-xs text-white truncate">{hotel.name}</div>
-                                    <div className="flex items-center gap-1.5 text-[10px] text-slate-400 mt-0.5">
-                                      <MapPin size={11} className="text-rose-400" />
-                                      <span>{hotel.city}</span>
-                                      <span>•</span>
-                                      <span className="text-amber-400">★ {hotel.starRating || 3} Star</span>
-                                    </div>
-                                    <div className="text-emerald-400 font-bold text-xs mt-1">
-                                      ₹{Number(price).toLocaleString("en-IN")}<span className="text-[10px] text-slate-400 font-normal"> / night</span>
-                                    </div>
-                                  </div>
-                                </div>
-
-                                <div className="flex flex-col gap-1.5 flex-shrink-0">
-                                  <Link
-                                    href={`/hotels/${hotel._id}`}
-                                    target="_blank"
-                                    className="bg-blue-600 hover:bg-blue-500 text-white text-[10px] font-bold px-3 py-1.5 rounded-lg flex items-center gap-1 transition"
-                                  >
-                                    Book Now <ArrowUpRight size={12} />
-                                  </Link>
-                                  <button
-                                    onClick={() => execute(`Send WhatsApp confirmation to 9876543210 for ${hotel.name}`)}
-                                    className="bg-emerald-600/80 hover:bg-emerald-500 text-white text-[10px] font-bold px-3 py-1.5 rounded-lg flex items-center gap-1 transition"
-                                  >
-                                    <MessageCircle size={12} /> WhatsApp
-                                  </button>
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      )}
-
-                      {/* ACTION TYPE: WHATSAPP CARD */}
-                      {message.actionType === "whatsapp" && message.actionData && (
-                        <div className="mt-3 bg-[#071e1b] border border-emerald-600/50 rounded-xl p-3.5 space-y-2.5">
-                          <div className="flex items-center justify-between text-xs">
-                            <span className="font-bold text-emerald-400 flex items-center gap-1.5">
-                              <MessageCircle size={14} /> WhatsApp Confirmation Prepared
-                            </span>
-                            <span className="text-[10px] text-emerald-300 font-mono">
-                              {message.actionData.phone}
-                            </span>
-                          </div>
-
-                          <div className="bg-[#041210] border border-emerald-800/60 rounded-lg p-2.5 text-[11px] text-slate-300 whitespace-pre-wrap font-sans">
-                            {message.actionData.text}
-                          </div>
-
-                          <div className="flex gap-2 pt-1">
-                            <a
-                              href={message.actionData.whatsappUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-4 py-2 rounded-lg flex items-center gap-2 transition flex-1 justify-center"
-                            >
-                              <MessageCircle size={15} /> Send on WhatsApp Now
-                            </a>
-                            <a
-                              href={message.actionData.smsUrl}
-                              className="bg-slate-800 hover:bg-slate-700 text-sky-300 border border-slate-700 text-xs font-bold px-3 py-2 rounded-lg flex items-center gap-1.5 transition"
-                            >
-                              <Phone size={14} /> SMS
-                            </a>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* ACTION TYPE: FINANCIAL STATS CARD */}
-                      {message.actionType === "stats" && message.actionData?.totalRevenue !== undefined && (
-                        <div className="mt-3 bg-[#0b1c2d] border border-emerald-500/30 rounded-xl p-3.5 space-y-2">
-                          <div className="text-xs font-bold text-emerald-400 flex items-center gap-1.5">
-                            <TrendingUp size={14} /> StayBuddy Financial Breakdown
-                          </div>
-                          <div className="grid grid-cols-2 gap-2 text-xs">
-                            <div className="bg-[#061523] p-2 rounded-lg">
-                              <div className="text-[10px] text-slate-400">Total B2C Revenue</div>
-                              <div className="text-sm font-bold text-white mt-0.5">₹{message.actionData.totalRevenue.toLocaleString("en-IN")}</div>
-                            </div>
-                            <div className="bg-[#061523] p-2 rounded-lg">
-                              <div className="text-[10px] text-slate-400">Gross Margin</div>
-                              <div className="text-sm font-bold text-emerald-400 mt-0.5">₹{message.actionData.grossProfit.toLocaleString("en-IN")}</div>
-                            </div>
-                            <div className="bg-[#061523] p-2 rounded-lg">
-                              <div className="text-[10px] text-slate-400">GST Output (5%)</div>
-                              <div className="text-sm font-bold text-amber-400 mt-0.5">-₹{message.actionData.gstDeduction.toLocaleString("en-IN", { maximumFractionDigits: 0 })}</div>
-                            </div>
-                            <div className="bg-[#061523] p-2 rounded-lg">
-                              <div className="text-[10px] text-slate-400">Net Platform Profit</div>
-                              <div className="text-sm font-bold text-sky-400 mt-0.5">₹{message.actionData.netProfit.toLocaleString("en-IN", { maximumFractionDigits: 0 })}</div>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+          {/* TRANSCRIPT 1: WHAT I HEARD */}
+          <div className="transcript">
+            <strong>WHAT I HEARD</strong>
+            <span>{heardText}</span>
           </div>
 
-          <div>
-            <form onSubmit={sendCommand} className="flex gap-2 mt-4">
-              <input
-                value={command}
-                onChange={e => setCommand(e.target.value)}
-                placeholder={language === "te" ? "తెలుగు లేదా ఇంగ్లీష్ లో అడగండి (హోటల్స్, బుకింగ్స్, రెవెన్యూ)..." : "Ask in English or Telugu ('Dude unnava', bookings, revenue)..."}
-                className="flex-1 min-w-0 bg-[#061523] border border-slate-700 focus:border-sky-500 p-3 rounded-xl text-sm outline-none transition text-white placeholder-slate-500"
-              />
-
-              <button
-                type="submit"
-                className="bg-blue-600 hover:bg-blue-500 px-4 rounded-xl transition flex items-center justify-center text-white"
-              >
-                <Send size={18} />
-              </button>
-            </form>
-          </div>
-        </div>
-
-        {/* WEBSITE INSPECTOR */}
-        <div className="panel p-5">
-          <div className="flex justify-between items-center border-b border-slate-700 pb-4">
-            <h3 className="text-sm font-bold flex gap-2 items-center">
-              <Bug className="text-sky-400" size={18} />
-              WEBSITE INTELLIGENCE
-            </h3>
-            <span className="text-sky-400 text-[10px] font-mono">DIAGNOSTICS</span>
+          {/* TRANSCRIPT 2: BUDDY'S RESPONSE */}
+          <div className="transcript" style={{ background: "#fff", borderColor: "#f1ece7" }}>
+            <strong>BUDDY&apos;S RESPONSE</strong>
+            {latestMessage?.teluguText && (
+              <div className="text-emerald-700 font-bold mb-1">{latestMessage.teluguText}</div>
+            )}
+            <span>{latestMessage?.text || "I’m ready to help you with StayBuddy."}</span>
           </div>
 
-          <div className="text-center py-6">
-            <Globe size={40} className="mx-auto text-sky-400" />
-            <h3 className="font-bold mt-3 text-base">StayBuddy Website Scanner</h3>
-            <p className="text-slate-400 text-xs mt-1.5 max-w-md mx-auto leading-relaxed">
-              Inspect StayBuddy homepage for HTTP errors, image accessibility, viewport settings, buttons and form labels.
-            </p>
-
+          {/* CONTROLS */}
+          <div className="controls">
             <button
-              disabled={scanning}
-              onClick={scanWebsite}
-              className="bg-blue-600 hover:bg-blue-500 rounded-xl px-6 py-2.5 text-xs font-bold mt-4 transition shadow-md shadow-blue-500/20"
+              onClick={listening ? stopListening : startListening}
+              className={`btn ${listening ? "danger" : "primary"}`}
             >
-              {scanning ? "SCANNING..." : "START WEBSITE SCAN"}
+              {listening ? <MicOff size={16} /> : <Mic size={16} />}
+              {listening ? "Stop listening" : "🎙 Start listening"}
+            </button>
+            <button
+              onClick={() => {
+                setSpeaking(!speaking);
+                if (typeof window !== "undefined") window.speechSynthesis.cancel();
+              }}
+              className="btn secondary"
+            >
+              {speaking ? <Volume2 size={16} /> : <VolumeX size={16} />}
+              {speaking ? "Mute Voice" : "Unmute Voice"}
+            </button>
+            <button
+              onClick={syncCompleteSystem}
+              disabled={systemData.syncing}
+              className="btn secondary"
+            >
+              <RefreshCw size={14} className={systemData.syncing ? "animate-spin" : ""} />
+              Sync DB
             </button>
           </div>
 
-          <div className="border-t border-slate-700 pt-4">
-            <div className="flex justify-between text-xs items-center font-bold">
-              <span>INSPECTION RESULTS</span>
-              <span className="text-sky-400 font-mono">{findings.length} FINDINGS</span>
-            </div>
+          <div className="hint">
+            Wake phrase: “Hey Buddy” (English) · “Dude unnava” (Telugu) · Instant response
+          </div>
 
-            {!scanDone && (
-              <div className="text-center text-slate-500 text-xs py-8">
-                <ShieldCheck size={28} className="mx-auto mb-2 text-slate-600" />
-                No inspection has been run yet. Click &quot;Start Website Scan&quot; to begin.
-              </div>
-            )}
+          {/* AUTO-SCROLL ACTION CARD CONTAINER */}
+          {latestMessage?.actionType && (
+            <div id="active-speaking-card" className="w-full mt-4 card-highlight rounded-2xl">
 
-            <div className="max-h-[220px] overflow-y-auto space-y-2 mt-2 pr-1">
-              {findings.map((item, index) => (
-                <div key={index} className="finding">
-                  <div className="flex justify-between gap-2">
-                    <strong className="text-xs text-white">{item.title}</strong>
-                    <span className={`text-[10px] font-mono uppercase font-bold ${item.severity.toLowerCase()}`}>
-                      {item.severity}
+              {/* ACTION: SINGLE BOOKING */}
+              {latestMessage.actionType === "booking" && latestMessage.actionData?.booking && (
+                <div className="bg-[#fff9f4] border border-[#ffdfc2] rounded-2xl p-4 text-xs space-y-3">
+                  <div className="flex justify-between items-center font-bold">
+                    <span className="text-[#c84a00]">
+                      Booking #{latestMessage.actionData.booking.bookingId || latestMessage.actionData.booking._id.slice(0, 8)}
+                    </span>
+                    <span className={`px-2 py-0.5 rounded-full uppercase text-[10px] ${latestMessage.actionData.booking.paymentStatus === "paid" ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"}`}>
+                      {latestMessage.actionData.booking.paymentStatus || "unpaid"}
                     </span>
                   </div>
-                  <p className="text-slate-400 text-xs mt-1">{item.detail}</p>
-                  <p className="text-sky-300 text-xs mt-1">Recommendation: {item.recommendation}</p>
+                  <div className="grid grid-cols-2 gap-2 text-slate-700">
+                    <div><b>Guest:</b> {latestMessage.actionData.booking.guestName || "Guest"}</div>
+                    <div><b>Phone:</b> {latestMessage.actionData.booking.guestPhone || "N/A"}</div>
+                    <div><b>Hotel:</b> {latestMessage.actionData.booking.hotelId?.name || "StayBuddy Hotel"}</div>
+                    <div><b>Amount:</b> ₹{Number(latestMessage.actionData.booking.totalAmount || 0).toLocaleString("en-IN")}</div>
+                  </div>
+                  <div className="flex gap-2 pt-2 border-t border-[#f2e2d2]">
+                    {latestMessage.actionData.whatsapp && (
+                      <a
+                        href={latestMessage.actionData.whatsapp.whatsappUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="btn primary py-2 px-3 text-xs"
+                      >
+                        <MessageCircle size={14} /> WhatsApp Guest
+                      </a>
+                    )}
+                    <button
+                      onClick={() => recheckPayment(latestMessage.actionData.booking._id)}
+                      disabled={recheckingBookingId === latestMessage.actionData.booking._id}
+                      className="btn secondary py-2 px-3 text-xs"
+                    >
+                      <RefreshCw size={12} className={recheckingBookingId === latestMessage.actionData.booking._id ? "animate-spin" : ""} /> Recheck Razorpay
+                    </button>
+                  </div>
                 </div>
+              )}
+
+              {/* ACTION: HOTELS RECOMMENDATION */}
+              {latestMessage.actionType === "hotels" && latestMessage.actionData?.hotels && (
+                <div className="space-y-2 mt-2">
+                  {latestMessage.actionData.hotels.map((hotel: HotelItem) => {
+                    const price = hotel.pricePerNight || hotel.rooms?.[0]?.price || 1811;
+                    return (
+                      <div key={hotel._id} className="bg-white border border-[#f0dfd0] rounded-xl p-3 flex items-center justify-between gap-3 text-xs shadow-sm">
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <div className="w-12 h-12 rounded-lg bg-orange-100 overflow-hidden flex-shrink-0 relative">
+                            {hotel.images?.[0] ? (
+                              <img src={hotel.images[0]} alt={hotel.name} className="w-full h-full object-cover" />
+                            ) : (
+                              <Hotel className="w-6 h-6 text-orange-500 m-auto mt-3" />
+                            )}
+                          </div>
+                          <div className="min-w-0">
+                            <b className="truncate block text-slate-800">{hotel.name}</b>
+                            <div className="text-[11px] text-slate-500">{hotel.city} • ★ {hotel.starRating || 3} Star</div>
+                            <div className="text-orange-600 font-bold mt-0.5">₹{Number(price).toLocaleString("en-IN")}/night</div>
+                          </div>
+                        </div>
+                        <div className="flex flex-col gap-1 flex-shrink-0">
+                          <Link
+                            href={`/hotels/${hotel._id}`}
+                            target="_blank"
+                            className="btn primary py-1 px-2.5 text-[11px]"
+                          >
+                            Book <ArrowUpRight size={11} />
+                          </Link>
+                          <button
+                            onClick={() => execute(`Send WhatsApp confirmation to 9876543210 for ${hotel.name}`)}
+                            className="btn secondary py-1 px-2.5 text-[11px]"
+                          >
+                            WhatsApp
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* ACTION: WHATSAPP CARD */}
+              {latestMessage.actionType === "whatsapp" && latestMessage.actionData && (
+                <div className="bg-[#f0fbf5] border border-[#a7f3d0] rounded-2xl p-4 text-xs space-y-2.5">
+                  <div className="flex justify-between items-center font-bold text-emerald-800">
+                    <span className="flex items-center gap-1.5"><MessageCircle size={14} /> WhatsApp Prepared</span>
+                    <span className="font-mono text-[11px]">{latestMessage.actionData.phone}</span>
+                  </div>
+                  <div className="bg-white border border-[#d1fae5] rounded-xl p-2.5 text-[11px] text-slate-700 whitespace-pre-wrap font-sans">
+                    {latestMessage.actionData.text}
+                  </div>
+                  <div className="flex gap-2 pt-1">
+                    <a
+                      href={latestMessage.actionData.whatsappUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="btn primary py-2 px-3 text-xs bg-emerald-600 hover:bg-emerald-500 text-white flex-1 justify-center"
+                    >
+                      Send on WhatsApp Now
+                    </a>
+                  </div>
+                </div>
+              )}
+
+              {/* ACTION: REVENUE & FINANCIAL STATS */}
+              {latestMessage.actionType === "stats" && latestMessage.actionData?.totalRevenue !== undefined && (
+                <div className="bg-white border border-[#ffdfc2] rounded-2xl p-4 text-xs space-y-2">
+                  <b className="text-[#a84c00] flex items-center gap-1.5 text-xs"><TrendingUp size={14} /> Financial Audit</b>
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div className="bg-[#fff8f1] p-2 rounded-xl">
+                      <span className="text-[10px] text-slate-500 block">Total Revenue</span>
+                      <strong className="text-slate-800 text-sm">₹{latestMessage.actionData.totalRevenue.toLocaleString("en-IN")}</strong>
+                    </div>
+                    <div className="bg-[#fff8f1] p-2 rounded-xl">
+                      <span className="text-[10px] text-slate-500 block">Gross Profit</span>
+                      <strong className="text-emerald-700 text-sm">₹{latestMessage.actionData.grossProfit.toLocaleString("en-IN")}</strong>
+                    </div>
+                    <div className="bg-[#fff8f1] p-2 rounded-xl">
+                      <span className="text-[10px] text-slate-500 block">GST 5%</span>
+                      <strong className="text-amber-700 text-sm">-₹{latestMessage.actionData.gstDeduction.toLocaleString("en-IN", { maximumFractionDigits: 0 })}</strong>
+                    </div>
+                    <div className="bg-[#fff8f1] p-2 rounded-xl">
+                      <span className="text-[10px] text-slate-500 block">Net StayBuddy Profit</span>
+                      <strong className="text-orange-600 text-sm">₹{latestMessage.actionData.netProfit.toLocaleString("en-IN", { maximumFractionDigits: 0 })}</strong>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+            </div>
+          )}
+        </section>
+
+        {/* RIGHT COLUMN: INTELLIGENCE CENTRE & SYSTEM ACTIONS */}
+        <aside className="panel side">
+          <h3>Buddy’s intelligence centre</h3>
+          <p className="desc">
+            Directly connected to your live StayBuddy database. Ask questions or trigger actions using voice or text.
+          </p>
+
+          <div className="activity">
+            <div className="item">
+              <div className="ico">🏨</div>
+              <div>
+                <b>Hotel booking &amp; inventory</b>
+                <span>Search properties, live rates, room occupancy and initiate reservations directly.</span>
+              </div>
+            </div>
+            <div className="item">
+              <div className="ico">🧠</div>
+              <div>
+                <b>Deep system knowledge</b>
+                <span>{systemData.bookings.length} live bookings, {systemData.hotels.length} properties, and {systemData.taxInvoices.length} tax invoices indexed.</span>
+              </div>
+            </div>
+            <div className="item">
+              <div className="ico">⚡</div>
+              <div>
+                <b>Website &amp; operations helper</b>
+                <span>Audit homepage health, check viewport, buttons and image accessibility instantly.</span>
+              </div>
+            </div>
+            <div className="item">
+              <div className="ico">🔐</div>
+              <div>
+                <b>WhatsApp &amp; payment verification</b>
+                <span>Recheck Razorpay payments and prepare official StayBuddy guest WhatsApp confirmations.</span>
+              </div>
+            </div>
+          </div>
+
+          {/* TRY A TEXT COMMAND */}
+          <div className="section">
+            <label htmlFor="typed">TRY A COMMAND (ENGLISH OR TELUGU)</label>
+            <form onSubmit={sendCommand} className="command">
+              <input
+                id="typed"
+                value={command}
+                onChange={e => setCommand(e.target.value)}
+                placeholder="e.g. Recommend best hotel in Goa, dude unnava, show revenue…"
+              />
+              <button type="submit" className="btn primary">Send</button>
+            </form>
+          </div>
+
+          {/* QUICK PROMPTS TAGS */}
+          <div className="section">
+            <label>SUGGESTIONS</label>
+            <div>
+              {quickPrompts.map((p, i) => (
+                <button
+                  key={i}
+                  onClick={() => execute(p.query)}
+                  className="tag hover:bg-orange-200 transition cursor-pointer border-0"
+                >
+                  {p.label}
+                </button>
               ))}
             </div>
           </div>
-        </div>
-      </section>
 
-      {/* FOOTER */}
-      <footer className="flex flex-wrap justify-between gap-4 text-[10px] text-sky-400 border-t border-slate-800 mt-8 pt-5 font-mono">
-        <span className="flex items-center gap-2"><Zap size={14}/> HEYBUDDY AI V4.0 • TELUGU &amp; ENGLISH VOICE</span>
-        <span className="flex items-center gap-2"><RefreshCw size={14}/> LAST SYNCED: {systemData.lastSynced || "LIVE"}</span>
-        <span className="flex items-center gap-2"><Hotel size={14}/> STAYBUDDY SUPER ADMIN CONSOLE</span>
-      </footer>
-    </main>
+          {/* WEBSITE AUDIT SECTION */}
+          <div className="section pt-2">
+            <button
+              onClick={scanWebsite}
+              disabled={scanning}
+              className="btn secondary w-full justify-center text-xs py-2.5 font-bold"
+            >
+              <Bug size={14} /> {scanning ? "Scanning Website..." : "Run Website Diagnostic Scan"}
+            </button>
+
+            {scanDone && (
+              <div className="mt-3 p-3 bg-white border border-[#f0dfd0] rounded-xl text-xs space-y-1.5 max-h-[160px] overflow-y-auto">
+                <b className="text-slate-800 block">Inspection Findings ({findings.length}):</b>
+                {findings.map((f, i) => (
+                  <div key={i} className="text-[11px] border-b border-slate-100 pb-1">
+                    <span className="font-bold text-orange-600">{f.title}:</span> {f.detail}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </aside>
+      </main>
+
+      <div className="foot">
+        StayBuddy AI · Executive Voice &amp; System Intelligence · Connected to Live Database
+      </div>
+    </div>
   );
 }
