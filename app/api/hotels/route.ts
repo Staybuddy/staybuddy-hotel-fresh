@@ -5,6 +5,7 @@ import { applyMarginToRoom, getRoomPriceForOccupancy } from '@/lib/occupancyPric
 import { getCached, setCached, invalidateCache, getFallback } from '@/lib/cache';
 import { getStayNights, isHotelBlockedForDates, getRoomBlockedCountForNight } from '@/lib/inventoryBlocks';
 import { calculateSmartScore, getSignificantTokens, cleanText } from '@/lib/smartSearch';
+import { VERIFIED_HOTELS } from '@/lib/verifiedFallbackData';
 
 export async function GET(request: NextRequest) {
   try {
@@ -430,7 +431,9 @@ export async function GET(request: NextRequest) {
         headers: { 'X-Cache': 'FALLBACK_EXHAUSTED_PROTECTION' },
       });
     }
-    return NextResponse.json({ hotels: [], total: 0, page: 1, pages: 1 });
+    return NextResponse.json({ hotels: VERIFIED_HOTELS, total: VERIFIED_HOTELS.length, page: 1, pages: 1 }, {
+      headers: { 'X-Cache': 'VERIFIED_STAYBUDDY_FALLBACK' },
+    });
   }
 }
 

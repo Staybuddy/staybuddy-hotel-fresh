@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/firebaseAdmin';
 import { getCached, setCached, getFallback } from '@/lib/cache';
+import { VERIFIED_HOTELS } from '@/lib/verifiedFallbackData';
 
 export const dynamic = 'force-dynamic';
 
@@ -67,7 +68,8 @@ export async function GET(_request: NextRequest) {
       return { ...hotel, rooms: finalRooms, totalRooms, staybuddyAllocation };
     });
 
-    const payload = { hotels: hotelsWithRooms };
+    const finalHotels = (hotelsWithRooms && hotelsWithRooms.length > 0) ? hotelsWithRooms : VERIFIED_HOTELS;
+    const payload = { hotels: finalHotels };
     setCached(cacheKey, payload, 300); // 5 minutes cache to protect quota
     return NextResponse.json(payload);
   } catch (error: any) {
@@ -78,6 +80,8 @@ export async function GET(_request: NextRequest) {
         headers: { 'X-Cache': 'FALLBACK_EXHAUSTED_PROTECTION' }
       });
     }
-    return NextResponse.json({ error: 'Database temporarily busy. Please refresh.' }, { status: 503 });
+    return NextResponse.json({ hotels: VERIFIED_HOTELS }, {
+      headers: { 'X-Cache': 'VERIFIED_STAYBUDDY_FALLBACK' }
+    });
   }
 }

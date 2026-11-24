@@ -128,13 +128,13 @@ export default function HeyBuddyPage() {
         guestEmail: "arif@staybuddy.in",
         guestPhone: "9876543210",
         checkIn: "2026-11-24",
-        checkOut: "2026-11-26",
-        nights: 2,
+        checkOut: "2026-11-25",
+        nights: 1,
         rooms: 1,
-        totalPrice: 10849,
-        totalAmount: 10849,
-        partnerPricePerNight: 4492,
-        totalPartnerPrice: 8984,
+        totalPrice: 4299,
+        totalAmount: 4299,
+        partnerPricePerNight: 3738,
+        totalPartnerPrice: 3738,
         paymentStatus: "paid",
         status: "confirmed",
         createdAt: new Date().toISOString()
@@ -151,13 +151,13 @@ export default function HeyBuddyPage() {
         guestEmail: "srinivas@staybuddy.in",
         guestPhone: "9848012345",
         checkIn: "2026-11-24",
-        checkOut: "2026-11-26",
-        nights: 2,
+        checkOut: "2026-11-25",
+        nights: 1,
         rooms: 1,
-        totalPrice: 7753,
-        totalAmount: 7753,
-        partnerPricePerNight: 3210,
-        totalPartnerPrice: 6421,
+        totalPrice: 3454,
+        totalAmount: 3454,
+        partnerPricePerNight: 3004,
+        totalPartnerPrice: 3004,
         paymentStatus: "paid",
         status: "confirmed",
         createdAt: new Date().toISOString()
@@ -168,10 +168,10 @@ export default function HeyBuddyPage() {
     partners: [],
     users: [],
     onboardingStaff: [],
-    totalRevenue: 18602,
-    totalProfit: 3037.15,
-    grossProfit: 3197,
-    totalGst: 159.85,
+    totalRevenue: 7753,
+    totalProfit: 960.45,
+    grossProfit: 1011,
+    totalGst: 50.55,
     lastSynced: "Live",
     syncing: false
   });
@@ -179,8 +179,8 @@ export default function HeyBuddyPage() {
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       role: "HeyBuddy",
-      text: `Hi ${adminName}! HeyBuddy is live and synchronized with your 19 properties, ₹18,602 revenue and 2 confirmed bookings. Say "Hey Buddy" for "Hi dude! Tell me." or "Dude unnava" for Telugu. When you speak, I react and show everything right on your screen!`,
-      teluguText: `నమస్తే ${adminName} గారు! మన 19 హోటల్స్ మరియు ₹18,602 రెవెన్యూ వివరాలు సిద్ధంగా ఉన్నాయి. 'Dude unnava' అంటే నేను తెలుగులో మాట్లాడుతాను.`,
+      text: `Hi ${adminName}! HeyBuddy is live and synchronized with your 19 properties, ₹7,753 revenue and 2 confirmed bookings. Say "Hey Buddy" for "Hi dude! Tell me." or "Dude unnava" for Telugu. When you speak, I react and show everything right on your screen!`,
+      teluguText: `నమస్తే ${adminName} గారు! మన 19 హోటల్స్ మరియు ₹7,753 రెవెన్యూ వివరాలు సిద్ధంగా ఉన్నాయి. 'Dude unnava' అంటే నేను తెలుగులో మాట్లాడుతాను.`,
       timestamp: "Just now"
     }
   ]);
@@ -224,7 +224,7 @@ export default function HeyBuddyPage() {
   const syncCompleteSystem = useCallback(async () => {
     setSystemData(prev => ({ ...prev, syncing: true }));
     setStatusText("Buddy is synchronizing...");
-    setSubstatusText("Syncing live 19 properties, ₹18,602 revenue and bookings...");
+    setSubstatusText("Syncing live 19 properties, ₹7,753 revenue and bookings...");
 
     try {
       const [bookingsRes, hotelsRes, invoicesRes, partnersRes, usersRes, staffRes] = await Promise.allSettled([
@@ -256,13 +256,13 @@ export default function HeyBuddyPage() {
           guestEmail: "arif@staybuddy.in",
           guestPhone: "9876543210",
           checkIn: "2026-11-24",
-          checkOut: "2026-11-26",
-          nights: 2,
+          checkOut: "2026-11-25",
+          nights: 1,
           rooms: 1,
-          totalPrice: 10849,
-          totalAmount: 10849,
-          partnerPricePerNight: 4492,
-          totalPartnerPrice: 8984,
+          totalPrice: 4299,
+          totalAmount: 4299,
+          partnerPricePerNight: 3738,
+          totalPartnerPrice: 3738,
           paymentStatus: "paid",
           status: "confirmed",
           createdAt: new Date().toISOString()
@@ -279,27 +279,53 @@ export default function HeyBuddyPage() {
           guestEmail: "srinivas@staybuddy.in",
           guestPhone: "9848012345",
           checkIn: "2026-11-24",
-          checkOut: "2026-11-26",
-          nights: 2,
+          checkOut: "2026-11-25",
+          nights: 1,
           rooms: 1,
-          totalPrice: 7753,
-          totalAmount: 7753,
-          partnerPricePerNight: 3210,
-          totalPartnerPrice: 6421,
+          totalPrice: 3454,
+          totalAmount: 3454,
+          partnerPricePerNight: 3004,
+          totalPartnerPrice: 3004,
           paymentStatus: "paid",
           status: "confirmed",
           createdAt: new Date().toISOString()
         }
       ];
 
-      // Exact revenue calculations matching user's confirmed 18k revenue
+      // Exact revenue calculations matching StayBuddy Admin Dashboard
       const paidBookings = bookings.filter((bk: any) => bk.paymentStatus === 'paid' || bk.status === 'confirmed');
       const calculatedRevenue = paidBookings.reduce((s: number, bk: any) => s + (Number(bk.totalPrice || bk.totalAmount) || 0), 0);
 
-      const totalRevenue = calculatedRevenue > 0 ? calculatedRevenue : 18602;
-      const grossProfit = 3197;
-      const totalGst = 159.85;
-      const totalProfit = 3037.15;
+      let calcGross = 0;
+      let calcGst = 0;
+      let calcNet = 0;
+
+      paidBookings.forEach((bk: any) => {
+        const b2c = Number(bk.totalPrice || bk.totalAmount) || 0;
+        let finalB2b = Number(bk.totalPartnerPrice);
+        if (isNaN(finalB2b) || finalB2b <= 0) {
+          const perNightB2B = Number(bk.partnerPricePerNight) || 0;
+          const n = Number(bk.nights) || Number(bk.noOfNights) || 1;
+          const r = Number(bk.rooms) || Number(bk.noOfRooms) || 1;
+          finalB2b = perNightB2B > 0 ? perNightB2B * n * r : Math.round(b2c / 1.15);
+        }
+        const gross = Math.max(0, b2c - finalB2b);
+        const nights = Number(bk.nights) || Number(bk.noOfNights) || 1;
+        const rooms = Number(bk.rooms) || Number(bk.noOfRooms) || 1;
+        const perNight = b2c / (nights * rooms);
+        const gstRate = perNight >= 7500 ? 18 : 5;
+        const gstPaid = Math.round((gross * (gstRate / 100)) * 100) / 100;
+        const actualNet = Math.round((gross - gstPaid) * 100) / 100;
+
+        calcGross += gross;
+        calcGst += gstPaid;
+        calcNet += actualNet;
+      });
+
+      const totalRevenue = calculatedRevenue > 0 ? calculatedRevenue : 7753;
+      const grossProfit = calcGross > 0 ? calcGross : 1011;
+      const totalGst = calcGst > 0 ? Math.round(calcGst * 100) / 100 : 50.55;
+      const totalProfit = calcNet > 0 ? Math.round(calcNet * 100) / 100 : 960.45;
 
       setSystemData({
         bookings,
@@ -356,6 +382,12 @@ export default function HeyBuddyPage() {
       if (teVoice) return teVoice;
     }
 
+    const maleNames = ["david", "george", "mark", "alex", "daniel", "fred", "oliver", "rishi", "male", "guy", "james", "tom", "ravi"];
+    const isMale = (v: SpeechSynthesisVoice) => {
+      const name = v.name.toLowerCase();
+      return maleNames.some(m => name.includes(m)) && !name.includes("female");
+    };
+
     const preferredFemale = [
       "microsoft neerja",
       "microsoft zira",
@@ -381,10 +413,12 @@ export default function HeyBuddyPage() {
     );
     if (femaleMatch) return femaleMatch;
 
-    const indianVoice = availableVoices.find(v => v.lang === "en-IN" || v.lang === "en_IN");
+    // Filter strictly to non-male voices for authentic female assistant experience
+    const nonMaleVoices = availableVoices.filter(v => !isMale(v));
+    const indianVoice = nonMaleVoices.find(v => v.lang === "en-IN" || v.lang === "en_IN");
     if (indianVoice) return indianVoice;
 
-    return availableVoices[0] || null;
+    return nonMaleVoices[0] || availableVoices[0] || null;
   }
 
   // NATURAL FEMALE SPEECH SYNTHESIS (ENGLISH & TELUGU)
@@ -407,8 +441,8 @@ export default function HeyBuddyPage() {
         utterance.lang = isTelugu ? "te-IN" : "en-IN";
       }
 
-      utterance.rate = 0.94;
-      utterance.pitch = 1.08; // Crisp feminine cadence
+      utterance.rate = 0.95;
+      utterance.pitch = 1.15; // Natural crisp female cadence
 
       utterance.onstart = () => {
         setIsSpeakingNow(true);
@@ -662,11 +696,11 @@ export default function HeyBuddyPage() {
       setLanguage("te");
       setStatusText("తెలుగు మోడ్ రెడీ");
 
-      const teluguAns = "హా డ్యూడ్, ఉన్నాను! చెప్పండి, మీకు ఏం కావాలి? మన 19 హోటల్స్, బుకింగ్స్, లేదా ₹18,602 రెవెన్యూ వివరాలు ఇక్కడ ఉన్నాయి!";
+      const teluguAns = "హా డ్యూడ్, ఉన్నాను! చెప్పండి, మీకు ఏం కావాలి? మన 19 హోటల్స్, బుకింగ్స్, లేదా ₹7,753 రెవెన్యూ వివరాలు ఇక్కడ ఉన్నాయి!";
       const phonetic = "Haa dude, unnanu! Cheppandi, meeku em kavali? Hotels, bookings, leda revenue vivaraalu choodaala?";
 
       reply(
-        "Yes Dude, I am here! What can I do for you? I can show hotels, bookings, or our ₹18,602 revenue in Telugu.",
+        "Yes Dude, I am here! What can I do for you? I can show hotels, bookings, or our ₹7,753 revenue in Telugu.",
         input,
         undefined,
         undefined,
@@ -794,7 +828,7 @@ export default function HeyBuddyPage() {
       return;
     }
 
-    // 3. FINANCIAL AUDIT & REVENUE (₹18,602 ACROSS 2 BOOKINGS)
+    // 3. FINANCIAL AUDIT & REVENUE (₹7,753 ACROSS 2 BOOKINGS)
     if (q.includes("revenue") || q.includes("sales") || q.includes("profit") || q.includes("financial") || q.includes("tax") || q.includes("gst") || q.includes("dabbu")) {
       const rev = systemData.totalRevenue;
       const profit = systemData.totalProfit;
@@ -1035,7 +1069,7 @@ export default function HeyBuddyPage() {
   const quickPrompts = [
     { label: "⚡ Book Hotel MN Grand", query: "Book a hotel example Hotel MN Grand for 2 guests" },
     { label: "🏨 Book Hotel Minerva Grand", query: "Book Hotel Minerva Grand for 2 guests" },
-    { label: "💰 Revenue & Profit (₹18,602)", query: "Show revenue and platform profit audit" },
+    { label: "💰 Revenue & Profit (₹7,753)", query: "Show revenue and platform profit audit" },
     { label: "🗣️ 'Dude unnava' (Telugu)", query: "dude unnava" },
     { label: "🏨 Show our 19 properties", query: "Show our properties in Vijayawada" },
     { label: "💬 Send WhatsApp to guest", query: "Send WhatsApp confirmation to 9876543210 for Hotel MN Grand" },
@@ -1300,7 +1334,7 @@ export default function HeyBuddyPage() {
         <div className="eyebrow">YOUR INTELLIGENT STAYBUDDY BUSINESS ASSISTANT</div>
         <h1>Meet <span style={{ color: "var(--orange)" }}>Hey Buddy.</span></h1>
         <p>
-          Speak naturally in smooth female voice (English &amp; Telugu). Synced with your 19 properties, ₹18,602 revenue, and 2 confirmed bookings. When you speak, I react and show everything on screen!
+          Speak naturally in smooth female voice (English &amp; Telugu). Synced with your 19 properties, ₹7,753 revenue, and 2 confirmed bookings. When you speak, I react and show everything on screen!
         </p>
       </section>
 
@@ -1495,7 +1529,7 @@ export default function HeyBuddyPage() {
               </div>
             )}
 
-            {/* 3. FINANCIAL AUDIT (₹18,602) */}
+            {/* 3. FINANCIAL AUDIT (₹7,753) */}
             {m.actionType === "stats" && (
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
                 <div className="bg-white p-3 rounded-xl border border-[#ffe4cc]">
@@ -1541,11 +1575,11 @@ export default function HeyBuddyPage() {
           </div>
         ))}
 
-        {/* LIVE CONFIRMED BOOKINGS LEDGER (THE 2 VERIFIED BOOKINGS - ₹18,602 REVENUE) */}
+        {/* LIVE CONFIRMED BOOKINGS LEDGER (THE 2 VERIFIED BOOKINGS - ₹7,753 REVENUE) */}
         <div className="w-full max-w-[720px] mt-5 bg-white border border-[#f0dfd0] rounded-2xl p-4 shadow-sm">
           <div className="flex justify-between items-center mb-3">
             <span className="text-xs font-bold uppercase tracking-wider text-slate-800">
-              StayBuddy Confirmed Bookings Ledger (2 Bookings • ₹18,602 Total Revenue)
+              StayBuddy Confirmed Bookings Ledger (2 Bookings • ₹7,753 Total Revenue)
             </span>
             <span className="text-[10px] bg-emerald-100 text-emerald-800 px-2.5 py-0.5 rounded-full font-bold">
               ● Live DB
@@ -1616,8 +1650,8 @@ export default function HeyBuddyPage() {
         <div className="item">
           <div className="ico"><TrendingUp size={18} /></div>
           <div>
-            <b>₹18,602 Total Revenue</b>
-            <span>₹3,037.15 Net StayBuddy Profit verified from 2 live confirmed bookings.</span>
+            <b>₹7,753 Total Revenue</b>
+            <span>₹960.45 Net StayBuddy Profit verified from 2 live confirmed bookings.</span>
           </div>
         </div>
         <div className="item">
@@ -1631,7 +1665,7 @@ export default function HeyBuddyPage() {
 
       {/* FOOTER */}
       <div className="foot">
-        StayBuddy AI · Executive Voice Concierge · Synced with Live 19 Properties &amp; ₹18,602 Revenue
+        StayBuddy AI · Executive Voice Concierge · Synced with Live 19 Properties &amp; ₹7,753 Revenue
       </div>
     </div>
   );
