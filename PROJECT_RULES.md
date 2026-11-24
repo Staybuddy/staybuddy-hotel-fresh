@@ -17,6 +17,11 @@
 5. **Successful Booking Notification Rule (Strict 3-Email Guarantee)**:
    - **Every successful booking ALWAYS carries 3 emails**:
      1. **Client / Guest Email (`sendBookingConfirmationEmail`)**: Sent to `guestEmail` / `customerId.email` containing booking confirmation & tax invoice.
-     2. **Partner / Hotel Email (`sendPartnerNotificationEmail`)**: Sent to `hotel.contactEmail` / `hotel.partnerEmail` / `hotel.email` containing new booking alert with guest name, phone, room, check-in, check-out, and Partner B2B Payout.
+     2. **Partner / Hotel Email (`sendPartnerNotificationEmail`)**: Sent to `hotel.contactEmail` / `hotel.partnerEmail` / `hotel.email` containing new booking alert with guest name, phone, room, check-in, check-out, and Partner B2B Payout (STRICTLY pure B2B contract rate, NEVER B2C).
      3. **Admin Email (`sendPaymentAuditEmail`)**: Sent to StayBuddy Admin (`staybuddyhotels@gmail.com` / `ADMIN_AUDIT_EMAIL`) containing instant payment audit alert with Hotel ID, Booking ID, Amount Received, and Razorpay transaction details.
    - Any booking reconciliation or confirmation flow must guarantee all 3 emails are dispatched.
+6. **Strict Partner Pricing Separation (Pure B2B Only - NEVER B2C)**:
+   - When communicating with hotel partners (via Extranet `/partner`, alert emails `sendPartnerNotificationEmail`, WhatsApp vouchers, settlement reports, and dashboard payouts):
+   - **STRICTLY AND EXCLUSIVELY SHOW PURE B2B CONTRACT RATES & PAYOUTS**.
+   - **NEVER** expose guest B2C pricing, StayBuddy retail markups, client invoices, or client gross totals to hotel partners under any circumstances.
+   - All partner notifications must only display `partnerPricePerNight` and `totalPartnerPrice` in StayBuddy's official brand theme.
