@@ -750,21 +750,38 @@ export default function AdminDashboard() {
                   style={{
                     display: 'flex',
                     alignItems: 'center',
-                    gap: 10,
-                    background: 'linear-gradient(135deg, #06111f, #0b1c2d)',
-                    border: '1px solid #1e3d57',
+                    gap: 12,
+                    background: 'white',
+                    border: '1px solid #f0dfd0',
                     padding: '10px 18px',
-                    borderRadius: 12,
+                    borderRadius: 16,
                     textDecoration: 'none',
-                    color: 'white',
-                    boxShadow: '0 4px 15px rgba(8, 122, 203, 0.2)',
-                    transition: 'transform 0.2s'
+                    boxShadow: '0 4px 20px rgba(255, 121, 0, 0.12)',
+                    transition: 'all 0.2s'
                   }}
+                  className="hover:scale-102"
                 >
-                  <span style={{ fontSize: '1.3rem' }}>🤖</span>
+                  <div style={{
+                    width: 38,
+                    height: 38,
+                    borderRadius: 12,
+                    background: 'linear-gradient(135deg, #ff7900, #ff9b36)',
+                    display: 'grid',
+                    placeItems: 'center',
+                    color: 'white',
+                    fontSize: '1.2rem',
+                    boxShadow: '0 4px 12px rgba(255, 121, 0, 0.3)'
+                  }}>
+                    ✦
+                  </div>
                   <div style={{ textAlign: 'left' }}>
-                    <div style={{ fontWeight: 800, fontSize: '0.85rem', color: '#38bdf8', letterSpacing: '0.05em' }}>HEYBUDDY AI</div>
-                    <div style={{ fontSize: '0.7rem', color: '#94a3b8' }}>Voice Intelligence &amp; Audit →</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <span style={{ fontWeight: 800, fontSize: '0.9rem', color: '#0f172a', letterSpacing: '-0.3px' }}>HEYBUDDY AI</span>
+                      <span style={{ background: '#fff0e2', color: '#c84a00', fontSize: '0.65rem', fontWeight: 800, padding: '2px 7px', borderRadius: 20 }}>VOICE CONCIERGE</span>
+                    </div>
+                    <div style={{ fontSize: '0.72rem', color: '#777985', marginTop: 2 }}>
+                      Click to speak in English / Telugu →
+                    </div>
                   </div>
                 </Link>
               </div>
