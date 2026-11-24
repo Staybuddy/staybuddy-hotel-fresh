@@ -21,6 +21,7 @@ const NAV = [
   { id: 'agreements', label: 'Partner Agreements', icon: '📜' },
   { id: 'tax_invoices', label: 'Tax Invoices', icon: '🧾' },
   { id: 'trade_shows', label: 'Trade Shows Extractor', icon: '🎯' },
+  { id: 'heybuddy', label: 'HeyBuddy Voice AI', icon: '🤖' },
 ];
 
 export default function AdminDashboard() {
@@ -42,25 +43,25 @@ export default function AdminDashboard() {
   };
 
   const [showCreateInvoice, setShowCreateInvoice] = useState(false);
-  const [newInvoiceData, setNewInvoiceData] = useState({ 
+  const [newInvoiceData, setNewInvoiceData] = useState({
     guestName: '', companyName: '', gstNumber: '', address: '', bookingId: `SB-${Math.floor(1000000 + Math.random() * 9000000)}`, placeOfSupply: 'Telangana', hotelName: '', hotelCity: '',
-    checkInDate: '', checkOutDate: '', noOfNights: '', noOfRooms: '1', noOfGuests: '1', totalAmount: '', 
-    invoiceNo: `INV-${Math.floor(100000 + Math.random() * 900000)}`, 
-    invoiceDate: getLocalDateString() 
+    checkInDate: '', checkOutDate: '', noOfNights: '', noOfRooms: '1', noOfGuests: '1', totalAmount: '',
+    invoiceNo: `INV-${Math.floor(100000 + Math.random() * 900000)}`,
+    invoiceDate: getLocalDateString()
   });
   const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState({ 
-    totalHotels: 0, 
-    pendingHotels: 0, 
-    pendingPartners: 0, 
-    totalBookings: 0, 
-    totalRevenue: 0, 
+  const [stats, setStats] = useState({
+    totalHotels: 0,
+    pendingHotels: 0,
+    pendingPartners: 0,
+    totalBookings: 0,
+    totalRevenue: 0,
     totalB2bCost: 0,
     grossProfit: 0,
     totalGst: 0,
-    totalProfit: 0, 
+    totalProfit: 0,
     gstRate: 5,
-    totalUsers: 0 
+    totalUsers: 0
   });
   const [approveLoading, setApproveLoading] = useState<string | null>(null);
   const [hasNewBookings, setHasNewBookings] = useState(false);
@@ -215,13 +216,13 @@ export default function AdminDashboard() {
     if (status === 'unauthenticated') { router.push('/login'); return; }
     if (status === 'authenticated') {
       const role = (session?.user as any)?.role;
-      if (role !== 'admin') { 
+      if (role !== 'admin') {
         if (role === 'onboarder') {
           router.push('/partner'); // Direct onboarding executives straight to Partner Extranet!
           return;
         }
-        router.push('/'); 
-        return; 
+        router.push('/');
+        return;
       }
       fetchAll();
 
@@ -273,7 +274,7 @@ export default function AdminDashboard() {
 
       const paidBookings = b.filter((bk: any) => bk.paymentStatus === 'paid');
       const revenue = paidBookings.reduce((s: number, bk: any) => s + (Number(bk.totalPrice) || 0), 0);
-      
+
       let totalB2bCost = 0;
       let totalGrossProfit = 0;
       let totalGstOnProfit = 0;
@@ -286,8 +287,8 @@ export default function AdminDashboard() {
         const margin = Number(hotel?.marginPercentage) || 15;
 
         // B2B cost paid to the partner
-        const b2b = Number(bk.totalPartnerPrice) > 0 
-          ? Number(bk.totalPartnerPrice) 
+        const b2b = Number(bk.totalPartnerPrice) > 0
+          ? Number(bk.totalPartnerPrice)
           : (Number(bk.partnerPricePerNight) > 0 ? Number(bk.partnerPricePerNight) * (Number(bk.nights) || 1) * (Number(bk.rooms) || 1) : 0);
         const defaultB2b = Math.round(b2c / (1 + margin / 100));
         const finalB2b = b2b > 0 ? b2b : defaultB2b;
@@ -338,7 +339,7 @@ export default function AdminDashboard() {
     await fetch(`/api/hotels/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
     try {
       localStorage.setItem('staybuddy_hotels_sync', String(Date.now()));
-    } catch (_) {}
+    } catch (_) { }
     setApproveLoading(null);
     fetchAll(false);
   }
@@ -353,7 +354,7 @@ export default function AdminDashboard() {
       }
       try {
         localStorage.setItem('staybuddy_hotels_sync', String(Date.now()));
-      } catch (_) {}
+      } catch (_) { }
     } catch (err) {
       console.error(err);
       alert('Error deleting property');
@@ -450,10 +451,10 @@ export default function AdminDashboard() {
   }
 
   async function handlePartnerStatus(id: string, action: string) {
-    await fetch('/api/admin/partners', { 
-      method: 'PATCH', 
-      headers: { 'Content-Type': 'application/json' }, 
-      body: JSON.stringify({ partnerId: id, action }) 
+    await fetch('/api/admin/partners', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ partnerId: id, action })
     });
     fetchAll(false);
   }
@@ -543,7 +544,7 @@ export default function AdminDashboard() {
     // First, assume 0% to get an initial per-room-night estimate
     let gstPercentage = 0;
     let perRoomNightInclusive = total / (nights * rooms);
-    
+
     // Determine slab from inclusive rate
     if (perRoomNightInclusive >= 7500) {
       gstPercentage = 18;
@@ -562,23 +563,23 @@ export default function AdminDashboard() {
     await fetch('/api/admin/tax-invoices', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ 
-        ...newInvoiceData, 
-        totalAmount: baseAmount, 
-        tariffPerNight, 
-        gstPercentage, 
-        gstAmount, 
+      body: JSON.stringify({
+        ...newInvoiceData,
+        totalAmount: baseAmount,
+        tariffPerNight,
+        gstPercentage,
+        gstAmount,
         grandTotal,
         noOfRooms: rooms,
         noOfGuests: guests,
       })
     });
     setShowCreateInvoice(false);
-    setNewInvoiceData({ 
+    setNewInvoiceData({
       guestName: '', companyName: '', gstNumber: '', address: '', bookingId: `SB-${Math.floor(1000000 + Math.random() * 9000000)}`, placeOfSupply: 'Telangana', hotelName: '', hotelCity: '',
-      checkInDate: '', checkOutDate: '', noOfNights: '', noOfRooms: '1', noOfGuests: '1', totalAmount: '', 
-      invoiceNo: `INV-${Math.floor(100000 + Math.random() * 900000)}`, 
-      invoiceDate: getLocalDateString() 
+      checkInDate: '', checkOutDate: '', noOfNights: '', noOfRooms: '1', noOfGuests: '1', totalAmount: '',
+      invoiceNo: `INV-${Math.floor(100000 + Math.random() * 900000)}`,
+      invoiceDate: getLocalDateString()
     });
     setApproveLoading(null);
     fetchAll();
@@ -634,7 +635,8 @@ export default function AdminDashboard() {
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: '#f8fafc' }}>
-      <style dangerouslySetInnerHTML={{__html: `
+      <style dangerouslySetInnerHTML={{
+        __html: `
         @keyframes shake {
           0%, 100% { transform: rotate(0deg); }
           25% { transform: rotate(20deg); }
@@ -646,8 +648,8 @@ export default function AdminDashboard() {
         }
       `}} />
       {/* Sidebar Overlay for Mobile */}
-      <div 
-        className="admin-overlay" 
+      <div
+        className="admin-overlay"
         style={{ display: isMobileMenuOpen ? 'block' : 'none' }}
         onClick={() => setIsMobileMenuOpen(false)}
       />
@@ -666,6 +668,10 @@ export default function AdminDashboard() {
             <button
               key={item.id}
               onClick={() => {
+                if (item.id === 'heybuddy') {
+                  router.push('/admin/heybuddy');
+                  return;
+                }
                 setActiveTab(item.id);
                 setIsMobileMenuOpen(false);
                 if (typeof window !== 'undefined') {
@@ -688,15 +694,15 @@ export default function AdminDashboard() {
                 marginBottom: 4,
               }}
             >
-              <span style={{ 
-                fontSize: '1.2rem', 
+              <span style={{
+                fontSize: '1.2rem',
                 opacity: activeTab === item.id ? 1 : 0.7,
                 display: 'inline-block',
                 transformOrigin: 'top center',
                 animation: item.id === 'bookings' && hasNewBookings ? 'shake 0.4s infinite ease-in-out' : 'none'
               }}>
                 {item.icon}
-              </span> 
+              </span>
               <span>{item.label}</span>
               {item.id === 'bookings' && hasNewBookings && (
                 <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#f97316', marginLeft: 'auto', animation: 'blink 1s infinite' }} />
@@ -709,7 +715,7 @@ export default function AdminDashboard() {
               )}
             </button>
           ))}
-          
+
           <div style={{ fontSize: '0.7rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.1em', marginTop: 32, marginBottom: 12, paddingLeft: 12 }}>External Links</div>
           <Link href="/partner" style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px', borderRadius: 8, color: '#475569', fontWeight: 500, textDecoration: 'none', transition: 'all 0.2s' }}>
             <span style={{ fontSize: '1.2rem', opacity: 0.7 }}>🏢</span> Partner Extranet
@@ -734,8 +740,34 @@ export default function AdminDashboard() {
           {/* ===== OVERVIEW ===== */}
           {activeTab === 'overview' && (
             <div className="fade-in">
-              <h1 style={{ fontSize: '2rem', color: '#0f172a', marginBottom: 8 }}>Dashboard Overview</h1>
-              <p style={{ color: '#64748b', marginBottom: 32 }}>Welcome back! Here&apos;s what&apos;s happening across StayBuddy today.</p>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16, marginBottom: 24 }}>
+                <div>
+                  <h1 style={{ fontSize: '2rem', color: '#0f172a', marginBottom: 4 }}>Dashboard Overview</h1>
+                  <p style={{ color: '#64748b', margin: 0 }}>Welcome back! Here&apos;s what&apos;s happening across StayBuddy today.</p>
+                </div>
+                <Link
+                  href="/admin/heybuddy"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 10,
+                    background: 'linear-gradient(135deg, #06111f, #0b1c2d)',
+                    border: '1px solid #1e3d57',
+                    padding: '10px 18px',
+                    borderRadius: 12,
+                    textDecoration: 'none',
+                    color: 'white',
+                    boxShadow: '0 4px 15px rgba(8, 122, 203, 0.2)',
+                    transition: 'transform 0.2s'
+                  }}
+                >
+                  <span style={{ fontSize: '1.3rem' }}>🤖</span>
+                  <div style={{ textAlign: 'left' }}>
+                    <div style={{ fontWeight: 800, fontSize: '0.85rem', color: '#38bdf8', letterSpacing: '0.05em' }}>HEYBUDDY AI</div>
+                    <div style={{ fontSize: '0.7rem', color: '#94a3b8' }}>Voice Intelligence &amp; Audit →</div>
+                  </div>
+                </Link>
+              </div>
 
               {/* Financial Hero Cards (Top Row: Total Revenue & StayBuddy Profit) */}
               <div className="admin-financial-grid">
@@ -996,7 +1028,7 @@ export default function AdminDashboard() {
                             </td>
                             <td style={{ padding: '16px 24px' }}>
                               <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-start' }}>
-                                <span style={{ 
+                                <span style={{
                                   padding: '4px 10px', borderRadius: 20, fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase',
                                   background: b.status === 'confirmed' ? '#d1fae5' : b.status === 'completed' ? '#dbeafe' : b.status === 'cancelled' ? '#fee2e2' : '#fef3c7',
                                   color: b.status === 'confirmed' ? '#059669' : b.status === 'completed' ? '#1d4ed8' : b.status === 'cancelled' ? '#dc2626' : '#d97706'
@@ -1279,7 +1311,7 @@ export default function AdminDashboard() {
             <div className="fade-in">
               <h1 style={{ fontSize: '2rem', color: '#0f172a', marginBottom: 8 }}>Property & Room Requests</h1>
               <p style={{ color: '#64748b', marginBottom: 32 }}>Review, edit, and approve properties and room additions/edits submitted by partners & onboarding executives via the Extranet.</p>
-              
+
               {/* SECTION 1: Pending Room & Inventory Updates */}
               {hotelsWithPendingRooms.length > 0 && (
                 <div style={{ marginBottom: 40 }}>
@@ -1336,9 +1368,9 @@ export default function AdminDashboard() {
                             <button
                               type="button"
                               onClick={() => {
-                                updateHotelStatus(hotel._id, { 
-                                  approvePendingRooms: true, 
-                                  status: 'approved', 
+                                updateHotelStatus(hotel._id, {
+                                  approvePendingRooms: true,
+                                  status: 'approved',
                                   rooms: hotel.pendingRooms || hotel.rooms,
                                   isAdmin: true,
                                   isAdminAction: true
@@ -1424,7 +1456,7 @@ export default function AdminDashboard() {
             <div className="fade-in">
               <h1 style={{ fontSize: '2rem', color: '#0f172a', marginBottom: 8 }}>Partner Approvals</h1>
               <p style={{ color: '#64748b', marginBottom: 32 }}>Review and approve new partners who signed up via Google.</p>
-              
+
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 24, width: '100%' }}>
                 {partners.filter((p: any) => p.partnerStatus === 'pending').length === 0 ? (
                   <div style={{ padding: '60px', gridColumn: '1 / -1', textAlign: 'center', background: 'white', borderRadius: 16, border: '1px dashed #cbd5e1' }}>
@@ -1437,7 +1469,7 @@ export default function AdminDashboard() {
                     <div key={p._id} style={{ background: 'white', borderRadius: 16, padding: 24, boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
                         <div style={{ width: 48, height: 48, borderRadius: '50%', background: '#e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                           {p.avatar ? <img src={p.avatar} alt="avatar" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} /> : '👤'}
+                          {p.avatar ? <img src={p.avatar} alt="avatar" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} /> : '👤'}
                         </div>
                         <div>
                           <h3 style={{ fontSize: '1.1rem', margin: 0, fontWeight: 800, color: '#0f172a' }}>{p.name}</h3>
@@ -1724,10 +1756,10 @@ export default function AdminDashboard() {
                             <div style={{ fontSize: '0.75rem', color: '#8b5cf6', fontWeight: 600, marginTop: 4 }}>Hotel ID: {h.hotelId || h._id?.slice(-8)}</div>
                           </td>
                           <td style={{ padding: '16px 24px' }}>
-                            <span style={{ 
-                              padding: '4px 10px', 
-                              borderRadius: 12, 
-                              fontSize: '0.78rem', 
+                            <span style={{
+                              padding: '4px 10px',
+                              borderRadius: 12,
+                              fontSize: '0.78rem',
                               fontWeight: 700,
                               background: h.status === 'approved' ? '#dcfce7' : h.status === 'rejected' ? '#fee2e2' : '#fef3c7',
                               color: h.status === 'approved' ? '#166534' : h.status === 'rejected' ? '#991b1b' : '#92400e'
@@ -1741,9 +1773,9 @@ export default function AdminDashboard() {
                             </span>
                           </td>
                           <td style={{ padding: '16px 24px' }}>
-                            <input 
-                              type="number" 
-                              defaultValue={h.marginPercentage || 0} 
+                            <input
+                              type="number"
+                              defaultValue={h.marginPercentage || 0}
                               onBlur={(e) => {
                                 const val = parseFloat(e.target.value);
                                 if (val !== h.marginPercentage) updateHotelStatus(h._id, { marginPercentage: val });
@@ -1753,7 +1785,7 @@ export default function AdminDashboard() {
                           </td>
                           <td style={{ padding: '16px 24px', whiteSpace: 'nowrap' }}>
                             {h.status === 'pending' && (
-                              <button 
+                              <button
                                 onClick={() => updateHotelStatus(h._id, { status: 'approved' })}
                                 disabled={approveLoading === h._id}
                                 style={{ marginRight: 8, padding: '6px 12px', background: '#16a34a', color: 'white', border: 'none', borderRadius: 6, fontSize: '0.85rem', fontWeight: 700, cursor: 'pointer' }}
@@ -1761,13 +1793,13 @@ export default function AdminDashboard() {
                                 {approveLoading === h._id ? 'Approving...' : '✓ Approve'}
                               </button>
                             )}
-                            <button 
+                            <button
                               onClick={() => updateHotelStatus(h._id, { isExtranet: !h.isExtranet })}
                               style={{ padding: '6px 12px', background: 'transparent', border: '1px solid #cbd5e1', borderRadius: 6, fontSize: '0.85rem', fontWeight: 600, color: '#475569', cursor: 'pointer' }}
                             >
                               Toggle Type
                             </button>
-                            <button 
+                            <button
                               onClick={() => deleteHotel(h._id)}
                               disabled={approveLoading === h._id}
                               style={{ marginLeft: 8, padding: '6px 12px', background: '#fff1f2', border: '1px solid #fecdd3', borderRadius: 6, fontSize: '0.85rem', fontWeight: 700, color: '#e11d48', cursor: 'pointer' }}
@@ -1796,8 +1828,8 @@ export default function AdminDashboard() {
                     </span>
                   </h1>
                   <p style={{ color: '#64748b', maxWidth: 760, lineHeight: 1.5 }}>
-                    Assign Gmail IDs to executives hired to onboard hotels for StayBuddy. Assigned staff get instant, seamless access to the 
-                    <strong> Partner Extranet</strong> and the <strong>B2C website</strong> to onboard properties. Their accounts are strictly 
+                    Assign Gmail IDs to executives hired to onboard hotels for StayBuddy. Assigned staff get instant, seamless access to the
+                    <strong> Partner Extranet</strong> and the <strong>B2C website</strong> to onboard properties. Their accounts are strictly
                     <strong> blocked from all Admin features</strong> and all partner communications go exclusively to the hotel partner.
                   </p>
                 </div>
@@ -1817,11 +1849,11 @@ export default function AdminDashboard() {
               </div>
 
               {/* Security & Access Isolation Rule Banner */}
-              <div style={{ 
-                background: 'linear-gradient(135deg, #f8fafc 0%, #eff6ff 100%)', 
-                border: '1px solid #bfdbfe', 
-                borderRadius: 16, 
-                padding: '20px 24px', 
+              <div style={{
+                background: 'linear-gradient(135deg, #f8fafc 0%, #eff6ff 100%)',
+                border: '1px solid #bfdbfe',
+                borderRadius: 16,
+                padding: '20px 24px',
                 marginBottom: 28,
                 display: 'grid',
                 gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
@@ -1896,7 +1928,7 @@ export default function AdminDashboard() {
                     <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#475569', marginBottom: 6, textTransform: 'uppercase' }}>
                       Executive Gmail ID *
                     </label>
-                    <input 
+                    <input
                       type="email"
                       required
                       placeholder="e.g. rahul.staybuddy@gmail.com"
@@ -1918,7 +1950,7 @@ export default function AdminDashboard() {
                     <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#475569', marginBottom: 6, textTransform: 'uppercase' }}>
                       Full Name
                     </label>
-                    <input 
+                    <input
                       type="text"
                       placeholder="e.g. Rahul Sharma"
                       value={newStaffName}
@@ -1939,7 +1971,7 @@ export default function AdminDashboard() {
                     <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#475569', marginBottom: 6, textTransform: 'uppercase' }}>
                       Mobile / WhatsApp
                     </label>
-                    <input 
+                    <input
                       type="tel"
                       placeholder="e.g. +91 98765 43210"
                       value={newStaffPhone}
@@ -1960,7 +1992,7 @@ export default function AdminDashboard() {
                     <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#475569', marginBottom: 6, textTransform: 'uppercase' }}>
                       Assigned Region / Territory
                     </label>
-                    <input 
+                    <input
                       type="text"
                       placeholder="e.g. Hyderabad & Secunderabad"
                       value={newStaffNotes}
@@ -2011,10 +2043,10 @@ export default function AdminDashboard() {
                     const member = onboardingStaff[slotIndex];
                     if (member) {
                       return (
-                        <div key={member._id} style={{ 
-                          background: 'white', 
-                          border: '2px solid #fdba74', 
-                          borderRadius: 14, 
+                        <div key={member._id} style={{
+                          background: 'white',
+                          border: '2px solid #fdba74',
+                          borderRadius: 14,
                           padding: 16,
                           boxShadow: '0 2px 8px rgba(234, 88, 12, 0.08)',
                           position: 'relative'
@@ -2065,10 +2097,10 @@ export default function AdminDashboard() {
                       );
                     } else {
                       return (
-                        <div key={slotIndex} style={{ 
-                          background: '#f8fafc', 
-                          border: '2px dashed #cbd5e1', 
-                          borderRadius: 14, 
+                        <div key={slotIndex} style={{
+                          background: '#f8fafc',
+                          border: '2px dashed #cbd5e1',
+                          borderRadius: 14,
                           padding: 16,
                           display: 'flex',
                           flexDirection: 'column',
@@ -2132,15 +2164,15 @@ export default function AdminDashboard() {
                               {staff.notes || 'General'}
                             </td>
                             <td style={{ padding: '16px 20px' }}>
-                              <span style={{ 
-                                display: 'inline-flex', 
-                                alignItems: 'center', 
-                                gap: 6, 
-                                fontSize: '0.78rem', 
-                                fontWeight: 700, 
-                                background: '#f0fdf4', 
-                                color: '#15803d', 
-                                padding: '4px 10px', 
+                              <span style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: 6,
+                                fontSize: '0.78rem',
+                                fontWeight: 700,
+                                background: '#f0fdf4',
+                                color: '#15803d',
+                                padding: '4px 10px',
                                 borderRadius: 9999,
                                 border: '1px solid #bbf7d0'
                               }}>
@@ -2149,9 +2181,9 @@ export default function AdminDashboard() {
                               </span>
                             </td>
                             <td style={{ padding: '16px 20px' }}>
-                              <span style={{ 
-                                fontSize: '0.85rem', 
-                                fontWeight: 800, 
+                              <span style={{
+                                fontSize: '0.85rem',
+                                fontWeight: 800,
                                 color: staff.hotelsOnboarded > 0 ? '#ea580c' : '#64748b',
                                 background: staff.hotelsOnboarded > 0 ? '#fff7ed' : '#f1f5f9',
                                 padding: '4px 10px',
@@ -2196,7 +2228,7 @@ export default function AdminDashboard() {
             <div className="fade-in">
               <h1 style={{ fontSize: '2rem', color: '#0f172a', marginBottom: 8 }}>Performance & Tax Invoices</h1>
               <p style={{ color: '#64748b', marginBottom: 32 }}>Track property-level GMV, generated StayBuddy profits, and download tax invoices.</p>
-              
+
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: 24, width: '100%' }}>
                 {approvedHotels.map(h => {
                   const propertyBookings = bookings.filter(b => (b.hotelId?._id === h._id || b.hotelId === h._id) && b.paymentStatus === 'paid');
@@ -2273,11 +2305,11 @@ export default function AdminDashboard() {
                               const gstP = perRoomNightInclusive >= 7500 ? 18 : 5;
                               const bkGst = Math.round(gross * (gstP / (100 + gstP)));
                               const bkProfit = Math.max(0, gross - bkGst);
-                              
+
                               return (
                                 <div key={bk._id} style={{ display: 'grid', gridTemplateColumns: '1fr auto auto auto', gap: 16, padding: '10px 12px', background: '#f8fafc', borderRadius: 8, border: '1px solid #e2e8f0', alignItems: 'center', fontSize: '0.8rem' }}>
                                   <div>
-                                    <div style={{ fontWeight: 700, color: '#0f172a', display: 'flex', alignItems: 'center', gap: 4 }}><span style={{fontSize: '1rem'}}>🧾</span> {bk.invoiceNo || `INV-${(bk.bookingId || bk._id?.slice(-6)).toUpperCase()}`}</div>
+                                    <div style={{ fontWeight: 700, color: '#0f172a', display: 'flex', alignItems: 'center', gap: 4 }}><span style={{ fontSize: '1rem' }}>🧾</span> {bk.invoiceNo || `INV-${(bk.bookingId || bk._id?.slice(-6)).toUpperCase()}`}</div>
                                     <div style={{ color: '#3b82f6', fontSize: '0.7rem', fontWeight: 600, marginTop: 4 }}>Booking ID: {bk.bookingId || bk._id.slice(-8)}</div>
                                     <div style={{ color: '#64748b', fontSize: '0.7rem', marginTop: 2 }}>Check In: {new Date(bk.checkIn).toLocaleDateString()}</div>
                                   </div>
@@ -2319,7 +2351,7 @@ export default function AdminDashboard() {
               <p style={{ color: '#475569', marginBottom: 24 }}>
                 The following properties and partners have accepted the StayBuddy Partner Policies and Terms & Conditions.
               </p>
-              
+
               <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                 {hotels.filter((h: any) => h.status === 'approved').map(hotel => {
                   const partner = partners.find(p => p._id === hotel.partnerId);
@@ -2366,20 +2398,20 @@ export default function AdminDashboard() {
                         <div>
                           <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#0f172a' }}>{u.name}</h3>
                           <div style={{ fontSize: '0.85rem', color: '#64748b', display: 'flex', alignItems: 'center', gap: 6 }}>
-                            {u.googleId ? '🔵 Google Auth' : '📱 Phone Auth'} 
+                            {u.googleId ? '🔵 Google Auth' : '📱 Phone Auth'}
                           </div>
                         </div>
                         <div style={{ marginLeft: 'auto' }}>
-                          <select 
+                          <select
                             value={u.role || 'customer'}
                             onChange={(e) => updateUser(u._id, { role: e.target.value })}
-                            style={{ 
-                              padding: '6px 14px', 
-                              background: u.role === 'admin' ? '#fef3c7' : u.role === 'partner' ? '#e0f2fe' : '#f1f5f9', 
-                              color: u.role === 'admin' ? '#d97706' : u.role === 'partner' ? '#0284c7' : '#475569', 
-                              borderRadius: 20, 
-                              fontSize: '0.75rem', 
-                              fontWeight: 700, 
+                            style={{
+                              padding: '6px 14px',
+                              background: u.role === 'admin' ? '#fef3c7' : u.role === 'partner' ? '#e0f2fe' : '#f1f5f9',
+                              color: u.role === 'admin' ? '#d97706' : u.role === 'partner' ? '#0284c7' : '#475569',
+                              borderRadius: 20,
+                              fontSize: '0.75rem',
+                              fontWeight: 700,
                               border: '1px solid',
                               borderColor: u.role === 'admin' ? '#fde68a' : u.role === 'partner' ? '#bae6fd' : '#e2e8f0',
                               outline: 'none',
@@ -2400,7 +2432,7 @@ export default function AdminDashboard() {
                         <div style={{ fontSize: '0.85rem', color: '#475569', marginTop: 8 }}><strong>Bookings Made:</strong> {userBookings.length}</div>
                       </div>
 
-                      <button 
+                      <button
                         onClick={() => updateUser(u._id, { isActive: !u.isActive })}
                         style={{ width: '100%', padding: '10px', background: u.isActive ? 'white' : '#fee2e2', border: `1px solid ${u.isActive ? '#e2e8f0' : '#fca5a5'}`, color: u.isActive ? '#ef4444' : '#b91c1c', borderRadius: 8, fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s' }}
                       >
@@ -2502,9 +2534,9 @@ export default function AdminDashboard() {
                   <p style={{ margin: '3px 0 0', fontSize: '0.78rem', color: '#64748b' }}>Create official GST tax bill / invoice for guests</p>
                 </div>
               </div>
-              <button 
-                type="button" 
-                onClick={() => setShowCreateInvoice(false)} 
+              <button
+                type="button"
+                onClick={() => setShowCreateInvoice(false)}
                 style={{ background: '#f8fafc', border: '1px solid #e2e8f0', width: 34, height: 34, borderRadius: '50%', cursor: 'pointer', fontSize: '1rem', color: '#64748b', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.15s ease' }}
                 aria-label="Close"
               >
@@ -2517,26 +2549,26 @@ export default function AdminDashboard() {
               <div className="tax-grid-2">
                 <div>
                   <label className="tax-modal-label">Invoice No.</label>
-                  <input required type="text" className="tax-modal-input" value={newInvoiceData.invoiceNo} onChange={e => setNewInvoiceData({...newInvoiceData, invoiceNo: e.target.value})} />
+                  <input required type="text" className="tax-modal-input" value={newInvoiceData.invoiceNo} onChange={e => setNewInvoiceData({ ...newInvoiceData, invoiceNo: e.target.value })} />
                 </div>
                 <div>
                   <label className="tax-modal-label">Invoice Date</label>
-                  <input required type="date" className="tax-modal-input" value={newInvoiceData.invoiceDate} onChange={e => setNewInvoiceData({...newInvoiceData, invoiceDate: e.target.value})} />
+                  <input required type="date" className="tax-modal-input" value={newInvoiceData.invoiceDate} onChange={e => setNewInvoiceData({ ...newInvoiceData, invoiceDate: e.target.value })} />
                 </div>
               </div>
-              
+
               {/* Row 2: Guest Name & Company Name */}
               <div className="tax-grid-split">
                 <div>
                   <label className="tax-modal-label">Guest Name</label>
-                  <input required type="text" className="tax-modal-input" placeholder="e.g. John Doe" value={newInvoiceData.guestName} onChange={e => setNewInvoiceData({...newInvoiceData, guestName: e.target.value})} />
+                  <input required type="text" className="tax-modal-input" placeholder="e.g. John Doe" value={newInvoiceData.guestName} onChange={e => setNewInvoiceData({ ...newInvoiceData, guestName: e.target.value })} />
                 </div>
                 <div>
                   <label className="tax-modal-label">
                     <span>Company Name</span>
                     <span style={{ fontSize: '0.72rem', color: '#94a3b8', fontWeight: 500 }}>Optional</span>
                   </label>
-                  <input type="text" className="tax-modal-input" placeholder="e.g. Acme Corp" value={newInvoiceData.companyName} onChange={e => setNewInvoiceData({...newInvoiceData, companyName: e.target.value})} />
+                  <input type="text" className="tax-modal-input" placeholder="e.g. Acme Corp" value={newInvoiceData.companyName} onChange={e => setNewInvoiceData({ ...newInvoiceData, companyName: e.target.value })} />
                 </div>
               </div>
 
@@ -2547,11 +2579,11 @@ export default function AdminDashboard() {
                     <span>GST Number</span>
                     <span style={{ fontSize: '0.72rem', color: '#94a3b8', fontWeight: 500 }}>Optional</span>
                   </label>
-                  <input type="text" className="tax-modal-input" placeholder="e.g. 36AABCU9603R1ZM" value={newInvoiceData.gstNumber} onChange={e => setNewInvoiceData({...newInvoiceData, gstNumber: e.target.value})} />
+                  <input type="text" className="tax-modal-input" placeholder="e.g. 36AABCU9603R1ZM" value={newInvoiceData.gstNumber} onChange={e => setNewInvoiceData({ ...newInvoiceData, gstNumber: e.target.value })} />
                 </div>
                 <div>
                   <label className="tax-modal-label">Address</label>
-                  <input type="text" className="tax-modal-input" placeholder="Guest / Company Address" value={newInvoiceData.address} onChange={e => setNewInvoiceData({...newInvoiceData, address: e.target.value})} />
+                  <input type="text" className="tax-modal-input" placeholder="Guest / Company Address" value={newInvoiceData.address} onChange={e => setNewInvoiceData({ ...newInvoiceData, address: e.target.value })} />
                 </div>
               </div>
 
@@ -2562,19 +2594,19 @@ export default function AdminDashboard() {
                     <span>Booking ID</span>
                     <span style={{ fontSize: '0.72rem', color: '#94a3b8', fontWeight: 500 }}>Opt</span>
                   </label>
-                  <input type="text" className="tax-modal-input" value={newInvoiceData.bookingId} onChange={e => setNewInvoiceData({...newInvoiceData, bookingId: e.target.value})} />
+                  <input type="text" className="tax-modal-input" value={newInvoiceData.bookingId} onChange={e => setNewInvoiceData({ ...newInvoiceData, bookingId: e.target.value })} />
                 </div>
                 <div>
                   <label className="tax-modal-label">Place of Supply</label>
-                  <input type="text" className="tax-modal-input" value={newInvoiceData.placeOfSupply} onChange={e => setNewInvoiceData({...newInvoiceData, placeOfSupply: e.target.value})} />
+                  <input type="text" className="tax-modal-input" value={newInvoiceData.placeOfSupply} onChange={e => setNewInvoiceData({ ...newInvoiceData, placeOfSupply: e.target.value })} />
                 </div>
                 <div>
                   <label className="tax-modal-label">Hotel Name</label>
-                  <input type="text" className="tax-modal-input" value={newInvoiceData.hotelName} onChange={e => setNewInvoiceData({...newInvoiceData, hotelName: e.target.value})} placeholder="e.g. Hotel RK Grand" />
+                  <input type="text" className="tax-modal-input" value={newInvoiceData.hotelName} onChange={e => setNewInvoiceData({ ...newInvoiceData, hotelName: e.target.value })} placeholder="e.g. Hotel RK Grand" />
                 </div>
                 <div>
                   <label className="tax-modal-label">Hotel City</label>
-                  <input type="text" className="tax-modal-input" value={newInvoiceData.hotelCity} onChange={e => setNewInvoiceData({...newInvoiceData, hotelCity: e.target.value})} placeholder="e.g. Hyderabad" />
+                  <input type="text" className="tax-modal-input" value={newInvoiceData.hotelCity} onChange={e => setNewInvoiceData({ ...newInvoiceData, hotelCity: e.target.value })} placeholder="e.g. Hyderabad" />
                 </div>
               </div>
 
@@ -2606,15 +2638,15 @@ export default function AdminDashboard() {
                         <span>Nights</span>
                         <span style={{ fontSize: '0.68rem', padding: '1px 5px', borderRadius: 4, background: '#dbeafe', color: '#1d4ed8', fontWeight: 800 }}>Auto</span>
                       </label>
-                      <input required type="number" min="1" className="tax-modal-input" style={{ fontWeight: 700, color: '#1d4ed8', background: '#f8fafc' }} value={newInvoiceData.noOfNights} onChange={e => setNewInvoiceData({...newInvoiceData, noOfNights: e.target.value})} placeholder="1" />
+                      <input required type="number" min="1" className="tax-modal-input" style={{ fontWeight: 700, color: '#1d4ed8', background: '#f8fafc' }} value={newInvoiceData.noOfNights} onChange={e => setNewInvoiceData({ ...newInvoiceData, noOfNights: e.target.value })} placeholder="1" />
                     </div>
                     <div>
                       <label className="tax-modal-label">Rooms</label>
-                      <input required type="number" min="1" className="tax-modal-input" value={newInvoiceData.noOfRooms} onChange={e => setNewInvoiceData({...newInvoiceData, noOfRooms: e.target.value})} />
+                      <input required type="number" min="1" className="tax-modal-input" value={newInvoiceData.noOfRooms} onChange={e => setNewInvoiceData({ ...newInvoiceData, noOfRooms: e.target.value })} />
                     </div>
                     <div>
                       <label className="tax-modal-label">Guests/Rm</label>
-                      <input required type="number" min="1" className="tax-modal-input" value={newInvoiceData.noOfGuests} onChange={e => setNewInvoiceData({...newInvoiceData, noOfGuests: e.target.value})} />
+                      <input required type="number" min="1" className="tax-modal-input" value={newInvoiceData.noOfGuests} onChange={e => setNewInvoiceData({ ...newInvoiceData, noOfGuests: e.target.value })} />
                     </div>
                   </div>
                 </div>
@@ -2628,16 +2660,16 @@ export default function AdminDashboard() {
                 </label>
                 <div style={{ display: 'flex', alignItems: 'stretch', borderRadius: 8, overflow: 'hidden', border: '1px solid #cbd5e1', background: 'white' }}>
                   <span style={{ background: '#f8fafc', color: '#475569', fontWeight: 800, padding: '0 16px', display: 'flex', alignItems: 'center', fontSize: '1.1rem', borderRight: '1px solid #cbd5e1' }}>₹</span>
-                  <input 
-                    required 
-                    type="number" 
-                    step="any" 
+                  <input
+                    required
+                    type="number"
+                    step="any"
                     min="0"
-                    placeholder="0.00" 
-                    className="tax-modal-input" 
-                    style={{ flex: 1, padding: '10px 14px', fontSize: '1.05rem', fontWeight: 700, color: '#0f172a', border: 'none', borderRadius: 0, outline: 'none' }} 
-                    value={newInvoiceData.totalAmount} 
-                    onChange={e => setNewInvoiceData({...newInvoiceData, totalAmount: e.target.value})} 
+                    placeholder="0.00"
+                    className="tax-modal-input"
+                    style={{ flex: 1, padding: '10px 14px', fontSize: '1.05rem', fontWeight: 700, color: '#0f172a', border: 'none', borderRadius: 0, outline: 'none' }}
+                    value={newInvoiceData.totalAmount}
+                    onChange={e => setNewInvoiceData({ ...newInvoiceData, totalAmount: e.target.value })}
                   />
                 </div>
 
@@ -2686,16 +2718,16 @@ export default function AdminDashboard() {
 
               {/* Action Buttons */}
               <div style={{ display: 'flex', gap: 12, marginTop: 10 }}>
-                <button 
-                  type="button" 
-                  onClick={() => setShowCreateInvoice(false)} 
+                <button
+                  type="button"
+                  onClick={() => setShowCreateInvoice(false)}
                   style={{ flex: 1, padding: '12px 16px', background: '#f1f5f9', color: '#475569', border: '1px solid #cbd5e1', borderRadius: 8, fontWeight: 700, cursor: 'pointer', transition: 'all 0.15s ease' }}
                 >
                   Cancel
                 </button>
-                <button 
-                  type="submit" 
-                  disabled={approveLoading === 'invoice'} 
+                <button
+                  type="submit"
+                  disabled={approveLoading === 'invoice'}
                   style={{ flex: 1.5, padding: '12px 16px', background: '#2563eb', color: 'white', border: 'none', borderRadius: 8, fontWeight: 700, cursor: 'pointer', opacity: approveLoading === 'invoice' ? 0.7 : 1, boxShadow: '0 4px 12px rgba(37,99,235,0.25)', transition: 'all 0.15s ease' }}
                 >
                   {approveLoading === 'invoice' ? 'Saving Invoice...' : 'Save & Generate Invoice'}
@@ -2723,7 +2755,7 @@ export default function AdminDashboard() {
         const b2bTotal = Number(b.totalPartnerPrice) > 0
           ? Number(b.totalPartnerPrice)
           : (Number(b.partnerPricePerNight) > 0 ? Number(b.partnerPricePerNight) * nights * rooms : 0) ||
-            Math.round(b2cTotal / (1 + (Number(hotelObj?.marginPercentage) || 15) / 100));
+          Math.round(b2cTotal / (1 + (Number(hotelObj?.marginPercentage) || 15) / 100));
 
         const perNightRate = b2cTotal / (nights * rooms);
         const gstRate = perNightRate >= 7500 ? 18 : 5;
@@ -2763,7 +2795,8 @@ export default function AdminDashboard() {
             }}
             onClick={() => setSelectedBookingAudit(null)}
           >
-            <style dangerouslySetInnerHTML={{__html: `
+            <style dangerouslySetInnerHTML={{
+              __html: `
               @media print {
                 @page {
                   size: A4 portrait;
@@ -3361,7 +3394,8 @@ export default function AdminDashboard() {
       {/* ===== INVOICE MODAL ===== */}
       {selectedInvoiceHotel && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 999, background: 'rgba(15, 23, 42, 0.7)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '40px', overflowY: 'auto' }} onClick={() => setSelectedInvoiceHotel(null)}>
-          <style dangerouslySetInnerHTML={{__html: `
+          <style dangerouslySetInnerHTML={{
+            __html: `
             @media print {
               body * { visibility: hidden; }
               #printable-invoice, #printable-invoice * { visibility: visible; }
@@ -3371,7 +3405,7 @@ export default function AdminDashboard() {
           `}} />
           <div id="printable-invoice" className="invoice-container" style={{ background: 'white', borderRadius: 16, width: '100%', maxWidth: 900, padding: 40, boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)', position: 'relative' }} onClick={e => e.stopPropagation()}>
             <button className="no-print" onClick={() => setSelectedInvoiceHotel(null)} style={{ position: 'absolute', top: 20, right: 20, background: '#f1f5f9', border: 'none', width: 36, height: 36, borderRadius: '50%', cursor: 'pointer', fontSize: '1.2rem', color: '#64748b', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
-            
+
             {/* Invoice Header */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '2px solid #e2e8f0', paddingBottom: 24, marginBottom: 32 }}>
               <div>
@@ -3435,7 +3469,7 @@ export default function AdminDashboard() {
                   {(() => {
                     const hBookings = bookings.filter(b => (b.hotelId?._id === selectedInvoiceHotel._id || b.hotelId === selectedInvoiceHotel._id) && b.paymentStatus === 'paid');
                     if (hBookings.length === 0) return <tr><td colSpan={5} style={{ padding: 24, textAlign: 'center', color: '#64748b' }}>No completed bookings to invoice.</td></tr>;
-                    
+
                     return hBookings.map(b => {
                       const gmv = b.totalPrice || 0;
                       const base = gmv / 1.12;
@@ -3443,7 +3477,7 @@ export default function AdminDashboard() {
                       return (
                         <tr key={b._id} style={{ borderBottom: '1px solid #e2e8f0' }}>
                           <td style={{ padding: '16px', color: '#0f172a', fontWeight: 600 }}>{b.guestName}</td>
-                          <td style={{ padding: '16px', color: '#475569', fontSize: '0.9rem' }}>{new Date(b.checkIn).toLocaleDateString('en-IN', {day:'numeric', month:'short'})} - {new Date(b.checkOut).toLocaleDateString('en-IN', {day:'numeric', month:'short'})}</td>
+                          <td style={{ padding: '16px', color: '#475569', fontSize: '0.9rem' }}>{new Date(b.checkIn).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })} - {new Date(b.checkOut).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}</td>
                           <td style={{ padding: '16px', textAlign: 'right', color: '#0f172a' }}>₹{Math.round(gmv).toLocaleString()}</td>
                           <td style={{ padding: '16px', textAlign: 'right', color: '#0f172a' }}>₹{Math.round(base).toLocaleString()}</td>
                           <td style={{ padding: '16px', textAlign: 'right', color: '#0f172a', fontWeight: 700 }}>₹{Math.round(comm).toLocaleString()}</td>
@@ -3503,7 +3537,7 @@ export default function AdminDashboard() {
         <div style={{ position: 'fixed', inset: 0, zIndex: 999, background: 'rgba(15, 23, 42, 0.7)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }} onClick={() => setEditingHotel(null)}>
           <div style={{ background: 'white', borderRadius: 16, width: '100%', maxWidth: 900, maxHeight: '92vh', overflowY: 'auto', padding: '28px 32px', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)', position: 'relative' }} onClick={e => e.stopPropagation()}>
             <button onClick={() => setEditingHotel(null)} style={{ position: 'absolute', top: 20, right: 20, background: '#f1f5f9', border: 'none', width: 36, height: 36, borderRadius: '50%', cursor: 'pointer', fontSize: '1.2rem', color: '#64748b' }}>✕</button>
-            
+
             {/* Header with badges */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 8 }}>
               <span style={{ background: '#fef3c7', color: '#b45309', padding: '3px 10px', borderRadius: 20, fontSize: '0.78rem', fontWeight: 800, textTransform: 'uppercase' }}>
@@ -3551,7 +3585,7 @@ export default function AdminDashboard() {
                 </div>
               </div>
             )}
-            
+
             <form onSubmit={async (e) => {
               e.preventDefault();
               const fd = new FormData(e.currentTarget);
@@ -3744,13 +3778,13 @@ export default function AdminDashboard() {
         </div>
       )}
 
-      
+
       {/* Extranet Edit Modal */}
       {extranetModal && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex' }}>
           <div style={{ position: 'absolute', inset: 0, background: 'rgba(15, 23, 42, 0.75)', backdropFilter: 'blur(6px)' }} onClick={() => setExtranetModal(null)} />
           <div style={{ position: 'relative', background: '#f8fafc', width: '94%', maxWidth: 1080, margin: 'auto', maxHeight: '92vh', borderRadius: 24, display: 'flex', flexDirection: 'column', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)', overflow: 'hidden' }}>
-            
+
             {/* Modal Header */}
             <div style={{ padding: '18px 24px', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'white', flexWrap: 'wrap', gap: 12 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
@@ -3769,27 +3803,27 @@ export default function AdminDashboard() {
                   <p style={{ color: '#64748b', fontSize: '0.82rem', margin: '2px 0 0' }}>
                     Admin Extranet CRM • Review and manage full property details • {
                       extranetModalTab === 'property' ? 'Tab 1 of 6 — Property Info' :
-                      extranetModalTab === 'location' ? 'Tab 2 of 6 — Location & Transit' :
-                      extranetModalTab === 'amenities' ? 'Tab 3 of 6 — Amenities & Meal Plans' :
-                      extranetModalTab === 'rooms' ? 'Tab 4 of 6 — Rooms & Pricing' :
-                      extranetModalTab === 'photos' ? 'Tab 5 of 6 — Photos & 30-Photo Gallery' :
-                      'Tab 6 of 6 — Policies & Inventory'
+                        extranetModalTab === 'location' ? 'Tab 2 of 6 — Location & Transit' :
+                          extranetModalTab === 'amenities' ? 'Tab 3 of 6 — Amenities & Meal Plans' :
+                            extranetModalTab === 'rooms' ? 'Tab 4 of 6 — Rooms & Pricing' :
+                              extranetModalTab === 'photos' ? 'Tab 5 of 6 — Photos & 30-Photo Gallery' :
+                                'Tab 6 of 6 — Policies & Inventory'
                     }
                   </p>
                 </div>
               </div>
 
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <button 
-                  onClick={() => setExtranetModal(null)} 
-                  style={{ 
-                    background: '#f1f5f9', 
-                    border: 'none', 
-                    width: 36, 
-                    height: 36, 
-                    borderRadius: '50%', 
-                    cursor: 'pointer', 
-                    fontSize: '1.1rem', 
+                <button
+                  onClick={() => setExtranetModal(null)}
+                  style={{
+                    background: '#f1f5f9',
+                    border: 'none',
+                    width: 36,
+                    height: 36,
+                    borderRadius: '50%',
+                    cursor: 'pointer',
+                    fontSize: '1.1rem',
                     color: '#64748b',
                     display: 'flex',
                     alignItems: 'center',
@@ -3859,8 +3893,8 @@ export default function AdminDashboard() {
                 if (finalImgs.length === 0 && roomPhotos.length > 0) {
                   finalImgs = Array.from(new Set(roomPhotos));
                 }
-                const updatedPayload = { 
-                  ...extranetModal, 
+                const updatedPayload = {
+                  ...extranetModal,
                   images: finalImgs,
                   isAdmin: true,
                   isAdminAction: true,
@@ -3871,7 +3905,7 @@ export default function AdminDashboard() {
                 setExtranetModal(null);
                 alert('Property updated successfully! Changes are live on B2C immediately.');
               }} style={{ display: 'flex', flexDirection: 'column', gap: 20, paddingBottom: 60 }}>
-                
+
                 {/* TAB 1: PROPERTY */}
                 {extranetModalTab === 'property' && (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
@@ -3882,11 +3916,11 @@ export default function AdminDashboard() {
                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 14 }}>
                         <div>
                           <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#64748b', marginBottom: 4 }}>Property Name *</label>
-                          <input type="text" value={extranetModal.name || ''} onChange={e => setExtranetModal({...extranetModal, name: e.target.value})} style={{ width: '100%', padding: '9px 12px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '0.9rem' }} required />
+                          <input type="text" value={extranetModal.name || ''} onChange={e => setExtranetModal({ ...extranetModal, name: e.target.value })} style={{ width: '100%', padding: '9px 12px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '0.9rem' }} required />
                         </div>
                         <div>
                           <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#64748b', marginBottom: 4 }}>Property Type</label>
-                          <select value={extranetModal.propertyType || 'Hotel'} onChange={e => setExtranetModal({...extranetModal, propertyType: e.target.value})} style={{ width: '100%', padding: '9px 12px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '0.9rem' }}>
+                          <select value={extranetModal.propertyType || 'Hotel'} onChange={e => setExtranetModal({ ...extranetModal, propertyType: e.target.value })} style={{ width: '100%', padding: '9px 12px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '0.9rem' }}>
                             <option value="Hotel">Hotel</option>
                             <option value="Resort">Resort</option>
                             <option value="Villa">Villa</option>
@@ -3897,7 +3931,7 @@ export default function AdminDashboard() {
                         </div>
                         <div>
                           <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#64748b', marginBottom: 4 }}>Star Rating (1 - 5)</label>
-                          <select value={extranetModal.starRating || 3} onChange={e => setExtranetModal({...extranetModal, starRating: Number(e.target.value)})} style={{ width: '100%', padding: '9px 12px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '0.9rem', fontWeight: 700, color: '#b45309' }}>
+                          <select value={extranetModal.starRating || 3} onChange={e => setExtranetModal({ ...extranetModal, starRating: Number(e.target.value) })} style={{ width: '100%', padding: '9px 12px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '0.9rem', fontWeight: 700, color: '#b45309' }}>
                             <option value={1}>★ 1 Star</option>
                             <option value={2}>★★ 2 Star</option>
                             <option value={3}>★★★ 3 Star</option>
@@ -3907,7 +3941,7 @@ export default function AdminDashboard() {
                         </div>
                         <div>
                           <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#64748b', marginBottom: 4 }}>Category</label>
-                          <select value={extranetModal.category || 'Standard'} onChange={e => setExtranetModal({...extranetModal, category: e.target.value})} style={{ width: '100%', padding: '9px 12px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '0.9rem' }}>
+                          <select value={extranetModal.category || 'Standard'} onChange={e => setExtranetModal({ ...extranetModal, category: e.target.value })} style={{ width: '100%', padding: '9px 12px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '0.9rem' }}>
                             <option value="Budget">Budget</option>
                             <option value="Standard">Standard</option>
                             <option value="Premium">Premium</option>
@@ -3916,15 +3950,15 @@ export default function AdminDashboard() {
                         </div>
                         <div>
                           <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#64748b', marginBottom: 4 }}>Total Rooms</label>
-                          <input type="number" value={extranetModal.totalPropertyRooms || 10} onChange={e => setExtranetModal({...extranetModal, totalPropertyRooms: Number(e.target.value)})} style={{ width: '100%', padding: '9px 12px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '0.9rem' }} />
+                          <input type="number" value={extranetModal.totalPropertyRooms || 10} onChange={e => setExtranetModal({ ...extranetModal, totalPropertyRooms: Number(e.target.value) })} style={{ width: '100%', padding: '9px 12px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '0.9rem' }} />
                         </div>
                         <div>
                           <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#64748b', marginBottom: 4 }}>StayBuddy Allocation</label>
-                          <input type="number" value={extranetModal.staybuddyAllocation || 5} onChange={e => setExtranetModal({...extranetModal, staybuddyAllocation: Number(e.target.value)})} style={{ width: '100%', padding: '9px 12px', borderRadius: 8, border: '1.5px solid #fed7aa', background: '#fff7ed', fontSize: '0.9rem', fontWeight: 700, color: '#c2410c' }} />
+                          <input type="number" value={extranetModal.staybuddyAllocation || 5} onChange={e => setExtranetModal({ ...extranetModal, staybuddyAllocation: Number(e.target.value) })} style={{ width: '100%', padding: '9px 12px', borderRadius: 8, border: '1.5px solid #fed7aa', background: '#fff7ed', fontSize: '0.9rem', fontWeight: 700, color: '#c2410c' }} />
                         </div>
                         <div>
                           <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#64748b', marginBottom: 4 }}>Total Floors</label>
-                          <input type="number" value={extranetModal.totalFloors || 4} onChange={e => setExtranetModal({...extranetModal, totalFloors: Number(e.target.value)})} style={{ width: '100%', padding: '9px 12px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '0.9rem' }} />
+                          <input type="number" value={extranetModal.totalFloors || 4} onChange={e => setExtranetModal({ ...extranetModal, totalFloors: Number(e.target.value) })} style={{ width: '100%', padding: '9px 12px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '0.9rem' }} />
                         </div>
                       </div>
 
@@ -3952,12 +3986,12 @@ export default function AdminDashboard() {
                             <span>{extranetAiLoading ? '⏳ Generating...' : '✨ AI Enhance Description'}</span>
                           </button>
                         </div>
-                        <textarea 
-                          value={extranetModal.description || ''} 
-                          onChange={e => setExtranetModal({...extranetModal, description: e.target.value})} 
-                          rows={4} 
+                        <textarea
+                          value={extranetModal.description || ''}
+                          onChange={e => setExtranetModal({ ...extranetModal, description: e.target.value })}
+                          rows={4}
                           placeholder="Describe the property and its unique highlights..."
-                          style={{ width: '100%', padding: '10px 14px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '0.88rem', lineHeight: 1.5 }} 
+                          style={{ width: '100%', padding: '10px 14px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '0.88rem', lineHeight: 1.5 }}
                         />
                       </div>
                     </div>
@@ -3969,19 +4003,19 @@ export default function AdminDashboard() {
                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 14 }}>
                         <div>
                           <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#64748b', marginBottom: 4 }}>Contact Name</label>
-                          <input type="text" value={extranetModal.contactName || ''} onChange={e => setExtranetModal({...extranetModal, contactName: e.target.value})} placeholder="e.g. Rahul Sharma" style={{ width: '100%', padding: '9px 12px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '0.9rem' }} />
+                          <input type="text" value={extranetModal.contactName || ''} onChange={e => setExtranetModal({ ...extranetModal, contactName: e.target.value })} placeholder="e.g. Rahul Sharma" style={{ width: '100%', padding: '9px 12px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '0.9rem' }} />
                         </div>
                         <div>
                           <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#64748b', marginBottom: 4 }}>Designation</label>
-                          <input type="text" value={extranetModal.contactDesignation || 'General Manager'} onChange={e => setExtranetModal({...extranetModal, contactDesignation: e.target.value})} placeholder="e.g. General Manager" style={{ width: '100%', padding: '9px 12px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '0.9rem' }} />
+                          <input type="text" value={extranetModal.contactDesignation || 'General Manager'} onChange={e => setExtranetModal({ ...extranetModal, contactDesignation: e.target.value })} placeholder="e.g. General Manager" style={{ width: '100%', padding: '9px 12px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '0.9rem' }} />
                         </div>
                         <div>
                           <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#64748b', marginBottom: 4 }}>Contact Phone</label>
-                          <input type="text" value={extranetModal.contactPhone || ''} onChange={e => setExtranetModal({...extranetModal, contactPhone: e.target.value})} placeholder="+91 98765 43210" style={{ width: '100%', padding: '9px 12px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '0.9rem' }} />
+                          <input type="text" value={extranetModal.contactPhone || ''} onChange={e => setExtranetModal({ ...extranetModal, contactPhone: e.target.value })} placeholder="+91 98765 43210" style={{ width: '100%', padding: '9px 12px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '0.9rem' }} />
                         </div>
                         <div>
                           <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#64748b', marginBottom: 4 }}>Partner Email</label>
-                          <input type="email" value={extranetModal.partnerEmail || extranetModal.contactEmail || ''} onChange={e => setExtranetModal({...extranetModal, partnerEmail: e.target.value, contactEmail: e.target.value})} placeholder="partner@hotel.com" style={{ width: '100%', padding: '9px 12px', borderRadius: 8, border: '1.5px solid #bbf7d0', background: '#f0fdf4', fontSize: '0.9rem', fontWeight: 600, color: '#166534' }} />
+                          <input type="email" value={extranetModal.partnerEmail || extranetModal.contactEmail || ''} onChange={e => setExtranetModal({ ...extranetModal, partnerEmail: e.target.value, contactEmail: e.target.value })} placeholder="partner@hotel.com" style={{ width: '100%', padding: '9px 12px', borderRadius: 8, border: '1.5px solid #bbf7d0', background: '#f0fdf4', fontSize: '0.9rem', fontWeight: 600, color: '#166534' }} />
                         </div>
                       </div>
                     </div>
@@ -4020,11 +4054,11 @@ export default function AdminDashboard() {
                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 14 }}>
                         <div>
                           <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#64748b', marginBottom: 4 }}>City *</label>
-                          <input type="text" value={extranetModal.city || ''} onChange={e => setExtranetModal({...extranetModal, city: e.target.value})} placeholder="e.g. Hyderabad" style={{ width: '100%', padding: '9px 12px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '0.9rem' }} required />
+                          <input type="text" value={extranetModal.city || ''} onChange={e => setExtranetModal({ ...extranetModal, city: e.target.value })} placeholder="e.g. Hyderabad" style={{ width: '100%', padding: '9px 12px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '0.9rem' }} required />
                         </div>
                         <div>
                           <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#64748b', marginBottom: 4 }}>Area / Locality</label>
-                          <input type="text" value={extranetModal.area || ''} onChange={e => setExtranetModal({...extranetModal, area: e.target.value})} placeholder="e.g. Shamshabad / Hitec City" style={{ width: '100%', padding: '9px 12px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '0.9rem' }} />
+                          <input type="text" value={extranetModal.area || ''} onChange={e => setExtranetModal({ ...extranetModal, area: e.target.value })} placeholder="e.g. Shamshabad / Hitec City" style={{ width: '100%', padding: '9px 12px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '0.9rem' }} />
                         </div>
                         <div style={{ gridColumn: '1 / -1' }}>
                           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4, flexWrap: 'wrap', gap: 6 }}>
@@ -4039,9 +4073,9 @@ export default function AdminDashboard() {
                             )}
                           </div>
                           <div style={{ position: 'relative' }}>
-                            <input 
-                              type="text" 
-                              value={extranetModal.lat && extranetModal.lng ? `${extranetModal.lat}, ${extranetModal.lng}` : (extranetModal.lat || extranetModal.lng || '')} 
+                            <input
+                              type="text"
+                              value={extranetModal.lat && extranetModal.lng ? `${extranetModal.lat}, ${extranetModal.lng}` : (extranetModal.lat || extranetModal.lng || '')}
                               onChange={e => {
                                 const val = e.target.value;
                                 const parsed = parseCoordinates(val);
@@ -4057,9 +4091,9 @@ export default function AdminDashboard() {
                                     setExtranetModal((p: any) => ({ ...p, lat: '', lng: '' }));
                                   }
                                 }
-                              }} 
-                              placeholder="e.g. 17.385044, 78.486671 (Paste from Google Maps)" 
-                              style={{ width: '100%', padding: '9px 12px', paddingRight: '75px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '0.9rem', fontFamily: 'monospace', fontWeight: 600 }} 
+                              }}
+                              placeholder="e.g. 17.385044, 78.486671 (Paste from Google Maps)"
+                              style={{ width: '100%', padding: '9px 12px', paddingRight: '75px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '0.9rem', fontFamily: 'monospace', fontWeight: 600 }}
                             />
                             <button
                               type="button"
@@ -4072,7 +4106,7 @@ export default function AdminDashboard() {
                                       if (parsed) setExtranetModal((p: any) => ({ ...p, lat: parsed.lat, lng: parsed.lng }));
                                     }
                                   }
-                                } catch (e) {}
+                                } catch (e) { }
                               }}
                               style={{ position: 'absolute', right: 6, top: '50%', transform: 'translateY(-50%)', background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: 4, padding: '3px 8px', fontSize: '0.72rem', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}
                             >
@@ -4083,11 +4117,11 @@ export default function AdminDashboard() {
                         </div>
                         <div style={{ gridColumn: '1 / -1' }}>
                           <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#64748b', marginBottom: 4 }}>Full Property Address</label>
-                          <input type="text" value={extranetModal.address || ''} onChange={e => setExtranetModal({...extranetModal, address: e.target.value})} placeholder="Plot 12, Main Road..." style={{ width: '100%', padding: '9px 12px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '0.9rem' }} />
+                          <input type="text" value={extranetModal.address || ''} onChange={e => setExtranetModal({ ...extranetModal, address: e.target.value })} placeholder="Plot 12, Main Road..." style={{ width: '100%', padding: '9px 12px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '0.9rem' }} />
                         </div>
                         <div style={{ gridColumn: '1 / -1' }}>
                           <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#64748b', marginBottom: 4 }}>Search String / Landmark Display</label>
-                          <input type="text" value={extranetModal.location || ''} onChange={e => setExtranetModal({...extranetModal, location: e.target.value})} placeholder="Near Rajiv Gandhi Airport, Hyderabad" style={{ width: '100%', padding: '9px 12px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '0.9rem' }} />
+                          <input type="text" value={extranetModal.location || ''} onChange={e => setExtranetModal({ ...extranetModal, location: e.target.value })} placeholder="Near Rajiv Gandhi Airport, Hyderabad" style={{ width: '100%', padding: '9px 12px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '0.9rem' }} />
                         </div>
                       </div>
                     </div>
@@ -4103,29 +4137,29 @@ export default function AdminDashboard() {
                       </h3>
                       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                         {[
-                          'Free WiFi', 'AC', '24-hour Front Desk', 'Restaurant', 'Swimming Pool', 
-                          'Parking', 'Elevator', 'Power Backup', 'Gym', 'Spa', 'Bar', 
-                          'Room Service', 'CCTV Security', 'Banquet Hall', 'Pet Friendly', 
+                          'Free WiFi', 'AC', '24-hour Front Desk', 'Restaurant', 'Swimming Pool',
+                          'Parking', 'Elevator', 'Power Backup', 'Gym', 'Spa', 'Bar',
+                          'Room Service', 'CCTV Security', 'Banquet Hall', 'Pet Friendly',
                           'Daily Housekeeping', 'Conference Room'
                         ].map(am => {
                           const has = (extranetModal.amenities || []).includes(am);
                           return (
-                            <div 
-                              key={am} 
+                            <div
+                              key={am}
                               onClick={() => {
-                                const newAm = has 
-                                  ? extranetModal.amenities.filter((a: string) => a !== am) 
+                                const newAm = has
+                                  ? extranetModal.amenities.filter((a: string) => a !== am)
                                   : [...(extranetModal.amenities || []), am];
-                                setExtranetModal({...extranetModal, amenities: newAm});
-                              }} 
-                              style={{ 
-                                padding: '8px 14px', 
-                                borderRadius: 10, 
-                                border: `1.5px solid ${has ? '#2563eb' : '#cbd5e1'}`, 
-                                background: has ? '#eff6ff' : 'white', 
-                                color: has ? '#1d4ed8' : '#64748b', 
-                                cursor: 'pointer', 
-                                fontSize: '0.84rem', 
+                                setExtranetModal({ ...extranetModal, amenities: newAm });
+                              }}
+                              style={{
+                                padding: '8px 14px',
+                                borderRadius: 10,
+                                border: `1.5px solid ${has ? '#2563eb' : '#cbd5e1'}`,
+                                background: has ? '#eff6ff' : 'white',
+                                color: has ? '#1d4ed8' : '#64748b',
+                                cursor: 'pointer',
+                                fontSize: '0.84rem',
                                 fontWeight: has ? 700 : 500,
                                 display: 'inline-flex',
                                 alignItems: 'center',
@@ -4147,11 +4181,11 @@ export default function AdminDashboard() {
                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 14 }}>
                         <div>
                           <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#64748b', marginBottom: 4 }}>Standard Check-in Time</label>
-                          <input type="text" value={extranetModal.checkInTime || '12:00 PM'} onChange={e => setExtranetModal({...extranetModal, checkInTime: e.target.value})} style={{ width: '100%', padding: '9px 12px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '0.9rem' }} />
+                          <input type="text" value={extranetModal.checkInTime || '12:00 PM'} onChange={e => setExtranetModal({ ...extranetModal, checkInTime: e.target.value })} style={{ width: '100%', padding: '9px 12px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '0.9rem' }} />
                         </div>
                         <div>
                           <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#64748b', marginBottom: 4 }}>Standard Check-out Time</label>
-                          <input type="text" value={extranetModal.checkOutTime || '11:00 AM'} onChange={e => setExtranetModal({...extranetModal, checkOutTime: e.target.value})} style={{ width: '100%', padding: '9px 12px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '0.9rem' }} />
+                          <input type="text" value={extranetModal.checkOutTime || '11:00 AM'} onChange={e => setExtranetModal({ ...extranetModal, checkOutTime: e.target.value })} style={{ width: '100%', padding: '9px 12px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '0.9rem' }} />
                         </div>
                       </div>
                     </div>
@@ -4166,26 +4200,26 @@ export default function AdminDashboard() {
                         <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>Room Types & Pricing</h3>
                         <p style={{ margin: '2px 0 0', fontSize: '0.8rem', color: '#64748b' }}>Configure single, double, triple pricing and room-specific photos for each room type.</p>
                       </div>
-                      <button 
-                        type="button" 
+                      <button
+                        type="button"
                         onClick={() => {
-                          const newRoom = { 
-                            id: 'new_' + Date.now().toString(), 
-                            type: 'Deluxe Room', 
-                            priceSingle: 1500, 
-                            priceDouble: 2000, 
-                            priceTriple: 0, 
-                            b2bPrice: 1200, 
-                            maxGuests: 2, 
-                            totalRooms: 10, 
-                            staybuddyAllocation: 5, 
+                          const newRoom = {
+                            id: 'new_' + Date.now().toString(),
+                            type: 'Deluxe Room',
+                            priceSingle: 1500,
+                            priceDouble: 2000,
+                            priceTriple: 0,
+                            b2bPrice: 1200,
+                            maxGuests: 2,
+                            totalRooms: 10,
+                            staybuddyAllocation: 5,
                             ratePlan: 'EP',
                             amenities: ['AC', 'Free WiFi', 'Room Service'],
                             description: 'Spacious modern room with premium bedding and amenities.',
                             images: []
                           };
-                          setExtranetModal({...extranetModal, rooms: [...(extranetModal.rooms || []), newRoom]});
-                        }} 
+                          setExtranetModal({ ...extranetModal, rooms: [...(extranetModal.rooms || []), newRoom] });
+                        }}
                         style={{ background: 'var(--brand-500, #f97316)', color: 'white', border: 'none', padding: '8px 16px', borderRadius: 8, cursor: 'pointer', fontWeight: 700, fontSize: '0.82rem', display: 'flex', alignItems: 'center', gap: 6 }}
                       >
                         + Add Another Room Type
@@ -4200,26 +4234,26 @@ export default function AdminDashboard() {
                               <span style={{ background: '#f97316', color: 'white', fontSize: '0.75rem', fontWeight: 800, padding: '2px 8px', borderRadius: 6 }}>
                                 Room {rIdx + 1}
                               </span>
-                              <input 
-                                type="text" 
-                                value={room.type || 'Standard Room'} 
+                              <input
+                                type="text"
+                                value={room.type || 'Standard Room'}
                                 onChange={e => {
                                   const updatedRooms = [...extranetModal.rooms];
                                   updatedRooms[rIdx].type = e.target.value;
-                                  setExtranetModal({...extranetModal, rooms: updatedRooms});
-                                }} 
-                                style={{ fontSize: '1rem', fontWeight: 800, color: '#0f172a', border: 'none', borderBottom: '1.5px dashed #cbd5e1', padding: '2px 6px', background: 'transparent' }} 
+                                  setExtranetModal({ ...extranetModal, rooms: updatedRooms });
+                                }}
+                                style={{ fontSize: '1rem', fontWeight: 800, color: '#0f172a', border: 'none', borderBottom: '1.5px dashed #cbd5e1', padding: '2px 6px', background: 'transparent' }}
                               />
                             </div>
-                            <button 
-                              type="button" 
+                            <button
+                              type="button"
                               onClick={() => {
                                 const roomToDelete = extranetModal.rooms[rIdx];
                                 if (confirm(`Are you sure you want to permanently remove "${roomToDelete.type || 'this room'}"? It will be deleted immediately upon clicking Save Changes.`)) {
                                   const updatedRooms = extranetModal.rooms.filter((_: any, idx: number) => idx !== rIdx);
-                                  setExtranetModal({...extranetModal, rooms: updatedRooms});
+                                  setExtranetModal({ ...extranetModal, rooms: updatedRooms });
                                 }
-                              }} 
+                              }}
                               style={{ color: '#ef4444', background: '#fee2e2', border: 'none', borderRadius: 6, padding: '4px 10px', cursor: 'pointer', fontSize: '0.78rem', fontWeight: 700 }}
                             >
                               ✕ Remove Room
@@ -4229,10 +4263,10 @@ export default function AdminDashboard() {
                           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(135px, 1fr))', gap: 12, marginBottom: 14 }}>
                             <div>
                               <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 800, color: '#c2410c', marginBottom: 4 }}>Single Price (₹) *</label>
-                              <input 
-                                type="number" 
-                                placeholder="e.g. 1500" 
-                                value={room.b2bPriceSingle !== undefined && room.b2bPriceSingle !== null && Number(room.b2bPriceSingle) > 0 ? room.b2bPriceSingle : (room.priceSingle || '')} 
+                              <input
+                                type="number"
+                                placeholder="e.g. 1500"
+                                value={room.b2bPriceSingle !== undefined && room.b2bPriceSingle !== null && Number(room.b2bPriceSingle) > 0 ? room.b2bPriceSingle : (room.priceSingle || '')}
                                 onChange={e => {
                                   const updatedRooms = [...extranetModal.rooms];
                                   const valSgl = Number(e.target.value) || 0;
@@ -4244,18 +4278,18 @@ export default function AdminDashboard() {
                                     updatedRooms[rIdx].b2bPriceDouble = valSgl;
                                     updatedRooms[rIdx].priceDouble = valSgl > 0 ? Math.round(valSgl * (1 + margin / 100)) : 0;
                                   }
-                                  setExtranetModal({...extranetModal, rooms: updatedRooms});
-                                }} 
-                                style={{ width: '100%', padding: '9px 12px', borderRadius: 8, border: '1.5px solid #fed7aa', background: '#fff7ed', fontSize: '0.9rem', fontWeight: 700 }} 
-                                required 
+                                  setExtranetModal({ ...extranetModal, rooms: updatedRooms });
+                                }}
+                                style={{ width: '100%', padding: '9px 12px', borderRadius: 8, border: '1.5px solid #fed7aa', background: '#fff7ed', fontSize: '0.9rem', fontWeight: 700 }}
+                                required
                               />
                             </div>
                             <div>
                               <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 800, color: '#15803d', marginBottom: 4 }}>Double Price (₹) *</label>
-                              <input 
-                                type="number" 
-                                placeholder="e.g. 2000" 
-                                value={room.b2bPriceDouble !== undefined && room.b2bPriceDouble !== null && Number(room.b2bPriceDouble) > 0 ? room.b2bPriceDouble : (room.priceDouble || '')} 
+                              <input
+                                type="number"
+                                placeholder="e.g. 2000"
+                                value={room.b2bPriceDouble !== undefined && room.b2bPriceDouble !== null && Number(room.b2bPriceDouble) > 0 ? room.b2bPriceDouble : (room.priceDouble || '')}
                                 onChange={e => {
                                   const updatedRooms = [...extranetModal.rooms];
                                   const valDbl = Number(e.target.value) || 0;
@@ -4265,18 +4299,18 @@ export default function AdminDashboard() {
                                   updatedRooms[rIdx].b2bPrice = valDbl || updatedRooms[rIdx].b2bPriceSingle || 0;
                                   const numTrp = Number(updatedRooms[rIdx].b2bPriceTriple) || Number(updatedRooms[rIdx].priceTriple) || 0;
                                   updatedRooms[rIdx].maxGuests = numTrp > 0 ? 3 : (valDbl > 0 ? 2 : 1);
-                                  setExtranetModal({...extranetModal, rooms: updatedRooms});
-                                }} 
-                                style={{ width: '100%', padding: '9px 12px', borderRadius: 8, border: '1.5px solid #bbf7d0', background: '#f0fdf4', fontSize: '0.9rem', fontWeight: 700 }} 
-                                required 
+                                  setExtranetModal({ ...extranetModal, rooms: updatedRooms });
+                                }}
+                                style={{ width: '100%', padding: '9px 12px', borderRadius: 8, border: '1.5px solid #bbf7d0', background: '#f0fdf4', fontSize: '0.9rem', fontWeight: 700 }}
+                                required
                               />
                             </div>
                             <div>
                               <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#1e40af', marginBottom: 4 }}>Triple (3 Guests)</label>
-                              <input 
-                                type="number" 
-                                placeholder={(room.b2bPriceTriple || room.priceTriple) ? "e.g. 2500" : "+ Add 3-Occupancy"} 
-                                value={room.b2bPriceTriple !== undefined && room.b2bPriceTriple !== null && Number(room.b2bPriceTriple) > 0 ? room.b2bPriceTriple : (room.priceTriple || '')} 
+                              <input
+                                type="number"
+                                placeholder={(room.b2bPriceTriple || room.priceTriple) ? "e.g. 2500" : "+ Add 3-Occupancy"}
+                                value={room.b2bPriceTriple !== undefined && room.b2bPriceTriple !== null && Number(room.b2bPriceTriple) > 0 ? room.b2bPriceTriple : (room.priceTriple || '')}
                                 onChange={e => {
                                   const updatedRooms = [...extranetModal.rooms];
                                   const numTrp = Number(e.target.value) || 0;
@@ -4285,9 +4319,9 @@ export default function AdminDashboard() {
                                   updatedRooms[rIdx].priceTriple = numTrp > 0 ? Math.round(numTrp * (1 + margin / 100)) : 0;
                                   const valDbl = Number(updatedRooms[rIdx].b2bPriceDouble) || Number(updatedRooms[rIdx].priceDouble) || 0;
                                   updatedRooms[rIdx].maxGuests = numTrp > 0 ? 3 : (valDbl > 0 ? 2 : 1);
-                                  setExtranetModal({...extranetModal, rooms: updatedRooms});
-                                }} 
-                                style={{ width: '100%', padding: '9px 12px', borderRadius: 8, border: (room.b2bPriceTriple || room.priceTriple) ? '1.5px solid #bfdbfe' : '1.5px dashed #fdba74', background: (room.b2bPriceTriple || room.priceTriple) ? '#eff6ff' : 'white', fontSize: '0.9rem', fontWeight: 700, color: '#1e40af' }} 
+                                  setExtranetModal({ ...extranetModal, rooms: updatedRooms });
+                                }}
+                                style={{ width: '100%', padding: '9px 12px', borderRadius: 8, border: (room.b2bPriceTriple || room.priceTriple) ? '1.5px solid #bfdbfe' : '1.5px dashed #fdba74', background: (room.b2bPriceTriple || room.priceTriple) ? '#eff6ff' : 'white', fontSize: '0.9rem', fontWeight: 700, color: '#1e40af' }}
                               />
                             </div>
                             <div>
@@ -4332,13 +4366,13 @@ export default function AdminDashboard() {
                                   );
                                 })}
                               </div>
-                              <select 
-                                value={room.ratePlan || 'EP'} 
+                              <select
+                                value={room.ratePlan || 'EP'}
                                 onChange={e => {
                                   const updatedRooms = [...extranetModal.rooms];
                                   updatedRooms[rIdx].ratePlan = e.target.value;
-                                  setExtranetModal({...extranetModal, rooms: updatedRooms});
-                                }} 
+                                  setExtranetModal({ ...extranetModal, rooms: updatedRooms });
+                                }}
                                 style={{ width: '100%', padding: '7px 10px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '0.84rem', fontWeight: 600, color: '#334155' }}
                               >
                                 <option value="EP">EP (Room Only - No Breakfast)</option>
@@ -4369,34 +4403,34 @@ export default function AdminDashboard() {
                                 const roomAms = Array.isArray(room.amenities) ? room.amenities : ['AC', 'Free WiFi'];
                                 const hasAm = roomAms.includes(am);
                                 return (
-                                  <label 
-                                    key={am} 
-                                    style={{ 
-                                      display: 'inline-flex', 
-                                      alignItems: 'center', 
-                                      gap: 6, 
-                                      padding: '6px 12px', 
-                                      borderRadius: 8, 
-                                      border: `1px solid ${hasAm ? '#f97316' : '#cbd5e1'}`, 
-                                      background: hasAm ? '#fff7ed' : '#ffffff', 
-                                      color: hasAm ? '#ea580c' : '#64748b', 
-                                      fontSize: '0.8rem', 
+                                  <label
+                                    key={am}
+                                    style={{
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      gap: 6,
+                                      padding: '6px 12px',
+                                      borderRadius: 8,
+                                      border: `1px solid ${hasAm ? '#f97316' : '#cbd5e1'}`,
+                                      background: hasAm ? '#fff7ed' : '#ffffff',
+                                      color: hasAm ? '#ea580c' : '#64748b',
+                                      fontSize: '0.8rem',
                                       fontWeight: hasAm ? 700 : 500,
-                                      cursor: 'pointer' 
+                                      cursor: 'pointer'
                                     }}
                                   >
-                                    <input 
-                                      type="checkbox" 
-                                      checked={hasAm} 
+                                    <input
+                                      type="checkbox"
+                                      checked={hasAm}
                                       onChange={e => {
                                         const updatedRooms = [...extranetModal.rooms];
-                                        const newAms = e.target.checked 
-                                          ? [...roomAms, am] 
+                                        const newAms = e.target.checked
+                                          ? [...roomAms, am]
                                           : roomAms.filter((a: string) => a !== am);
                                         updatedRooms[rIdx].amenities = newAms;
-                                        setExtranetModal({...extranetModal, rooms: updatedRooms});
-                                      }} 
-                                      style={{ accentColor: '#f97316' }} 
+                                        setExtranetModal({ ...extranetModal, rooms: updatedRooms });
+                                      }}
+                                      style={{ accentColor: '#f97316' }}
                                     />
                                     <span>{am}</span>
                                   </label>
@@ -4410,16 +4444,16 @@ export default function AdminDashboard() {
                               <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 800, color: '#475569', marginBottom: 6 }}>
                                 Room Description
                               </label>
-                              <textarea 
-                                value={room.description || ''} 
+                              <textarea
+                                value={room.description || ''}
                                 onChange={e => {
                                   const updatedRooms = [...extranetModal.rooms];
                                   updatedRooms[rIdx].description = e.target.value;
-                                  setExtranetModal({...extranetModal, rooms: updatedRooms});
-                                }} 
-                                rows={3} 
-                                placeholder="Spacious room with a king bed and ocean views..." 
-                                style={{ width: '100%', padding: '9px 12px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '0.85rem' }} 
+                                  setExtranetModal({ ...extranetModal, rooms: updatedRooms });
+                                }}
+                                rows={3}
+                                placeholder="Spacious room with a king bed and ocean views..."
+                                style={{ width: '100%', padding: '9px 12px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '0.85rem' }}
                               />
                             </div>
 
@@ -4738,9 +4772,9 @@ export default function AdminDashboard() {
                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 14 }}>
                         <div>
                           <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#64748b', marginBottom: 4 }}>Cancellation Policy</label>
-                          <select 
-                            value={extranetModal.cancellationPolicy || 'free_24h'} 
-                            onChange={e => setExtranetModal({...extranetModal, cancellationPolicy: e.target.value})} 
+                          <select
+                            value={extranetModal.cancellationPolicy || 'free_24h'}
+                            onChange={e => setExtranetModal({ ...extranetModal, cancellationPolicy: e.target.value })}
                             style={{ width: '100%', padding: '9px 12px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '0.9rem' }}
                           >
                             <option value="free_24h">Free Cancellation before 24 hours</option>
@@ -4750,9 +4784,9 @@ export default function AdminDashboard() {
                         </div>
                         <div>
                           <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#64748b', marginBottom: 4 }}>Couple Friendly</label>
-                          <select 
-                            value={extranetModal.coupleFriendly !== false ? 'yes' : 'no'} 
-                            onChange={e => setExtranetModal({...extranetModal, coupleFriendly: e.target.value === 'yes'})} 
+                          <select
+                            value={extranetModal.coupleFriendly !== false ? 'yes' : 'no'}
+                            onChange={e => setExtranetModal({ ...extranetModal, coupleFriendly: e.target.value === 'yes' })}
                             style={{ width: '100%', padding: '9px 12px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '0.9rem' }}
                           >
                             <option value="yes">Yes (Couples & Unmarried Couples Welcome)</option>
@@ -4761,9 +4795,9 @@ export default function AdminDashboard() {
                         </div>
                         <div>
                           <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#64748b', marginBottom: 4 }}>Local IDs Accepted</label>
-                          <select 
-                            value={extranetModal.localIdsAccepted !== false ? 'yes' : 'no'} 
-                            onChange={e => setExtranetModal({...extranetModal, localIdsAccepted: e.target.value === 'yes'})} 
+                          <select
+                            value={extranetModal.localIdsAccepted !== false ? 'yes' : 'no'}
+                            onChange={e => setExtranetModal({ ...extranetModal, localIdsAccepted: e.target.value === 'yes' })}
                             style={{ width: '100%', padding: '9px 12px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '0.9rem' }}
                           >
                             <option value="yes">Yes (Local City IDs Allowed)</option>
@@ -4772,9 +4806,9 @@ export default function AdminDashboard() {
                         </div>
                         <div>
                           <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#64748b', marginBottom: 4 }}>Pets Policy</label>
-                          <select 
-                            value={extranetModal.petsAllowed ? 'yes' : 'no'} 
-                            onChange={e => setExtranetModal({...extranetModal, petsAllowed: e.target.value === 'yes'})} 
+                          <select
+                            value={extranetModal.petsAllowed ? 'yes' : 'no'}
+                            onChange={e => setExtranetModal({ ...extranetModal, petsAllowed: e.target.value === 'yes' })}
                             style={{ width: '100%', padding: '9px 12px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '0.9rem' }}
                           >
                             <option value="no">Pets Not Allowed</option>
@@ -4788,15 +4822,15 @@ export default function AdminDashboard() {
 
                 {/* Sticky Footer */}
                 <div style={{ position: 'sticky', bottom: 0, background: '#f8fafc', padding: '16px 0', borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-                  <button 
-                    type="button" 
+                  <button
+                    type="button"
                     onClick={() => {
                       if (confirm(`Permanently delete ${extranetModal.name}?`)) {
                         deleteHotel(extranetModal._id);
                         setExtranetModal(null);
                       }
-                    }} 
-                    className="btn" 
+                    }}
+                    className="btn"
                     style={{ background: '#fff1f2', color: '#e11d48', border: '1px solid #fecdd3', fontWeight: 700, fontSize: '0.82rem', padding: '8px 14px' }}
                   >
                     🗑️ Delete Property
@@ -4804,14 +4838,14 @@ export default function AdminDashboard() {
 
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                     {extranetModalTab !== 'property' && (
-                      <button 
-                        type="button" 
+                      <button
+                        type="button"
                         onClick={() => {
                           const tabOrder = ['property', 'location', 'amenities', 'rooms', 'photos', 'policies'];
                           const currIdx = tabOrder.indexOf(extranetModalTab);
                           if (currIdx > 0) setExtranetModalTab(tabOrder[currIdx - 1] as any);
-                        }} 
-                        className="btn btn-outline" 
+                        }}
+                        className="btn btn-outline"
                         style={{ background: 'white', fontSize: '0.82rem', padding: '8px 14px' }}
                       >
                         ← Prev Tab
@@ -4819,14 +4853,14 @@ export default function AdminDashboard() {
                     )}
 
                     {extranetModalTab !== 'policies' && (
-                      <button 
-                        type="button" 
+                      <button
+                        type="button"
                         onClick={() => {
                           const tabOrder = ['property', 'location', 'amenities', 'rooms', 'photos', 'policies'];
                           const currIdx = tabOrder.indexOf(extranetModalTab);
                           if (currIdx < tabOrder.length - 1) setExtranetModalTab(tabOrder[currIdx + 1] as any);
-                        }} 
-                        className="btn" 
+                        }}
+                        className="btn"
                         style={{ background: '#f1f5f9', color: '#334155', border: '1px solid #cbd5e1', fontWeight: 700, fontSize: '0.82rem', padding: '8px 14px' }}
                       >
                         Next Tab →
