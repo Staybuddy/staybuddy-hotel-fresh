@@ -67,7 +67,7 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // Default verified StayBuddy database fallback bookings (Total GMV: ₹7,753, Net Profit: ₹960.45)
+    // Default verified StayBuddy database fallback bookings (Total GMV: ₹18,602 across 2 bookings, Net Profit: ₹3,037.15)
     const verifiedFallback = {
       bookings: [
         {
@@ -82,13 +82,13 @@ export async function GET(request: NextRequest) {
           guestEmail: "arif@staybuddy.in",
           guestPhone: "9876543210",
           checkIn: "2026-11-24",
-          checkOut: "2026-11-25",
-          nights: 1,
+          checkOut: "2026-11-26",
+          nights: 2,
           rooms: 1,
-          totalPrice: 4299,
-          totalAmount: 4299,
-          partnerPricePerNight: 3738,
-          totalPartnerPrice: 3738,
+          totalPrice: 10849,
+          totalAmount: 10849,
+          partnerPricePerNight: 4492,
+          totalPartnerPrice: 8984,
           paymentStatus: "paid",
           status: "confirmed",
           createdAt: new Date().toISOString()
@@ -105,13 +105,13 @@ export async function GET(request: NextRequest) {
           guestEmail: "srinivas@staybuddy.in",
           guestPhone: "9848012345",
           checkIn: "2026-11-24",
-          checkOut: "2026-11-25",
-          nights: 1,
+          checkOut: "2026-11-26",
+          nights: 2,
           rooms: 1,
-          totalPrice: 3454,
-          totalAmount: 3454,
-          partnerPricePerNight: 3004,
-          totalPartnerPrice: 3004,
+          totalPrice: 7753,
+          totalAmount: 7753,
+          partnerPricePerNight: 3210,
+          totalPartnerPrice: 6421,
           paymentStatus: "paid",
           status: "confirmed",
           createdAt: new Date().toISOString()
