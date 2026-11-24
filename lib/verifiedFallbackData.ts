@@ -1,5 +1,5 @@
 // Single Source of Truth for verified StayBuddy data fallback
-// Total Properties: 19 | Total Bookings: 2 | GMV: ₹7,753 | StayBuddy Net Profit: ₹960.45
+// Total Properties: 19 | Total Bookings: 2 | GMV: ₹18,602 (SB-006: ₹9,979 + Minerva: ₹8,623)
 
 export const VERIFIED_HOTELS = [
   {
@@ -313,13 +313,45 @@ export const VERIFIED_HOTELS = [
 
 export const VERIFIED_BOOKINGS = [
   {
-    "_id": "bk_minerva_101",
-    "bookingId": "SB-83921",
-    "guestName": "Arif Shaik",
-    "guestEmail": "arif@staybuddy.in",
-    "guestPhone": "9876543210",
+    "_id": "bk_kosala_sb006",
+    "bookingId": "SB-006",
+    "hotelId": {
+      "_id": "AIhu5Jqm1NeMpFnu7bus",
+      "hotelId": "SBHO-017",
+      "name": "GM Hotel Kosala",
+      "city": "Vijayawada"
+    },
+    "roomId": {
+      "_id": "rm_kosala_deluxe",
+      "type": "Deluxe Room"
+    },
+    "guestName": "jigesh shah",
+    "guestEmail": "jigeshshah333@gmail.com",
+    "guestPhone": "9821242333",
+    "roomSummary": "1 × Deluxe Room",
+    "roomType": "Deluxe Room",
+    "checkIn": "2026-11-24",
+    "checkOut": "2026-11-26",
+    "nights": 2,
+    "rooms": 1,
+    "guests": 2,
+    "totalPrice": 9979,
+    "totalAmount": 9979,
+    "partnerPricePerNight": 4338,
+    "totalPartnerPrice": 8677,
+    "razorpayPaymentId": "pay_U3uWVBQunbzyKW",
+    "razorpayOrderId": "order_U3uMhLL5qJsfXB",
+    "paymentMethod": "RAZORPAY",
+    "status": "confirmed",
+    "paymentStatus": "paid",
+    "createdAt": "2026-11-24T11:48:13.000Z"
+  },
+  {
+    "_id": "bk_minerva_sb005",
+    "bookingId": "SB-005",
     "hotelId": {
       "_id": "C4qQgdQkykNRM70gW1L7",
+      "hotelId": "SBHO-001",
       "name": "Hotel Minerva Grand",
       "city": "Vijayawada"
     },
@@ -327,53 +359,35 @@ export const VERIFIED_BOOKINGS = [
       "_id": "rm_minerva_deluxe",
       "type": "Deluxe Room"
     },
-    "checkIn": "2026-12-04",
-    "checkOut": "2026-12-06",
+    "guestName": "Arif Shaik",
+    "guestEmail": "arif@staybuddy.in",
+    "guestPhone": "9876543210",
+    "roomSummary": "1 × Deluxe Room",
+    "roomType": "Deluxe Room",
+    "checkIn": "2026-11-24",
+    "checkOut": "2026-11-26",
     "nights": 2,
     "rooms": 1,
     "guests": 2,
-    "totalPrice": 5554,
-    "totalPartnerPrice": 4830,
+    "totalPrice": 8623,
+    "totalAmount": 8623,
+    "partnerPricePerNight": 3749,
+    "totalPartnerPrice": 7498,
+    "paymentMethod": "RAZORPAY",
     "status": "confirmed",
     "paymentStatus": "paid",
-    "createdAt": "2026-11-24T20:17:10.871Z"
-  },
-  {
-    "_id": "bk_kosala_102",
-    "bookingId": "SB-83922",
-    "guestName": "Vijay Kumar",
-    "guestEmail": "vijay@gmail.com",
-    "guestPhone": "9123456789",
-    "hotelId": {
-      "_id": "AIhu5Jqm1NeMpFnu7bus",
-      "name": "GM Hotel Kosala",
-      "city": "Vijayawada"
-    },
-    "roomId": {
-      "_id": "rm_kosala_std",
-      "type": "Executive Room"
-    },
-    "checkIn": "2026-12-10",
-    "checkOut": "2026-12-11",
-    "nights": 1,
-    "rooms": 1,
-    "guests": 1,
-    "totalPrice": 2199,
-    "totalPartnerPrice": 1912,
-    "status": "confirmed",
-    "paymentStatus": "paid",
-    "createdAt": "2026-11-24T20:17:10.876Z"
+    "createdAt": "2026-11-24T10:30:00.000Z"
   }
 ];
 
 export const VERIFIED_STATS = {
   totalHotels: 19,
   totalBookings: 2,
-  totalRevenue: 7753,
-  totalB2bCost: 6742,
-  grossProfit: 1011,
-  totalGst: 50.55,
-  totalProfit: 960.45,
+  totalRevenue: 18602,
+  totalB2bCost: 16175,
+  grossProfit: 2427,
+  totalGst: 121.35,
+  totalProfit: 2305.65,
   gstRate: 5,
   referrals: 0
 };

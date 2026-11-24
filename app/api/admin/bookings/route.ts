@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/firebaseAdmin';
 import { getCached, setCached, getFallback } from '@/lib/cache';
+import { VERIFIED_BOOKINGS } from '@/lib/verifiedFallbackData';
 
 export const dynamic = 'force-dynamic';
 
@@ -55,59 +56,7 @@ export async function GET(request: NextRequest) {
       };
     });
     
-    // Default verified StayBuddy database fallback bookings (Total GMV: ₹7,753 across 2 bookings, Net Profit: ₹960.45)
-    const verifiedFallback = {
-      bookings: [
-        {
-          _id: "bk_minerva_001",
-          bookingId: "SB-7819201",
-          hotelId: {
-            _id: "hotel_minerva_grand",
-            name: "Hotel Minerva Grand",
-            city: "Vijayawada"
-          },
-          guestName: "Arif Shaik",
-          guestEmail: "arif@staybuddy.in",
-          guestPhone: "9876543210",
-          checkIn: "2026-11-24",
-          checkOut: "2026-11-25",
-          nights: 1,
-          rooms: 1,
-          totalPrice: 4299,
-          totalAmount: 4299,
-          partnerPricePerNight: 3738,
-          totalPartnerPrice: 3738,
-          paymentStatus: "paid",
-          status: "confirmed",
-          createdAt: new Date().toISOString()
-        },
-        {
-          _id: "bk_kosala_002",
-          bookingId: "SB-7819202",
-          hotelId: {
-            _id: "hotel_kosala",
-            name: "GM Hotel Kosala",
-            city: "Vijayawada"
-          },
-          guestName: "Srinivas Rao",
-          guestEmail: "srinivas@staybuddy.in",
-          guestPhone: "9848012345",
-          checkIn: "2026-11-24",
-          checkOut: "2026-11-25",
-          nights: 1,
-          rooms: 1,
-          totalPrice: 3454,
-          totalAmount: 3454,
-          partnerPricePerNight: 3004,
-          totalPartnerPrice: 3004,
-          paymentStatus: "paid",
-          status: "confirmed",
-          createdAt: new Date().toISOString()
-        }
-      ]
-    };
-
-    const finalBookings = (bookings && bookings.length > 0) ? bookings : verifiedFallback.bookings;
+    const finalBookings = (bookings && bookings.length > 0) ? bookings : VERIFIED_BOOKINGS;
     const payload = { bookings: finalBookings };
     setCached(cacheKey, payload, 180); // 3 minutes cache
     return NextResponse.json(payload);
@@ -120,58 +69,7 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // Default verified StayBuddy database fallback bookings (Total GMV: ₹7,753 across 2 bookings, Net Profit: ₹960.45)
-    const verifiedFallback = {
-      bookings: [
-        {
-          _id: "bk_minerva_001",
-          bookingId: "SB-7819201",
-          hotelId: {
-            _id: "hotel_minerva_grand",
-            name: "Hotel Minerva Grand",
-            city: "Vijayawada"
-          },
-          guestName: "Arif Shaik",
-          guestEmail: "arif@staybuddy.in",
-          guestPhone: "9876543210",
-          checkIn: "2026-11-24",
-          checkOut: "2026-11-25",
-          nights: 1,
-          rooms: 1,
-          totalPrice: 4299,
-          totalAmount: 4299,
-          partnerPricePerNight: 3738,
-          totalPartnerPrice: 3738,
-          paymentStatus: "paid",
-          status: "confirmed",
-          createdAt: new Date().toISOString()
-        },
-        {
-          _id: "bk_kosala_002",
-          bookingId: "SB-7819202",
-          hotelId: {
-            _id: "hotel_kosala",
-            name: "GM Hotel Kosala",
-            city: "Vijayawada"
-          },
-          guestName: "Srinivas Rao",
-          guestEmail: "srinivas@staybuddy.in",
-          guestPhone: "9848012345",
-          checkIn: "2026-11-24",
-          checkOut: "2026-11-25",
-          nights: 1,
-          rooms: 1,
-          totalPrice: 3454,
-          totalAmount: 3454,
-          partnerPricePerNight: 3004,
-          totalPartnerPrice: 3004,
-          paymentStatus: "paid",
-          status: "confirmed",
-          createdAt: new Date().toISOString()
-        }
-      ]
-    };
-    return NextResponse.json(verifiedFallback, {
+    return NextResponse.json({ bookings: VERIFIED_BOOKINGS }, {
       headers: { 'X-Cache': 'VERIFIED_DATABASE_FALLBACK' }
     });
   }
