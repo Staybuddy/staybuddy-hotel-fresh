@@ -21,7 +21,6 @@ const NAV = [
   { id: 'agreements', label: 'Partner Agreements', icon: '📜' },
   { id: 'tax_invoices', label: 'Tax Invoices', icon: '🧾' },
   { id: 'trade_shows', label: 'Trade Shows Extractor', icon: '🎯' },
-  { id: 'heybuddy', label: 'HeyBuddy Voice AI', icon: '🤖' },
 ];
 
 export default function AdminDashboard() {
@@ -668,10 +667,6 @@ export default function AdminDashboard() {
             <button
               key={item.id}
               onClick={() => {
-                if (item.id === 'heybuddy') {
-                  router.push('/admin/heybuddy?autoListen=true');
-                  return;
-                }
                 setActiveTab(item.id);
                 setIsMobileMenuOpen(false);
                 if (typeof window !== 'undefined') {
@@ -745,45 +740,6 @@ export default function AdminDashboard() {
                   <h1 style={{ fontSize: '2rem', color: '#0f172a', marginBottom: 4 }}>Dashboard Overview</h1>
                   <p style={{ color: '#64748b', margin: 0 }}>Welcome back! Here&apos;s what&apos;s happening across StayBuddy today.</p>
                 </div>
-                <Link
-                  href="/admin/heybuddy?autoListen=true"
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 12,
-                    background: 'white',
-                    border: '1px solid #f0dfd0',
-                    padding: '10px 18px',
-                    borderRadius: 16,
-                    textDecoration: 'none',
-                    boxShadow: '0 4px 20px rgba(255, 121, 0, 0.12)',
-                    transition: 'all 0.2s'
-                  }}
-                  className="hover:scale-102"
-                >
-                  <div style={{
-                    width: 38,
-                    height: 38,
-                    borderRadius: 12,
-                    background: 'linear-gradient(135deg, #ff7900, #ff9b36)',
-                    display: 'grid',
-                    placeItems: 'center',
-                    color: 'white',
-                    fontSize: '1.2rem',
-                    boxShadow: '0 4px 12px rgba(255, 121, 0, 0.3)'
-                  }}>
-                    ✦
-                  </div>
-                  <div style={{ textAlign: 'left' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <span style={{ fontWeight: 800, fontSize: '0.9rem', color: '#0f172a', letterSpacing: '-0.3px' }}>HEYBUDDY AI</span>
-                      <span style={{ background: '#fff0e2', color: '#c84a00', fontSize: '0.65rem', fontWeight: 800, padding: '2px 7px', borderRadius: 20 }}>VOICE CONCIERGE</span>
-                    </div>
-                    <div style={{ fontSize: '0.72rem', color: '#777985', marginTop: 2 }}>
-                      Click to speak in English / Telugu →
-                    </div>
-                  </div>
-                </Link>
               </div>
 
               {/* Financial Hero Cards (Top Row: Total Revenue & StayBuddy Profit) */}
