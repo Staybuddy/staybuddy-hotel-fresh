@@ -223,6 +223,140 @@ export default function HotelDetailPage() {
     occupancyType?: 'single' | 'double' | 'triple';
   } | null>(null);
 
+  // Direct Guest Pay Link (5-second hold on Price Breakup & Smart Share Modal)
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [isHoldingCard, setIsHoldingCard] = useState(false);
+  const [holdProgress, setHoldProgress] = useState(0);
+  const [includeGuestDetailsInShare, setIncludeGuestDetailsInShare] = useState(true);
+  const [shareCopiedToast, setShareCopiedToast] = useState(false);
+  const holdIntervalRef = useRef<any>(null);
+  const holdStartTimeRef = useRef<number>(0);
+
+  const startHoldCard = () => {
+    if (holdIntervalRef.current) clearInterval(holdIntervalRef.current);
+    holdStartTimeRef.current = Date.now();
+    setIsHoldingCard(true);
+    setHoldProgress(0);
+
+    holdIntervalRef.current = setInterval(() => {
+      const elapsed = Date.now() - holdStartTimeRef.current;
+      const pct = Math.min(100, (elapsed / 5000) * 100);
+      setHoldProgress(pct);
+
+      if (elapsed >= 5000) {
+        clearInterval(holdIntervalRef.current);
+        holdIntervalRef.current = null;
+        setIsHoldingCard(false);
+        setHoldProgress(100);
+        if (typeof navigator !== 'undefined' && navigator.vibrate) {
+          try { navigator.vibrate([40, 60, 40]); } catch (_) {}
+        }
+        setShowShareModal(true);
+      }
+    }, 40);
+  };
+
+  const cancelHoldCard = () => {
+    if (holdIntervalRef.current) {
+      clearInterval(holdIntervalRef.current);
+      holdIntervalRef.current = null;
+    }
+    setIsHoldingCard(false);
+    setHoldProgress(0);
+  };
+
+  const getDirectPayUrl = () => {
+    const origin = typeof window !== 'undefined' && window.location.origin
+      ? window.location.origin
+      : 'https://www.staybuddy.in';
+    const hotelIdVal = Array.isArray(id) ? id[0] : id;
+    const url = new URL(`/hotels/${encodeURIComponent(hotelIdVal)}`, origin);
+
+    url.searchParams.set('step', '1');
+    url.searchParams.set('action', 'pay');
+    if (selectedRoom?._id || selectedRoom?.id) {
+      url.searchParams.set('roomId', String(selectedRoom._id || selectedRoom.id));
+    }
+    if (bookingData.checkIn) url.searchParams.set('checkIn', bookingData.checkIn);
+    if (bookingData.checkOut) url.searchParams.set('checkOut', bookingData.checkOut);
+    url.searchParams.set('adults', String(bookingData.adults || 1));
+    url.searchParams.set('rooms', String(bookingData.rooms || 1));
+    if (bookingData.children) {
+      url.searchParams.set('children', String(bookingData.children));
+    }
+    if (occupancy) url.searchParams.set('occupancy', occupancy);
+    if (appliedCoupon) url.searchParams.set('coupon', appliedCoupon);
+
+    if (includeGuestDetailsInShare) {
+      if (bookingData.guestFirstName) url.searchParams.set('firstName', bookingData.guestFirstName);
+      if (bookingData.guestLastName) url.searchParams.set('lastName', bookingData.guestLastName);
+      if (bookingData.guestPhone) url.searchParams.set('phone', bookingData.guestPhone);
+      if (bookingData.guestEmail) url.searchParams.set('email', bookingData.guestEmail);
+    }
+
+    if (Object.keys(selectedRoomsMap).length > 0) {
+      url.searchParams.set('multiRooms', encodeURIComponent(JSON.stringify(selectedRoomsMap)));
+    }
+
+    return url.toString();
+  };
+
+  const getWhatsAppShareText = () => {
+    const payUrl = getDirectPayUrl();
+    const hotelName = hotel?.name || 'StayBuddy Hotel';
+    const hotelCity = hotel?.city ? `, ${hotel?.city}` : '';
+    const roomName = selectedRoom?.type || 'Standard Room';
+    const nightsCount = nights || 1;
+    const totalAmount = Math.max(0, currentPricing.totalAmount - couponDiscount).toLocaleString('en-IN');
+    const occText = currentPricing.summaryText || `${bookingData.rooms} Room(s), ${bookingData.adults} Adult(s)`;
+
+    return `🏨 *StayBuddy Reservation & Direct Payment Link*\n\n` +
+      `Dear Guest, your reservation at *${hotelName}${hotelCity}* is ready.\n\n` +
+      `📅 *Dates:* ${bookingData.checkIn} to ${bookingData.checkOut} (${nightsCount} Night${nightsCount > 1 ? 's' : ''})\n` +
+      `🛏️ *Room:* ${roomName}\n` +
+      `👥 *Guests:* ${occText}\n` +
+      `💰 *Total to Pay:* ₹${totalAmount}\n\n` +
+      `👉 *Click here to review & complete your payment directly:*\n${payUrl}\n\n` +
+      `_Safe & Secure Checkout powered by StayBuddy & Razorpay._`;
+  };
+
+  const handleCopyShareLink = async () => {
+    try {
+      const url = getDirectPayUrl();
+      if (navigator.clipboard) {
+        await navigator.clipboard.writeText(url);
+      } else {
+        const ta = document.createElement('textarea');
+        ta.value = url;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+      }
+      setShareCopiedToast(true);
+      setTimeout(() => setShareCopiedToast(false), 2500);
+    } catch (err) {
+      console.error('Failed to copy share link:', err);
+    }
+  };
+
+  const handleNativeShare = async () => {
+    const url = getDirectPayUrl();
+    const hotelName = hotel?.name || 'StayBuddy Hotel';
+    const totalAmount = Math.max(0, currentPricing.totalAmount - couponDiscount).toLocaleString('en-IN');
+    if (typeof navigator !== 'undefined' && navigator.share) {
+      try {
+        await navigator.share({
+          title: `Book & Pay: ${hotelName}`,
+          text: `Here is your reservation at ${hotelName}. Total: ₹${totalAmount}. Click to pay directly:`,
+          url: url,
+        });
+      } catch (_) {}
+    } else {
+      handleCopyShareLink();
+    }
+  };
+
   const showTripleNotification = (roomName?: string, customMsg?: string, occType: 'single' | 'double' | 'triple' = 'triple') => {
     setTripleToast({
       show: true,
@@ -465,6 +599,61 @@ export default function HotelDetailPage() {
       console.error('Failed to restore pending checkout:', e);
     }
   }, [id, session]);
+
+  // Handle direct guest pay share link (e.g. ?step=1&action=pay&roomId=...)
+  useEffect(() => {
+    if (rooms.length === 0) return;
+    const stepParam = searchParams.get("step");
+    const actionParam = searchParams.get("action");
+    const roomIdParam = searchParams.get("roomId");
+
+    if ((stepParam === "1" || actionParam === "pay") && roomIdParam) {
+      const match = rooms.find((r: any) => r._id === roomIdParam || r.id === roomIdParam);
+      if (match) {
+        setSelectedRoom(match);
+        const occ = searchParams.get("occupancy");
+        if (occ === "single" || occ === "double" || occ === "triple") {
+          setOccupancy(occ);
+        }
+
+        const multiRoomsRaw = searchParams.get("multiRooms");
+        if (multiRoomsRaw) {
+          try {
+            const parsedMap = JSON.parse(decodeURIComponent(multiRoomsRaw));
+            if (parsedMap && typeof parsedMap === 'object') {
+              setSelectedRoomsMap(parsedMap);
+            }
+          } catch (_) {}
+        }
+
+        const fName = searchParams.get("firstName");
+        const lName = searchParams.get("lastName");
+        const pEmail = searchParams.get("email");
+        const pPhone = searchParams.get("phone");
+        if (fName || lName || pEmail || pPhone) {
+          setBookingData(prev => ({
+            ...prev,
+            guestFirstName: fName || prev.guestFirstName,
+            guestLastName: lName || prev.guestLastName,
+            guestEmail: pEmail || prev.guestEmail,
+            guestPhone: pPhone || prev.guestPhone,
+          }));
+        }
+
+        const couponParam = searchParams.get("coupon");
+        if (couponParam) {
+          applyCouponCode(couponParam);
+        }
+
+        setBookingStep(1);
+
+        setTimeout(() => {
+          const el = document.getElementById("review-section") || document.querySelector(".price-breakup-card");
+          if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+        }, 350);
+      }
+    }
+  }, [rooms, searchParams]);
 
   const handlePhoneUpdate = (newPhone: string) => {
     setBookingData((p) => ({ ...p, guestPhone: newPhone }));
@@ -5340,22 +5529,136 @@ export default function HotelDetailPage() {
                   }}
                 >
                   <div
-                    className="card price-breakup-card"
+                    className={`card price-breakup-card ${isHoldingCard ? 'card-holding-active' : ''}`}
                     style={{
                       borderRadius: "var(--radius-lg)",
                       maxWidth: "100%",
                       overflow: "hidden",
+                      position: "relative",
+                      transition: "all 0.2s ease",
+                      border: isHoldingCard ? "2.5px solid #ea580c" : "1px solid var(--border)",
+                      boxShadow: isHoldingCard 
+                        ? "0 0 25px rgba(234, 88, 12, 0.4), 0 8px 20px -4px rgba(234, 88, 12, 0.25)" 
+                        : "0 4px 6px -1px rgba(0,0,0,0.05)",
+                      transform: isHoldingCard ? "scale(1.01)" : "none",
+                      cursor: "pointer",
+                      userSelect: "none",
+                      WebkitUserSelect: "none",
                     }}
+                    onMouseDown={startHoldCard}
+                    onMouseUp={cancelHoldCard}
+                    onMouseLeave={cancelHoldCard}
+                    onTouchStart={startHoldCard}
+                    onTouchEnd={cancelHoldCard}
+                    onTouchCancel={cancelHoldCard}
+                    onTouchMove={cancelHoldCard}
                   >
-                    <h3
+                    {/* Glowing Top Progress Bar during 5s hold */}
+                    {isHoldingCard && (
+                      <div
+                        style={{
+                          position: "absolute",
+                          top: 0,
+                          left: 0,
+                          right: 0,
+                          height: 6,
+                          background: "rgba(241, 245, 249, 0.8)",
+                          zIndex: 20,
+                          overflow: "hidden",
+                        }}
+                      >
+                        <div
+                          style={{
+                            height: "100%",
+                            width: `${holdProgress}%`,
+                            background: "linear-gradient(90deg, #f59e0b, #ea580c, #dc2626)",
+                            transition: "width 0.04s linear",
+                            boxShadow: "0 0 12px rgba(234, 88, 12, 0.8)",
+                          }}
+                        />
+                      </div>
+                    )}
+
+                    <div
                       style={{
-                        fontSize: "1.3rem",
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
                         marginBottom: 20,
-                        fontWeight: 800,
+                        gap: 10,
                       }}
                     >
-                      Price Breakup
-                    </h3>
+                      <div>
+                        <h3
+                          style={{
+                            fontSize: "1.3rem",
+                            margin: 0,
+                            fontWeight: 800,
+                            color: "#0f172a",
+                          }}
+                        >
+                          Price Breakup
+                        </h3>
+                        {isHoldingCard ? (
+                          <div
+                            style={{
+                              fontSize: "0.74rem",
+                              color: "#c2410c",
+                              fontWeight: 800,
+                              marginTop: 4,
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 6,
+                            }}
+                          >
+                            <span style={{ display: "inline-block" }}>⚡</span>
+                            <span>Hold {Math.max(1, Math.ceil((5000 - (holdProgress / 100 * 5000)) / 1000))}s to generate Direct Pay Link...</span>
+                          </div>
+                        ) : (
+                          <div
+                            style={{
+                              fontSize: "0.72rem",
+                              color: "#64748b",
+                              fontWeight: 600,
+                              marginTop: 2,
+                            }}
+                          >
+                            Tap & hold 5s to share direct pay link
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Quick 1-Click Share Button (also opens modal immediately) */}
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setShowShareModal(true);
+                        }}
+                        style={{
+                          background: "linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%)",
+                          border: "1.5px solid #fdba74",
+                          color: "#c2410c",
+                          padding: "6px 14px",
+                          borderRadius: "20px",
+                          fontSize: "0.78rem",
+                          fontWeight: 800,
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: 6,
+                          cursor: "pointer",
+                          boxShadow: "0 2px 6px rgba(234, 88, 12, 0.12)",
+                          whiteSpace: "nowrap",
+                          flexShrink: 0,
+                          transition: "transform 0.15s ease",
+                        }}
+                        onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.04)")}
+                        onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
+                        title="Share Direct Pay Link with Guest (or hold card 5s)"
+                      >
+                        <span>🔗 Share Pay Link</span>
+                      </button>
+                    </div>
 
                     <div
                       className="price-breakup-rows"
@@ -6402,6 +6705,300 @@ export default function HotelDetailPage() {
                 )}
               </div>
             </div>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* DIRECT GUEST PAY LINK SHARE MODAL */}
+      {showShareModal && (
+        <>
+          <div
+            style={{
+              position: "fixed",
+              inset: 0,
+              background: "rgba(15, 23, 42, 0.75)",
+              backdropFilter: "blur(6px)",
+              WebkitBackdropFilter: "blur(6px)",
+              zIndex: 30000,
+              animation: "fadeIn 0.2s ease-out",
+            }}
+            onClick={() => setShowShareModal(false)}
+          />
+          <div
+            className="fade-in"
+            style={{
+              position: "fixed",
+              top: "50%",
+              left: "50%",
+              transform: "translate(-50%, -50%)",
+              background: "#ffffff",
+              borderRadius: "24px",
+              width: "92%",
+              maxWidth: 540,
+              maxHeight: "92vh",
+              overflowY: "auto",
+              overflowX: "hidden",
+              zIndex: 30001,
+              boxShadow: "0 25px 60px -15px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.15)",
+              boxSizing: "border-box",
+            }}
+          >
+            {/* Header with StayBuddy Orange Gradient */}
+            <div
+              style={{
+                background: "linear-gradient(135deg, #ea580c 0%, #c2410c 100%)",
+                padding: "24px 26px",
+                color: "white",
+                position: "relative",
+              }}
+            >
+              <button
+                type="button"
+                onClick={() => setShowShareModal(false)}
+                style={{
+                  position: "absolute",
+                  top: 18,
+                  right: 18,
+                  background: "rgba(255, 255, 255, 0.2)",
+                  border: "none",
+                  color: "white",
+                  width: 32,
+                  height: 32,
+                  borderRadius: "50%",
+                  cursor: "pointer",
+                  fontSize: "1.2rem",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  transition: "background 0.15s ease",
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255, 255, 255, 0.35)")}
+                onMouseLeave={(e) => (e.currentTarget.style.background = "rgba(255, 255, 255, 0.2)")}
+              >
+                ✕
+              </button>
+              <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "rgba(255,255,255,0.18)", padding: "4px 10px", borderRadius: 20, fontSize: "0.72rem", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 8 }}>
+                <span>⚡ Instant Checkout</span>
+              </div>
+              <h2 style={{ fontSize: "1.45rem", fontWeight: 900, margin: 0, letterSpacing: "-0.02em" }}>
+                Direct Guest Pay Link
+              </h2>
+              <p style={{ margin: "6px 0 0 0", fontSize: "0.85rem", opacity: 0.92, lineHeight: 1.4 }}>
+                Send this link to any guest. They land straight on checkout to review and pay with 1 click.
+              </p>
+            </div>
+
+            {/* Modal Body */}
+            <div style={{ padding: "24px 26px" }}>
+              {/* Reservation Snapshot Card */}
+              <div
+                style={{
+                  background: "#f8fafc",
+                  border: "1px solid #e2e8f0",
+                  borderRadius: 16,
+                  padding: "16px 18px",
+                  marginBottom: 20,
+                }}
+              >
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 }}>
+                  <div>
+                    <div style={{ fontSize: "1.05rem", fontWeight: 800, color: "#0f172a" }}>
+                      {hotel?.name || "StayBuddy Hotel"}
+                    </div>
+                    <div style={{ fontSize: "0.8rem", color: "#64748b", marginTop: 2 }}>
+                      📍 {hotel?.city || "India"} • {nights} Night{nights > 1 ? "s" : ""}
+                    </div>
+                  </div>
+                  <span style={{ background: "#ecfdf5", color: "#047857", border: "1px solid #a7f3d0", fontSize: "0.72rem", fontWeight: 800, padding: "3px 8px", borderRadius: 6 }}>
+                    ✓ Ready to Pay
+                  </span>
+                </div>
+
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 12, paddingTop: 12, borderTop: "1px dashed #cbd5e1", fontSize: "0.82rem" }}>
+                  <div>
+                    <span style={{ color: "#64748b" }}>Room:</span>{" "}
+                    <strong style={{ color: "#0f172a" }}>{selectedRoom?.type || "Standard Room"}</strong>
+                  </div>
+                  <div>
+                    <span style={{ color: "#64748b" }}>Occupancy:</span>{" "}
+                    <strong style={{ color: "#0f172a" }}>{currentPricing.summaryText || `${bookingData.rooms} Room(s)`}</strong>
+                  </div>
+                  <div>
+                    <span style={{ color: "#64748b" }}>Check-In:</span>{" "}
+                    <strong style={{ color: "#0f172a" }}>{bookingData.checkIn}</strong>
+                  </div>
+                  <div>
+                    <span style={{ color: "#64748b" }}>Check-Out:</span>{" "}
+                    <strong style={{ color: "#0f172a" }}>{bookingData.checkOut}</strong>
+                  </div>
+                </div>
+
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 14, paddingTop: 12, borderTop: "1px solid #e2e8f0" }}>
+                  <span style={{ fontSize: "0.85rem", fontWeight: 700, color: "#475569" }}>
+                    Payable Amount:
+                  </span>
+                  <span style={{ fontSize: "1.4rem", fontWeight: 900, color: "#ea580c" }}>
+                    ₹{Math.max(0, currentPricing.totalAmount - couponDiscount).toLocaleString("en-IN")}
+                  </span>
+                </div>
+              </div>
+
+              {/* Guest Details Toggle Checkbox */}
+              {(bookingData.guestFirstName || bookingData.guestPhone || bookingData.guestEmail) && (
+                <label
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 10,
+                    marginBottom: 20,
+                    cursor: "pointer",
+                    background: "#fff7ed",
+                    border: "1px solid #ffedd5",
+                    padding: "10px 14px",
+                    borderRadius: 12,
+                    fontSize: "0.84rem",
+                    color: "#9a3412",
+                    fontWeight: 600,
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={includeGuestDetailsInShare}
+                    onChange={(e) => setIncludeGuestDetailsInShare(e.target.checked)}
+                    style={{ width: 16, height: 16, accentColor: "#ea580c", cursor: "pointer" }}
+                  />
+                  <span>
+                    Include pre-filled guest details ({bookingData.guestFirstName || "Guest"}{bookingData.guestPhone ? ` • ${bookingData.guestPhone}` : ""})
+                  </span>
+                </label>
+              )}
+
+              {/* Primary Sharing Action Buttons */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                {/* 1. Share on WhatsApp */}
+                <a
+                  href={`https://wa.me/?text=${encodeURIComponent(getWhatsAppShareText())}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    background: "#25D366",
+                    color: "#ffffff",
+                    borderRadius: 14,
+                    padding: "14px 20px",
+                    textDecoration: "none",
+                    fontWeight: 800,
+                    fontSize: "1rem",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: 10,
+                    boxShadow: "0 4px 12px rgba(37, 211, 102, 0.3)",
+                    transition: "transform 0.15s ease",
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.transform = "translateY(-1px)")}
+                  onMouseLeave={(e) => (e.currentTarget.style.transform = "translateY(0)")}
+                >
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.711 2.598 2.669-.699c.969.528 1.897.808 2.791.808 3.181 0 5.767-2.586 5.768-5.766.001-3.18-2.585-5.794-5.768-5.794zm3.376 8.21c-.141.396-.718.73-1.011.758-.292.029-.628.141-2.022-.442-1.688-.705-2.766-2.428-2.85-2.54-.085-.113-.679-.904-.679-1.724 0-.82.425-1.229.576-1.399.151-.17.33-.212.443-.212.113 0 .226.002.325.006.104.005.245-.039.382.292.141.34.481 1.173.523 1.258.042.085.071.184.014.297-.057.113-.085.184-.17.283-.085.099-.178.221-.255.297-.085.085-.174.177-.075.347.099.17.441.728.948 1.179.652.58 1.201.76 1.371.845.17.085.269.071.368-.042.099-.113.425-.495.538-.665.113-.17.226-.142.382-.085.156.057.991.467 1.161.552.17.085.283.127.325.198.042.071.042.41-.099.806z" />
+                    <path d="M12 2C6.477 2 2 6.477 2 12c0 1.89.525 3.66 1.438 5.168L2 22l4.98-1.306A9.957 9.957 0 0 0 12 22c5.523 0 10-4.477 10-10S17.523 2 12 2zm0 18.062c-1.614 0-3.13-.483-4.409-1.314l-.316-.206-2.964.777.791-2.89-.226-.36A7.994 7.994 0 0 1 4 12c0-4.411 3.589-8 8-8s8 3.589 8 8-3.589 8.062-8 8.062z" />
+                  </svg>
+                  <span>Share on WhatsApp</span>
+                </a>
+
+                {/* 2. Copy Link Button */}
+                <button
+                  type="button"
+                  onClick={handleCopyShareLink}
+                  style={{
+                    background: shareCopiedToast ? "#ecfdf5" : "#ffffff",
+                    color: shareCopiedToast ? "#047857" : "#0f172a",
+                    border: shareCopiedToast ? "2px solid #10b981" : "1.5px solid #cbd5e1",
+                    borderRadius: 14,
+                    padding: "13px 20px",
+                    fontWeight: 800,
+                    fontSize: "0.95rem",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: 8,
+                    cursor: "pointer",
+                    transition: "all 0.15s ease",
+                  }}
+                >
+                  <span>{shareCopiedToast ? "✓ Link Copied to Clipboard!" : "📋 Copy Direct Pay Link"}</span>
+                </button>
+
+                {/* 3. Native Share (SMS, Telegram, Email, etc.) */}
+                {typeof navigator !== "undefined" && typeof navigator.share === "function" && (
+                  <button
+                    type="button"
+                    onClick={handleNativeShare}
+                    style={{
+                      background: "#f1f5f9",
+                      color: "#334155",
+                      border: "1px solid #e2e8f0",
+                      borderRadius: 14,
+                      padding: "11px 18px",
+                      fontWeight: 700,
+                      fontSize: "0.88rem",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: 8,
+                      cursor: "pointer",
+                    }}
+                  >
+                    <span>📱 More Apps (SMS, Telegram, AirDrop, etc.)</span>
+                  </button>
+                )}
+              </div>
+
+              {/* Direct URL Input Box */}
+              <div style={{ marginTop: 20 }}>
+                <div style={{ fontSize: "0.75rem", fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: 6 }}>
+                  Direct Pay URL:
+                </div>
+                <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                  <input
+                    type="text"
+                    readOnly
+                    value={getDirectPayUrl()}
+                    onClick={(e) => (e.target as HTMLInputElement).select()}
+                    style={{
+                      flex: 1,
+                      padding: "8px 12px",
+                      borderRadius: 8,
+                      border: "1px solid #cbd5e1",
+                      fontSize: "0.8rem",
+                      background: "#f8fafc",
+                      color: "#334155",
+                      fontFamily: "monospace",
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={handleCopyShareLink}
+                    style={{
+                      padding: "8px 14px",
+                      borderRadius: 8,
+                      background: "#ea580c",
+                      color: "white",
+                      border: "none",
+                      fontSize: "0.8rem",
+                      fontWeight: 700,
+                      cursor: "pointer",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    Copy
+                  </button>
+                </div>
+              </div>
+
+              <div style={{ marginTop: 18, fontSize: "0.75rem", color: "#64748b", textAlign: "center", lineHeight: 1.4 }}>
+                ℹ️ When the guest opens this link, their checkout page opens with all room & date details preloaded so they can pay securely via UPI, Cards, or NetBanking.
+              </div>
             </div>
           </div>
         </>
