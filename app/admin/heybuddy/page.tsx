@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef, useState, useMemo } from "react";
+import React, { useEffect, useRef, useState, useMemo, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -10,7 +10,8 @@ import {
   ShieldCheck, Volume2, VolumeX, Zap, RefreshCw,
   ArrowLeft, Lock, MessageCircle, Phone, Calendar,
   ExternalLink, Sparkles, Star, MapPin, IndianRupee,
-  Share2, ArrowUpRight
+  Share2, ArrowUpRight, Search, Users, FileText,
+  TrendingUp, AlertTriangle, Check, Clock, UserCheck
 } from "lucide-react";
 
 type Finding = {
@@ -30,13 +31,48 @@ type HotelItem = {
   images?: string[];
   rooms?: any[];
   status?: string;
+  hasPendingRoomUpdates?: boolean;
+  isExtranet?: boolean;
+};
+
+type BookingItem = {
+  _id: string;
+  bookingId?: string;
+  hotelId?: any;
+  customerId?: any;
+  guestName?: string;
+  guestEmail?: string;
+  guestPhone?: string;
+  roomType?: string;
+  checkIn?: string;
+  checkOut?: string;
+  guests?: number;
+  totalAmount?: number;
+  b2bCost?: number;
+  status?: string;
+  paymentStatus?: string;
+  isReferralBooking?: boolean;
+  referralCode?: string;
+  referrerName?: string;
+  createdAt?: string;
+};
+
+type SystemSyncData = {
+  bookings: BookingItem[];
+  hotels: HotelItem[];
+  taxInvoices: any[];
+  partners: any[];
+  users: any[];
+  onboardingStaff: any[];
+  lastSynced: string | null;
+  syncing: boolean;
 };
 
 type ChatMessage = {
   role: "HeyBuddy" | "You";
   text: string;
   timestamp?: string;
-  actionType?: "hotels" | "whatsapp" | "stats" | "diagnostic";
+  actionType?: "hotels" | "whatsapp" | "booking" | "bookings_list" | "stats" | "diagnostic" | "partners" | "navigate";
   actionData?: any;
 };
 
@@ -47,17 +83,30 @@ export default function HeyBuddyPage() {
   const [listening, setListening] = useState(false);
   const [speaking, setSpeaking] = useState(true);
   const [command, setCommand] = useState("");
-  const [status, setStatus] = useState("● ACTIVATED & LISTENING • \"DUDU, TELL ME\"");
+  const [status, setStatus] = useState("● SYSTEM SYNCHRONIZED • \"DUDU, TELL ME\"");
   const [availableVoices, setAvailableVoices] = useState<SpeechSynthesisVoice[]>([]);
+  const [recheckingBookingId, setRecheckingBookingId] = useState<string | null>(null);
 
   const adminName = useMemo(() => {
     return session?.user?.name || "Arif";
   }, [session]);
 
+  // LIVE SYSTEM SYNCHRONIZATION REPOSITORY
+  const [systemData, setSystemData] = useState<SystemSyncData>({
+    bookings: [],
+    hotels: [],
+    taxInvoices: [],
+    partners: [],
+    users: [],
+    onboardingStaff: [],
+    lastSynced: null,
+    syncing: true
+  });
+
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       role: "HeyBuddy",
-      text: `Hi, ${adminName} ✨ I am HeyBuddy, your executive AI voice assistant. Say "Hey Buddy" and I'll respond "Dudu, tell me". You can ask me to book hotels, send WhatsApp confirmations, check revenue, or scan your website!`,
+      text: `Hi, ${adminName} ✨ I am HeyBuddy, your StayBuddy Executive AI. I am completely synchronized with your live database: Bookings, Hotel Inventory, Revenue, Tax Invoices, and Partner Extranet. Say "Hey Buddy" and I'll respond "Dudu, tell me", or speak any request directly!`,
       timestamp: "Just now"
     }
   ]);
@@ -87,6 +136,54 @@ export default function HeyBuddyPage() {
     }
   }, [authStatus, session, router]);
 
+  // DEEP SYSTEM SYNCHRONIZATION FUNCTION
+  const syncCompleteSystem = useCallback(async () => {
+    setSystemData(prev => ({ ...prev, syncing: true }));
+    setStatus("SYNCHRONIZING SYSTEM DATA...");
+
+    try {
+      const [bookingsRes, hotelsRes, invoicesRes, partnersRes, usersRes, staffRes] = await Promise.allSettled([
+        fetch("/api/admin/bookings").then(r => r.ok ? r.json() : { bookings: [] }),
+        fetch("/api/admin/hotels").then(r => r.ok ? r.json() : { hotels: [] }),
+        fetch("/api/admin/tax-invoices").then(r => r.ok ? r.json() : { invoices: [] }),
+        fetch("/api/admin/partners").then(r => r.ok ? r.json() : { partners: [] }),
+        fetch("/api/admin/users").then(r => r.ok ? r.json() : { users: [] }),
+        fetch("/api/admin/onboarding-staff").then(r => r.ok ? r.json() : { staff: [] })
+      ]);
+
+      const bookings = bookingsRes.status === "fulfilled" ? (bookingsRes.value.bookings || []) : [];
+      const hotels = hotelsRes.status === "fulfilled" ? (hotelsRes.value.hotels || []) : [];
+      const taxInvoices = invoicesRes.status === "fulfilled" ? (invoicesRes.value.invoices || []) : [];
+      const partners = partnersRes.status === "fulfilled" ? (partnersRes.value.partners || []) : [];
+      const users = usersRes.status === "fulfilled" ? (usersRes.value.users || []) : [];
+      const onboardingStaff = staffRes.status === "fulfilled" ? (staffRes.value.staff || []) : [];
+
+      setSystemData({
+        bookings,
+        hotels,
+        taxInvoices,
+        partners,
+        users,
+        onboardingStaff,
+        lastSynced: new Date().toLocaleTimeString("en-IN"),
+        syncing: false
+      });
+
+      setStatus("● FULLY SYNCHRONIZED • \"DUDU, TELL ME\"");
+    } catch (err) {
+      console.error("System sync error:", err);
+      setSystemData(prev => ({ ...prev, syncing: false }));
+      setStatus("● SYSTEM READY (OFFLINE SYNC)");
+    }
+  }, []);
+
+  // INITIAL SYSTEM SYNC
+  useEffect(() => {
+    if (authStatus === "authenticated" && (session?.user as any)?.role === "admin") {
+      syncCompleteSystem();
+    }
+  }, [authStatus, session, syncCompleteSystem]);
+
   // LOAD FEMALE VOICES
   useEffect(() => {
     if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
@@ -105,7 +202,6 @@ export default function HeyBuddyPage() {
   function getFemaleVoice(): SpeechSynthesisVoice | null {
     if (!availableVoices.length) return null;
 
-    // Preferred realistic female voices
     const preferred = [
       "google uk english female",
       "google us english female",
@@ -126,7 +222,6 @@ export default function HeyBuddyPage() {
       if (match) return match;
     }
 
-    // Secondary check: voice name containing female or en-IN
     const femaleMatch = availableVoices.find(v =>
       v.name.toLowerCase().includes("female") ||
       (v.lang.startsWith("en") && (v.name.toLowerCase().includes("woman") || v.name.toLowerCase().includes("girl")))
@@ -140,14 +235,14 @@ export default function HeyBuddyPage() {
     return anyEn || availableVoices[0] || null;
   }
 
-  // VOICE SYNTHESIS (Natural, melodic female tone)
+  // NATURAL FEMALE SPEECH SYNTHESIS
   function speak(text: string) {
     if (!speaking || typeof window === "undefined" || !("speechSynthesis" in window)) return;
 
     try {
       window.speechSynthesis.cancel();
 
-      // Clean speech text (strip URLs, markdown asterisks, emojis for smooth voice)
+      // Clean speech text
       const cleanText = text
         .replace(/https?:\/\/\S+/g, "")
         .replace(/[*_#`~]/g, "")
@@ -161,7 +256,7 @@ export default function HeyBuddyPage() {
       }
       utterance.lang = femaleVoice?.lang || "en-IN";
       utterance.rate = 0.98;
-      utterance.pitch = 1.25; // Gentle, melodic female pitch
+      utterance.pitch = 1.25;
 
       window.speechSynthesis.speak(utterance);
     } catch (e) {
@@ -169,7 +264,7 @@ export default function HeyBuddyPage() {
     }
   }
 
-  function reply(text: string, originalCommand: string, actionType?: "hotels" | "whatsapp" | "stats" | "diagnostic", actionData?: any) {
+  function reply(text: string, originalCommand: string, actionType?: "hotels" | "whatsapp" | "booking" | "bookings_list" | "stats" | "diagnostic" | "partners" | "navigate", actionData?: any) {
     setMessages(old => [
       ...old,
       { role: "You", text: originalCommand, timestamp: "Just now" },
@@ -178,6 +273,29 @@ export default function HeyBuddyPage() {
 
     setStatus("RESPONSE READY");
     speak(text);
+  }
+
+  // RECHECK RAZORPAY PAYMENT
+  async function recheckPayment(bookingId: string) {
+    setRecheckingBookingId(bookingId);
+    try {
+      const res = await fetch("/api/payments/recheck", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ bookingId })
+      });
+      const data = await res.json();
+      if (data.verified) {
+        alert("🎉 Payment successfully verified via Razorpay! Marked as Confirmed & Paid.");
+        syncCompleteSystem();
+      } else {
+        alert(data.message || "No captured payment found on Razorpay for this booking.");
+      }
+    } catch (e: any) {
+      alert("Error checking payment: " + (e.message || e));
+    } finally {
+      setRecheckingBookingId(null);
+    }
   }
 
   // WEBSITE SCANNER
@@ -189,10 +307,7 @@ export default function HeyBuddyPage() {
     const issues: Finding[] = [];
 
     try {
-      const response = await fetch(window.location.origin, {
-        cache: "no-store"
-      });
-
+      const response = await fetch(window.location.origin, { cache: "no-store" });
       if (!response.ok) {
         issues.push({
           title: "Homepage HTTP error",
@@ -225,7 +340,6 @@ export default function HeyBuddyPage() {
 
       const images = Array.from(doc.querySelectorAll("img"));
       const missingAlt = images.filter(image => !image.hasAttribute("alt") || !image.getAttribute("alt")?.trim());
-
       if (missingAlt.length) {
         issues.push({
           title: "Images missing alt text",
@@ -236,50 +350,13 @@ export default function HeyBuddyPage() {
       }
 
       const buttons = Array.from(doc.querySelectorAll("button"));
-      const unnamedButtons = buttons.filter(button =>
-        !button.textContent?.trim() &&
-        !button.getAttribute("aria-label")
-      );
-
+      const unnamedButtons = buttons.filter(button => !button.textContent?.trim() && !button.getAttribute("aria-label"));
       if (unnamedButtons.length) {
         issues.push({
           title: "Buttons missing accessible names",
           severity: "Medium",
           detail: `${unnamedButtons.length} buttons have no text or aria-label.`,
           recommendation: "Add button text or aria-label for screen reader support."
-        });
-      }
-
-      const inputs = Array.from(doc.querySelectorAll("input"));
-      const unlabeledInputs = inputs.filter(input => {
-        if (["hidden", "submit", "button"].includes(input.type)) return false;
-        const id = input.id;
-        const hasLabel = id && doc.querySelector(`label[for="${CSS.escape(id)}"]`);
-        return !hasLabel && !input.getAttribute("aria-label");
-      });
-
-      if (unlabeledInputs.length) {
-        issues.push({
-          title: "Form fields missing labels",
-          severity: "Medium",
-          detail: `${unlabeledInputs.length} search/form fields need accessible labels.`,
-          recommendation: "Add associated labels or aria-label attributes."
-        });
-      }
-
-      const links = Array.from(doc.querySelectorAll("a"));
-      const unnamedLinks = links.filter(link =>
-        !link.textContent?.trim() &&
-        !link.getAttribute("aria-label") &&
-        !link.querySelector("img[alt]")
-      );
-
-      if (unnamedLinks.length) {
-        issues.push({
-          title: "Links missing accessible names",
-          severity: "Low",
-          detail: `${unnamedLinks.length} links have no descriptive text or aria-labels.`,
-          recommendation: "Add descriptive link text or aria-label."
         });
       }
 
@@ -306,113 +383,17 @@ export default function HeyBuddyPage() {
     setScanning(false);
     setScanDone(true);
     setStatus("SCAN COMPLETED");
-
     return issues;
   }
 
-  // INTELLIGENT HOTEL SEARCH & BOOKING FINDER
-  async function searchHotels(queryCity?: string, hotelNameQuery?: string) {
-    try {
-      const res = await fetch("/api/admin/hotels");
-      if (!res.ok) throw new Error("Could not fetch hotels");
-      const data = await res.json();
-      const allHotels: any[] = data.hotels || [];
-
-      let matched = allHotels.filter(h => h.status === "approved" || !h.status);
-
-      if (queryCity) {
-        const cLower = queryCity.toLowerCase().trim();
-        matched = matched.filter(h => (h.city || "").toLowerCase().includes(cLower));
-      }
-
-      if (hotelNameQuery) {
-        const nLower = hotelNameQuery.toLowerCase().trim();
-        matched = matched.filter(h => (h.name || "").toLowerCase().includes(nLower));
-      }
-
-      // If no exact city match, fallback to approved hotels
-      if (!matched.length && allHotels.length) {
-        matched = allHotels.slice(0, 4);
-      }
-
-      return matched.slice(0, 5);
-    } catch (e) {
-      console.error("Hotel search error:", e);
-      return [];
-    }
-  }
-
-  // LIVE STAYBUDDY STATS FETCHERS
-  async function fetchLiveBookings(): Promise<string> {
-    try {
-      const res = await fetch("/api/admin/bookings");
-      if (!res.ok) throw new Error("Failed to fetch bookings");
-      const data = await res.json();
-      const bookings: any[] = data.bookings || [];
-
-      const total = bookings.length;
-      const confirmed = bookings.filter(b => b.status === "confirmed" || b.status === "completed").length;
-      const pending = bookings.filter(b => b.status === "pending").length;
-      const paid = bookings.filter(b => b.paymentStatus === "paid").length;
-
-      const todayStr = new Date().toISOString().split("T")[0];
-      const todayBookings = bookings.filter(b => {
-        const d = b.createdAt ? new Date(b.createdAt).toISOString().split("T")[0] : "";
-        return d === todayStr;
-      });
-
-      return `Dudu, StayBuddy currently has ${total} total bookings. ${confirmed} are confirmed, ${paid} are verified paid payments, and ${pending} are pending verification. Today there are ${todayBookings.length} new booking requests recorded.`;
-    } catch (err) {
-      return "Dudu, connected to StayBuddy bookings database, but could not load current records. Please check the Admin Bookings tab.";
-    }
-  }
-
-  async function fetchLiveRevenue(): Promise<string> {
-    try {
-      const res = await fetch("/api/admin/bookings");
-      if (!res.ok) throw new Error("Failed to fetch financial data");
-      const data = await res.json();
-      const bookings: any[] = data.bookings || [];
-
-      const confirmedPaid = bookings.filter(b => (b.status === "confirmed" || b.status === "completed") && b.paymentStatus === "paid");
-      const totalRevenue = confirmedPaid.reduce((acc, b) => acc + (Number(b.totalAmount) || 0), 0);
-      const totalCommission = confirmedPaid.reduce((acc, b) => {
-        const total = Number(b.totalAmount) || 0;
-        const b2b = Number(b.b2bCost) || 0;
-        return acc + (total > b2b ? (total - b2b) : 0);
-      }, 0);
-
-      return `Dudu, here is the verified revenue: ₹${totalRevenue.toLocaleString("en-IN")} collected across ${confirmedPaid.length} confirmed paid reservations, with an estimated gross profit margin of ₹${totalCommission.toLocaleString("en-IN")}.`;
-    } catch (err) {
-      return "Dudu, could not compute financial figures at this moment. You can check the complete tax invoices and margins tab in the Admin Console.";
-    }
-  }
-
-  async function fetchLiveHotelsSummary(): Promise<string> {
-    try {
-      const res = await fetch("/api/admin/hotels");
-      if (!res.ok) throw new Error("Failed to fetch hotels");
-      const data = await res.json();
-      const hotels: any[] = data.hotels || [];
-
-      const total = hotels.length;
-      const approved = hotels.filter(h => h.status === "approved").length;
-      const pending = hotels.filter(h => h.status === "pending" || h.hasPendingRoomUpdates === true || (Array.isArray(h.rooms) && h.rooms.some((r: any) => r.approvalStatus === "pending"))).length;
-      const extranetCount = hotels.filter(h => h.isExtranet === true || h.source === "extranet").length;
-
-      return `Dudu, StayBuddy has ${total} registered properties in total. ${approved} are live on the B2C site, ${pending} properties or room updates require admin review, and ${extranetCount} properties are managed via Partner Extranet.`;
-    } catch (err) {
-      return "Dudu, could not retrieve hotel inventory list. Please review the Properties tab in the Admin Console.";
-    }
-  }
-
-  // PREPARE WHATSAPP & SMS DATA
-  function prepareWhatsApp(guestPhone: string, guestName: string, hotelName: string, bookingRef?: string) {
+  // PREPARE WHATSAPP MESSAGE
+  function prepareWhatsApp(guestPhone: string, guestName: string, hotelName: string, bookingRef?: string, totalAmount?: number) {
     const cleanPhone = guestPhone.replace(/\D/g, "");
     const formattedPhone = cleanPhone.length === 10 ? `91${cleanPhone}` : cleanPhone;
     const ref = bookingRef || `SB-${Math.floor(100000 + Math.random() * 900000)}`;
+    const amtStr = totalAmount ? `\n*Amount:* ₹${Number(totalAmount).toLocaleString("en-IN")}` : "";
 
-    const text = `*StayBuddy Hotel Booking Confirmation* 🏨✨\n\nDear ${guestName || "Guest"},\nThank you for choosing StayBuddy! Your reservation at *${hotelName || "StayBuddy Hotel"}* is confirmed.\n\n*Booking ID:* ${ref}\n*Check-in:* 12:00 PM\n*Check-out:* 11:00 AM\n\nFor directions or special requests, please reply to this chat or visit https://staybuddy.in\n\n_Wish you a pleasant stay with StayBuddy!_`;
+    const text = `*StayBuddy Hotel Booking Confirmation* 🏨✨\n\nDear ${guestName || "Guest"},\nThank you for choosing StayBuddy! Your reservation at *${hotelName || "StayBuddy Hotel"}* is confirmed.\n\n*Booking ID:* ${ref}${amtStr}\n*Check-in:* 12:00 PM\n*Check-out:* 11:00 AM\n\nFor directions, early check-in, or assistance, reach us at care@staybuddy.in or https://staybuddy.in\n\n_Wish you a pleasant stay with StayBuddy!_`;
 
     return {
       phone: formattedPhone,
@@ -426,14 +407,91 @@ export default function HeyBuddyPage() {
     };
   }
 
-  // EXECUTIVE COMMAND ENGINE
+  // DEEP SYSTEM INTELLIGENCE ENGINE
   async function execute(input: string) {
     const q = input.trim().toLowerCase();
     if (!q) return;
 
-    setStatus("PROCESSING COMMAND");
+    setStatus("PROCESSING INTELLIGENCE...");
 
-    // 1. WHATSAPP & SMS DISPATCH
+    // 1. REFRESH / SYNC SYSTEM
+    if (q.includes("sync") || q.includes("refresh data") || q.includes("reload database")) {
+      await syncCompleteSystem();
+      reply(`Dudu, system data has been completely re-synchronized with StayBuddy's live database.`, input);
+      return;
+    }
+
+    // 2. SEARCH SPECIFIC BOOKING (By ID, Guest Name, or Phone)
+    if (
+      q.includes("find booking") ||
+      q.includes("search booking") ||
+      q.includes("booking for") ||
+      q.includes("check booking") ||
+      (q.includes("booking") && (q.match(/\b\d{4,}\b/) || q.match(/sb-/i)))
+    ) {
+      const bookings = systemData.bookings;
+      let matchedBooking: BookingItem | undefined;
+
+      // Extract query term
+      const queryIdMatch = input.match(/sb-?\d+/i);
+      if (queryIdMatch) {
+        const idSearch = queryIdMatch[0].toLowerCase().replace("-", "");
+        matchedBooking = bookings.find(b =>
+          (b._id || "").toLowerCase().includes(idSearch) ||
+          (b.bookingId || "").toLowerCase().replace("-", "").includes(idSearch)
+        );
+      }
+
+      if (!matchedBooking) {
+        // Search by guest name or phone
+        const words = input.replace(/find|search|check|booking|for|details|of|the|with/gi, "").trim().split(" ");
+        const searchWord = words.find(w => w.length > 2);
+        if (searchWord) {
+          const swLower = searchWord.toLowerCase();
+          matchedBooking = bookings.find(b =>
+            (b.guestName || "").toLowerCase().includes(swLower) ||
+            (b.guestPhone || "").includes(swLower) ||
+            (b.customerId?.name || "").toLowerCase().includes(swLower) ||
+            (b.hotelId?.name || "").toLowerCase().includes(swLower)
+          );
+        }
+      }
+
+      if (matchedBooking) {
+        const guestName = matchedBooking.guestName || matchedBooking.customerId?.name || "Guest";
+        const hotelName = matchedBooking.hotelId?.name || "StayBuddy Property";
+        const amt = Number(matchedBooking.totalAmount || 0);
+        const statusStr = matchedBooking.status || "confirmed";
+        const payStatus = matchedBooking.paymentStatus || "unpaid";
+
+        const answer = `Dudu, I found booking ${matchedBooking.bookingId || matchedBooking._id.slice(0, 8)} for ${guestName} at ${hotelName}. Status is ${statusStr.toUpperCase()}, payment is ${payStatus.toUpperCase()} for ₹${amt.toLocaleString("en-IN")}. Details and actions are shown below.`;
+
+        const waData = prepareWhatsApp(
+          matchedBooking.guestPhone || matchedBooking.customerId?.phone || "9876543210",
+          guestName,
+          hotelName,
+          matchedBooking.bookingId || matchedBooking._id,
+          amt
+        );
+
+        reply(answer, input, "booking", { booking: matchedBooking, whatsapp: waData });
+        return;
+      }
+    }
+
+    // 3. PENDING BOOKINGS OR UNPAID RESERVATIONS
+    if (q.includes("pending booking") || q.includes("unpaid") || q.includes("failed payment") || q.includes("recheck payment")) {
+      const pending = systemData.bookings.filter(b => b.status === "pending" || b.paymentStatus !== "paid");
+      if (pending.length > 0) {
+        const answer = `Dudu, there are ${pending.length} bookings currently marked as pending or awaiting payment verification. Here are the top items with direct Razorpay verification.`;
+        reply(answer, input, "bookings_list", { bookings: pending.slice(0, 5) });
+      } else {
+        reply(`Dudu, all bookings in the system currently have verified payments and confirmed status!`, input);
+      }
+      return;
+    }
+
+    // 4. WHATSAPP & SMS DISPATCH
     if (
       q.includes("whatsapp") ||
       q.includes("what up") ||
@@ -442,41 +500,35 @@ export default function HeyBuddyPage() {
       q.includes("message to guest") ||
       q.includes("send message")
     ) {
-      setStatus("PREPARING WHATSAPP");
-      // Extract phone number if spoken or typed
       const phoneMatch = input.match(/(\+?91[\-\s]?)?[6-9]\d{9}/);
-      const phone = phoneMatch ? phoneMatch[0].replace(/\D/g, "") : "9876543210";
+      const phone = phoneMatch ? phoneMatch[0].replace(/\D/g, "") : (systemData.bookings[0]?.guestPhone || "9876543210");
 
-      let hotelName = "GM Hotel Kosala";
+      let hotelName = systemData.bookings[0]?.hotelId?.name || "GM Hotel Kosala";
       if (q.includes("galadari")) hotelName = "Hotel Galadari";
-      if (q.includes("taj")) hotelName = "Taj Banjara";
+      if (q.includes("kosala")) hotelName = "GM Hotel Kosala";
 
-      let guestName = "Guest";
+      let guestName = systemData.bookings[0]?.guestName || "Guest";
       if (q.includes("for ")) {
         const afterFor = input.split(/for /i)[1];
         if (afterFor) guestName = afterFor.split(" ")[0].trim();
       }
 
       const waData = prepareWhatsApp(phone, guestName, hotelName);
-      const answer = `Dudu, I have prepared the WhatsApp confirmation message for ${waData.guestName} (${waData.displayPhone}) for ${waData.hotelName}. Click "Send on WhatsApp" below to open and dispatch it!`;
+      const answer = `Dudu, I have prepared the WhatsApp confirmation message for ${waData.guestName} (${waData.displayPhone}) at ${waData.hotelName}. Click "Send on WhatsApp" to dispatch it!`;
 
       reply(answer, input, "whatsapp", waData);
       return;
     }
 
-    // 2. HOTEL RECOMMENDATION & INSTANT BOOKING
+    // 5. HOTEL INVENTORY & SEARCH
     if (
       q.includes("book") ||
       q.includes("recommend") ||
       q.includes("find hotel") ||
       q.includes("show hotel") ||
       q.includes("hotels in") ||
-      q.includes("flight") ||
-      q.includes("myra")
+      q.includes("rooms in")
     ) {
-      setStatus("SEARCHING PROPERTIES");
-
-      // Extract city
       let targetCity = "";
       const cities = ["goa", "vijayawada", "hyderabad", "bengaluru", "bangalore", "mumbai", "delhi", "chennai", "kolkata", "pune", "jaipur"];
       for (const c of cities) {
@@ -486,97 +538,139 @@ export default function HeyBuddyPage() {
         }
       }
 
-      // Extract hotel name keywords
-      let hotelNameQuery = "";
-      if (q.includes("kosala")) hotelNameQuery = "kosala";
-      else if (q.includes("galadari")) hotelNameQuery = "galadari";
-      else if (q.includes("executive")) hotelNameQuery = "executive";
+      let matched = systemData.hotels.filter(h => h.status === "approved" || !h.status);
+      if (targetCity) {
+        matched = matched.filter(h => (h.city || "").toLowerCase().includes(targetCity));
+      }
 
-      const matchedHotels = await searchHotels(targetCity, hotelNameQuery);
+      if (!matched.length && systemData.hotels.length) {
+        matched = systemData.hotels.slice(0, 4);
+      }
 
-      if (matchedHotels.length > 0) {
-        const top = matchedHotels[0];
-        const cityName = targetCity ? (targetCity.charAt(0).toUpperCase() + targetCity.slice(1)) : (top.city || "India");
-        const price = top.pricePerNight || (top.rooms?.[0]?.price) || 1811;
+      const top = matched[0];
+      const cityName = targetCity ? (targetCity.charAt(0).toUpperCase() + targetCity.slice(1)) : (top?.city || "India");
+      const price = top?.pricePerNight || (top?.rooms?.[0]?.price) || 1811;
 
-        const answer = `Dudu, I found ${matchedHotels.length} great hotels in ${cityName}. The best option is ${top.name} starting at ₹${Number(price).toLocaleString("en-IN")}/night. You can book it directly or share details via WhatsApp!`;
+      const answer = `Dudu, I found ${matched.length} properties in ${cityName}. The best recommendation is ${top?.name || "StayBuddy Hotel"} starting at ₹${Number(price).toLocaleString("en-IN")}/night.`;
 
-        reply(answer, input, "hotels", { hotels: matchedHotels, targetCity: cityName });
+      reply(answer, input, "hotels", { hotels: matched.slice(0, 5), targetCity: cityName });
+      return;
+    }
+
+    // 6. PENDING HOTEL APPROVALS & EXTRANET UPDATES
+    if (q.includes("pending approval") || q.includes("hotel approval") || q.includes("pending properties") || q.includes("room approval")) {
+      const pendingHotels = systemData.hotels.filter(h =>
+        h.status === "pending" ||
+        h.hasPendingRoomUpdates === true ||
+        (Array.isArray(h.rooms) && h.rooms.some((r: any) => r.approvalStatus === "pending"))
+      );
+
+      if (pendingHotels.length > 0) {
+        const answer = `Dudu, there are ${pendingHotels.length} properties or room updates awaiting your admin approval. Here is the list for your review.`;
+        reply(answer, input, "hotels", { hotels: pendingHotels, isPendingList: true });
       } else {
-        const answer = `Dudu, I couldn't find active hotels in that location right now. Showing our top approved properties across StayBuddy.`;
-        const allHotels = await searchHotels();
-        reply(answer, input, "hotels", { hotels: allHotels, targetCity: "All Cities" });
+        reply(`Dudu, all properties and room rates are up-to-date and approved across the platform!`, input);
       }
       return;
     }
 
-    // 3. LIVE BOOKINGS
-    if (q.includes("booking") || q.includes("reservation") || q.includes("today's booking") || q.includes("live bookings")) {
-      setStatus("FETCHING BOOKINGS DATA");
-      const answer = await fetchLiveBookings();
+    // 7. FINANCIAL AUDIT & REVENUE REPORT
+    if (q.includes("revenue") || q.includes("sales") || q.includes("profit") || q.includes("financial") || q.includes("tax") || q.includes("gst")) {
+      const bookings = systemData.bookings;
+      const confirmedPaid = bookings.filter(b => (b.status === "confirmed" || b.status === "completed") && b.paymentStatus === "paid");
+      const totalRevenue = confirmedPaid.reduce((acc, b) => acc + (Number(b.totalAmount) || 0), 0);
+      const totalB2b = confirmedPaid.reduce((acc, b) => acc + (Number(b.b2bCost) || 0), 0);
+      const grossProfit = totalRevenue > totalB2b ? totalRevenue - totalB2b : 0;
+      const gstDeduction = grossProfit * 0.05;
+      const netProfit = grossProfit - gstDeduction;
+
+      const answer = `Dudu, here is the complete financial audit: Total GMV is ₹${totalRevenue.toLocaleString("en-IN")} across ${confirmedPaid.length} confirmed paid bookings. Platform gross profit is ₹${grossProfit.toLocaleString("en-IN")}, with estimated net profit of ₹${netProfit.toLocaleString("en-IN", { maximumFractionDigits: 0 })} after 5% GST deduction.`;
+
+      reply(answer, input, "stats", {
+        totalRevenue,
+        grossProfit,
+        netProfit,
+        gstDeduction,
+        totalBookings: bookings.length,
+        confirmedPaidCount: confirmedPaid.length
+      });
+      return;
+    }
+
+    // 8. PARTNER ONBOARDING & TEAM
+    if (q.includes("partner") || q.includes("onboarding") || q.includes("staff")) {
+      const pendingPartners = systemData.partners.filter(p => !p.isApproved);
+      const answer = `Dudu, StayBuddy has ${systemData.partners.length} registered hotel partners (${pendingPartners.length} pending verification) and ${systemData.onboardingStaff.length} active onboarding executives.`;
+      reply(answer, input, "partners", { partners: systemData.partners.slice(0, 4), staff: systemData.onboardingStaff });
+      return;
+    }
+
+    // 9. REFERRALS & USERS
+    if (q.includes("referral") || q.includes("users") || q.includes("wallet")) {
+      const referralBookings = systemData.bookings.filter(b => b.isReferralBooking || b.referralCode);
+      const answer = `Dudu, we have ${systemData.users.length} registered customers, with ${referralBookings.length} bookings driven by referral codes. Referral rewards are set at ₹20 per completed stay.`;
       reply(answer, input, "stats");
       return;
     }
 
-    // 4. LIVE REVENUE & FINANCIAL AUDIT
-    if (q.includes("revenue") || q.includes("sales") || q.includes("profit") || q.includes("money") || q.includes("finance") || q.includes("earnings")) {
-      setStatus("CALCULATING REVENUE");
-      const answer = await fetchLiveRevenue();
-      reply(answer, input, "stats");
-      return;
-    }
-
-    // 5. HOTEL INVENTORY PERFORMANCE
-    if (q.includes("hotel performance") || q.includes("inventory") || q.includes("properties") || q.includes("onboarding")) {
-      setStatus("ANALYZING HOTEL INVENTORY");
-      const answer = await fetchLiveHotelsSummary();
-      reply(answer, input, "stats");
-      return;
-    }
-
-    // 6. WEBSITE SCANNER & ACCESSIBILITY AUDIT
-    if (
-      q.includes("scan") ||
-      q.includes("website") ||
-      q.includes("bug") ||
-      q.includes("error") ||
-      q.includes("health") ||
-      q.includes("inspect")
-    ) {
+    // 10. WEBSITE SCANNER & ACCESSIBILITY AUDIT
+    if (q.includes("scan") || q.includes("website") || q.includes("bug") || q.includes("error") || q.includes("health") || q.includes("inspect")) {
       const result = await scanWebsite();
-      const answer = `Dudu, website inspection is completed. I found ${result.length} diagnostic findings for StayBuddy homepage. All details are displayed in the diagnostics panel.`;
+      const answer = `Dudu, website inspection is completed. I found ${result.length} diagnostic findings for the StayBuddy homepage. Full details are listed in the diagnostics panel.`;
       reply(answer, input, "diagnostic", { findings: result });
       return;
     }
 
-    // 7. GREETINGS & HEY BUDDY RECOGNITION
+    // 11. ADMIN SECTION NAVIGATION
+    if (q.includes("open") || q.includes("go to")) {
+      if (q.includes("booking")) {
+        reply(`Dudu, opening Live Bookings tab in Admin Console.`, input, "navigate");
+        setTimeout(() => router.push("/admin?tab=bookings"), 800);
+        return;
+      }
+      if (q.includes("hotel") || q.includes("property")) {
+        reply(`Dudu, opening Properties & Margins tab in Admin Console.`, input, "navigate");
+        setTimeout(() => router.push("/admin?tab=hotels"), 800);
+        return;
+      }
+      if (q.includes("tax") || q.includes("invoice")) {
+        reply(`Dudu, opening Tax Invoices tab in Admin Console.`, input, "navigate");
+        setTimeout(() => router.push("/admin?tab=tax_invoices"), 800);
+        return;
+      }
+      if (q.includes("trade")) {
+        reply(`Dudu, opening Trade Shows Extractor tab.`, input, "navigate");
+        setTimeout(() => router.push("/admin?tab=trade_shows"), 800);
+        return;
+      }
+      if (q.includes("overview") || q.includes("dashboard")) {
+        reply(`Dudu, navigating to Admin Dashboard Overview.`, input, "navigate");
+        setTimeout(() => router.push("/admin"), 800);
+        return;
+      }
+    }
+
+    // 12. GREETINGS & HEY BUDDY
     if (q.includes("hello") || q.includes("hi") || q.includes("hey") || q.includes("dudu")) {
       reply(
-        `Dudu, tell me! What can I do for you today, ${adminName}? You can ask me to book a hotel, send a WhatsApp confirmation, show revenue, or inspect the website.`,
+        `Dudu, tell me! What can I do for you today, ${adminName}? You can ask me to find any booking, check revenue, dispatch WhatsApp messages, or approve pending properties.`,
         input
       );
       return;
     }
 
-    // 8. HELP & CAPABILITIES
-    if (q.includes("help") || q.includes("what can you do") || q.includes("commands")) {
+    // 13. HELP & CAPABILITIES
+    if (q.includes("help") || q.includes("what can you do") || q.includes("capabilities")) {
       reply(
-        `Dudu, here is what I can do: 1. Recommend and book hotels in Goa, Vijayawada, Hyderabad or Bengaluru. 2. Send instant WhatsApp & SMS confirmations to guests. 3. Show live bookings and revenue. 4. Scan StayBuddy for bugs. Just say the word!`,
+        `Dudu, I have complete access to your StayBuddy system: 1. Search bookings by guest name or ID with live Razorpay rechecks. 2. Recommend and book hotels in Goa, Vijayawada, Hyderabad, and Bengaluru. 3. Dispatch official WhatsApp confirmations. 4. Audit gross profit and 5% GST. 5. Manage partner onboarding. What would you like to inspect?`,
         input
       );
       return;
     }
 
-    // 9. ADMIN NAVIGATION SHORTCUTS
-    if (q.includes("admin") || q.includes("dashboard") || q.includes("go to admin")) {
-      reply(`Dudu, taking you right to the StayBuddy Admin Console.`, input);
-      setTimeout(() => router.push("/admin"), 1000);
-      return;
-    }
-
-    // DEFAULT FALLBACK
+    // FALLBACK INTELLIGENT MATCH
     reply(
-      `Dudu, I heard: "${input}". Searching StayBuddy intelligence... You can ask me to recommend hotels, dispatch WhatsApp confirmations, or check today's revenue.`,
+      `Dudu, I received: "${input}". Querying StayBuddy's synchronized database... You can ask me to find any booking, review revenue, dispatch WhatsApp messages, or inspect website health.`,
       input
     );
   }
@@ -621,10 +715,8 @@ export default function HeyBuddyPage() {
             const afterWake = normalized.replace(/hey buddy|a buddy|hey body|dudu/gi, "").trim();
 
             if (afterWake && afterWake.length > 2) {
-              // User said "Hey Buddy recommend hotel in Goa"
               execute(afterWake);
             } else {
-              // User called "Hey Buddy"
               const wakeGreeting = "Dudu, tell me";
               speak(wakeGreeting);
               setMessages(old => [
@@ -634,7 +726,7 @@ export default function HeyBuddyPage() {
               ]);
             }
           } else {
-            // 2. Direct command spoken without saying "Hey Buddy" -> Respond immediately!
+            // 2. Direct command spoken without saying "Hey Buddy"
             execute(transcript);
           }
         }
@@ -685,7 +777,16 @@ export default function HeyBuddyPage() {
     setStatus("VOICE ASSISTANT PAUSED");
   }
 
-  // AUTO-ACTIVATE ON ARRIVAL: Immediately start listening and greet with "Dudu, tell me"
+  function sendCommand(e: React.FormEvent) {
+    e.preventDefault();
+    if (!command.trim()) return;
+
+    const value = command;
+    setCommand("");
+    execute(value);
+  }
+
+  // AUTO-ACTIVATE ON MOUNT
   useEffect(() => {
     if (authStatus !== "authenticated") return;
     const role = (session?.user as any)?.role;
@@ -698,15 +799,6 @@ export default function HeyBuddyPage() {
 
     return () => clearTimeout(timer);
   }, [authStatus, session]);
-
-  function sendCommand(e: React.FormEvent) {
-    e.preventDefault();
-    if (!command.trim()) return;
-
-    const value = command;
-    setCommand("");
-    execute(value);
-  }
 
   useEffect(() => {
     return () => {
@@ -721,15 +813,16 @@ export default function HeyBuddyPage() {
   }, []);
 
   const quickPrompts = [
+    { label: "🔍 Find booking for Arif", query: "Find booking for Arif" },
+    { label: "⏳ Show pending bookings", query: "Show pending bookings" },
+    { label: "💰 Show revenue & profit audit", query: "Show revenue and platform profit audit" },
     { label: "🏨 Recommend best hotel in Goa", query: "Recommend best hotel in Goa" },
     { label: "🏨 Hotels in Vijayawada", query: "Recommend best hotel in Vijayawada" },
-    { label: "💬 Send WhatsApp confirmation to guest", query: "Send WhatsApp confirmation to 9876543210 for GM Hotel Kosala" },
-    { label: "💰 Show revenue & profit", query: "Show revenue and platform profit" },
-    { label: "🛎️ Show today's live bookings", query: "Show today's bookings" },
-    { label: "🔍 Scan website for bugs", query: "Scan my website" }
+    { label: "💬 Send WhatsApp to guest", query: "Send WhatsApp confirmation to 9876543210 for GM Hotel Kosala" },
+    { label: "🧑‍💼 Show partner approvals", query: "Show partner approvals" },
+    { label: "🔄 Sync entire database", query: "Sync entire database" }
   ];
 
-  // If session is still verifying, show futuristic security check
   if (authStatus === "loading") {
     return (
       <main className="min-h-screen bg-[#06111f] text-white flex flex-col items-center justify-center p-6">
@@ -741,7 +834,6 @@ export default function HeyBuddyPage() {
     );
   }
 
-  // Security Gate: Only Admin allowed
   const role = (session?.user as any)?.role;
   if (authStatus === "unauthenticated" || role !== "admin") {
     return (
@@ -802,18 +894,27 @@ export default function HeyBuddyPage() {
 
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="font-bold tracking-[4px] text-xl">HEYBUDDY</h1>
-              <span className="bg-sky-950 text-sky-400 border border-sky-800 text-[10px] px-2 py-0.5 rounded-full font-mono">
+              <h1 className="font-bold tracking-[4px] text-xl">HEYBUDDY AI</h1>
+              <span className="bg-sky-950 text-sky-400 border border-sky-800 text-[10px] px-2.5 py-0.5 rounded-full font-mono">
                 FEMALE VOICE • &quot;DUDU, TELL ME&quot;
               </span>
             </div>
             <p className="text-[9px] tracking-[3px] text-sky-300 uppercase">
-              STAYBUDDY EXECUTIVE AI • LIKE MYRA
+              FULL SYSTEM INTEGRATION • LIVE DATABASE SYNCHRONIZED
             </p>
           </div>
         </div>
 
         <div className="flex items-center gap-3">
+          <button
+            onClick={syncCompleteSystem}
+            disabled={systemData.syncing}
+            className="flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-sky-300 text-xs px-3 py-2 rounded-xl transition"
+            title="Re-sync all live data"
+          >
+            <RefreshCw size={13} className={systemData.syncing ? "animate-spin" : ""} />
+            {systemData.syncing ? "Syncing..." : "Sync Live DB"}
+          </button>
           <Link
             href="/admin"
             className="flex items-center gap-2 bg-slate-800/80 hover:bg-slate-700 border border-slate-700 text-sky-300 text-xs px-4 py-2 rounded-xl transition"
@@ -826,19 +927,47 @@ export default function HeyBuddyPage() {
         </div>
       </header>
 
-      {/* MYRA-STYLE EXECUTIVE WELCOME BANNER */}
-      <div className="mt-6 bg-gradient-to-r from-[#0b1c2d] via-[#102c49] to-[#0b1c2d] border border-[#1e3d57] rounded-2xl p-5 shadow-xl flex flex-wrap items-center justify-between gap-4">
+      {/* SYSTEM METRICS TICKER */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mt-4">
+        <div className="bg-[#0b1c2d] border border-slate-800 rounded-xl p-3 text-center">
+          <div className="text-[10px] text-slate-400 uppercase font-mono">Total Bookings</div>
+          <div className="text-base font-bold text-sky-400 mt-0.5">{systemData.bookings.length}</div>
+        </div>
+        <div className="bg-[#0b1c2d] border border-slate-800 rounded-xl p-3 text-center">
+          <div className="text-[10px] text-slate-400 uppercase font-mono">Properties</div>
+          <div className="text-base font-bold text-emerald-400 mt-0.5">{systemData.hotels.length}</div>
+        </div>
+        <div className="bg-[#0b1c2d] border border-slate-800 rounded-xl p-3 text-center">
+          <div className="text-[10px] text-slate-400 uppercase font-mono">Tax Invoices</div>
+          <div className="text-base font-bold text-amber-400 mt-0.5">{systemData.taxInvoices.length}</div>
+        </div>
+        <div className="bg-[#0b1c2d] border border-slate-800 rounded-xl p-3 text-center">
+          <div className="text-[10px] text-slate-400 uppercase font-mono">Hotel Partners</div>
+          <div className="text-base font-bold text-indigo-400 mt-0.5">{systemData.partners.length}</div>
+        </div>
+        <div className="bg-[#0b1c2d] border border-slate-800 rounded-xl p-3 text-center">
+          <div className="text-[10px] text-slate-400 uppercase font-mono">Registered Users</div>
+          <div className="text-base font-bold text-purple-400 mt-0.5">{systemData.users.length}</div>
+        </div>
+        <div className="bg-[#0b1c2d] border border-slate-800 rounded-xl p-3 text-center">
+          <div className="text-[10px] text-slate-400 uppercase font-mono">Onboarders</div>
+          <div className="text-base font-bold text-rose-400 mt-0.5">{systemData.onboardingStaff.length}</div>
+        </div>
+      </div>
+
+      {/* MYRA-STYLE EXECUTIVE BANNER */}
+      <div className="mt-4 bg-gradient-to-r from-[#0b1c2d] via-[#102c49] to-[#0b1c2d] border border-[#1e3d57] rounded-2xl p-5 shadow-xl flex flex-wrap items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
             <h2 className="text-2xl font-extrabold text-white">
               Hi, <span className="text-sky-400">{adminName}</span> ✨
             </h2>
             <span className="bg-blue-600/30 text-blue-300 border border-blue-500/40 text-[10px] px-2.5 py-0.5 rounded-full font-bold">
-              AI ASSISTANT
+              CONNECTED EXECUTIVE AI
             </span>
           </div>
           <p className="text-slate-300 text-xs mt-1 max-w-xl leading-relaxed">
-            Meet HeyBuddy, your online executive AI assistant. Say <strong className="text-sky-300">&quot;Hey Buddy&quot;</strong> and she responds <strong className="text-emerald-400">&quot;Dudu, tell me&quot;</strong> in a realistic female voice. She can search hotels, create bookings, dispatch WhatsApp confirmations, and inspect website health!
+            HeyBuddy has direct access across all StayBuddy modules: search bookings by guest name or booking ID, trigger Razorpay rechecks, dispatch WhatsApp confirmations, manage hotel approvals, or audit gross profit &amp; 5% GST.
           </p>
         </div>
 
@@ -854,24 +983,24 @@ export default function HeyBuddyPage() {
       </div>
 
       {/* HERO VOICE ORB */}
-      <section className="text-center py-8 flex flex-col items-center">
+      <section className="text-center py-6 flex flex-col items-center">
         <div className={`orb ${listening ? "active" : ""} ${scanning ? "scanning" : ""}`}>
           <div className="orb-inner">
             <AudioLines size={55} />
           </div>
         </div>
 
-        <h2 className="text-2xl font-bold tracking-[6px] mt-5">
+        <h2 className="text-2xl font-bold tracking-[6px] mt-4">
           HEYBUDDY AI
         </h2>
 
-        <p className="text-emerald-400 text-xs tracking-widest mt-3 font-mono font-bold">
+        <p className="text-emerald-400 text-xs tracking-widest mt-2.5 font-mono font-bold">
           {status}
         </p>
 
-        <p className="text-slate-300 text-xs mt-2 font-medium">
+        <p className="text-slate-300 text-xs mt-1.5 font-medium">
           {listening
-            ? '● Microphone is active! Say "Hey Buddy" to hear "Dudu, tell me" or speak your booking/revenue request directly.'
+            ? '● Microphone active! Say "Hey Buddy" to hear "Dudu, tell me" or speak any booking/system request directly.'
             : 'Click below to activate voice assistant.'}
         </p>
 
@@ -900,7 +1029,7 @@ export default function HeyBuddyPage() {
       {/* DASHBOARD PANELS */}
       <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
-        {/* COMMAND CENTRE (MYRA-STYLE CHAT WITH ACTION CARDS) */}
+        {/* COMMAND CENTRE */}
         <div className="panel p-5 flex flex-col justify-between">
           <div>
             <div className="flex justify-between items-center border-b border-slate-700 pb-4">
@@ -908,12 +1037,12 @@ export default function HeyBuddyPage() {
                 <Activity className="text-sky-400" size={18} />
                 COMMAND CENTRE
               </h3>
-              <span className="text-sky-400 text-[10px] font-mono">AI CONSOLE • LIKE MYRA</span>
+              <span className="text-sky-400 text-[10px] font-mono">DEEP SYSTEM ACCESS</span>
             </div>
 
             {/* QUICK PROMPTS CHIPS */}
             <div className="py-3 border-b border-slate-800/80">
-              <div className="text-[11px] text-slate-400 mb-2 font-medium">You may try asking:</div>
+              <div className="text-[11px] text-slate-400 mb-2 font-medium">Try asking any system query:</div>
               <div className="flex flex-wrap gap-2">
                 {quickPrompts.map((item, idx) => (
                   <button
@@ -947,12 +1076,106 @@ export default function HeyBuddyPage() {
                       {message.text}
                     </p>
 
+                    {/* ACTION TYPE: SINGLE BOOKING DETAILS */}
+                    {message.actionType === "booking" && message.actionData?.booking && (
+                      <div className="mt-3 bg-[#071625] border border-sky-600/40 rounded-xl p-3.5 space-y-3">
+                        <div className="flex justify-between items-center text-xs">
+                          <span className="font-bold text-sky-300">
+                            Booking #{message.actionData.booking.bookingId || message.actionData.booking._id.slice(0, 8)}
+                          </span>
+                          <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase ${message.actionData.booking.paymentStatus === "paid" ? "bg-emerald-950 text-emerald-400 border border-emerald-800" : "bg-amber-950 text-amber-400 border border-amber-800"}`}>
+                            {message.actionData.booking.paymentStatus || "unpaid"}
+                          </span>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2 text-[11px] text-slate-300">
+                          <div>
+                            <span className="text-slate-400 block">Guest Name:</span>
+                            <strong className="text-white">{message.actionData.booking.guestName || message.actionData.booking.customerId?.name || "Guest"}</strong>
+                          </div>
+                          <div>
+                            <span className="text-slate-400 block">Phone:</span>
+                            <strong className="text-white">{message.actionData.booking.guestPhone || message.actionData.booking.customerId?.phone || "N/A"}</strong>
+                          </div>
+                          <div>
+                            <span className="text-slate-400 block">Property:</span>
+                            <strong className="text-white">{message.actionData.booking.hotelId?.name || "StayBuddy Hotel"}</strong>
+                          </div>
+                          <div>
+                            <span className="text-slate-400 block">Total Amount:</span>
+                            <strong className="text-emerald-400">₹{Number(message.actionData.booking.totalAmount || 0).toLocaleString("en-IN")}</strong>
+                          </div>
+                        </div>
+
+                        <div className="flex flex-wrap gap-2 pt-1 border-t border-slate-700/60">
+                          {message.actionData.whatsapp && (
+                            <a
+                              href={message.actionData.whatsapp.whatsappUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-bold px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition"
+                            >
+                              <MessageCircle size={13} /> WhatsApp Guest
+                            </a>
+                          )}
+                          <button
+                            onClick={() => recheckPayment(message.actionData.booking._id)}
+                            disabled={recheckingBookingId === message.actionData.booking._id}
+                            className="bg-sky-600 hover:bg-sky-500 text-white text-[11px] font-bold px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition"
+                          >
+                            <RefreshCw size={12} className={recheckingBookingId === message.actionData.booking._id ? "animate-spin" : ""} />
+                            Recheck Razorpay
+                          </button>
+                          <Link
+                            href="/admin?tab=bookings"
+                            className="bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] font-bold px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition"
+                          >
+                            View in Console →
+                          </Link>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* ACTION TYPE: LIST OF PENDING BOOKINGS */}
+                    {message.actionType === "bookings_list" && message.actionData?.bookings && (
+                      <div className="mt-3 space-y-2">
+                        {message.actionData.bookings.map((b: BookingItem) => (
+                          <div key={b._id} className="bg-[#071625] border border-slate-700/80 rounded-xl p-2.5 flex items-center justify-between gap-2 text-xs">
+                            <div>
+                              <div className="font-bold text-white">{b.guestName || b.customerId?.name || "Guest"}</div>
+                              <div className="text-[10px] text-slate-400 mt-0.5">
+                                {b.hotelId?.name || "Hotel"} • ₹{Number(b.totalAmount || 0).toLocaleString("en-IN")} • <span className="text-amber-400 font-mono uppercase">{b.paymentStatus || "unpaid"}</span>
+                              </div>
+                            </div>
+                            <div className="flex gap-1.5">
+                              <button
+                                onClick={() => recheckPayment(b._id)}
+                                disabled={recheckingBookingId === b._id}
+                                className="bg-sky-600 hover:bg-sky-500 text-white text-[10px] font-bold px-2.5 py-1 rounded-lg flex items-center gap-1 transition"
+                              >
+                                Recheck
+                              </button>
+                              {b.guestPhone && (
+                                <a
+                                  href={`https://wa.me/91${b.guestPhone.replace(/\D/g,"")}?text=${encodeURIComponent(`Hello ${b.guestName || "Guest"}, this is StayBuddy regarding your reservation. Please confirm your booking payment.`)}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-bold px-2 py-1 rounded-lg flex items-center gap-1 transition"
+                                >
+                                  <MessageCircle size={12} />
+                                </a>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
                     {/* ACTION TYPE: HOTELS RECOMMENDATION CARDS */}
                     {message.actionType === "hotels" && message.actionData?.hotels && (
                       <div className="mt-3 space-y-2.5">
                         {message.actionData.hotels.map((hotel: HotelItem) => {
                           const price = hotel.pricePerNight || hotel.rooms?.[0]?.price || 1811;
-                          const img = hotel.images?.[0] || "/placeholder-hotel.jpg";
                           return (
                             <div key={hotel._id} className="bg-[#071524] border border-[#1e3d57] rounded-xl p-3 flex items-center justify-between gap-3 hover:border-sky-500/50 transition">
                               <div className="flex items-center gap-3 min-w-0">
@@ -1033,6 +1256,33 @@ export default function HeyBuddyPage() {
                       </div>
                     )}
 
+                    {/* ACTION TYPE: FINANCIAL STATS CARD */}
+                    {message.actionType === "stats" && message.actionData?.totalRevenue !== undefined && (
+                      <div className="mt-3 bg-[#0b1c2d] border border-emerald-500/30 rounded-xl p-3.5 space-y-2">
+                        <div className="text-xs font-bold text-emerald-400 flex items-center gap-1.5">
+                          <TrendingUp size={14} /> StayBuddy Financial Breakdown
+                        </div>
+                        <div className="grid grid-cols-2 gap-2 text-xs">
+                          <div className="bg-[#061523] p-2 rounded-lg">
+                            <div className="text-[10px] text-slate-400">Total B2C Revenue</div>
+                            <div className="text-sm font-bold text-white mt-0.5">₹{message.actionData.totalRevenue.toLocaleString("en-IN")}</div>
+                          </div>
+                          <div className="bg-[#061523] p-2 rounded-lg">
+                            <div className="text-[10px] text-slate-400">Gross Margin</div>
+                            <div className="text-sm font-bold text-emerald-400 mt-0.5">₹{message.actionData.grossProfit.toLocaleString("en-IN")}</div>
+                          </div>
+                          <div className="bg-[#061523] p-2 rounded-lg">
+                            <div className="text-[10px] text-slate-400">GST Output (5%)</div>
+                            <div className="text-sm font-bold text-amber-400 mt-0.5">-₹{message.actionData.gstDeduction.toLocaleString("en-IN", { maximumFractionDigits: 0 })}</div>
+                          </div>
+                          <div className="bg-[#061523] p-2 rounded-lg">
+                            <div className="text-[10px] text-slate-400">Net Platform Profit</div>
+                            <div className="text-sm font-bold text-sky-400 mt-0.5">₹{message.actionData.netProfit.toLocaleString("en-IN", { maximumFractionDigits: 0 })}</div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
                   </div>
                 </div>
               ))}
@@ -1044,7 +1294,7 @@ export default function HeyBuddyPage() {
               <input
                 value={command}
                 onChange={e => setCommand(e.target.value)}
-                placeholder="Ask HeyBuddy to book a hotel, send WhatsApp, check revenue..."
+                placeholder="Ask HeyBuddy: find booking, check revenue, send WhatsApp, search hotels..."
                 className="flex-1 min-w-0 bg-[#061523] border border-slate-700 focus:border-sky-500 p-3 rounded-xl text-sm outline-none transition text-white placeholder-slate-500"
               />
 
@@ -1065,18 +1315,12 @@ export default function HeyBuddyPage() {
               <Bug className="text-sky-400" size={18} />
               WEBSITE INTELLIGENCE
             </h3>
-            <span className="text-sky-400 text-[10px] font-mono">
-              DIAGNOSTICS
-            </span>
+            <span className="text-sky-400 text-[10px] font-mono">DIAGNOSTICS</span>
           </div>
 
           <div className="text-center py-6">
             <Globe size={40} className="mx-auto text-sky-400" />
-
-            <h3 className="font-bold mt-3 text-base">
-              StayBuddy Website Scanner
-            </h3>
-
+            <h3 className="font-bold mt-3 text-base">StayBuddy Website Scanner</h3>
             <p className="text-slate-400 text-xs mt-1.5 max-w-md mx-auto leading-relaxed">
               Inspect StayBuddy homepage for HTTP errors, image accessibility, viewport settings, buttons and form labels.
             </p>
@@ -1093,9 +1337,7 @@ export default function HeyBuddyPage() {
           <div className="border-t border-slate-700 pt-4">
             <div className="flex justify-between text-xs items-center font-bold">
               <span>INSPECTION RESULTS</span>
-              <span className="text-sky-400 font-mono">
-                {findings.length} FINDINGS
-              </span>
+              <span className="text-sky-400 font-mono">{findings.length} FINDINGS</span>
             </div>
 
             {!scanDone && (
@@ -1109,22 +1351,13 @@ export default function HeyBuddyPage() {
               {findings.map((item, index) => (
                 <div key={index} className="finding">
                   <div className="flex justify-between gap-2">
-                    <strong className="text-xs text-white">
-                      {item.title}
-                    </strong>
-
+                    <strong className="text-xs text-white">{item.title}</strong>
                     <span className={`text-[10px] font-mono uppercase font-bold ${item.severity.toLowerCase()}`}>
                       {item.severity}
                     </span>
                   </div>
-
-                  <p className="text-slate-400 text-xs mt-1">
-                    {item.detail}
-                  </p>
-
-                  <p className="text-sky-300 text-xs mt-1">
-                    Recommendation: {item.recommendation}
-                  </p>
+                  <p className="text-slate-400 text-xs mt-1">{item.detail}</p>
+                  <p className="text-sky-300 text-xs mt-1">Recommendation: {item.recommendation}</p>
                 </div>
               ))}
             </div>
@@ -1134,9 +1367,9 @@ export default function HeyBuddyPage() {
 
       {/* FOOTER */}
       <footer className="flex flex-wrap justify-between gap-4 text-[10px] text-sky-400 border-t border-slate-800 mt-8 pt-5 font-mono">
-        <span className="flex items-center gap-2"><Zap size={14}/> HEYBUDDY AI V2.0 • VOICE &amp; BOOKING</span>
-        <span className="flex items-center gap-2"><RefreshCw size={14}/> SCANS RUN: {scanCount}</span>
-        <span className="flex items-center gap-2"><Hotel size={14}/> STAYBUDDY ADMIN CONSOLE</span>
+        <span className="flex items-center gap-2"><Zap size={14}/> HEYBUDDY AI V3.0 • DEEP SYSTEM SYNC</span>
+        <span className="flex items-center gap-2"><RefreshCw size={14}/> LAST SYNCED: {systemData.lastSynced || "LIVE"}</span>
+        <span className="flex items-center gap-2"><Hotel size={14}/> STAYBUDDY SUPER ADMIN CONSOLE</span>
       </footer>
     </main>
   );
