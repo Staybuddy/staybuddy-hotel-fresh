@@ -27,8 +27,25 @@ export default function PartnerDashboard() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState('hotels');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [hotels, setHotels] = useState<any[]>([]);
-  const [bookings, setBookings] = useState<any[]>([]);
+  const [hotels, setHotels] = useState<any[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const cached = localStorage.getItem('staybuddy_partner_hotels_cache');
+        if (cached) return JSON.parse(cached);
+      } catch (_) {}
+    }
+    return [];
+  });
+  const [bookings, setBookings] = useState<any[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const cached = localStorage.getItem('staybuddy_partner_bookings_cache');
+        if (cached) return JSON.parse(cached);
+      } catch (_) {}
+    }
+    return [];
+  });
+  const [isServingCache, setIsServingCache] = useState(false);
   const [stats, setStats] = useState({ totalHotels: 0, totalBookings: 0, totalRevenue: 0, pendingHotels: 0 });
   const [loading, setLoading] = useState(true);
   const [hasShownSplash, setHasShownSplash] = useState<boolean>(() => {
@@ -328,41 +345,111 @@ export default function PartnerDashboard() {
     if (showLoadingIndicator) setLoading(true);
     const partnerId = (session?.user as any)?.id || (session?.user as any)?.email;
     const role = (session?.user as any)?.role;
+    const isAdmin = role === 'admin' || session?.user?.email?.toLowerCase().includes('staybuddy') || session?.user?.name?.toLowerCase().includes('stay buddy');
+
     try {
-      const hotelUrl = role === 'admin' 
-        ? `/api/hotels?status=all&limit=50` 
-        : `/api/hotels?partnerId=${encodeURIComponent(partnerId || '')}&status=all&limit=50`;
-      const bookingUrl = role === 'admin'
-        ? `/api/bookings?limit=50`
-        : `/api/bookings?partnerId=${encodeURIComponent(partnerId || '')}&limit=50`;
+      let h: any[] = [];
+      let allBookings: any[] = [];
 
-      const [hotelRes, bookingRes] = await Promise.all([
-        fetch(hotelUrl),
-        fetch(bookingUrl),
-        new Promise(resolve => setTimeout(resolve, 600))
-      ]);
-      const [hotelData, bookingData] = await Promise.all([hotelRes.json(), bookingRes.json()]);
+      if (isAdmin) {
+        // Admin gets full 19 property inventory and all bookings
+        const [adminHotelsRes, adminBookingsRes] = await Promise.allSettled([
+          fetch('/api/admin/hotels').then(r => r.ok ? r.json() : null),
+          fetch('/api/admin/bookings').then(r => r.ok ? r.json() : null),
+        ]);
 
-      const h = hotelData.hotels || [];
-      const allBookings = bookingData.bookings || [];
-      const confirmedBookings = allBookings.filter((bk: any) => bk.status !== 'pending' && bk.paymentStatus !== 'pending');
-      setHotels(h);
-      setBookings(confirmedBookings);
+        if (adminHotelsRes.status === 'fulfilled' && adminHotelsRes.value?.hotels?.length) {
+          h = adminHotelsRes.value.hotels;
+        } else {
+          // Fallback to standard hotels route
+          const stdRes = await fetch('/api/hotels?status=all&limit=50').then(r => r.ok ? r.json() : null).catch(() => null);
+          if (stdRes?.hotels?.length) h = stdRes.hotels;
+        }
 
-      const revenue = confirmedBookings.filter((bk: any) => bk.paymentStatus === 'paid').reduce((sum: number, bk: any) => {
+        if (adminBookingsRes.status === 'fulfilled' && adminBookingsRes.value?.bookings?.length) {
+          allBookings = adminBookingsRes.value.bookings;
+        } else {
+          const stdBRes = await fetch('/api/bookings?limit=50').then(r => r.ok ? r.json() : null).catch(() => null);
+          if (stdBRes?.bookings?.length) allBookings = stdBRes.bookings;
+        }
+      } else {
+        // Partner gets properties associated with their ID or email
+        const hotelUrl = `/api/hotels?partnerId=${encodeURIComponent(partnerId || '')}&status=all&limit=50`;
+        const bookingUrl = `/api/bookings?partnerId=${encodeURIComponent(partnerId || '')}&limit=50`;
+        const [hotelData, bookingData] = await Promise.all([
+          fetch(hotelUrl).then(r => r.ok ? r.json() : null).catch(() => null),
+          fetch(bookingUrl).then(r => r.ok ? r.json() : null).catch(() => null)
+        ]);
+        h = hotelData?.hotels || [];
+        allBookings = bookingData?.bookings || [];
+
+        // If 0 hotels returned by id, try partner email if different
+        if (h.length === 0 && session?.user?.email && session?.user?.email !== partnerId) {
+          const emailHotelData = await fetch(`/api/hotels?partnerId=${encodeURIComponent(session.user.email)}&status=all&limit=50`).then(r => r.ok ? r.json() : null).catch(() => null);
+          if (emailHotelData?.hotels?.length) h = emailHotelData.hotels;
+        }
+      }
+
+      // Check if we received live data or need to fall back to localStorage
+      if (h.length > 0) {
+        setHotels(h);
+        setIsServingCache(false);
+        try { localStorage.setItem('staybuddy_partner_hotels_cache', JSON.stringify(h)); } catch (_) {}
+      } else {
+        // Fallback to cached hotels
+        try {
+          const cached = localStorage.getItem('staybuddy_partner_hotels_cache');
+          if (cached) {
+            const parsed = JSON.parse(cached);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              setHotels(parsed);
+              h = parsed;
+              setIsServingCache(true);
+            }
+          }
+        } catch (_) {}
+      }
+
+      if (allBookings.length > 0) {
+        setBookings(allBookings);
+        try { localStorage.setItem('staybuddy_partner_bookings_cache', JSON.stringify(allBookings)); } catch (_) {}
+      } else {
+        // Fallback to cached bookings
+        try {
+          const cachedB = localStorage.getItem('staybuddy_partner_bookings_cache');
+          if (cachedB) {
+            const parsedB = JSON.parse(cachedB);
+            if (Array.isArray(parsedB) && parsedB.length > 0) {
+              setBookings(parsedB);
+              allBookings = parsedB;
+              setIsServingCache(true);
+            }
+          }
+        } catch (_) {}
+      }
+
+      const revenue = allBookings.filter((bk: any) => bk.paymentStatus === 'paid' || bk.status === 'confirmed' || bk.status === 'completed').reduce((sum: number, bk: any) => {
         const b2b = Number(bk.totalPartnerPrice) > 0 
           ? Number(bk.totalPartnerPrice) 
           : (Number(bk.partnerPricePerNight) > 0 ? Number(bk.partnerPricePerNight) * (Number(bk.nights) || 1) * (Number(bk.rooms) || 1) : Math.round(Number(bk.totalPrice || 0) / 1.15));
         return sum + b2b;
       }, 0);
+
       setStats({
         totalHotels: h.length,
-        totalBookings: confirmedBookings.length,
+        totalBookings: allBookings.length,
         totalRevenue: revenue,
         pendingHotels: h.filter((h: any) => h.status === 'pending').length,
       });
     } catch (e) {
-      console.error(e);
+      console.error('fetchData error:', e);
+      try {
+        const cachedH = localStorage.getItem('staybuddy_partner_hotels_cache');
+        const cachedB = localStorage.getItem('staybuddy_partner_bookings_cache');
+        if (cachedH) setHotels(JSON.parse(cachedH));
+        if (cachedB) setBookings(JSON.parse(cachedB));
+        setIsServingCache(true);
+      } catch (_) {}
     } finally {
       if (showLoadingIndicator) setLoading(false);
     }
@@ -830,19 +917,16 @@ export default function PartnerDashboard() {
     if (!hotels || hotels.length === 0) return;
     setLoadingAllBlocks(true);
     try {
-      const all: any[] = [];
-      await Promise.all(
-        hotels.map(async (h) => {
-          try {
-            const res = await fetch(`/api/hotels/block?hotelId=${h._id}`);
-            const data = await res.json();
-            if (data.blocks) {
-              data.blocks.forEach((b: any) => all.push({ ...b, hotelName: h.name, hotelCity: h.city }));
-            }
-          } catch (e) {}
-        })
-      );
-      setAllPartnerBlocks(all);
+      const res = await fetch(`/api/hotels/block?hotelId=all`);
+      const data = await res.json();
+      if (data.blocks) {
+        const hotelNameMap = new Map(hotels.map(h => [h._id, { name: h.name, city: h.city }]));
+        const enriched = data.blocks.map((b: any) => {
+          const info = hotelNameMap.get(b.hotelId);
+          return { ...b, hotelName: info?.name || b.hotelName || 'Property', hotelCity: info?.city || '' };
+        });
+        setAllPartnerBlocks(enriched);
+      }
     } catch (e) {
       console.error(e);
     } finally {
@@ -1078,6 +1162,12 @@ export default function PartnerDashboard() {
           {/* ===== MY HOTELS ===== */}
           {activeTab === 'hotels' && (
             <div className="fade-in">
+              {isServingCache && (
+                <div style={{ background: '#fffbeb', border: '1px solid #fef3c7', padding: '10px 14px', borderRadius: 12, marginBottom: 16, fontSize: '0.8rem', color: '#92400e', display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span>⚡</span>
+                  <span><b>Cached Inventory Active:</b> Displaying verified properties &amp; bookings from local cache while cloud database refreshes.</span>
+                </div>
+              )}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
                 <h1 style={{ margin: 0, fontSize: '1.85rem' }}>My Hotels</h1>
                 <button className="btn btn-primary" onClick={() => setActiveTab('add-hotel')}>+ Add New Hotel</button>

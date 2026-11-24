@@ -1,0 +1,692 @@
+{
+  "admin_hotels_list": {
+    "data": {
+      "hotels": [
+        {
+          "_id": "C4qQgdQkykNRM70gW1L7",
+          "id": "C4qQgdQkykNRM70gW1L7",
+          "name": "Hotel Minerva Grand",
+          "city": "Vijayawada",
+          "totalRooms": 30,
+          "staybuddyAllocation": 30,
+          "starRating": "4",
+          "status": "approved",
+          "startingPrice": 2777,
+          "startingB2BPrice": 2415,
+          "images": [
+            "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1200&q=80"
+          ],
+          "rooms": [
+            {
+              "_id": "rm_minerva_deluxe",
+              "type": "Deluxe Room",
+              "priceSingle": 1932,
+              "priceDouble": 2777,
+              "priceTriple": 3168,
+              "totalRooms": 30,
+              "staybuddyAllocation": 30
+            }
+          ]
+        },
+        {
+          "_id": "AIhu5Jqm1NeMpFnu7bus",
+          "id": "AIhu5Jqm1NeMpFnu7bus",
+          "name": "GM Hotel Kosala",
+          "city": "Vijayawada",
+          "totalRooms": 40,
+          "staybuddyAllocation": 20,
+          "starRating": "3",
+          "status": "approved",
+          "startingPrice": 2199,
+          "startingB2BPrice": 1912,
+          "images": [
+            "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=1200&q=80"
+          ],
+          "rooms": [
+            {
+              "_id": "rm_kosala_std",
+              "type": "Executive Room",
+              "priceSingle": 1799,
+              "priceDouble": 2199,
+              "priceTriple": 2699,
+              "totalRooms": 40,
+              "staybuddyAllocation": 20
+            }
+          ]
+        },
+        {
+          "_id": "5Qc6lbcDpDm4I7cvEipS",
+          "id": "5Qc6lbcDpDm4I7cvEipS",
+          "name": "Hotel Galadari",
+          "city": "Vijayawada",
+          "totalRooms": 25,
+          "staybuddyAllocation": 15,
+          "starRating": "3",
+          "status": "approved",
+          "startingPrice": 1899,
+          "startingB2BPrice": 1650,
+          "images": [
+            "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&w=1200&q=80"
+          ]
+        },
+        {
+          "_id": "LMWz27HWdCoerEZnNANx",
+          "id": "LMWz27HWdCoerEZnNANx",
+          "name": "Mango Vybrant Hotel",
+          "city": "Vijayawada",
+          "totalRooms": 35,
+          "staybuddyAllocation": 20,
+          "starRating": "3",
+          "status": "approved",
+          "startingPrice": 2399,
+          "startingB2BPrice": 2086,
+          "images": [
+            "https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&w=1200&q=80"
+          ]
+        },
+        {
+          "_id": "WDHPSKudHWcPnLUISEGf",
+          "id": "WDHPSKudHWcPnLUISEGf",
+          "name": "Quality Hotel DV Manor",
+          "city": "Vijayawada",
+          "totalRooms": 50,
+          "staybuddyAllocation": 25,
+          "starRating": "4",
+          "status": "approved",
+          "startingPrice": 3499,
+          "startingB2BPrice": 3042,
+          "images": [
+            "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1200&q=80"
+          ]
+        },
+        {
+          "_id": "XeESRWDO9fGKVNM1noq9",
+          "id": "XeESRWDO9fGKVNM1noq9",
+          "name": "Hotel Jagapathi International",
+          "city": "Vijayawada",
+          "totalRooms": 28,
+          "staybuddyAllocation": 14,
+          "starRating": "3",
+          "status": "approved",
+          "startingPrice": 1799,
+          "startingB2BPrice": 1564,
+          "images": [
+            "https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?auto=format&fit=crop&w=1200&q=80"
+          ]
+        },
+        {
+          "_id": "TONvbMz8T0jhSqXqya88",
+          "id": "TONvbMz8T0jhSqXqya88",
+          "name": "Hotel Park N",
+          "city": "Vijayawada",
+          "totalRooms": 32,
+          "staybuddyAllocation": 16,
+          "starRating": "3",
+          "status": "approved",
+          "startingPrice": 2099,
+          "startingB2BPrice": 1825,
+          "images": [
+            "https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?auto=format&fit=crop&w=1200&q=80"
+          ]
+        },
+        {
+          "_id": "aUHkDKNvmGjxrNGwxYHq",
+          "id": "aUHkDKNvmGjxrNGwxYHq",
+          "name": "Hotel The surya",
+          "city": "Vijayawada",
+          "totalRooms": 24,
+          "staybuddyAllocation": 12,
+          "starRating": "3",
+          "status": "approved",
+          "startingPrice": 1699,
+          "startingB2BPrice": 1477,
+          "images": [
+            "https://images.unsplash.com/photo-1582719508461-905c673771fd?auto=format&fit=crop&w=1200&q=80"
+          ]
+        },
+        {
+          "_id": "n2lpuk2abr7zco8MiT29",
+          "id": "n2lpuk2abr7zco8MiT29",
+          "name": "Hotel MN Grand",
+          "city": "Vijayawada",
+          "totalRooms": 20,
+          "staybuddyAllocation": 10,
+          "starRating": "3",
+          "status": "approved",
+          "startingPrice": 1899,
+          "startingB2BPrice": 1651,
+          "images": [
+            "https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=1200&q=80"
+          ]
+        },
+        {
+          "_id": "apBzDtKjyd3E2p9Rg6GI",
+          "id": "apBzDtKjyd3E2p9Rg6GI",
+          "name": "The royal bay",
+          "city": "Vijayawada",
+          "totalRooms": 18,
+          "staybuddyAllocation": 10,
+          "starRating": "3",
+          "status": "approved",
+          "startingPrice": 1999,
+          "startingB2BPrice": 1738,
+          "images": [
+            "https://images.unsplash.com/photo-1591088398332-8a7791972843?auto=format&fit=crop&w=1200&q=80"
+          ]
+        },
+        {
+          "_id": "eXwAmzkCi6gisbWObVd5",
+          "id": "eXwAmzkCi6gisbWObVd5",
+          "name": "Hotel Sannidhi",
+          "city": "Vijayawada",
+          "totalRooms": 22,
+          "staybuddyAllocation": 12,
+          "starRating": "3",
+          "status": "approved",
+          "startingPrice": 1750,
+          "startingB2BPrice": 1521,
+          "images": [
+            "https://images.unsplash.com/photo-1584132967334-10e028bd69f7?auto=format&fit=crop&w=1200&q=80"
+          ]
+        },
+        {
+          "_id": "gW3rsJCG6wva2mzAy5ad",
+          "id": "gW3rsJCG6wva2mzAy5ad",
+          "name": "Hotel eagle grand",
+          "city": "Vijayawada",
+          "totalRooms": 30,
+          "staybuddyAllocation": 15,
+          "starRating": "3",
+          "status": "approved",
+          "startingPrice": 2100,
+          "startingB2BPrice": 1826,
+          "images": [
+            "https://images.unsplash.com/photo-1578683010236-d716f9a3f461?auto=format&fit=crop&w=1200&q=80"
+          ]
+        },
+        {
+          "_id": "hyieR4BJA3Ah7XfiX5Df",
+          "id": "hyieR4BJA3Ah7XfiX5Df",
+          "name": "Hotel Pushpa grand",
+          "city": "Vijayawada",
+          "totalRooms": 25,
+          "staybuddyAllocation": 15,
+          "starRating": "3",
+          "status": "approved",
+          "startingPrice": 1850,
+          "startingB2BPrice": 1608,
+          "images": [
+            "https://images.unsplash.com/photo-1596394516093-501ba68a0ba6?auto=format&fit=crop&w=1200&q=80"
+          ]
+        },
+        {
+          "_id": "iM0XyQj4SpEpLm6QZ96X",
+          "id": "iM0XyQj4SpEpLm6QZ96X",
+          "name": "Olympia Inn",
+          "city": "Vijayawada",
+          "totalRooms": 30,
+          "staybuddyAllocation": 15,
+          "starRating": "3",
+          "status": "approved",
+          "startingPrice": 2200,
+          "startingB2BPrice": 1913,
+          "images": [
+            "https://images.unsplash.com/photo-1566665797739-1674de7a421a?auto=format&fit=crop&w=1200&q=80"
+          ]
+        },
+        {
+          "_id": "pvMivdvgUWF9QXjXokei",
+          "id": "pvMivdvgUWF9QXjXokei",
+          "name": "Hotel kings palace",
+          "city": "Vijayawada",
+          "totalRooms": 26,
+          "staybuddyAllocation": 13,
+          "starRating": "3",
+          "status": "approved",
+          "startingPrice": 1950,
+          "startingB2BPrice": 1695,
+          "images": [
+            "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=1200&q=80"
+          ]
+        },
+        {
+          "_id": "tFJ115u14LknP4AgrAgN",
+          "id": "tFJ115u14LknP4AgrAgN",
+          "name": "Hotel Vista Airport Zone",
+          "city": "Hyderabad",
+          "totalRooms": 45,
+          "staybuddyAllocation": 25,
+          "starRating": "3",
+          "status": "approved",
+          "startingPrice": 2499,
+          "startingB2BPrice": 2173,
+          "images": [
+            "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1200&q=80"
+          ]
+        },
+        {
+          "_id": "Uq8Wcy6IXbN4DZGRbwot",
+          "id": "Uq8Wcy6IXbN4DZGRbwot",
+          "name": "Hotel sunrise",
+          "city": "Hyderabad",
+          "totalRooms": 20,
+          "staybuddyAllocation": 10,
+          "starRating": "3",
+          "status": "approved",
+          "startingPrice": 1699,
+          "startingB2BPrice": 1477,
+          "images": [
+            "https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&w=1200&q=80"
+          ]
+        },
+        {
+          "_id": "Z24CtXq1LqRQiqjCVsn8",
+          "id": "Z24CtXq1LqRQiqjCVsn8",
+          "name": "Hotel captial O",
+          "city": "Vijayawada",
+          "totalRooms": 20,
+          "staybuddyAllocation": 10,
+          "starRating": "3",
+          "status": "approved",
+          "startingPrice": 1800,
+          "startingB2BPrice": 1565,
+          "images": [
+            "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&w=1200&q=80"
+          ]
+        },
+        {
+          "_id": "MivuxbXcHDtSlViBk0aQ",
+          "id": "MivuxbXcHDtSlViBk0aQ",
+          "name": "Hotel elite",
+          "city": "Vijayawada",
+          "totalRooms": 15,
+          "staybuddyAllocation": 8,
+          "starRating": "3",
+          "status": "approved",
+          "startingPrice": 1600,
+          "startingB2BPrice": 1391,
+          "images": [
+            "https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?auto=format&fit=crop&w=1200&q=80"
+          ]
+        }
+      ]
+    },
+    "updatedAt": 1795551430876
+  },
+  "admin_bookings_list": {
+    "data": {
+      "bookings": [
+        {
+          "_id": "bk_minerva_101",
+          "bookingId": "SB-83921",
+          "guestName": "Arif Shaik",
+          "guestEmail": "arif@staybuddy.in",
+          "guestPhone": "9876543210",
+          "hotelId": {
+            "_id": "C4qQgdQkykNRM70gW1L7",
+            "name": "Hotel Minerva Grand",
+            "city": "Vijayawada"
+          },
+          "roomId": {
+            "_id": "rm_minerva_deluxe",
+            "type": "Deluxe Room"
+          },
+          "checkIn": "2026-12-04",
+          "checkOut": "2026-12-06",
+          "nights": 2,
+          "rooms": 1,
+          "guests": 2,
+          "totalPrice": 5554,
+          "totalPartnerPrice": 4830,
+          "status": "confirmed",
+          "paymentStatus": "paid",
+          "createdAt": "2026-11-24T20:17:10.871Z"
+        },
+        {
+          "_id": "bk_kosala_102",
+          "bookingId": "SB-83922",
+          "guestName": "Vijay Kumar",
+          "guestEmail": "vijay@gmail.com",
+          "guestPhone": "9123456789",
+          "hotelId": {
+            "_id": "AIhu5Jqm1NeMpFnu7bus",
+            "name": "GM Hotel Kosala",
+            "city": "Vijayawada"
+          },
+          "roomId": {
+            "_id": "rm_kosala_std",
+            "type": "Executive Room"
+          },
+          "checkIn": "2026-12-10",
+          "checkOut": "2026-12-11",
+          "nights": 1,
+          "rooms": 1,
+          "guests": 1,
+          "totalPrice": 2199,
+          "totalPartnerPrice": 1912,
+          "status": "confirmed",
+          "paymentStatus": "paid",
+          "createdAt": "2026-11-24T20:17:10.876Z"
+        }
+      ]
+    },
+    "updatedAt": 1795551430876
+  },
+  "hotels_search_fallback": {
+    "data": {
+      "hotels": [
+        {
+          "_id": "C4qQgdQkykNRM70gW1L7",
+          "id": "C4qQgdQkykNRM70gW1L7",
+          "name": "Hotel Minerva Grand",
+          "city": "Vijayawada",
+          "totalRooms": 30,
+          "staybuddyAllocation": 30,
+          "starRating": "4",
+          "status": "approved",
+          "startingPrice": 2777,
+          "startingB2BPrice": 2415,
+          "images": [
+            "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1200&q=80"
+          ],
+          "rooms": [
+            {
+              "_id": "rm_minerva_deluxe",
+              "type": "Deluxe Room",
+              "priceSingle": 1932,
+              "priceDouble": 2777,
+              "priceTriple": 3168,
+              "totalRooms": 30,
+              "staybuddyAllocation": 30
+            }
+          ]
+        },
+        {
+          "_id": "AIhu5Jqm1NeMpFnu7bus",
+          "id": "AIhu5Jqm1NeMpFnu7bus",
+          "name": "GM Hotel Kosala",
+          "city": "Vijayawada",
+          "totalRooms": 40,
+          "staybuddyAllocation": 20,
+          "starRating": "3",
+          "status": "approved",
+          "startingPrice": 2199,
+          "startingB2BPrice": 1912,
+          "images": [
+            "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=1200&q=80"
+          ],
+          "rooms": [
+            {
+              "_id": "rm_kosala_std",
+              "type": "Executive Room",
+              "priceSingle": 1799,
+              "priceDouble": 2199,
+              "priceTriple": 2699,
+              "totalRooms": 40,
+              "staybuddyAllocation": 20
+            }
+          ]
+        },
+        {
+          "_id": "5Qc6lbcDpDm4I7cvEipS",
+          "id": "5Qc6lbcDpDm4I7cvEipS",
+          "name": "Hotel Galadari",
+          "city": "Vijayawada",
+          "totalRooms": 25,
+          "staybuddyAllocation": 15,
+          "starRating": "3",
+          "status": "approved",
+          "startingPrice": 1899,
+          "startingB2BPrice": 1650,
+          "images": [
+            "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&w=1200&q=80"
+          ]
+        },
+        {
+          "_id": "LMWz27HWdCoerEZnNANx",
+          "id": "LMWz27HWdCoerEZnNANx",
+          "name": "Mango Vybrant Hotel",
+          "city": "Vijayawada",
+          "totalRooms": 35,
+          "staybuddyAllocation": 20,
+          "starRating": "3",
+          "status": "approved",
+          "startingPrice": 2399,
+          "startingB2BPrice": 2086,
+          "images": [
+            "https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&w=1200&q=80"
+          ]
+        },
+        {
+          "_id": "WDHPSKudHWcPnLUISEGf",
+          "id": "WDHPSKudHWcPnLUISEGf",
+          "name": "Quality Hotel DV Manor",
+          "city": "Vijayawada",
+          "totalRooms": 50,
+          "staybuddyAllocation": 25,
+          "starRating": "4",
+          "status": "approved",
+          "startingPrice": 3499,
+          "startingB2BPrice": 3042,
+          "images": [
+            "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1200&q=80"
+          ]
+        },
+        {
+          "_id": "XeESRWDO9fGKVNM1noq9",
+          "id": "XeESRWDO9fGKVNM1noq9",
+          "name": "Hotel Jagapathi International",
+          "city": "Vijayawada",
+          "totalRooms": 28,
+          "staybuddyAllocation": 14,
+          "starRating": "3",
+          "status": "approved",
+          "startingPrice": 1799,
+          "startingB2BPrice": 1564,
+          "images": [
+            "https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?auto=format&fit=crop&w=1200&q=80"
+          ]
+        },
+        {
+          "_id": "TONvbMz8T0jhSqXqya88",
+          "id": "TONvbMz8T0jhSqXqya88",
+          "name": "Hotel Park N",
+          "city": "Vijayawada",
+          "totalRooms": 32,
+          "staybuddyAllocation": 16,
+          "starRating": "3",
+          "status": "approved",
+          "startingPrice": 2099,
+          "startingB2BPrice": 1825,
+          "images": [
+            "https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?auto=format&fit=crop&w=1200&q=80"
+          ]
+        },
+        {
+          "_id": "aUHkDKNvmGjxrNGwxYHq",
+          "id": "aUHkDKNvmGjxrNGwxYHq",
+          "name": "Hotel The surya",
+          "city": "Vijayawada",
+          "totalRooms": 24,
+          "staybuddyAllocation": 12,
+          "starRating": "3",
+          "status": "approved",
+          "startingPrice": 1699,
+          "startingB2BPrice": 1477,
+          "images": [
+            "https://images.unsplash.com/photo-1582719508461-905c673771fd?auto=format&fit=crop&w=1200&q=80"
+          ]
+        },
+        {
+          "_id": "n2lpuk2abr7zco8MiT29",
+          "id": "n2lpuk2abr7zco8MiT29",
+          "name": "Hotel MN Grand",
+          "city": "Vijayawada",
+          "totalRooms": 20,
+          "staybuddyAllocation": 10,
+          "starRating": "3",
+          "status": "approved",
+          "startingPrice": 1899,
+          "startingB2BPrice": 1651,
+          "images": [
+            "https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=1200&q=80"
+          ]
+        },
+        {
+          "_id": "apBzDtKjyd3E2p9Rg6GI",
+          "id": "apBzDtKjyd3E2p9Rg6GI",
+          "name": "The royal bay",
+          "city": "Vijayawada",
+          "totalRooms": 18,
+          "staybuddyAllocation": 10,
+          "starRating": "3",
+          "status": "approved",
+          "startingPrice": 1999,
+          "startingB2BPrice": 1738,
+          "images": [
+            "https://images.unsplash.com/photo-1591088398332-8a7791972843?auto=format&fit=crop&w=1200&q=80"
+          ]
+        },
+        {
+          "_id": "eXwAmzkCi6gisbWObVd5",
+          "id": "eXwAmzkCi6gisbWObVd5",
+          "name": "Hotel Sannidhi",
+          "city": "Vijayawada",
+          "totalRooms": 22,
+          "staybuddyAllocation": 12,
+          "starRating": "3",
+          "status": "approved",
+          "startingPrice": 1750,
+          "startingB2BPrice": 1521,
+          "images": [
+            "https://images.unsplash.com/photo-1584132967334-10e028bd69f7?auto=format&fit=crop&w=1200&q=80"
+          ]
+        },
+        {
+          "_id": "gW3rsJCG6wva2mzAy5ad",
+          "id": "gW3rsJCG6wva2mzAy5ad",
+          "name": "Hotel eagle grand",
+          "city": "Vijayawada",
+          "totalRooms": 30,
+          "staybuddyAllocation": 15,
+          "starRating": "3",
+          "status": "approved",
+          "startingPrice": 2100,
+          "startingB2BPrice": 1826,
+          "images": [
+            "https://images.unsplash.com/photo-1578683010236-d716f9a3f461?auto=format&fit=crop&w=1200&q=80"
+          ]
+        },
+        {
+          "_id": "hyieR4BJA3Ah7XfiX5Df",
+          "id": "hyieR4BJA3Ah7XfiX5Df",
+          "name": "Hotel Pushpa grand",
+          "city": "Vijayawada",
+          "totalRooms": 25,
+          "staybuddyAllocation": 15,
+          "starRating": "3",
+          "status": "approved",
+          "startingPrice": 1850,
+          "startingB2BPrice": 1608,
+          "images": [
+            "https://images.unsplash.com/photo-1596394516093-501ba68a0ba6?auto=format&fit=crop&w=1200&q=80"
+          ]
+        },
+        {
+          "_id": "iM0XyQj4SpEpLm6QZ96X",
+          "id": "iM0XyQj4SpEpLm6QZ96X",
+          "name": "Olympia Inn",
+          "city": "Vijayawada",
+          "totalRooms": 30,
+          "staybuddyAllocation": 15,
+          "starRating": "3",
+          "status": "approved",
+          "startingPrice": 2200,
+          "startingB2BPrice": 1913,
+          "images": [
+            "https://images.unsplash.com/photo-1566665797739-1674de7a421a?auto=format&fit=crop&w=1200&q=80"
+          ]
+        },
+        {
+          "_id": "pvMivdvgUWF9QXjXokei",
+          "id": "pvMivdvgUWF9QXjXokei",
+          "name": "Hotel kings palace",
+          "city": "Vijayawada",
+          "totalRooms": 26,
+          "staybuddyAllocation": 13,
+          "starRating": "3",
+          "status": "approved",
+          "startingPrice": 1950,
+          "startingB2BPrice": 1695,
+          "images": [
+            "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=1200&q=80"
+          ]
+        },
+        {
+          "_id": "tFJ115u14LknP4AgrAgN",
+          "id": "tFJ115u14LknP4AgrAgN",
+          "name": "Hotel Vista Airport Zone",
+          "city": "Hyderabad",
+          "totalRooms": 45,
+          "staybuddyAllocation": 25,
+          "starRating": "3",
+          "status": "approved",
+          "startingPrice": 2499,
+          "startingB2BPrice": 2173,
+          "images": [
+            "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1200&q=80"
+          ]
+        },
+        {
+          "_id": "Uq8Wcy6IXbN4DZGRbwot",
+          "id": "Uq8Wcy6IXbN4DZGRbwot",
+          "name": "Hotel sunrise",
+          "city": "Hyderabad",
+          "totalRooms": 20,
+          "staybuddyAllocation": 10,
+          "starRating": "3",
+          "status": "approved",
+          "startingPrice": 1699,
+          "startingB2BPrice": 1477,
+          "images": [
+            "https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&w=1200&q=80"
+          ]
+        },
+        {
+          "_id": "Z24CtXq1LqRQiqjCVsn8",
+          "id": "Z24CtXq1LqRQiqjCVsn8",
+          "name": "Hotel captial O",
+          "city": "Vijayawada",
+          "totalRooms": 20,
+          "staybuddyAllocation": 10,
+          "starRating": "3",
+          "status": "approved",
+          "startingPrice": 1800,
+          "startingB2BPrice": 1565,
+          "images": [
+            "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&w=1200&q=80"
+          ]
+        },
+        {
+          "_id": "MivuxbXcHDtSlViBk0aQ",
+          "id": "MivuxbXcHDtSlViBk0aQ",
+          "name": "Hotel elite",
+          "city": "Vijayawada",
+          "totalRooms": 15,
+          "staybuddyAllocation": 8,
+          "starRating": "3",
+          "status": "approved",
+          "startingPrice": 1600,
+          "startingB2BPrice": 1391,
+          "images": [
+            "https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?auto=format&fit=crop&w=1200&q=80"
+          ]
+        }
+      ],
+      "total": 19,
+      "page": 1,
+      "pages": 1
+    },
+    "updatedAt": 1795551430876
+  }
+}

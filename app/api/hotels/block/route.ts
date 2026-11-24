@@ -9,15 +9,15 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const hotelId = searchParams.get('hotelId');
-    if (!hotelId) {
-      return NextResponse.json({ error: 'hotelId parameter is required' }, { status: 400 });
+
+    let query: any = db.collection('inventory_blocks');
+    if (hotelId && hotelId !== 'all') {
+      query = query.where('hotelId', '==', hotelId);
     }
 
-    const snap = await db.collection('inventory_blocks')
-      .where('hotelId', '==', hotelId)
-      .get();
+    const snap = await query.get();
 
-    const blocks = snap.docs.map(doc => ({ _id: doc.id, ...doc.data() }));
+    const blocks = snap.docs.map((doc: any) => ({ _id: doc.id, ...doc.data() }));
     // Sort descending by startDate
     blocks.sort((a: any, b: any) => (b.startDate || '').localeCompare(a.startDate || ''));
 

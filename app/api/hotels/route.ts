@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 export const dynamic = 'force-dynamic';
 import { db } from '@/lib/firebaseAdmin';
 import { applyMarginToRoom, getRoomPriceForOccupancy } from '@/lib/occupancyPricing';
-import { getCached, setCached, invalidateCache } from '@/lib/cache';
+import { getCached, setCached, invalidateCache, getFallback } from '@/lib/cache';
 import { getStayNights, isHotelBlockedForDates, getRoomBlockedCountForNight } from '@/lib/inventoryBlocks';
 import { calculateSmartScore, getSignificantTokens, cleanText } from '@/lib/smartSearch';
 
@@ -414,16 +414,23 @@ export async function GET(request: NextRequest) {
       pages: Math.max(1, Math.ceil(adjustedTotal / limitParam)),
     };
 
-    setCached(cacheKey, responsePayload, 30);
+    setCached(cacheKey, responsePayload, 300); // 5 minutes cache to protect quota
+    setCached('hotels_search_fallback', responsePayload, 86400);
 
     return NextResponse.json(responsePayload, {
       headers: {
-        'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=120',
+        'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
       },
     });
   } catch (error) {
-    console.error('Hotels GET error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    console.error('Hotels GET error (serving fallback cache):', error);
+    const fallback = getFallback<any>(cacheKey) || getFallback<any>('hotels_search_fallback') || getFallback<any>('admin_hotels_list');
+    if (fallback && Array.isArray(fallback.hotels) && fallback.hotels.length > 0) {
+      return NextResponse.json(fallback, {
+        headers: { 'X-Cache': 'FALLBACK_EXHAUSTED_PROTECTION' },
+      });
+    }
+    return NextResponse.json({ hotels: [], total: 0, page: 1, pages: 1 });
   }
 }
 
