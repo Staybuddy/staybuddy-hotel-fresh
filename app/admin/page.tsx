@@ -737,59 +737,66 @@ export default function AdminDashboard() {
               <h1 style={{ fontSize: '2rem', color: '#0f172a', marginBottom: 8 }}>Dashboard Overview</h1>
               <p style={{ color: '#64748b', marginBottom: 32 }}>Welcome back! Here&apos;s what&apos;s happening across StayBuddy today.</p>
 
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 20, marginBottom: 40 }}>
-                {[
-                  { label: 'Total Revenue (GMV)', value: `₹${stats.totalRevenue.toLocaleString()}`, icon: '💰', color: '#f59e0b', bg: '#fffbeb', subtitle: 'Collected from Guests (B2C)' },
-                  { 
-                    label: 'StayBuddy Profit', 
-                    value: `₹${stats.totalProfit.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 
-                    icon: '📈', 
-                    color: '#10b981', 
-                    bg: '#ecfdf5',
-                    badge: 'Actual Net Profit',
-                    subtitle: `Gross: ₹${stats.grossProfit.toLocaleString()} (B2C - B2B) • GST (${stats.gstRate}%): -₹${Number(stats.totalGst).toFixed(2)}`
-                  },
-                  { label: 'Active Properties', value: stats.totalHotels, icon: '🏨', color: '#3b82f6', bg: '#eff6ff' },
-                  { label: 'Total Bookings', value: stats.totalBookings, icon: '📋', color: '#8b5cf6', bg: '#f5f3ff' },
-                  { 
-                    label: 'Referral Bookings', 
-                    value: bookings.filter(b => b.isReferralBooking || b.referralCode || b.referredByUserId).length, 
-                    icon: '🎁', 
-                    color: '#ea580c', 
-                    bg: '#fff7ed',
-                    onClick: () => setActiveTab('referrals')
-                  },
-                ].map(s => (
-                  <div 
-                    key={s.label} 
-                    onClick={s.onClick}
-                    style={{ 
-                      background: 'white', 
-                      padding: 24, 
-                      borderRadius: 16, 
-                      boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03)', 
-                      display: 'flex', 
-                      alignItems: 'center', 
-                      gap: 20,
-                      cursor: s.onClick ? 'pointer' : 'default',
-                      transition: 'transform 0.15s ease'
-                    }}
-                  >
-                    <div style={{ width: 64, height: 64, borderRadius: 16, background: s.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2rem' }}>{s.icon}</div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-                        <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{s.label}</div>
-                        {s.badge && (
-                          <span style={{ fontSize: '0.68rem', fontWeight: 800, background: '#ecfdf5', color: '#047857', border: '1px solid #a7f3d0', padding: '2px 6px', borderRadius: 4 }}>{s.badge}</span>
-                        )}
-                      </div>
-                      <div style={{ fontSize: '1.8rem', fontWeight: 900, color: '#0f172a' }}>{s.value}</div>
-                      {s.subtitle && (
-                        <div style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 600, marginTop: 4 }}>{s.subtitle}</div>
-                      )}
+              {/* Financial Hero Cards (Top Row: Total Revenue & StayBuddy Profit) */}
+              <div className="admin-financial-grid">
+                <div className="admin-hero-card admin-hero-card-revenue">
+                  <div className="admin-hero-top">
+                    <div className="admin-hero-icon-box" style={{ background: '#fffbeb', color: '#f59e0b' }}>💰</div>
+                    <span className="admin-hero-pill" style={{ background: '#fffbeb', color: '#b45309', border: '1px solid #fde68a' }}>Guest B2C</span>
+                  </div>
+                  <div className="admin-hero-body">
+                    <div className="admin-hero-label">Total Revenue (GMV)</div>
+                    <div className="admin-hero-value" style={{ color: '#0f172a' }}>
+                      ₹{stats.totalRevenue.toLocaleString('en-IN')}
+                    </div>
+                    <div className="admin-hero-sub">Collected from Guests (B2C)</div>
+                  </div>
+                </div>
+
+                <div className="admin-hero-card admin-hero-card-profit">
+                  <div className="admin-hero-top">
+                    <div className="admin-hero-icon-box" style={{ background: '#ecfdf5', color: '#10b981' }}>📈</div>
+                    <span className="admin-hero-pill" style={{ background: '#ecfdf5', color: '#047857', border: '1px solid #a7f3d0' }}>✓ Actual Net</span>
+                  </div>
+                  <div className="admin-hero-body">
+                    <div className="admin-hero-label">StayBuddy Profit</div>
+                    <div className="admin-hero-value" style={{ color: '#059669' }}>
+                      ₹{stats.totalProfit.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </div>
+                    <div className="admin-hero-sub">
+                      Gross: ₹{stats.grossProfit.toLocaleString('en-IN')} • GST ({stats.gstRate}%): -₹{Number(stats.totalGst).toFixed(2)}
                     </div>
                   </div>
-                ))}
+                </div>
+              </div>
+
+              {/* Operational Grid (Bottom Row: Properties, Bookings, Referrals) */}
+              <div className="admin-operations-grid">
+                <div className="admin-op-card" onClick={() => setActiveTab('hotels')}>
+                  <div className="admin-op-icon-box" style={{ background: '#eff6ff', color: '#3b82f6' }}>🏨</div>
+                  <div className="admin-op-body">
+                    <div className="admin-op-value">{stats.totalHotels}</div>
+                    <div className="admin-op-label">Properties</div>
+                  </div>
+                </div>
+
+                <div className="admin-op-card" onClick={() => setActiveTab('bookings')}>
+                  <div className="admin-op-icon-box" style={{ background: '#f5f3ff', color: '#8b5cf6' }}>📋</div>
+                  <div className="admin-op-body">
+                    <div className="admin-op-value">{stats.totalBookings}</div>
+                    <div className="admin-op-label">Bookings</div>
+                  </div>
+                </div>
+
+                <div className="admin-op-card" onClick={() => setActiveTab('referrals')}>
+                  <div className="admin-op-icon-box" style={{ background: '#fff7ed', color: '#ea580c' }}>🎁</div>
+                  <div className="admin-op-body">
+                    <div className="admin-op-value">
+                      {bookings.filter(b => b.isReferralBooking || b.referralCode || b.referredByUserId).length}
+                    </div>
+                    <div className="admin-op-label">Referrals</div>
+                  </div>
+                </div>
               </div>
 
               {pendingHotels.length > 0 && (
