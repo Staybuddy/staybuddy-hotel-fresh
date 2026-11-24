@@ -669,7 +669,7 @@ export default function AdminDashboard() {
               key={item.id}
               onClick={() => {
                 if (item.id === 'heybuddy') {
-                  router.push('/admin/heybuddy');
+                  router.push('/admin/heybuddy?autoListen=true');
                   return;
                 }
                 setActiveTab(item.id);
@@ -746,7 +746,7 @@ export default function AdminDashboard() {
                   <p style={{ color: '#64748b', margin: 0 }}>Welcome back! Here&apos;s what&apos;s happening across StayBuddy today.</p>
                 </div>
                 <Link
-                  href="/admin/heybuddy"
+                  href="/admin/heybuddy?autoListen=true"
                   style={{
                     display: 'flex',
                     alignItems: 'center',

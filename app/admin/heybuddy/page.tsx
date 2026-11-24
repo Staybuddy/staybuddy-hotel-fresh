@@ -47,7 +47,7 @@ export default function HeyBuddyPage() {
   const [listening, setListening] = useState(false);
   const [speaking, setSpeaking] = useState(true);
   const [command, setCommand] = useState("");
-  const [status, setStatus] = useState("SYSTEM READY");
+  const [status, setStatus] = useState("● ACTIVATED & LISTENING • \"DUDU, TELL ME\"");
   const [availableVoices, setAvailableVoices] = useState<SpeechSynthesisVoice[]>([]);
 
   const adminName = useMemo(() => {
@@ -594,7 +594,7 @@ export default function HeyBuddyPage() {
       return;
     }
 
-    if (listeningRef.current) return;
+    if (listeningRef.current && recognition.current) return;
 
     try {
       const engine = new SpeechRecognition();
@@ -607,46 +607,57 @@ export default function HeyBuddyPage() {
           if (!event.results[i].isFinal) continue;
 
           const transcript = event.results[i][0].transcript.trim();
+          if (!transcript) continue;
           const normalized = transcript.toLowerCase();
 
-          // EXACT REQUIREMENT: When admin says "hey buddy", it must respond "Dudu, tell me"
-          if (!wakeActive.current && normalized.includes("hey buddy")) {
-            wakeActive.current = true;
+          // 1. Explicit Hey Buddy call: responds "Dudu, tell me"
+          if (
+            normalized.includes("hey buddy") ||
+            normalized.includes("a buddy") ||
+            normalized.includes("hey body") ||
+            normalized.includes("dudu")
+          ) {
             setStatus("HEYBUDDY: DUDU, TELL ME");
+            const afterWake = normalized.replace(/hey buddy|a buddy|hey body|dudu/gi, "").trim();
 
-            const wakeGreeting = "Dudu, tell me";
-            speak(wakeGreeting);
-
-            const afterWake = normalized.split("hey buddy").pop()?.trim();
-            if (afterWake) {
-              wakeActive.current = false;
+            if (afterWake && afterWake.length > 2) {
+              // User said "Hey Buddy recommend hotel in Goa"
               execute(afterWake);
             } else {
+              // User called "Hey Buddy"
+              const wakeGreeting = "Dudu, tell me";
+              speak(wakeGreeting);
               setMessages(old => [
                 ...old,
-                { role: "You", text: "Hey Buddy", timestamp: "Just now" },
+                { role: "You", text: transcript, timestamp: "Just now" },
                 { role: "HeyBuddy", text: "Dudu, tell me! What can I do for you today?", timestamp: "Just now" }
               ]);
             }
-          } else if (wakeActive.current) {
-            wakeActive.current = false;
+          } else {
+            // 2. Direct command spoken without saying "Hey Buddy" -> Respond immediately!
             execute(transcript);
           }
         }
       };
 
       engine.onerror = (e: any) => {
-        console.warn("Speech recognition error:", e);
-        setStatus("VOICE CONNECTION INTERRUPTED");
+        console.warn("Speech recognition notice:", e?.error || e);
+        if (e?.error === "not-allowed") {
+          setStatus("MICROPHONE ACCESS DENIED");
+        }
       };
 
       engine.onend = () => {
         if (listeningRef.current) {
-          try {
-            engine.start();
-          } catch {
-            setStatus("VOICE RESTART FAILED");
-          }
+          setTimeout(() => {
+            if (listeningRef.current) {
+              try {
+                engine.start();
+              } catch (err) {
+                console.warn("Speech recognition restart catch:", err);
+              }
+            }
+          }, 300);
         }
       };
 
@@ -654,10 +665,10 @@ export default function HeyBuddyPage() {
       listeningRef.current = true;
       engine.start();
       setListening(true);
-      setStatus("LISTENING FOR 'HEY BUDDY'");
+      setStatus("● ACTIVATED & LISTENING • \"DUDU, TELL ME\"");
     } catch (err) {
       listeningRef.current = false;
-      setStatus("MICROPHONE UNAVAILABLE");
+      setStatus("MICROPHONE PAUSED");
     }
   }
 
@@ -673,6 +684,20 @@ export default function HeyBuddyPage() {
     setListening(false);
     setStatus("VOICE ASSISTANT PAUSED");
   }
+
+  // AUTO-ACTIVATE ON ARRIVAL: Immediately start listening and greet with "Dudu, tell me"
+  useEffect(() => {
+    if (authStatus !== "authenticated") return;
+    const role = (session?.user as any)?.role;
+    if (role !== "admin") return;
+
+    const timer = setTimeout(() => {
+      startListening();
+      speak("Dudu, tell me! I am online and listening.");
+    }, 400);
+
+    return () => clearTimeout(timer);
+  }, [authStatus, session]);
 
   function sendCommand(e: React.FormEvent) {
     e.preventDefault();
@@ -820,10 +845,10 @@ export default function HeyBuddyPage() {
         <div className="flex items-center gap-2">
           <button
             onClick={listening ? stopListening : startListening}
-            className={`${listening ? "bg-red-600 hover:bg-red-500" : "bg-blue-600 hover:bg-blue-500"} px-5 py-2.5 rounded-xl flex items-center gap-2 font-bold text-xs tracking-wider transition shadow-lg shadow-blue-500/20`}
+            className={`${listening ? "bg-rose-600 hover:bg-rose-500 ring-4 ring-rose-500/30 animate-pulse" : "bg-blue-600 hover:bg-blue-500"} px-5 py-2.5 rounded-xl flex items-center gap-2 font-bold text-xs tracking-wider transition shadow-lg shadow-blue-500/20 text-white`}
           >
             {listening ? <MicOff size={16} /> : <Mic size={16} />}
-            {listening ? "MUTE MIC" : "SAY HEY BUDDY"}
+            {listening ? "● ACTIVATED (PAUSE)" : "START LISTENING"}
           </button>
         </div>
       </div>
@@ -840,23 +865,23 @@ export default function HeyBuddyPage() {
           HEYBUDDY AI
         </h2>
 
-        <p className="text-sky-400 text-xs tracking-widest mt-3 font-mono">
-          ● {status}
+        <p className="text-emerald-400 text-xs tracking-widest mt-3 font-mono font-bold">
+          {status}
         </p>
 
-        <p className="text-slate-400 text-xs mt-2">
+        <p className="text-slate-300 text-xs mt-2 font-medium">
           {listening
-            ? 'Microphone active. Say "Hey Buddy" to hear "Dudu, tell me".'
-            : 'Click Activate to speak or type commands below.'}
+            ? '● Microphone is active! Say "Hey Buddy" to hear "Dudu, tell me" or speak your booking/revenue request directly.'
+            : 'Click below to activate voice assistant.'}
         </p>
 
         <div className="flex gap-3 mt-4">
           <button
             onClick={listening ? stopListening : startListening}
-            className={`${listening ? "bg-red-600 hover:bg-red-500" : "bg-blue-600 hover:bg-blue-500"} px-6 py-2.5 rounded-xl flex items-center gap-2 font-bold text-xs tracking-wider transition shadow-lg shadow-blue-500/20`}
+            className={`${listening ? "bg-rose-600 hover:bg-rose-500 ring-4 ring-rose-500/30 animate-pulse" : "bg-blue-600 hover:bg-blue-500"} px-6 py-3 rounded-xl flex items-center gap-2.5 font-bold text-xs tracking-wider transition shadow-lg shadow-blue-500/20 text-white`}
           >
             {listening ? <MicOff size={18} /> : <Mic size={18} />}
-            {listening ? "STOP LISTENING" : "ACTIVATE HEYBUDDY"}
+            {listening ? "● ACTIVATED & LISTENING (CLICK TO PAUSE)" : "START LISTENING NOW"}
           </button>
 
           <button
