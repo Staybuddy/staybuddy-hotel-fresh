@@ -5189,7 +5189,7 @@ export default function PartnerDashboard() {
                   <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: '#334155', marginBottom: 8 }}>
                     1. Select Block Scope
                   </label>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                  <div className="offline-grid-2">
                     <button
                       type="button"
                       onClick={() => setBlockForm(p => ({ ...p, blockScope: 'property', roomId: 'all', roomType: 'Entire Property' }))}
@@ -5990,18 +5990,42 @@ export default function PartnerDashboard() {
 
         return (
           <div
+            className="offline-modal-backdrop"
             style={{ position: 'fixed', inset: 0, zIndex: 99999, background: 'rgba(15,23,42,0.72)', backdropFilter: 'blur(6px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}
             onClick={() => !offlineBookingSaving && setShowOfflineBookingModal(false)}
           >
-            <div onClick={(e) => e.stopPropagation()} style={{ background: 'white', borderRadius: 20, width: '100%', maxWidth: 640, maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)' }}>
-              <div style={{ padding: '20px 24px', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f8fafc', borderTopLeftRadius: 20, borderTopRightRadius: 20 }}>
+            <style dangerouslySetInnerHTML={{
+              __html: `
+                .offline-modal-card { box-sizing: border-box; }
+                .offline-modal-card * { box-sizing: border-box; min-width: 0; }
+                .offline-grid-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+                .offline-grid-3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+                .offline-grid-4 { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr) 80px 80px; gap: 10px; }
+                .offline-coupon-row { display: flex; gap: 8px; }
+                @media (max-width: 639px) {
+                  .offline-modal-backdrop { padding: 10px !important; align-items: flex-end !important; }
+                  .offline-modal-card { border-radius: 16px !important; max-height: 92vh !important; }
+                  .offline-modal-header { padding: 16px !important; border-top-left-radius: 16px !important; border-top-right-radius: 16px !important; }
+                  .offline-modal-body { padding: 16px !important; gap: 12px !important; }
+                  .offline-grid-2 { grid-template-columns: 1fr !important; gap: 10px !important; }
+                  .offline-grid-3 { grid-template-columns: 1fr !important; gap: 10px !important; }
+                  .offline-grid-4 { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 10px !important; }
+                  .offline-coupon-row { flex-direction: column !important; }
+                  .offline-modal-actions { flex-direction: column-reverse !important; }
+                  .offline-modal-actions button { width: 100% !important; }
+                }
+              `
+            }} />
+            <div className="offline-modal-card" onClick={(e) => e.stopPropagation()} style={{ background: 'white', borderRadius: 20, width: '100%', maxWidth: 640, maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)' }}>
+              <div className="offline-modal-header" style={{ padding: '20px 24px', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, background: '#f8fafc', borderTopLeftRadius: 20, borderTopRightRadius: 20 }}>
                 <div>
-                  <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 800 }}>Create Offline Booking</h2>
-                  <p style={{ margin: '4px 0 0', fontSize: '0.82rem', color: '#64748b' }}>Payment option: StayBuddy Admin Offline (updates Admin Revenue &amp; Profit)</p>
+                  <h2 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 800 }}>Create Offline Booking</h2>
+                  <p style={{ margin: '4px 0 0', fontSize: '0.8rem', color: '#64748b' }}>Payment option: StayBuddy Admin Offline (updates Admin Revenue &amp; Profit)</p>
                 </div>
-                <button type="button" onClick={() => setShowOfflineBookingModal(false)} style={{ background: '#e2e8f0', border: 'none', width: 32, height: 32, borderRadius: '50%', cursor: 'pointer', fontWeight: 800 }}>✕</button>
+                <button type="button" onClick={() => setShowOfflineBookingModal(false)} style={{ flexShrink: 0, background: '#e2e8f0', border: 'none', width: 32, height: 32, borderRadius: '50%', cursor: 'pointer', fontWeight: 800 }}>✕</button>
               </div>
               <form
+                className="offline-modal-body"
                 onSubmit={async (e) => {
                   e.preventDefault();
                   setOfflineBookingError('');
@@ -6034,7 +6058,7 @@ export default function PartnerDashboard() {
                     ⚠️ {offlineBookingError}
                   </div>
                 )}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <div className="offline-grid-2">
                   <div>
                     <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, marginBottom: 4 }}>Select Hotel *</label>
                     <select
@@ -6072,7 +6096,7 @@ export default function PartnerDashboard() {
                     )}
                   </div>
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 80px 80px', gap: 10 }}>
+                <div className="offline-grid-4">
                   <div>
                     <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, marginBottom: 4 }}>Check-In *</label>
                     <input type="date" required value={offlineBookingForm.checkIn} onChange={(e) => {
@@ -6105,7 +6129,7 @@ export default function PartnerDashboard() {
                     <input type="number" min={1} required value={offlineBookingForm.guests} onChange={(e) => setOfflineBookingForm((prev) => ({ ...prev, guests: e.target.value }))} className="form-input" />
                   </div>
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
+                <div className="offline-grid-3">
                   <div>
                     <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, marginBottom: 4 }}>Guest Name *</label>
                     <input type="text" required value={offlineBookingForm.guestName} onChange={(e) => setOfflineBookingForm((prev) => ({ ...prev, guestName: e.target.value }))} className="form-input" />
@@ -6119,7 +6143,7 @@ export default function PartnerDashboard() {
                     <input type="email" value={offlineBookingForm.guestEmail} onChange={(e) => setOfflineBookingForm((prev) => ({ ...prev, guestEmail: e.target.value }))} className="form-input" />
                   </div>
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <div className="offline-grid-2">
                   <div>
                     <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, marginBottom: 4 }}>Guest Paid Total (B2C ₹) *</label>
                     <input type="number" required min={1} value={offlineBookingForm.totalPrice} onChange={(e) => setOfflineBookingForm((prev) => ({ ...prev, totalPrice: e.target.value }))} className="form-input" />
@@ -6143,7 +6167,7 @@ export default function PartnerDashboard() {
 
                 <div style={{ border: '1px solid #fcd34d', borderRadius: 10, padding: '10px 12px', background: '#fffbeb' }}>
                   <label style={{ display: 'block', fontSize: '0.76rem', fontWeight: 700, color: '#92400e', marginBottom: 4 }}>First-Booking Coupon Code (Checked against Guest Email)</label>
-                  <div style={{ display: 'flex', gap: 8 }}>
+                  <div className="offline-coupon-row">
                     <input
                       type="text"
                       placeholder="e.g. FIRST150 or STAYBUDDY20"
@@ -6203,7 +6227,7 @@ export default function PartnerDashboard() {
                     </div>
                   )}
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, paddingTop: 4 }}>
+                <div className="offline-modal-actions" style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, paddingTop: 4 }}>
                   <button type="button" onClick={() => setShowOfflineBookingModal(false)} className="btn btn-secondary">Cancel</button>
                   <button type="submit" disabled={offlineBookingSaving} className="btn btn-primary">{offlineBookingSaving ? 'Creating...' : 'Confirm Offline Booking'}</button>
                 </div>

@@ -5006,6 +5006,7 @@ export default function AdminDashboard() {
 
         return (
           <div
+            className="offline-modal-backdrop"
             style={{
               position: 'fixed',
               inset: 0,
@@ -5019,7 +5020,30 @@ export default function AdminDashboard() {
             }}
             onClick={() => !offlineBookingSaving && setShowOfflineBookingModal(false)}
           >
+            <style dangerouslySetInnerHTML={{
+              __html: `
+                .offline-modal-card { box-sizing: border-box; }
+                .offline-modal-card * { box-sizing: border-box; min-width: 0; }
+                .offline-grid-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+                .offline-grid-3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+                .offline-grid-4 { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr) 90px 90px; gap: 12px; }
+                .offline-coupon-row { display: flex; gap: 8px; }
+                @media (max-width: 639px) {
+                  .offline-modal-backdrop { padding: 10px !important; align-items: flex-end !important; }
+                  .offline-modal-card { border-radius: 16px !important; max-height: 92vh !important; }
+                  .offline-modal-header { padding: 16px !important; border-top-left-radius: 16px !important; border-top-right-radius: 16px !important; }
+                  .offline-modal-body { padding: 16px !important; gap: 14px !important; }
+                  .offline-grid-2 { grid-template-columns: 1fr !important; gap: 10px !important; }
+                  .offline-grid-3 { grid-template-columns: 1fr !important; gap: 10px !important; }
+                  .offline-grid-4 { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 10px !important; }
+                  .offline-coupon-row { flex-direction: column !important; }
+                  .offline-modal-actions { flex-direction: column-reverse !important; }
+                  .offline-modal-actions button { width: 100% !important; }
+                }
+              `
+            }} />
             <div
+              className="offline-modal-card"
               onClick={(e) => e.stopPropagation()}
               style={{
                 background: 'white',
@@ -5032,30 +5056,30 @@ export default function AdminDashboard() {
                 border: '1px solid #e2e8f0',
               }}
             >
-              <div style={{ padding: '22px 28px', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f8fafc', borderTopLeftRadius: 20, borderTopRightRadius: 20 }}>
+              <div className="offline-modal-header" style={{ padding: '22px 28px', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, background: '#f8fafc', borderTopLeftRadius: 20, borderTopRightRadius: 20 }}>
                 <div>
-                  <h2 style={{ margin: 0, fontSize: '1.35rem', fontWeight: 800, color: '#0f172a' }}>Create Offline Booking</h2>
-                  <p style={{ margin: '4px 0 0', fontSize: '0.84rem', color: '#64748b' }}>
+                  <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 800, color: '#0f172a' }}>Create Offline Booking</h2>
+                  <p style={{ margin: '4px 0 0', fontSize: '0.82rem', color: '#64748b' }}>
                     Record offline / direct bookings by Admin or Onboarder. Automatically updates Revenue &amp; Profit.
                   </p>
                 </div>
                 <button
                   type="button"
                   onClick={() => setShowOfflineBookingModal(false)}
-                  style={{ background: '#e2e8f0', border: 'none', width: 34, height: 34, borderRadius: '50%', cursor: 'pointer', fontWeight: 800, color: '#475569' }}
+                  style={{ flexShrink: 0, background: '#e2e8f0', border: 'none', width: 34, height: 34, borderRadius: '50%', cursor: 'pointer', fontWeight: 800, color: '#475569' }}
                 >
                   ✕
                 </button>
               </div>
 
-              <form onSubmit={handleCreateOfflineBooking} style={{ padding: '24px 28px', display: 'flex', flexDirection: 'column', gap: 18 }}>
+              <form onSubmit={handleCreateOfflineBooking} className="offline-modal-body" style={{ padding: '24px 28px', display: 'flex', flexDirection: 'column', gap: 18 }}>
                 {offlineBookingError && (
                   <div style={{ padding: '10px 14px', borderRadius: 10, background: '#fef2f2', border: '1px solid #fecaca', color: '#dc2626', fontSize: '0.85rem', fontWeight: 600 }}>
                     ⚠️ {offlineBookingError}
                   </div>
                 )}
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+                <div className="offline-grid-2">
                   <div>
                     <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#334155', marginBottom: 6 }}>Select Hotel *</label>
                     <select
@@ -5120,7 +5144,7 @@ export default function AdminDashboard() {
                   </div>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 90px 90px', gap: 12 }}>
+                <div className="offline-grid-4">
                   <div>
                     <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#334155', marginBottom: 6 }}>Check-In *</label>
                     <input
@@ -5197,7 +5221,7 @@ export default function AdminDashboard() {
                   </div>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
+                <div className="offline-grid-3">
                   <div>
                     <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#334155', marginBottom: 6 }}>Guest Name *</label>
                     <input
@@ -5232,7 +5256,7 @@ export default function AdminDashboard() {
                   </div>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+                <div className="offline-grid-2">
                   <div>
                     <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#334155', marginBottom: 6 }}>Guest Paid Total (B2C ₹) *</label>
                     <input
@@ -5270,7 +5294,7 @@ export default function AdminDashboard() {
                 {/* First-Booking Coupon (by Client Email) */}
                 <div style={{ border: '1px solid #e2e8f0', borderRadius: 12, padding: '12px 14px', background: '#fffbeb' }}>
                   <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#92400e', marginBottom: 6 }}>First-Booking Coupon Code (Checked against Guest Email)</label>
-                  <div style={{ display: 'flex', gap: 8 }}>
+                  <div className="offline-coupon-row">
                     <input
                       type="text"
                       placeholder="e.g. FIRST150 or STAYBUDDY20"
@@ -5361,7 +5385,7 @@ export default function AdminDashboard() {
                   )}
                 </div>
 
-                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, paddingTop: 6 }}>
+                <div className="offline-modal-actions" style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, paddingTop: 6 }}>
                   <button
                     type="button"
                     disabled={offlineBookingSaving}
