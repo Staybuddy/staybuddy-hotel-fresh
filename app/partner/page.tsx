@@ -88,6 +88,35 @@ export default function PartnerDashboard() {
   const [bookingFilter, setBookingFilter] = useState('All');
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [bookingSearch, setBookingSearch] = useState('');
+
+  const [showOfflineBookingModal, setShowOfflineBookingModal] = useState(false);
+  const [offlineBookingSaving, setOfflineBookingSaving] = useState(false);
+  const [offlineBookingError, setOfflineBookingError] = useState('');
+  const getOfflineTodayStr = () => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  };
+  const getOfflineTomorrowStr = () => {
+    const d = new Date();
+    d.setDate(d.getDate() + 1);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  };
+  const [offlineBookingForm, setOfflineBookingForm] = useState({
+    hotelId: '',
+    roomId: '',
+    roomType: '',
+    guestName: '',
+    guestPhone: '',
+    guestEmail: '',
+    checkIn: getOfflineTodayStr(),
+    checkOut: getOfflineTomorrowStr(),
+    rooms: 1,
+    guests: 2,
+    totalPrice: '',
+    totalPartnerPrice: '',
+    paymentMethod: 'StayBuddy Admin Offline',
+    specialRequests: '',
+  });
   const [extranetModal, setExtranetModal] = useState<any>(null);
   const [extranetModalTab, setExtranetModalTab] = useState<'property' | 'location' | 'amenities' | 'rooms' | 'photos' | 'policies'>('property');
   const [extranetAiLoading, setExtranetAiLoading] = useState(false);
@@ -1700,7 +1729,50 @@ export default function PartnerDashboard() {
             <div className="fade-in">
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-6)' }}>
                 <h1 style={{ margin: 0 }}>All Bookings</h1>
-                <div style={{ display: 'flex', gap: 12 }}>
+                <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
+                  {((session?.user as any)?.role === 'onboarder' || (session?.user as any)?.isOnboarder || (session?.user as any)?.role === 'admin') && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const firstHotel = hotels.find((h: any) => h.status === 'approved') || hotels[0];
+                        const firstRoom = Array.isArray(firstHotel?.rooms) ? firstHotel.rooms[0] : null;
+                        const b2c = Number(firstRoom?.priceDouble || firstRoom?.priceSingle || firstHotel?.startingPrice || 0);
+                        const margin = Number(firstHotel?.marginPercentage) || 15;
+                        const b2b = Number(firstRoom?.b2bPriceDouble || firstRoom?.b2bPriceSingle || firstHotel?.startingB2BPrice || (b2c > 0 ? Math.round(b2c / (1 + margin / 100)) : 0));
+                        setOfflineBookingError('');
+                        setOfflineBookingForm({
+                          hotelId: firstHotel?._id || '',
+                          roomId: firstRoom?._id || firstRoom?.id || '',
+                          roomType: firstRoom?.type || 'Standard Room',
+                          guestName: '',
+                          guestPhone: '',
+                          guestEmail: '',
+                          checkIn: getOfflineTodayStr(),
+                          checkOut: getOfflineTomorrowStr(),
+                          rooms: 1,
+                          guests: 2,
+                          totalPrice: b2c > 0 ? String(b2c) : '',
+                          totalPartnerPrice: b2b > 0 ? String(b2b) : '',
+                          paymentMethod: 'StayBuddy Admin Offline',
+                          specialRequests: '',
+                        });
+                        setShowOfflineBookingModal(true);
+                      }}
+                      style={{
+                        padding: '10px 16px',
+                        borderRadius: 10,
+                        border: 'none',
+                        cursor: 'pointer',
+                        fontWeight: 800,
+                        fontSize: '0.85rem',
+                        background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
+                        color: 'white',
+                        boxShadow: '0 4px 10px rgba(37,99,235,0.25)',
+                      }}
+                    >
+                      ＋ Create Offline Booking
+                    </button>
+                  )}
                   <input 
                     type="text" 
                     placeholder="Search by Guest Name or ID..." 
@@ -5867,6 +5939,193 @@ export default function PartnerDashboard() {
         }}
         userEmail={session?.user?.email || null}
       />
+
+      {/* CREATE OFFLINE BOOKING MODAL (ONBOARDER / ADMIN) */}
+      {showOfflineBookingModal && (() => {
+        const selectedHotel = hotels.find((h: any) => h._id === offlineBookingForm.hotelId);
+        const hotelRoomsList = Array.isArray(selectedHotel?.rooms) ? selectedHotel.rooms : [];
+        const d1 = new Date(offlineBookingForm.checkIn);
+        const d2 = new Date(offlineBookingForm.checkOut);
+        const nights = (!isNaN(d1.getTime()) && !isNaN(d2.getTime()) && d2 > d1)
+          ? Math.max(1, Math.round((d2.getTime() - d1.getTime()) / (1000 * 60 * 60 * 24)))
+          : 1;
+        const roomsCount = Math.max(1, Number(offlineBookingForm.rooms) || 1);
+        const recalc = (hId: string, rId: string, cIn: string, cOut: string, rmCount: number) => {
+          const h = hotels.find((x: any) => x._id === hId);
+          if (!h) return { roomId: '', roomType: '', totalPrice: '', totalPartnerPrice: '' };
+          const rms = Array.isArray(h.rooms) ? h.rooms : [];
+          const rm = rms.find((r: any) => (r._id || r.id) === rId) || rms[0];
+          const dt1 = new Date(cIn);
+          const dt2 = new Date(cOut);
+          const nts = (!isNaN(dt1.getTime()) && !isNaN(dt2.getTime()) && dt2 > dt1)
+            ? Math.max(1, Math.round((dt2.getTime() - dt1.getTime()) / (1000 * 60 * 60 * 24)))
+            : 1;
+          const cnt = Math.max(1, Number(rmCount) || 1);
+          const margin = Number(h.marginPercentage) || 15;
+          const b2cPerNight = Number(rm?.priceDouble || rm?.priceSingle || h.startingPrice || 0);
+          const b2bPerNight = Number(rm?.b2bPriceDouble || rm?.b2bPriceSingle || h.startingB2BPrice || (b2cPerNight > 0 ? Math.round(b2cPerNight / (1 + margin / 100)) : 0));
+          return {
+            roomId: rm ? (rm._id || rm.id || '') : '',
+            roomType: rm?.type || 'Standard Room',
+            totalPrice: b2cPerNight > 0 ? String(Math.round(b2cPerNight * nts * cnt)) : '',
+            totalPartnerPrice: b2bPerNight > 0 ? String(Math.round(b2bPerNight * nts * cnt)) : '',
+          };
+        };
+
+        return (
+          <div
+            style={{ position: 'fixed', inset: 0, zIndex: 99999, background: 'rgba(15,23,42,0.72)', backdropFilter: 'blur(6px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}
+            onClick={() => !offlineBookingSaving && setShowOfflineBookingModal(false)}
+          >
+            <div onClick={(e) => e.stopPropagation()} style={{ background: 'white', borderRadius: 20, width: '100%', maxWidth: 640, maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)' }}>
+              <div style={{ padding: '20px 24px', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f8fafc', borderTopLeftRadius: 20, borderTopRightRadius: 20 }}>
+                <div>
+                  <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 800 }}>Create Offline Booking</h2>
+                  <p style={{ margin: '4px 0 0', fontSize: '0.82rem', color: '#64748b' }}>Payment option: StayBuddy Admin Offline (updates Admin Revenue &amp; Profit)</p>
+                </div>
+                <button type="button" onClick={() => setShowOfflineBookingModal(false)} style={{ background: '#e2e8f0', border: 'none', width: 32, height: 32, borderRadius: '50%', cursor: 'pointer', fontWeight: 800 }}>✕</button>
+              </div>
+              <form
+                onSubmit={async (e) => {
+                  e.preventDefault();
+                  setOfflineBookingError('');
+                  setOfflineBookingSaving(true);
+                  try {
+                    const res = await fetch('/api/admin/bookings', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify(offlineBookingForm),
+                    });
+                    const data = await res.json();
+                    if (!res.ok) {
+                      setOfflineBookingError(data.error || 'Failed to create offline booking');
+                      setOfflineBookingSaving(false);
+                      return;
+                    }
+                    setShowOfflineBookingModal(false);
+                    fetchData(false);
+                    alert(`✅ Offline booking ${data.booking?.bookingId || ''} created!`);
+                  } catch (err: any) {
+                    setOfflineBookingError(err.message || 'Network error');
+                  } finally {
+                    setOfflineBookingSaving(false);
+                  }
+                }}
+                style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 14 }}
+              >
+                {offlineBookingError && (
+                  <div style={{ padding: '10px 14px', borderRadius: 10, background: '#fef2f2', border: '1px solid #fecaca', color: '#dc2626', fontSize: '0.84rem', fontWeight: 600 }}>
+                    ⚠️ {offlineBookingError}
+                  </div>
+                )}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, marginBottom: 4 }}>Select Hotel *</label>
+                    <select
+                      required
+                      value={offlineBookingForm.hotelId}
+                      onChange={(e) => {
+                        const p = recalc(e.target.value, '', offlineBookingForm.checkIn, offlineBookingForm.checkOut, offlineBookingForm.rooms);
+                        setOfflineBookingForm((prev) => ({ ...prev, hotelId: e.target.value, roomId: p.roomId, roomType: p.roomType, totalPrice: p.totalPrice || prev.totalPrice, totalPartnerPrice: p.totalPartnerPrice || prev.totalPartnerPrice }));
+                      }}
+                      className="form-input"
+                    >
+                      <option value="">-- Choose Property --</option>
+                      {hotels.map((h: any) => (
+                        <option key={h._id} value={h._id}>{h.name} ({h.city})</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, marginBottom: 4 }}>Room Category</label>
+                    {hotelRoomsList.length > 0 ? (
+                      <select
+                        value={offlineBookingForm.roomId}
+                        onChange={(e) => {
+                          const p = recalc(offlineBookingForm.hotelId, e.target.value, offlineBookingForm.checkIn, offlineBookingForm.checkOut, offlineBookingForm.rooms);
+                          setOfflineBookingForm((prev) => ({ ...prev, roomId: e.target.value, roomType: p.roomType, totalPrice: p.totalPrice || prev.totalPrice, totalPartnerPrice: p.totalPartnerPrice || prev.totalPartnerPrice }));
+                        }}
+                        className="form-input"
+                      >
+                        {hotelRoomsList.map((r: any) => (
+                          <option key={r._id || r.id} value={r._id || r.id}>{r.type}</option>
+                        ))}
+                      </select>
+                    ) : (
+                      <input type="text" placeholder="Deluxe Room" value={offlineBookingForm.roomType} onChange={(e) => setOfflineBookingForm((prev) => ({ ...prev, roomType: e.target.value }))} className="form-input" />
+                    )}
+                  </div>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 80px 80px', gap: 10 }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, marginBottom: 4 }}>Check-In *</label>
+                    <input type="date" required value={offlineBookingForm.checkIn} onChange={(e) => {
+                      const p = recalc(offlineBookingForm.hotelId, offlineBookingForm.roomId, e.target.value, offlineBookingForm.checkOut, offlineBookingForm.rooms);
+                      setOfflineBookingForm((prev) => ({ ...prev, checkIn: e.target.value, totalPrice: p.totalPrice || prev.totalPrice, totalPartnerPrice: p.totalPartnerPrice || prev.totalPartnerPrice }));
+                    }} className="form-input" />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, marginBottom: 4 }}>Check-Out *</label>
+                    <input type="date" required value={offlineBookingForm.checkOut} onChange={(e) => {
+                      const p = recalc(offlineBookingForm.hotelId, offlineBookingForm.roomId, offlineBookingForm.checkIn, e.target.value, offlineBookingForm.rooms);
+                      setOfflineBookingForm((prev) => ({ ...prev, checkOut: e.target.value, totalPrice: p.totalPrice || prev.totalPrice, totalPartnerPrice: p.totalPartnerPrice || prev.totalPartnerPrice }));
+                    }} className="form-input" />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, marginBottom: 4 }}>Rooms</label>
+                    <input type="number" min={1} value={offlineBookingForm.rooms} onChange={(e) => {
+                      const val = Math.max(1, Number(e.target.value) || 1);
+                      const p = recalc(offlineBookingForm.hotelId, offlineBookingForm.roomId, offlineBookingForm.checkIn, offlineBookingForm.checkOut, val);
+                      setOfflineBookingForm((prev) => ({ ...prev, rooms: val, totalPrice: p.totalPrice || prev.totalPrice, totalPartnerPrice: p.totalPartnerPrice || prev.totalPartnerPrice }));
+                    }} className="form-input" />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, marginBottom: 4 }}>Guests</label>
+                    <input type="number" min={1} value={offlineBookingForm.guests} onChange={(e) => setOfflineBookingForm((prev) => ({ ...prev, guests: Math.max(1, Number(e.target.value) || 1) }))} className="form-input" />
+                  </div>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, marginBottom: 4 }}>Guest Name *</label>
+                    <input type="text" required value={offlineBookingForm.guestName} onChange={(e) => setOfflineBookingForm((prev) => ({ ...prev, guestName: e.target.value }))} className="form-input" />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, marginBottom: 4 }}>Guest Phone *</label>
+                    <input type="tel" required value={offlineBookingForm.guestPhone} onChange={(e) => setOfflineBookingForm((prev) => ({ ...prev, guestPhone: e.target.value }))} className="form-input" />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, marginBottom: 4 }}>Guest Email</label>
+                    <input type="email" value={offlineBookingForm.guestEmail} onChange={(e) => setOfflineBookingForm((prev) => ({ ...prev, guestEmail: e.target.value }))} className="form-input" />
+                  </div>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, marginBottom: 4 }}>Guest Paid Total (B2C ₹) *</label>
+                    <input type="number" required min={1} value={offlineBookingForm.totalPrice} onChange={(e) => setOfflineBookingForm((prev) => ({ ...prev, totalPrice: e.target.value }))} className="form-input" />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, marginBottom: 4 }}>Partner Cost (B2B ₹) *</label>
+                    <input type="number" required min={0} value={offlineBookingForm.totalPartnerPrice} onChange={(e) => setOfflineBookingForm((prev) => ({ ...prev, totalPartnerPrice: e.target.value }))} className="form-input" />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, marginBottom: 4 }}>Payment Option</label>
+                    <select value={offlineBookingForm.paymentMethod} onChange={(e) => setOfflineBookingForm((prev) => ({ ...prev, paymentMethod: e.target.value }))} className="form-input" style={{ background: '#ecfdf5', color: '#065f46', fontWeight: 700 }}>
+                      <option value="StayBuddy Admin Offline">StayBuddy Admin Offline</option>
+                    </select>
+                  </div>
+                </div>
+                <div style={{ fontSize: '0.82rem', color: '#475569', background: '#f8fafc', padding: '10px 14px', borderRadius: 10 }}>
+                  Duration: <strong>{nights} night(s), {roomsCount} room(s)</strong>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, paddingTop: 4 }}>
+                  <button type="button" onClick={() => setShowOfflineBookingModal(false)} className="btn btn-secondary">Cancel</button>
+                  <button type="submit" disabled={offlineBookingSaving} className="btn btn-primary">{offlineBookingSaving ? 'Creating...' : 'Confirm Offline Booking'}</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }
