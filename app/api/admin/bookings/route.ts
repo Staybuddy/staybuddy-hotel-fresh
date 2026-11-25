@@ -150,9 +150,12 @@ export async function POST(request: NextRequest) {
 
     const roomType = bodyRoomType || roomData?.type || 'Standard Room';
     const marginPercentage = Number(hotelData.marginPercentage) || 15;
+    const roomB2bPerNight = Number(roomData?.b2bPriceDouble || roomData?.b2bPriceSingle || hotelData.startingB2BPrice || 0);
     const totalPartnerPrice = bodyTotalPartnerPrice !== undefined && bodyTotalPartnerPrice !== ''
       ? Math.round(Number(bodyTotalPartnerPrice))
-      : Math.round(totalPrice / (1 + marginPercentage / 100));
+      : (roomB2bPerNight > 0
+          ? Math.round(roomB2bPerNight * nights * numRooms)
+          : Math.round(totalPrice / (1 + marginPercentage / 100)));
 
     const partnerPricePerNight = Math.round(totalPartnerPrice / (nights * numRooms));
     const pricePerNight = Math.round(totalPrice / (nights * numRooms));

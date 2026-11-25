@@ -173,7 +173,7 @@ export default function AdminDashboard() {
       rooms: 1,
       guests: 2,
       totalPrice: priced.totalPrice,
-      totalPartnerPrice: priced.totalPartnerPrice,
+      totalPartnerPrice: '',
       paymentMethod: 'StayBuddy Admin Offline',
       specialRequests: '',
     });
@@ -4987,13 +4987,6 @@ export default function AdminDashboard() {
           ? Math.max(1, Math.round((d2.getTime() - d1.getTime()) / (1000 * 60 * 60 * 24)))
           : 1;
         const roomsCount = Math.max(1, Number(offlineBookingForm.rooms) || 1);
-        const b2cTotal = Number(offlineBookingForm.totalPrice) || 0;
-        const b2bTotal = Number(offlineBookingForm.totalPartnerPrice) || 0;
-        const gross = Math.max(0, b2cTotal - b2bTotal);
-        const perNight = b2cTotal / (nights * roomsCount);
-        const gstRate = perNight >= 7500 ? 18 : 5;
-        const gstAmt = Math.round(gross * (gstRate / 100) * 100) / 100;
-        const netProfit = Math.round((gross - gstAmt) * 100) / 100;
 
         return (
           <div
@@ -5216,7 +5209,7 @@ export default function AdminDashboard() {
                   </div>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
                   <div>
                     <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#334155', marginBottom: 6 }}>Guest Paid Total (B2C ₹) *</label>
                     <input
@@ -5227,18 +5220,6 @@ export default function AdminDashboard() {
                       value={offlineBookingForm.totalPrice}
                       onChange={(e) => setOfflineBookingForm((p) => ({ ...p, totalPrice: e.target.value }))}
                       style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1px solid #3b82f6', fontSize: '0.95rem', fontWeight: 700, color: '#1e3a8a' }}
-                    />
-                  </div>
-                  <div>
-                    <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#334155', marginBottom: 6 }}>Partner Cost (B2B ₹) *</label>
-                    <input
-                      type="number"
-                      required
-                      min={0}
-                      placeholder="e.g. 4200"
-                      value={offlineBookingForm.totalPartnerPrice}
-                      onChange={(e) => setOfflineBookingForm((p) => ({ ...p, totalPartnerPrice: e.target.value }))}
-                      style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1px solid #cbd5e1', fontSize: '0.95rem', fontWeight: 700 }}
                     />
                   </div>
                   <div>
@@ -5253,24 +5234,9 @@ export default function AdminDashboard() {
                   </div>
                 </div>
 
-                {/* Live Revenue & Profit Impact Box */}
-                <div style={{ background: 'linear-gradient(135deg, #f0fdf4 0%, #eff6ff 100%)', border: '1px solid #bae6fd', borderRadius: 14, padding: '14px 18px', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10 }}>
-                  <div>
-                    <div style={{ fontSize: '0.7rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Stay Duration</div>
-                    <div style={{ fontSize: '1.05rem', fontWeight: 800, color: '#0f172a' }}>{nights} Night{nights > 1 ? 's' : ''} • {roomsCount} Rm</div>
-                  </div>
-                  <div>
-                    <div style={{ fontSize: '0.7rem', fontWeight: 700, color: '#1e40af', textTransform: 'uppercase' }}>Revenue Added</div>
-                    <div style={{ fontSize: '1.05rem', fontWeight: 900, color: '#1d4ed8' }}>+₹{b2cTotal.toLocaleString()}</div>
-                  </div>
-                  <div>
-                    <div style={{ fontSize: '0.7rem', fontWeight: 700, color: '#9a3412', textTransform: 'uppercase' }}>GST ({gstRate}%)</div>
-                    <div style={{ fontSize: '1.05rem', fontWeight: 800, color: '#c2410c' }}>-₹{gstAmt.toFixed(2)}</div>
-                  </div>
-                  <div>
-                    <div style={{ fontSize: '0.7rem', fontWeight: 800, color: '#065f46', textTransform: 'uppercase' }}>Net Profit Added</div>
-                    <div style={{ fontSize: '1.1rem', fontWeight: 900, color: '#059669' }}>+₹{netProfit.toFixed(2)}</div>
-                  </div>
+                <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 12, padding: '12px 16px', fontSize: '0.85rem', color: '#475569', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span>Stay Duration: <strong style={{ color: '#0f172a' }}>{nights} Night{nights > 1 ? 's' : ''} • {roomsCount} Room{roomsCount > 1 ? 's' : ''}</strong></span>
+                  <span style={{ fontWeight: 700, color: '#1d4ed8' }}>B2C Total: ₹{(Number(offlineBookingForm.totalPrice) || 0).toLocaleString()}</span>
                 </div>
 
                 <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, paddingTop: 6 }}>

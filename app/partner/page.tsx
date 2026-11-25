@@ -1752,7 +1752,7 @@ export default function PartnerDashboard() {
                           rooms: 1,
                           guests: 2,
                           totalPrice: b2c > 0 ? String(b2c) : '',
-                          totalPartnerPrice: b2b > 0 ? String(b2b) : '',
+                          totalPartnerPrice: '',
                           paymentMethod: 'StayBuddy Admin Offline',
                           specialRequests: '',
                         });
@@ -6098,14 +6098,10 @@ export default function PartnerDashboard() {
                     <input type="email" value={offlineBookingForm.guestEmail} onChange={(e) => setOfflineBookingForm((prev) => ({ ...prev, guestEmail: e.target.value }))} className="form-input" />
                   </div>
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                   <div>
                     <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, marginBottom: 4 }}>Guest Paid Total (B2C ₹) *</label>
                     <input type="number" required min={1} value={offlineBookingForm.totalPrice} onChange={(e) => setOfflineBookingForm((prev) => ({ ...prev, totalPrice: e.target.value }))} className="form-input" />
-                  </div>
-                  <div>
-                    <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, marginBottom: 4 }}>Partner Cost (B2B ₹) *</label>
-                    <input type="number" required min={0} value={offlineBookingForm.totalPartnerPrice} onChange={(e) => setOfflineBookingForm((prev) => ({ ...prev, totalPartnerPrice: e.target.value }))} className="form-input" />
                   </div>
                   <div>
                     <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, marginBottom: 4 }}>Payment Option</label>
