@@ -102,8 +102,8 @@ export default function AdminDashboard() {
     guestEmail: '',
     checkIn: getLocalDateString(),
     checkOut: getTomorrowDateString(),
-    rooms: 1,
-    guests: 2,
+    rooms: 1 as number | string,
+    guests: 2 as number | string,
     totalPrice: '',
     totalPartnerPrice: '',
     paymentMethod: 'StayBuddy Admin Offline',
@@ -140,7 +140,7 @@ export default function AdminDashboard() {
     }
   }
 
-  function recalcOfflinePricing(hotelId: string, roomId: string, checkIn: string, checkOut: string, roomsCount: number) {
+  function recalcOfflinePricing(hotelId: string, roomId: string, checkIn: string, checkOut: string, roomsCount: number | string) {
     const hotel = hotels.find((h: any) => h._id === hotelId);
     if (!hotel) return { roomType: '', totalPrice: '', totalPartnerPrice: '' };
     const hotelRooms = Array.isArray(hotel.rooms) ? hotel.rooms : [];
@@ -5164,13 +5164,19 @@ export default function AdminDashboard() {
                     <input
                       type="number"
                       min={1}
+                      required
                       value={offlineBookingForm.rooms}
                       onChange={(e) => {
-                        const val = Math.max(1, Number(e.target.value) || 1);
-                        const priced = recalcOfflinePricing(offlineBookingForm.hotelId, offlineBookingForm.roomId, offlineBookingForm.checkIn, offlineBookingForm.checkOut, val);
+                        const raw = e.target.value;
+                        if (raw === '') {
+                          setOfflineBookingForm((p) => ({ ...p, rooms: '' }));
+                          return;
+                        }
+                        const num = Math.max(1, Number(raw) || 1);
+                        const priced = recalcOfflinePricing(offlineBookingForm.hotelId, offlineBookingForm.roomId, offlineBookingForm.checkIn, offlineBookingForm.checkOut, num);
                         setOfflineBookingForm((p) => ({
                           ...p,
-                          rooms: val,
+                          rooms: raw,
                           totalPrice: priced.totalPrice || p.totalPrice,
                           totalPartnerPrice: priced.totalPartnerPrice || p.totalPartnerPrice,
                         }));
@@ -5183,8 +5189,9 @@ export default function AdminDashboard() {
                     <input
                       type="number"
                       min={1}
+                      required
                       value={offlineBookingForm.guests}
-                      onChange={(e) => setOfflineBookingForm((p) => ({ ...p, guests: Math.max(1, Number(e.target.value) || 1) }))}
+                      onChange={(e) => setOfflineBookingForm((p) => ({ ...p, guests: e.target.value }))}
                       style={{ width: '100%', padding: '10px 10px', borderRadius: 10, border: '1px solid #cbd5e1', fontSize: '0.88rem' }}
                     />
                   </div>
