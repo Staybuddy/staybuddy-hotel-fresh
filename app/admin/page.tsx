@@ -108,6 +108,14 @@ export default function AdminDashboard() {
     totalPartnerPrice: '',
     paymentMethod: 'StayBuddy Admin Offline',
     specialRequests: '',
+    couponCode: '',
+    couponDiscount: 0,
+    couponMessage: '',
+    couponError: '',
+    showGstDetails: false,
+    gstRegistrationNo: '',
+    gstCompanyName: '',
+    gstCompanyAddress: '',
   });
 
   async function adminRecheckBookingPayment(bookingId: string) {
@@ -176,6 +184,14 @@ export default function AdminDashboard() {
       totalPartnerPrice: '',
       paymentMethod: 'StayBuddy Admin Offline',
       specialRequests: '',
+      couponCode: '',
+      couponDiscount: 0,
+      couponMessage: '',
+      couponError: '',
+      showGstDetails: false,
+      gstRegistrationNo: '',
+      gstCompanyName: '',
+      gstCompanyAddress: '',
     });
     setShowOfflineBookingModal(true);
   }
@@ -5236,7 +5252,106 @@ export default function AdminDashboard() {
 
                 <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 12, padding: '12px 16px', fontSize: '0.85rem', color: '#475569', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span>Stay Duration: <strong style={{ color: '#0f172a' }}>{nights} Night{nights > 1 ? 's' : ''} • {roomsCount} Room{roomsCount > 1 ? 's' : ''}</strong></span>
-                  <span style={{ fontWeight: 700, color: '#1d4ed8' }}>B2C Total: ₹{(Number(offlineBookingForm.totalPrice) || 0).toLocaleString()}</span>
+                  <span style={{ fontWeight: 700, color: '#1d4ed8' }}>
+                    Final B2C Total: ₹{Math.max(0, (Number(offlineBookingForm.totalPrice) || 0) - (Number(offlineBookingForm.couponDiscount) || 0)).toLocaleString()}
+                    {offlineBookingForm.couponDiscount > 0 && (
+                      <span style={{ color: '#059669', marginLeft: 6, fontSize: '0.78rem' }}>(Saved ₹{offlineBookingForm.couponDiscount})</span>
+                    )}
+                  </span>
+                </div>
+
+                {/* First-Booking Coupon (by Client Email) */}
+                <div style={{ border: '1px solid #e2e8f0', borderRadius: 12, padding: '12px 14px', background: '#fffbeb' }}>
+                  <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#92400e', marginBottom: 6 }}>First-Booking Coupon Code (Checked against Guest Email)</label>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <input
+                      type="text"
+                      placeholder="e.g. FIRST150 or STAYBUDDY20"
+                      value={offlineBookingForm.couponCode}
+                      onChange={(e) => setOfflineBookingForm((p) => ({ ...p, couponCode: e.target.value.toUpperCase(), couponDiscount: 0, couponMessage: '', couponError: '' }))}
+                      style={{ flex: 1, padding: '8px 12px', borderRadius: 8, border: '1px solid #fcd34d', fontSize: '0.88rem', fontWeight: 700, textTransform: 'uppercase', background: 'white' }}
+                    />
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        if (!offlineBookingForm.couponCode.trim()) return;
+                        try {
+                          const res = await fetch('/api/coupons/validate', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                              code: offlineBookingForm.couponCode,
+                              email: offlineBookingForm.guestEmail,
+                              basePrice: Number(offlineBookingForm.totalPrice) || 0,
+                            }),
+                          });
+                          const data = await res.json();
+                          if (data.valid) {
+                            setOfflineBookingForm((p) => ({ ...p, couponCode: data.code, couponDiscount: data.discountAmount || 0, couponMessage: data.message || 'Coupon applied!', couponError: '' }));
+                          } else {
+                            setOfflineBookingForm((p) => ({ ...p, couponDiscount: 0, couponMessage: '', couponError: data.error || 'Invalid coupon' }));
+                          }
+                        } catch (_) {
+                          setOfflineBookingForm((p) => ({ ...p, couponDiscount: 0, couponMessage: '', couponError: 'Failed to validate coupon' }));
+                        }
+                      }}
+                      style={{ padding: '8px 16px', borderRadius: 8, border: 'none', background: '#d97706', color: 'white', fontWeight: 700, fontSize: '0.84rem', cursor: 'pointer' }}
+                    >
+                      Apply
+                    </button>
+                  </div>
+                  {offlineBookingForm.couponMessage && (
+                    <div style={{ marginTop: 6, fontSize: '0.78rem', fontWeight: 700, color: '#059669' }}>{offlineBookingForm.couponMessage}</div>
+                  )}
+                  {offlineBookingForm.couponError && (
+                    <div style={{ marginTop: 6, fontSize: '0.78rem', fontWeight: 700, color: '#dc2626' }}>⚠️ {offlineBookingForm.couponError}</div>
+                  )}
+                </div>
+
+                {/* Corporate GST Details for Client Invoice */}
+                <div style={{ border: '1px solid #e2e8f0', borderRadius: 12, padding: '12px 14px', background: '#f8fafc' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: '0.84rem', fontWeight: 700, color: '#1e293b' }}>
+                    <input
+                      type="checkbox"
+                      checked={offlineBookingForm.showGstDetails}
+                      onChange={(e) => setOfflineBookingForm((p) => ({ ...p, showGstDetails: e.target.checked }))}
+                    />
+                    <span>Add Client Corporate GST Details (appears on Client Tax Invoice &amp; Email)</span>
+                  </label>
+                  {offlineBookingForm.showGstDetails && (
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 12 }}>
+                      <div>
+                        <label style={{ display: 'block', fontSize: '0.74rem', fontWeight: 700, color: '#475569', marginBottom: 4 }}>GSTIN / Registration No.</label>
+                        <input
+                          type="text"
+                          placeholder="e.g. 36ABCDE1234F1Z5"
+                          value={offlineBookingForm.gstRegistrationNo}
+                          onChange={(e) => setOfflineBookingForm((p) => ({ ...p, gstRegistrationNo: e.target.value.toUpperCase() }))}
+                          style={{ width: '100%', padding: '8px 10px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '0.85rem', textTransform: 'uppercase' }}
+                        />
+                      </div>
+                      <div>
+                        <label style={{ display: 'block', fontSize: '0.74rem', fontWeight: 700, color: '#475569', marginBottom: 4 }}>Company Name</label>
+                        <input
+                          type="text"
+                          placeholder="Registered Company Name"
+                          value={offlineBookingForm.gstCompanyName}
+                          onChange={(e) => setOfflineBookingForm((p) => ({ ...p, gstCompanyName: e.target.value }))}
+                          style={{ width: '100%', padding: '8px 10px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '0.85rem' }}
+                        />
+                      </div>
+                      <div style={{ gridColumn: '1 / -1' }}>
+                        <label style={{ display: 'block', fontSize: '0.74rem', fontWeight: 700, color: '#475569', marginBottom: 4 }}>Company Address</label>
+                        <input
+                          type="text"
+                          placeholder="Full Billing Address"
+                          value={offlineBookingForm.gstCompanyAddress}
+                          onChange={(e) => setOfflineBookingForm((p) => ({ ...p, gstCompanyAddress: e.target.value }))}
+                          style={{ width: '100%', padding: '8px 10px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '0.85rem' }}
+                        />
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, paddingTop: 6 }}>

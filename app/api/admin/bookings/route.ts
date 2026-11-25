@@ -107,6 +107,10 @@ export async function POST(request: NextRequest) {
       totalPartnerPrice: bodyTotalPartnerPrice,
       paymentMethod = 'StayBuddy Admin Offline',
       specialRequests = '',
+      couponCode: rawCouponCode = '',
+      gstRegistrationNo = '',
+      gstCompanyName = '',
+      gstCompanyAddress = '',
     } = body;
 
     if (!hotelId || !guestName || !guestPhone || !checkIn || !checkOut) {
@@ -116,10 +120,43 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const totalPrice = Math.round(Number(bodyTotalPrice) || 0);
-    if (totalPrice <= 0) {
+    const baseTotalPrice = Math.round(Number(bodyTotalPrice) || 0);
+    if (baseTotalPrice <= 0) {
       return NextResponse.json({ error: 'Total B2C amount must be greater than 0' }, { status: 400 });
     }
+
+    // Validate & apply First-Booking Coupon (funded from StayBuddy Margin)
+    let couponCode: string | null = rawCouponCode ? String(rawCouponCode).trim().toUpperCase() : null;
+    let couponDiscount = 0;
+    let isFirstBookingDiscount = false;
+    const cleanGuestEmail = guestEmail ? String(guestEmail).trim().toLowerCase() : '';
+
+    if (couponCode === 'FIRST150' || couponCode === 'FIRST5' || couponCode === 'STAY150' || couponCode === 'STAYBUDDY150' || couponCode === 'STAYBUDDY5' || couponCode === 'STAYBUDDY20') {
+      let alreadyBooked = false;
+      if (cleanGuestEmail) {
+        const existingSnap = await db.collection('bookings')
+          .where('guestEmail', '==', cleanGuestEmail)
+          .where('status', 'in', ['confirmed', 'completed'])
+          .limit(1)
+          .get();
+        if (!existingSnap.empty) {
+          alreadyBooked = true;
+        }
+      }
+
+      if (!alreadyBooked) {
+        const isPercent20 = couponCode === 'STAYBUDDY20';
+        couponDiscount = isPercent20 ? Math.round(baseTotalPrice * 0.20) : Math.min(baseTotalPrice, 150);
+        if (couponCode === 'FIRST5') couponCode = 'FIRST150';
+        isFirstBookingDiscount = true;
+      } else {
+        couponCode = null;
+      }
+    } else {
+      couponCode = null;
+    }
+
+    const totalPrice = Math.max(1, baseTotalPrice - couponDiscount);
 
     const checkInDate = new Date(checkIn);
     const checkOutDate = new Date(checkOut);
@@ -211,6 +248,14 @@ export async function POST(request: NextRequest) {
       totalPartnerPrice,
       marginPercentage,
       marginAmount,
+      couponCode: couponCode || null,
+      discountAmount: couponDiscount,
+      couponDiscount,
+      isFirstBookingDiscount,
+      discountFundedBy: couponDiscount > 0 ? 'StayBuddy Margin' : null,
+      gstRegistrationNo: gstRegistrationNo ? String(gstRegistrationNo).trim().toUpperCase() : '',
+      gstCompanyName: gstCompanyName ? String(gstCompanyName).trim() : '',
+      gstCompanyAddress: gstCompanyAddress ? String(gstCompanyAddress).trim() : '',
       paymentMethod: paymentMethod || 'StayBuddy Admin Offline',
       bookingSource: 'offline',
       isOfflineBooking: true,

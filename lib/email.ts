@@ -190,17 +190,32 @@ export async function sendBookingConfirmationEmail(booking: any) {
           <table style="width: 100%; border-collapse: collapse; background: #f9fafb; border-radius: 8px; overflow: hidden; font-size: 15px;">
             <tr>
               <td style="padding: 16px; color: #4b5563;">Room Charges (${booking.nights || 1} Night)</td>
-              <td style="padding: 16px; color: #1f2937; text-align: right; font-weight: 500;">₹${(booking.pricePerNight * booking.nights || totalPrice).toLocaleString()}</td>
+              <td style="padding: 16px; color: #1f2937; text-align: right; font-weight: 500;">₹${((booking.pricePerNight * (booking.nights || 1)) || totalPrice).toLocaleString()}</td>
             </tr>
+            ${(booking.discountAmount > 0 && booking.couponCode) ? `
             <tr>
-              <td style="padding: 16px; color: #4b5563; border-bottom: 1px solid #e5e7eb;">Taxes & Fees (5% GST)</td>
-              <td style="padding: 16px; color: #1f2937; text-align: right; font-weight: 500; border-bottom: 1px solid #e5e7eb;">₹${(totalPrice - (booking.pricePerNight * booking.nights)).toLocaleString()}</td>
+              <td style="padding: 16px; color: #15803d; border-bottom: 1px solid #e5e7eb;">Coupon Discount (${booking.couponCode})</td>
+              <td style="padding: 16px; color: #15803d; text-align: right; font-weight: 700; border-bottom: 1px solid #e5e7eb;">-₹${Number(booking.discountAmount).toLocaleString()}</td>
+            </tr>
+            ` : ''}
+            <tr>
+              <td style="padding: 16px; color: #4b5563; border-bottom: 1px solid #e5e7eb;">Taxes & Fees (5% GST Included)</td>
+              <td style="padding: 16px; color: #1f2937; text-align: right; font-weight: 500; border-bottom: 1px solid #e5e7eb;">Included</td>
             </tr>
             <tr style="background-color: #fff7ed;">
               <td style="padding: 16px; color: #c2410c; font-weight: 800; font-size: 18px;">Total Amount Paid</td>
               <td style="padding: 16px; color: #c2410c; font-weight: 800; font-size: 18px; text-align: right;">₹${totalPrice.toLocaleString()}</td>
             </tr>
           </table>
+
+          ${(booking.gstRegistrationNo || booking.gstCompanyName) ? `
+          <div style="margin-top: 20px; padding: 14px 16px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 13px; color: #334155;">
+            <div style="font-weight: 800; text-transform: uppercase; font-size: 11px; color: #64748b; margin-bottom: 6px;">Corporate GST Billing Details</div>
+            ${booking.gstCompanyName ? `<div><strong>Company:</strong> ${booking.gstCompanyName}</div>` : ''}
+            ${booking.gstRegistrationNo ? `<div><strong>GSTIN:</strong> ${booking.gstRegistrationNo}</div>` : ''}
+            ${booking.gstCompanyAddress ? `<div><strong>Address:</strong> ${booking.gstCompanyAddress}</div>` : ''}
+          </div>
+          ` : ''}
 
           <div style="margin-top: 40px; padding-top: 24px; border-top: 1px dashed #d1d5db; text-align: center; color: #6b7280; font-size: 13px;">
             <p style="margin: 4px 0;">This is a computer-generated tax invoice and does not require a signature.</p>
