@@ -100,6 +100,7 @@ export async function POST(request: NextRequest) {
       guestName,
       guestPhone,
       guestEmail,
+      guestEmail2 = '',
       checkIn,
       checkOut,
       rooms = 1,
@@ -247,6 +248,7 @@ export async function POST(request: NextRequest) {
       guestName: String(guestName).trim(),
       guestPhone: String(guestPhone).trim(),
       guestEmail: guestEmail ? String(guestEmail).trim() : '',
+      guestEmail2: guestEmail2 ? String(guestEmail2).trim() : '',
       checkIn: checkInDate.toISOString(),
       checkOut: checkOutDate.toISOString(),
       nights,
@@ -296,11 +298,11 @@ export async function POST(request: NextRequest) {
 
       const emailPromises: Promise<any>[] = [];
 
-      // 1. Client Booking Confirmation & Tax Invoice Email (if guestEmail provided)
-      if (newBooking.guestEmail && newBooking.guestEmail.includes('@')) {
+      // 1. Client Booking Confirmation & Tax Invoice Email (to guestEmail & guestEmail2 if provided)
+      if ((newBooking.guestEmail && newBooking.guestEmail.includes('@')) || (newBooking.guestEmail2 && newBooking.guestEmail2.includes('@'))) {
         emailPromises.push(
           sendBookingConfirmationEmail(populatedBooking)
-            .then(() => console.log(`[Offline Booking] Client confirmation email sent to ${newBooking.guestEmail}`))
+            .then(() => console.log(`[Offline Booking] Client confirmation email sent to ${[newBooking.guestEmail, newBooking.guestEmail2].filter(Boolean).join(', ')}`))
             .catch((err) => console.error('[Offline Booking] Failed to send client confirmation email:', err))
         );
       }

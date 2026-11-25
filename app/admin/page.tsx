@@ -101,6 +101,7 @@ export default function AdminDashboard() {
     guestName: '',
     guestPhone: '',
     guestEmail: '',
+    guestEmail2: '',
     checkIn: getLocalDateString(),
     checkOut: getTomorrowDateString(),
     rooms: 1 as number | string,
@@ -185,6 +186,7 @@ export default function AdminDashboard() {
       guestName: '',
       guestPhone: '',
       guestEmail: '',
+      guestEmail2: '',
       checkIn,
       checkOut,
       rooms: 1,
@@ -5247,7 +5249,7 @@ export default function AdminDashboard() {
                   </div>
                 </div>
 
-                <div className="offline-grid-3">
+                <div className="offline-grid-2">
                   <div>
                     <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#334155', marginBottom: 6 }}>Guest Name *</label>
                     <input
@@ -5271,12 +5273,22 @@ export default function AdminDashboard() {
                     />
                   </div>
                   <div>
-                    <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#334155', marginBottom: 6 }}>Guest Email (Optional)</label>
+                    <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#334155', marginBottom: 6 }}>Guest Email 1 (Optional)</label>
                     <input
                       type="email"
                       placeholder="guest@email.com"
                       value={offlineBookingForm.guestEmail}
                       onChange={(e) => setOfflineBookingForm((p) => ({ ...p, guestEmail: e.target.value }))}
+                      style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1px solid #cbd5e1', fontSize: '0.9rem' }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#334155', marginBottom: 6 }}>Guest Email 2 (Optional)</label>
+                    <input
+                      type="email"
+                      placeholder="second.guest@email.com"
+                      value={offlineBookingForm.guestEmail2}
+                      onChange={(e) => setOfflineBookingForm((p) => ({ ...p, guestEmail2: e.target.value }))}
                       style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1px solid #cbd5e1', fontSize: '0.9rem' }}
                     />
                   </div>

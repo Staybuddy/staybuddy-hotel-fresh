@@ -93,7 +93,7 @@ export function getDirectionsUrl(hotel: any, hotelName: string, hotelCity: strin
 }
 
 export async function sendBookingConfirmationEmail(booking: any) {
-  const { customerId, hotelId, checkIn, checkOut, totalPrice, _id, guestEmail, guestName } = booking;
+  const { customerId, hotelId, checkIn, checkOut, totalPrice, _id, guestEmail, guestEmail2, guestName } = booking;
   
   const hotelName = (typeof hotelId === 'object' && hotelId?.name) ? hotelId.name : (booking.hotelName || 'StayBuddy Hotel');
   const hotelCity = (typeof hotelId === 'object' && hotelId?.city) ? hotelId.city : (booking.hotelCity || '');
@@ -105,7 +105,13 @@ export async function sendBookingConfirmationEmail(booking: any) {
   const checkInStr = new Date(checkIn).toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
   const checkOutStr = new Date(checkOut).toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
   
-  const recipientEmail = guestEmail || customerId?.email;
+  const rawEmails = [guestEmail, guestEmail2, customerId?.email]
+    .filter(Boolean)
+    .flatMap((e: string) => String(e).split(/[,;\s]+/))
+    .map((e: string) => e.trim().toLowerCase())
+    .filter((e: string) => e.includes('@'));
+  const recipientEmails = Array.from(new Set(rawEmails));
+  const recipientEmail = recipientEmails.join(', ');
   const recipientName = guestName || customerId?.name || 'Guest';
 
   if (!recipientEmail) {

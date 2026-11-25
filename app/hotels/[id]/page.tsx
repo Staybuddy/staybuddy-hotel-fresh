@@ -1446,28 +1446,27 @@ export default function HotelDetailPage() {
     setBookingStep(1);
     setTimeout(() => window.scrollTo(0, 0), 10);
     try {
-      const url = new URL(window.location.href);
-      url.searchParams.set("adults", String(bookingData.adults));
-      url.searchParams.set("rooms", String(bookingData.rooms));
-      if (bookingData.checkIn) url.searchParams.set("checkIn", bookingData.checkIn);
-      if (bookingData.checkOut) url.searchParams.set("checkOut", bookingData.checkOut);
-      url.hash = "review";
-      window.history.pushState(null, "", url.pathname + url.search + url.hash);
-    } catch (e) {
-      window.history.pushState(
-        null,
-        "",
-        window.location.pathname + window.location.search + "#review",
-      );
-    }
+      if (window.location.hash !== "#review") {
+        window.history.pushState(
+          { ...(window.history.state || {}), staybuddyReview: true },
+          "",
+          window.location.pathname + window.location.search + "#review",
+        );
+      }
+    } catch (e) {}
   };
 
   const closeReview = () => {
-    if (window.location.hash === "#review") {
-      window.history.back();
-    } else {
-      setBookingStep(0);
-    }
+    setBookingStep(0);
+    try {
+      if (window.location.hash === "#review") {
+        window.history.replaceState(
+          window.history.state,
+          "",
+          window.location.pathname + window.location.search,
+        );
+      }
+    } catch (e) {}
   };
 
   const today = new Date().toISOString().split("T")[0];

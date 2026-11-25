@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect, Fragment } from 'react';
+import { useState, useEffect, useRef, Fragment } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -109,6 +109,7 @@ export default function PartnerDashboard() {
     guestName: '',
     guestPhone: '',
     guestEmail: '',
+    guestEmail2: '',
     checkIn: getOfflineTodayStr(),
     checkOut: getOfflineTomorrowStr(),
     rooms: 1 as number | string,
@@ -385,6 +386,101 @@ export default function PartnerDashboard() {
       setHasShownSplash(true);
     }
   }, [loading, status]);
+
+  // Keep browser/mobile Back button inside Extranet previous step/tab/modal instead of exiting to main page
+  const isPoppingPartnerRef = useRef(false);
+  const partnerHistorySnapshotRef = useRef<{ tab: string; step: number }>({ tab: 'hotels', step: 1 });
+  const partnerModalsRef = useRef({
+    showOfflineBookingModal: false,
+    extranetModal: null as any,
+    inventoryModal: null as any,
+    addRoomModal: null as any,
+    selectedBookingModal: null as any,
+    activeTab: 'hotels',
+    formStep: 1,
+  });
+
+  useEffect(() => {
+    partnerModalsRef.current = {
+      showOfflineBookingModal,
+      extranetModal,
+      inventoryModal,
+      addRoomModal,
+      selectedBookingModal,
+      activeTab,
+      formStep,
+    };
+  }, [showOfflineBookingModal, extranetModal, inventoryModal, addRoomModal, selectedBookingModal, activeTab, formStep]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (isPoppingPartnerRef.current) {
+      isPoppingPartnerRef.current = false;
+      return;
+    }
+    const prev = partnerHistorySnapshotRef.current;
+    const changedTabOrStep = prev.tab !== activeTab || prev.step !== formStep;
+    const openedModal = Boolean(showOfflineBookingModal || extranetModal || inventoryModal || addRoomModal || selectedBookingModal);
+    if (changedTabOrStep || openedModal) {
+      try {
+        window.history.pushState(
+          { ...(window.history.state || {}), partnerExtranet: true, tab: activeTab, step: formStep },
+          '',
+          `${window.location.pathname}${window.location.search}#${activeTab}${activeTab === 'add-hotel' ? `-step${formStep}` : ''}`
+        );
+      } catch (_) {}
+      partnerHistorySnapshotRef.current = { tab: activeTab, step: formStep };
+    }
+  }, [activeTab, formStep, showOfflineBookingModal, extranetModal, inventoryModal, addRoomModal, selectedBookingModal]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const handlePartnerPopState = (e: PopStateEvent) => {
+      const cur = partnerModalsRef.current;
+      if (cur.showOfflineBookingModal) {
+        isPoppingPartnerRef.current = true;
+        setShowOfflineBookingModal(false);
+        return;
+      }
+      if (cur.extranetModal) {
+        isPoppingPartnerRef.current = true;
+        setExtranetModal(null);
+        return;
+      }
+      if (cur.inventoryModal) {
+        isPoppingPartnerRef.current = true;
+        setInventoryModal(null);
+        return;
+      }
+      if (cur.addRoomModal) {
+        isPoppingPartnerRef.current = true;
+        setAddRoomModal(null);
+        return;
+      }
+      if (cur.selectedBookingModal) {
+        isPoppingPartnerRef.current = true;
+        setSelectedBookingModal(null);
+        return;
+      }
+      if (cur.activeTab === 'add-hotel' && cur.formStep > 1) {
+        isPoppingPartnerRef.current = true;
+        const prevStep = cur.formStep - 1;
+        partnerHistorySnapshotRef.current = { tab: 'add-hotel', step: prevStep };
+        setFormStep(prevStep);
+        return;
+      }
+      if (cur.activeTab !== 'hotels') {
+        isPoppingPartnerRef.current = true;
+        const targetTab = (e.state && e.state.partnerExtranet && e.state.tab && e.state.tab !== cur.activeTab)
+          ? e.state.tab
+          : 'hotels';
+        partnerHistorySnapshotRef.current = { tab: targetTab, step: 1 };
+        setActiveTab(targetTab);
+      }
+    };
+    window.addEventListener('popstate', handlePartnerPopState);
+    return () => window.removeEventListener('popstate', handlePartnerPopState);
+  }, []);
 
   async function fetchData(showLoadingIndicator = !hasShownSplash) {
     if (showLoadingIndicator) setLoading(true);
@@ -1761,6 +1857,7 @@ export default function PartnerDashboard() {
                           guestName: '',
                           guestPhone: '',
                           guestEmail: '',
+                          guestEmail2: '',
                           checkIn: getOfflineTodayStr(),
                           checkOut: getOfflineTomorrowStr(),
                           rooms: 1,
@@ -6156,7 +6253,7 @@ export default function PartnerDashboard() {
                     }} className="form-input" />
                   </div>
                 </div>
-                <div className="offline-grid-3">
+                <div className="offline-grid-2">
                   <div>
                     <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, marginBottom: 4 }}>Guest Name *</label>
                     <input type="text" required value={offlineBookingForm.guestName} onChange={(e) => setOfflineBookingForm((prev) => ({ ...prev, guestName: e.target.value }))} className="form-input" />
@@ -6166,8 +6263,12 @@ export default function PartnerDashboard() {
                     <input type="tel" required value={offlineBookingForm.guestPhone} onChange={(e) => setOfflineBookingForm((prev) => ({ ...prev, guestPhone: e.target.value }))} className="form-input" />
                   </div>
                   <div>
-                    <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, marginBottom: 4 }}>Guest Email</label>
-                    <input type="email" value={offlineBookingForm.guestEmail} onChange={(e) => setOfflineBookingForm((prev) => ({ ...prev, guestEmail: e.target.value }))} className="form-input" />
+                    <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, marginBottom: 4 }}>Guest Email 1 (Optional)</label>
+                    <input type="email" placeholder="guest@email.com" value={offlineBookingForm.guestEmail} onChange={(e) => setOfflineBookingForm((prev) => ({ ...prev, guestEmail: e.target.value }))} className="form-input" />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, marginBottom: 4 }}>Guest Email 2 (Optional)</label>
+                    <input type="email" placeholder="second.guest@email.com" value={offlineBookingForm.guestEmail2} onChange={(e) => setOfflineBookingForm((prev) => ({ ...prev, guestEmail2: e.target.value }))} className="form-input" />
                   </div>
                 </div>
                 <div className="offline-grid-2">
