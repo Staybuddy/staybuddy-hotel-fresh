@@ -7,6 +7,7 @@ import Image from 'next/image';
 import { compressImage } from '@/lib/imageUtils';
 import { parseCoordinates } from '@/lib/coordinates';
 import TradeShowExtractor from '@/components/admin/TradeShowExtractor';
+import { applyMarginToRoom, calculateBookingPricing } from '@/lib/occupancyPricing';
 
 const NAV = [
   { id: 'overview', label: 'Dashboard', icon: '📊' },
@@ -140,9 +141,9 @@ export default function AdminDashboard() {
     }
   }
 
-  function recalcOfflinePricing(hotelId: string, roomId: string, checkIn: string, checkOut: string, roomsCount: number | string) {
+  function recalcOfflinePricing(hotelId: string, roomId: string, checkIn: string, checkOut: string, roomsCount: number | string, guestsCount: number | string = 2) {
     const hotel = hotels.find((h: any) => h._id === hotelId);
-    if (!hotel) return { roomType: '', totalPrice: '', totalPartnerPrice: '' };
+    if (!hotel) return { roomId: '', roomType: '', totalPrice: '', totalPartnerPrice: '' };
     const hotelRooms = Array.isArray(hotel.rooms) ? hotel.rooms : [];
     const room = hotelRooms.find((r: any) => (r._id || r.id) === roomId) || hotelRooms[0];
     const d1 = new Date(checkIn);
@@ -151,14 +152,22 @@ export default function AdminDashboard() {
       ? Math.max(1, Math.round((d2.getTime() - d1.getTime()) / (1000 * 60 * 60 * 24)))
       : 1;
     const count = Math.max(1, Number(roomsCount) || 1);
-    const margin = Number(hotel.marginPercentage) || 15;
-    const b2cPerNight = Number(room?.priceDouble || room?.priceSingle || hotel.startingPrice || 0);
-    const b2bPerNight = Number(room?.b2bPriceDouble || room?.b2bPriceSingle || hotel.startingB2BPrice || (b2cPerNight > 0 ? Math.round(b2cPerNight / (1 + margin / 100)) : 0));
+    const safeGuests = Math.max(1, Number(guestsCount) || 1);
+    const margin = Number(hotel.marginPercentage) || 0;
+    let totalWithGst = 0;
+    if (room) {
+      const marginedRoom = applyMarginToRoom(room, margin);
+      const pricing = calculateBookingPricing(marginedRoom, safeGuests, count, nights);
+      totalWithGst = pricing.totalAmount || 0;
+    } else {
+      const base = Number(hotel.startingPrice || 0) * nights * count;
+      totalWithGst = base + Math.round(base * 0.05);
+    }
     return {
       roomId: room ? (room._id || room.id || '') : '',
       roomType: room?.type || 'Standard Room',
-      totalPrice: b2cPerNight > 0 ? String(Math.round(b2cPerNight * nights * count)) : '',
-      totalPartnerPrice: b2bPerNight > 0 ? String(Math.round(b2bPerNight * nights * count)) : '',
+      totalPrice: totalWithGst > 0 ? String(Math.round(totalWithGst)) : '',
+      totalPartnerPrice: '',
     };
   }
 
@@ -5087,7 +5096,7 @@ export default function AdminDashboard() {
                       value={offlineBookingForm.hotelId}
                       onChange={(e) => {
                         const newHotelId = e.target.value;
-                        const priced = recalcOfflinePricing(newHotelId, '', offlineBookingForm.checkIn, offlineBookingForm.checkOut, offlineBookingForm.rooms);
+                        const priced = recalcOfflinePricing(newHotelId, '', offlineBookingForm.checkIn, offlineBookingForm.checkOut, offlineBookingForm.rooms, offlineBookingForm.guests);
                         setOfflineBookingForm((p) => ({
                           ...p,
                           hotelId: newHotelId,
@@ -5115,7 +5124,7 @@ export default function AdminDashboard() {
                         value={offlineBookingForm.roomId}
                         onChange={(e) => {
                           const newRoomId = e.target.value;
-                          const priced = recalcOfflinePricing(offlineBookingForm.hotelId, newRoomId, offlineBookingForm.checkIn, offlineBookingForm.checkOut, offlineBookingForm.rooms);
+                          const priced = recalcOfflinePricing(offlineBookingForm.hotelId, newRoomId, offlineBookingForm.checkIn, offlineBookingForm.checkOut, offlineBookingForm.rooms, offlineBookingForm.guests);
                           setOfflineBookingForm((p) => ({
                             ...p,
                             roomId: newRoomId,
@@ -5126,11 +5135,15 @@ export default function AdminDashboard() {
                         }}
                         style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1px solid #cbd5e1', fontSize: '0.9rem', background: 'white' }}
                       >
-                        {hotelRooms.map((r: any) => (
-                          <option key={r._id || r.id} value={r._id || r.id}>
-                            {r.type} (₹{r.priceDouble || r.priceSingle || 0}/night)
-                          </option>
-                        ))}
+                        {hotelRooms.map((r: any) => {
+                          const margined = applyMarginToRoom(r, Number(selectedHotel?.marginPercentage) || 0);
+                          const nightRate = Number(margined?.priceDouble || margined?.priceSingle || r.priceDouble || r.priceSingle || 0);
+                          return (
+                            <option key={r._id || r.id} value={r._id || r.id}>
+                              {r.type} (₹{nightRate}/night + GST)
+                            </option>
+                          );
+                        })}
                       </select>
                     ) : (
                       <input
@@ -5153,7 +5166,7 @@ export default function AdminDashboard() {
                       value={offlineBookingForm.checkIn}
                       onChange={(e) => {
                         const val = e.target.value;
-                        const priced = recalcOfflinePricing(offlineBookingForm.hotelId, offlineBookingForm.roomId, val, offlineBookingForm.checkOut, offlineBookingForm.rooms);
+                        const priced = recalcOfflinePricing(offlineBookingForm.hotelId, offlineBookingForm.roomId, val, offlineBookingForm.checkOut, offlineBookingForm.rooms, offlineBookingForm.guests);
                         setOfflineBookingForm((p) => ({
                           ...p,
                           checkIn: val,
@@ -5172,7 +5185,7 @@ export default function AdminDashboard() {
                       value={offlineBookingForm.checkOut}
                       onChange={(e) => {
                         const val = e.target.value;
-                        const priced = recalcOfflinePricing(offlineBookingForm.hotelId, offlineBookingForm.roomId, offlineBookingForm.checkIn, val, offlineBookingForm.rooms);
+                        const priced = recalcOfflinePricing(offlineBookingForm.hotelId, offlineBookingForm.roomId, offlineBookingForm.checkIn, val, offlineBookingForm.rooms, offlineBookingForm.guests);
                         setOfflineBookingForm((p) => ({
                           ...p,
                           checkOut: val,
@@ -5197,7 +5210,7 @@ export default function AdminDashboard() {
                           return;
                         }
                         const num = Math.max(1, Number(raw) || 1);
-                        const priced = recalcOfflinePricing(offlineBookingForm.hotelId, offlineBookingForm.roomId, offlineBookingForm.checkIn, offlineBookingForm.checkOut, num);
+                        const priced = recalcOfflinePricing(offlineBookingForm.hotelId, offlineBookingForm.roomId, offlineBookingForm.checkIn, offlineBookingForm.checkOut, num, offlineBookingForm.guests);
                         setOfflineBookingForm((p) => ({
                           ...p,
                           rooms: raw,
@@ -5215,7 +5228,20 @@ export default function AdminDashboard() {
                       min={1}
                       required
                       value={offlineBookingForm.guests}
-                      onChange={(e) => setOfflineBookingForm((p) => ({ ...p, guests: e.target.value }))}
+                      onChange={(e) => {
+                        const raw = e.target.value;
+                        if (raw === '') {
+                          setOfflineBookingForm((p) => ({ ...p, guests: '' }));
+                          return;
+                        }
+                        const num = Math.max(1, Number(raw) || 1);
+                        const priced = recalcOfflinePricing(offlineBookingForm.hotelId, offlineBookingForm.roomId, offlineBookingForm.checkIn, offlineBookingForm.checkOut, offlineBookingForm.rooms, num);
+                        setOfflineBookingForm((p) => ({
+                          ...p,
+                          guests: raw,
+                          totalPrice: priced.totalPrice || p.totalPrice,
+                        }));
+                      }}
                       style={{ width: '100%', padding: '10px 10px', borderRadius: 10, border: '1px solid #cbd5e1', fontSize: '0.88rem' }}
                     />
                   </div>

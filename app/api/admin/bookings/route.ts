@@ -5,6 +5,7 @@ import { db } from '@/lib/firebaseAdmin';
 import { getCached, setCached, getFallback, invalidateCache } from '@/lib/cache';
 import { VERIFIED_BOOKINGS } from '@/lib/verifiedFallbackData';
 import { sendBookingConfirmationEmail, sendPartnerNotificationEmail, sendPaymentAuditEmail } from '@/lib/email';
+import { calculateBookingPricing, getPureB2BRoomData } from '@/lib/occupancyPricing';
 
 export const dynamic = 'force-dynamic';
 
@@ -187,12 +188,22 @@ export async function POST(request: NextRequest) {
 
     const roomType = bodyRoomType || roomData?.type || 'Standard Room';
     const marginPercentage = Number(hotelData.marginPercentage) || 15;
-    const roomB2bPerNight = Number(roomData?.b2bPriceDouble || roomData?.b2bPriceSingle || hotelData.startingB2BPrice || 0);
-    const totalPartnerPrice = bodyTotalPartnerPrice !== undefined && bodyTotalPartnerPrice !== ''
-      ? Math.round(Number(bodyTotalPartnerPrice))
-      : (roomB2bPerNight > 0
-          ? Math.round(roomB2bPerNight * nights * numRooms)
-          : Math.round(totalPrice / (1 + marginPercentage / 100)));
+    let totalPartnerPrice = 0;
+    let occupancySummary = '';
+    if (bodyTotalPartnerPrice !== undefined && bodyTotalPartnerPrice !== '') {
+      totalPartnerPrice = Math.round(Number(bodyTotalPartnerPrice));
+    } else if (roomData) {
+      const pureB2bRoom = getPureB2BRoomData(roomData);
+      const partnerPricing = calculateBookingPricing(pureB2bRoom, numGuests, numRooms, nights);
+      totalPartnerPrice = Math.round(partnerPricing.priceAfterDiscount || 0);
+      occupancySummary = partnerPricing.summaryText || '';
+    }
+    if (totalPartnerPrice <= 0) {
+      const roomB2bPerNight = Number(roomData?.b2bPriceDouble || roomData?.b2bPriceSingle || hotelData.startingB2BPrice || 0);
+      totalPartnerPrice = roomB2bPerNight > 0
+        ? Math.round(roomB2bPerNight * nights * numRooms)
+        : Math.round(totalPrice / (1 + marginPercentage / 100));
+    }
 
     const partnerPricePerNight = Math.round(totalPartnerPrice / (nights * numRooms));
     const pricePerNight = Math.round(totalPrice / (nights * numRooms));
@@ -232,6 +243,7 @@ export async function POST(request: NextRequest) {
       roomId: roomId || null,
       roomType,
       roomSummary: `${numRooms} × ${roomType}`,
+      occupancySummary: occupancySummary || null,
       guestName: String(guestName).trim(),
       guestPhone: String(guestPhone).trim(),
       guestEmail: guestEmail ? String(guestEmail).trim() : '',

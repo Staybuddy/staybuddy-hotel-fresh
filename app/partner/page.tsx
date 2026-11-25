@@ -12,6 +12,7 @@ import PartnerExtranetIntroModal from '@/components/PartnerExtranetIntroModal';
 import OnboardingExecutiveCard from '@/components/OnboardingExecutiveCard';
 import OnboardingTrainingVideoModal from '@/components/OnboardingTrainingVideoModal';
 import { VERIFIED_HOTELS, VERIFIED_BOOKINGS } from '@/lib/verifiedFallbackData';
+import { applyMarginToRoom, calculateBookingPricing } from '@/lib/occupancyPricing';
 
 const NAV_ITEMS = [
   { id: 'hotels', label: 'My Properties', icon: '🏨' },
@@ -1744,9 +1745,14 @@ export default function PartnerDashboard() {
                       onClick={() => {
                         const firstHotel = hotels.find((h: any) => h.status === 'approved') || hotels[0];
                         const firstRoom = Array.isArray(firstHotel?.rooms) ? firstHotel.rooms[0] : null;
-                        const b2c = Number(firstRoom?.priceDouble || firstRoom?.priceSingle || firstHotel?.startingPrice || 0);
-                        const margin = Number(firstHotel?.marginPercentage) || 15;
-                        const b2b = Number(firstRoom?.b2bPriceDouble || firstRoom?.b2bPriceSingle || firstHotel?.startingB2BPrice || (b2c > 0 ? Math.round(b2c / (1 + margin / 100)) : 0));
+                        let initialTotal = 0;
+                        if (firstRoom) {
+                          const margined = applyMarginToRoom(firstRoom, Number(firstHotel?.marginPercentage) || 0);
+                          initialTotal = calculateBookingPricing(margined, 2, 1, 1).totalAmount || 0;
+                        } else {
+                          const base = Number(firstHotel?.startingPrice || 0);
+                          initialTotal = base + Math.round(base * 0.05);
+                        }
                         setOfflineBookingError('');
                         setOfflineBookingForm({
                           hotelId: firstHotel?._id || '',
@@ -1759,7 +1765,7 @@ export default function PartnerDashboard() {
                           checkOut: getOfflineTomorrowStr(),
                           rooms: 1,
                           guests: 2,
-                          totalPrice: b2c > 0 ? String(b2c) : '',
+                          totalPrice: initialTotal > 0 ? String(Math.round(initialTotal)) : '',
                           totalPartnerPrice: '',
                           paymentMethod: 'StayBuddy Admin Offline',
                           specialRequests: '',
@@ -5966,7 +5972,7 @@ export default function PartnerDashboard() {
           ? Math.max(1, Math.round((d2.getTime() - d1.getTime()) / (1000 * 60 * 60 * 24)))
           : 1;
         const roomsCount = Math.max(1, Number(offlineBookingForm.rooms) || 1);
-        const recalc = (hId: string, rId: string, cIn: string, cOut: string, rmCount: number | string) => {
+        const recalc = (hId: string, rId: string, cIn: string, cOut: string, rmCount: number | string, gCount: number | string = 2) => {
           const h = hotels.find((x: any) => x._id === hId);
           if (!h) return { roomId: '', roomType: '', totalPrice: '', totalPartnerPrice: '' };
           const rms = Array.isArray(h.rooms) ? h.rooms : [];
@@ -5977,14 +5983,22 @@ export default function PartnerDashboard() {
             ? Math.max(1, Math.round((dt2.getTime() - dt1.getTime()) / (1000 * 60 * 60 * 24)))
             : 1;
           const cnt = Math.max(1, Number(rmCount) || 1);
-          const margin = Number(h.marginPercentage) || 15;
-          const b2cPerNight = Number(rm?.priceDouble || rm?.priceSingle || h.startingPrice || 0);
-          const b2bPerNight = Number(rm?.b2bPriceDouble || rm?.b2bPriceSingle || h.startingB2BPrice || (b2cPerNight > 0 ? Math.round(b2cPerNight / (1 + margin / 100)) : 0));
+          const safeG = Math.max(1, Number(gCount) || 1);
+          const margin = Number(h.marginPercentage) || 0;
+          let totalWithGst = 0;
+          if (rm) {
+            const marginedRoom = applyMarginToRoom(rm, margin);
+            const pricing = calculateBookingPricing(marginedRoom, safeG, cnt, nts);
+            totalWithGst = pricing.totalAmount || 0;
+          } else {
+            const base = Number(h.startingPrice || 0) * nts * cnt;
+            totalWithGst = base + Math.round(base * 0.05);
+          }
           return {
             roomId: rm ? (rm._id || rm.id || '') : '',
             roomType: rm?.type || 'Standard Room',
-            totalPrice: b2cPerNight > 0 ? String(Math.round(b2cPerNight * nts * cnt)) : '',
-            totalPartnerPrice: b2bPerNight > 0 ? String(Math.round(b2bPerNight * nts * cnt)) : '',
+            totalPrice: totalWithGst > 0 ? String(Math.round(totalWithGst)) : '',
+            totalPartnerPrice: '',
           };
         };
 
@@ -6065,7 +6079,7 @@ export default function PartnerDashboard() {
                       required
                       value={offlineBookingForm.hotelId}
                       onChange={(e) => {
-                        const p = recalc(e.target.value, '', offlineBookingForm.checkIn, offlineBookingForm.checkOut, offlineBookingForm.rooms);
+                        const p = recalc(e.target.value, '', offlineBookingForm.checkIn, offlineBookingForm.checkOut, offlineBookingForm.rooms, offlineBookingForm.guests);
                         setOfflineBookingForm((prev) => ({ ...prev, hotelId: e.target.value, roomId: p.roomId, roomType: p.roomType, totalPrice: p.totalPrice || prev.totalPrice, totalPartnerPrice: p.totalPartnerPrice || prev.totalPartnerPrice }));
                       }}
                       className="form-input"
@@ -6082,14 +6096,18 @@ export default function PartnerDashboard() {
                       <select
                         value={offlineBookingForm.roomId}
                         onChange={(e) => {
-                          const p = recalc(offlineBookingForm.hotelId, e.target.value, offlineBookingForm.checkIn, offlineBookingForm.checkOut, offlineBookingForm.rooms);
+                          const p = recalc(offlineBookingForm.hotelId, e.target.value, offlineBookingForm.checkIn, offlineBookingForm.checkOut, offlineBookingForm.rooms, offlineBookingForm.guests);
                           setOfflineBookingForm((prev) => ({ ...prev, roomId: e.target.value, roomType: p.roomType, totalPrice: p.totalPrice || prev.totalPrice, totalPartnerPrice: p.totalPartnerPrice || prev.totalPartnerPrice }));
                         }}
                         className="form-input"
                       >
-                        {hotelRoomsList.map((r: any) => (
-                          <option key={r._id || r.id} value={r._id || r.id}>{r.type}</option>
-                        ))}
+                        {hotelRoomsList.map((r: any) => {
+                          const margined = applyMarginToRoom(r, Number(selectedHotel?.marginPercentage) || 0);
+                          const nightRate = Number(margined?.priceDouble || margined?.priceSingle || r.priceDouble || r.priceSingle || 0);
+                          return (
+                            <option key={r._id || r.id} value={r._id || r.id}>{r.type} (₹{nightRate}/night + GST)</option>
+                          );
+                        })}
                       </select>
                     ) : (
                       <input type="text" placeholder="Deluxe Room" value={offlineBookingForm.roomType} onChange={(e) => setOfflineBookingForm((prev) => ({ ...prev, roomType: e.target.value }))} className="form-input" />
@@ -6100,14 +6118,14 @@ export default function PartnerDashboard() {
                   <div>
                     <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, marginBottom: 4 }}>Check-In *</label>
                     <input type="date" required value={offlineBookingForm.checkIn} onChange={(e) => {
-                      const p = recalc(offlineBookingForm.hotelId, offlineBookingForm.roomId, e.target.value, offlineBookingForm.checkOut, offlineBookingForm.rooms);
+                      const p = recalc(offlineBookingForm.hotelId, offlineBookingForm.roomId, e.target.value, offlineBookingForm.checkOut, offlineBookingForm.rooms, offlineBookingForm.guests);
                       setOfflineBookingForm((prev) => ({ ...prev, checkIn: e.target.value, totalPrice: p.totalPrice || prev.totalPrice, totalPartnerPrice: p.totalPartnerPrice || prev.totalPartnerPrice }));
                     }} className="form-input" />
                   </div>
                   <div>
                     <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, marginBottom: 4 }}>Check-Out *</label>
                     <input type="date" required value={offlineBookingForm.checkOut} onChange={(e) => {
-                      const p = recalc(offlineBookingForm.hotelId, offlineBookingForm.roomId, offlineBookingForm.checkIn, e.target.value, offlineBookingForm.rooms);
+                      const p = recalc(offlineBookingForm.hotelId, offlineBookingForm.roomId, offlineBookingForm.checkIn, e.target.value, offlineBookingForm.rooms, offlineBookingForm.guests);
                       setOfflineBookingForm((prev) => ({ ...prev, checkOut: e.target.value, totalPrice: p.totalPrice || prev.totalPrice, totalPartnerPrice: p.totalPartnerPrice || prev.totalPartnerPrice }));
                     }} className="form-input" />
                   </div>
@@ -6120,13 +6138,22 @@ export default function PartnerDashboard() {
                         return;
                       }
                       const num = Math.max(1, Number(raw) || 1);
-                      const p = recalc(offlineBookingForm.hotelId, offlineBookingForm.roomId, offlineBookingForm.checkIn, offlineBookingForm.checkOut, num);
+                      const p = recalc(offlineBookingForm.hotelId, offlineBookingForm.roomId, offlineBookingForm.checkIn, offlineBookingForm.checkOut, num, offlineBookingForm.guests);
                       setOfflineBookingForm((prev) => ({ ...prev, rooms: raw, totalPrice: p.totalPrice || prev.totalPrice, totalPartnerPrice: p.totalPartnerPrice || prev.totalPartnerPrice }));
                     }} className="form-input" />
                   </div>
                   <div>
                     <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, marginBottom: 4 }}>Guests</label>
-                    <input type="number" min={1} required value={offlineBookingForm.guests} onChange={(e) => setOfflineBookingForm((prev) => ({ ...prev, guests: e.target.value }))} className="form-input" />
+                    <input type="number" min={1} required value={offlineBookingForm.guests} onChange={(e) => {
+                      const raw = e.target.value;
+                      if (raw === '') {
+                        setOfflineBookingForm((prev) => ({ ...prev, guests: '' }));
+                        return;
+                      }
+                      const num = Math.max(1, Number(raw) || 1);
+                      const p = recalc(offlineBookingForm.hotelId, offlineBookingForm.roomId, offlineBookingForm.checkIn, offlineBookingForm.checkOut, offlineBookingForm.rooms, num);
+                      setOfflineBookingForm((prev) => ({ ...prev, guests: raw, totalPrice: p.totalPrice || prev.totalPrice }));
+                    }} className="form-input" />
                   </div>
                 </div>
                 <div className="offline-grid-3">
