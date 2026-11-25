@@ -416,6 +416,12 @@ export async function sendPaymentAuditEmail(
   const formattedAmount = `₹${Number(totalPrice || 0).toLocaleString('en-IN')}`;
   const timestamp = new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', dateStyle: 'full', timeStyle: 'medium' });
 
+  const isOffline = Boolean(
+    booking.isOfflineBooking ||
+    (paymentDetails?.paymentMethod || booking.paymentMethod || '').toLowerCase().includes('offline')
+  );
+  const effectiveMethod = paymentDetails?.paymentMethod || booking.paymentMethod || 'Razorpay Online';
+
   const mailOptions = {
     from: process.env.EMAIL_FROM || 'StayBuddy Audit <noreply@staybuddy.com>',
     to: adminEmail,
@@ -426,7 +432,7 @@ export async function sendPaymentAuditEmail(
         <div style="background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%); padding: 24px; text-align: center; color: white;">
           <div style="font-size: 13px; text-transform: uppercase; letter-spacing: 1.5px; opacity: 0.85; font-weight: 700; margin-bottom: 6px;">StayBuddy Payment Audit Alert</div>
           <h1 style="margin: 0; font-size: 26px; font-weight: 800;">${formattedAmount} Payment Received</h1>
-          <p style="margin: 6px 0 0 0; opacity: 0.9; font-size: 14px;">Transaction verified & confirmed via Razorpay</p>
+          <p style="margin: 6px 0 0 0; opacity: 0.9; font-size: 14px;">${isOffline ? `Transaction confirmed via ${effectiveMethod}` : 'Transaction verified & confirmed via Razorpay'}</p>
         </div>
 
         <div style="padding: 24px;">
@@ -461,19 +467,19 @@ export async function sendPaymentAuditEmail(
             </table>
           </div>
 
-          <h3 style="margin: 0 0 12px 0; font-size: 14px; color: #374151; text-transform: uppercase; letter-spacing: 0.5px;">Razorpay Gateway Details</h3>
+          <h3 style="margin: 0 0 12px 0; font-size: 14px; color: #374151; text-transform: uppercase; letter-spacing: 0.5px;">${isOffline ? 'Payment & Audit Details' : 'Razorpay Gateway Details'}</h3>
           <table style="width: 100%; border-collapse: collapse; margin-bottom: 24px; font-size: 13px; background: #f9fafb; border-radius: 8px; overflow: hidden; border: 1px solid #e5e7eb;">
             <tr>
-              <td style="padding: 10px 14px; border-bottom: 1px solid #e5e7eb; color: #6b7280; width: 40%;">Razorpay Payment ID</td>
+              <td style="padding: 10px 14px; border-bottom: 1px solid #e5e7eb; color: #6b7280; width: 40%;">${isOffline ? 'Payment Reference' : 'Razorpay Payment ID'}</td>
               <td style="padding: 10px 14px; border-bottom: 1px solid #e5e7eb; color: #111827; font-family: monospace; font-weight: 600;">${paymentDetails?.paymentId || booking.razorpayPaymentId || 'N/A'}</td>
             </tr>
             <tr>
-              <td style="padding: 10px 14px; border-bottom: 1px solid #e5e7eb; color: #6b7280;">Razorpay Order ID</td>
+              <td style="padding: 10px 14px; border-bottom: 1px solid #e5e7eb; color: #6b7280;">${isOffline ? 'Created By / Order Ref' : 'Razorpay Order ID'}</td>
               <td style="padding: 10px 14px; border-bottom: 1px solid #e5e7eb; color: #111827; font-family: monospace; font-weight: 600;">${paymentDetails?.orderId || booking.razorpayOrderId || 'N/A'}</td>
             </tr>
             <tr>
               <td style="padding: 10px 14px; border-bottom: 1px solid #e5e7eb; color: #6b7280;">Payment Method</td>
-              <td style="padding: 10px 14px; border-bottom: 1px solid #e5e7eb; color: #111827; font-weight: 600; text-transform: uppercase;">${paymentDetails?.paymentMethod || booking.paymentMethod || 'Razorpay Online'}</td>
+              <td style="padding: 10px 14px; border-bottom: 1px solid #e5e7eb; color: #111827; font-weight: 600; text-transform: uppercase;">${effectiveMethod}</td>
             </tr>
             <tr>
               <td style="padding: 10px 14px; color: #6b7280;">Audit Recorded At</td>

@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth';
 import { db } from '@/lib/firebaseAdmin';
 import { getCached, setCached, getFallback, invalidateCache } from '@/lib/cache';
 import { VERIFIED_BOOKINGS } from '@/lib/verifiedFallbackData';
+import { sendBookingConfirmationEmail, sendPartnerNotificationEmail, sendPaymentAuditEmail } from '@/lib/email';
 
 export const dynamic = 'force-dynamic';
 
@@ -223,6 +224,89 @@ export async function POST(request: NextRequest) {
 
     // Clear cached admin bookings so dashboard reflects new revenue & profit immediately
     invalidateCache('admin_bookings_list');
+
+    // Dispatch Client Confirmation, Partner B2B Notification, and Admin Audit Emails
+    try {
+      const populatedBooking: any = {
+        ...newBooking,
+        hotelId: { _id: hotelId, ...hotelData },
+        roomId: roomData ? { _id: roomId, ...roomData } : { _id: roomId, type: roomType },
+        customerId: { _id: null, name: newBooking.guestName, email: newBooking.guestEmail },
+      };
+
+      const emailPromises: Promise<any>[] = [];
+
+      // 1. Client Booking Confirmation & Tax Invoice Email (if guestEmail provided)
+      if (newBooking.guestEmail && newBooking.guestEmail.includes('@')) {
+        emailPromises.push(
+          sendBookingConfirmationEmail(populatedBooking)
+            .then(() => console.log(`[Offline Booking] Client confirmation email sent to ${newBooking.guestEmail}`))
+            .catch((err) => console.error('[Offline Booking] Failed to send client confirmation email:', err))
+        );
+      }
+
+      // 2. Admin Payment Audit Email (to StayBuddy Admin)
+      emailPromises.push(
+        sendPaymentAuditEmail(populatedBooking, {
+          paymentId: `OFFLINE-${bookingIdString}`,
+          orderId: `ADMIN-${createdByRole.toUpperCase()}`,
+          paymentMethod: newBooking.paymentMethod,
+          source: 'manual_admin',
+        })
+          .then(() => console.log(`[Offline Booking] Admin audit email sent for ${bookingIdString}`))
+          .catch((err) => console.error('[Offline Booking] Failed to send admin audit email:', err))
+      );
+
+      // 3. Hotel Partner Notification Email (with same B2B payout)
+      const notificationEmails = new Set<string>();
+      const designatedPartnerEmail = (hotelData.contactEmail || hotelData.partnerEmail || hotelData.email || '').trim().toLowerCase();
+      if (designatedPartnerEmail && designatedPartnerEmail.includes('@') && !designatedPartnerEmail.includes('staybuddy')) {
+        notificationEmails.add(designatedPartnerEmail);
+      }
+
+      if (notificationEmails.size === 0) {
+        const partnerUserRef = hotelData.partnerId || hotelData.ownerId || hotelData.userId;
+        if (partnerUserRef) {
+          if (typeof partnerUserRef === 'string') {
+            try {
+              const pSnap = await db.collection('users').doc(partnerUserRef).get();
+              if (pSnap.exists) {
+                const uData = pSnap.data();
+                const uEmail = uData?.email?.trim().toLowerCase();
+                const isAdmin = uData?.role === 'admin' || (uEmail && uEmail.includes('staybuddy'));
+                if (!isAdmin && uEmail) notificationEmails.add(uEmail);
+              }
+            } catch (_) {}
+          } else if (typeof partnerUserRef === 'object' && partnerUserRef.email) {
+            const uEmail = partnerUserRef.email.trim().toLowerCase();
+            const isAdmin = partnerUserRef.role === 'admin' || uEmail.includes('staybuddy');
+            if (!isAdmin && uEmail) notificationEmails.add(uEmail);
+          }
+        }
+      }
+
+      if (hotelData.onboardedBy) {
+        const staffEmail = typeof hotelData.onboardedBy === 'string'
+          ? hotelData.onboardedBy.trim().toLowerCase()
+          : (hotelData.onboardedBy.email ? hotelData.onboardedBy.email.trim().toLowerCase() : null);
+        if (staffEmail && staffEmail !== designatedPartnerEmail) {
+          notificationEmails.delete(staffEmail);
+        }
+      }
+      notificationEmails.delete('staybuddyhotels@gmail.com');
+
+      notificationEmails.forEach((email) => {
+        emailPromises.push(
+          sendPartnerNotificationEmail(populatedBooking, email)
+            .then(() => console.log(`[Offline Booking] Partner notification email sent to ${email}`))
+            .catch((err) => console.error(`[Offline Booking] Failed to send partner notification email to ${email}:`, err))
+        );
+      });
+
+      await Promise.allSettled(emailPromises);
+    } catch (emailErr) {
+      console.error('[Offline Booking] Email dispatch error (non-fatal):', emailErr);
+    }
 
     return NextResponse.json(
       {
